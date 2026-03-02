@@ -140,6 +140,33 @@
   .animate-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
   }
+
+  .animate-thinking-pulse {
+    animation: thinkingPulse 1.5s ease-in-out infinite;
+  }
+
+  .animate-glow-expand {
+    animation: glowExpand 0.6s ease-out forwards;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-thinking-pulse,
+  .animate-glow-expand,
+  .animate-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Focus-visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid hsl(252 85% 60%);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 @keyframes fadeInUp {
@@ -156,4 +183,18 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes thinkingPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes glowExpand {
+  from {
+    box-shadow: 0 0 0 hsl(252 85% 60% / 0);
+  }
+  to {
+    box-shadow: 0 0 30px hsl(252 85% 60% / 0.3), 0 0 60px hsl(252 85% 60% / 0.1);
+  }
 }

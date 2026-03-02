@@ -25,20 +25,23 @@ export function TopBar() {
     .slice(0, 2);
 
   return (
-    <header className="h-16 border-b border-border bg-background/80 backdrop-blur-lg flex items-center justify-between px-6 sticky top-0 z-30">
+    <header className="h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg flex items-center justify-between px-6 sticky top-0 z-30 relative">
+      {/* Gradient bottom border glow */}
+      <div className="absolute bottom-0 left-0 right-0 h-px gradient-primary opacity-20" />
+
       <div />
       <div className="flex items-center gap-3">
         <Badge variant="secondary" className="text-xs capitalize">
           {profile?.plan || "free"}
         </Badge>
 
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+        <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
           <Bell className="h-4 w-4 text-muted-foreground" />
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-9 w-9 rounded-full p-0">
+            <Button variant="ghost" className="h-9 w-9 rounded-full p-0" aria-label="User menu">
               <Avatar className="h-9 w-9">
                 <AvatarImage src={profile?.avatar_url || ""} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
