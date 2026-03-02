@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import Generate from "./pages/Generate";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
                 }
               >
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/generate" element={<Generate />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
