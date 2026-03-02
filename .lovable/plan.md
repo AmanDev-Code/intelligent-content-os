@@ -1,37 +1,67 @@
 
 
-## Investigation Results
+## Unified Implementation Plan
 
-**Issues 1 & 2 from the user are already resolved:**
-- `carousel_urls`, `hashtags`, `suggested_improvements` are already `TEXT[]` (udt_name: `_text`) -- not broken
-- `user_roles.role` already uses `app_role` enum -- not broken
+This combines all previously approved work plus the new edge function and Generate page into one consolidated plan.
 
-**What actually needs fixing:**
+### Already Completed (No Changes Needed)
 
-### 1. Database Migration (3 changes)
+- Database schema: array types (`TEXT[]`), `app_role` enum -- already correct
+- `handle_new_user()` trigger: assigns default `'user'` role on signup -- done
+- `created_at DESC` index on `generated_content` -- done
+- `UNIQUE(user_id)` constraint on `subscriptions` -- done
+- `useGenerationProgress` hook (fake latency masking) -- done
+- `useGenerationJob` hook (Supabase Realtime subscription) -- done
+- `useCountUp` hook, KPI cards, content feed, animations, accessibility -- done
 
-**A. Default role on signup** -- The `handle_new_user()` trigger only creates a profile row. It does NOT assign a default `'user'` role. This must be added so every new signup gets a role in `user_roles`.
+### What Will Be Implemented Now
 
-Update `handle_new_user()` to also insert into `user_roles`:
-```sql
-INSERT INTO public.user_roles (user_id, role) VALUES (NEW.id, 'user');
+#### 1. Edge Function: `supabase/functions/generate-post/index.ts`
+
+- CORS headers for browser preflight
+- `verify_jwt = false` in config.toml + manual auth via `getClaims()` (required by Supabase signing-keys)
+- Extract `userId` from JWT `sub` claim -- never from request body
+- Create `generation_jobs` row (`status: 'generating'`, `progress: 0`, `current_stage: 'Starting...'`)
+- Return 500 if job creation fails
+- Call `N8N_WEBHOOK_URL` secret in try/catch -- on failure, update job to `status: 'failed'`, `error: 'Webhook failed'`
+- Return `{ jobId }` on success
+
+#### 2. Update `supabase/config.toml`
+
+```toml
+project_id = "pfrhlcmkgpfiuyrfdmee"
+
+[functions.generate-post]
+verify_jwt = false
 ```
 
-**B. `created_at DESC` index on `generated_content`** -- Missing, needed for feed performance.
+#### 3. Create `src/pages/Generate.tsx`
 
-**C. `UNIQUE (user_id)` constraint on `subscriptions`** -- Currently allows multiple subscription rows per user.
+Full generation page with:
+- `const [isGenerating, setIsGenerating] = useState(false)`
+- `const [jobId, setJobId] = useState<string | null>(null)`
+- Generate button with `disabled={isGenerating}` to prevent double clicks
+- On click: `setIsGenerating(true)` then `supabase.functions.invoke('generate-post')` then `setJobId(result.jobId)`
+- `useGenerationProgress(isGenerating)` -- smooth fake progress bar for UX
+- `useGenerationJob({ jobId, onComplete, onFailed, onProgress })` -- real-time sync with backend
+- `onComplete`: call `complete()` then `setIsGenerating(false)` then `navigate("/content")`
+- `onFailed`: `setIsGenerating(false)` then show error toast
+- UI: progress bar, current stage text, thinking pulse animation, card layout using existing components
 
-### 2. Frontend: Realtime subscription to `generation_jobs`
+#### 4. Update `src/App.tsx`
 
-The `useGenerationProgress` hook currently runs fake progress only. When a real generation job exists, the frontend should subscribe to Supabase Realtime on the `generation_jobs` table, and when the job status changes to `ready`, call `complete()` to jump progress to 100%.
+Add `/generate` route inside the protected layout alongside the existing `/` route.
 
-This involves:
-- Creating a `useGenerationJob` hook that subscribes to a specific job row via Supabase Realtime channel
-- When `status` changes to `ready` or `failed`, emit callbacks
-- The existing `useGenerationProgress` hook's `complete()` function gets called when realtime delivers completion
+#### 5. Secret: `N8N_WEBHOOK_URL`
 
-### Files changed:
-- **New migration SQL** -- update `handle_new_user`, add index, add unique constraint
-- **New hook** `src/hooks/useGenerationJob.ts` -- Supabase Realtime subscription for a generation job
-- No other file changes needed (the realtime hook will be consumed by future generation UI)
+Will use the secrets tool to prompt for the n8n webhook URL. The edge function will not work without it.
+
+### Files to Create/Edit
+
+| Action | File |
+|--------|------|
+| Create | `supabase/functions/generate-post/index.ts` |
+| Edit   | `supabase/config.toml` |
+| Create | `src/pages/Generate.tsx` |
+| Edit   | `src/App.tsx` |
 
