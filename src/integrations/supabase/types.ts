@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_config: {
+        Row: {
+          enable_carousel: boolean
+          enable_images: boolean
+          id: string
+          max_tokens: number
+          model_name: string
+          temperature: number
+          updated_at: string
+        }
+        Insert: {
+          enable_carousel?: boolean
+          enable_images?: boolean
+          id?: string
+          max_tokens?: number
+          model_name?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Update: {
+          enable_carousel?: boolean
+          enable_images?: boolean
+          id?: string
+          max_tokens?: number
+          model_name?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_categories: {
         Row: {
           color: string | null
@@ -38,6 +68,24 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          config: Json
+          enabled: boolean
+          key: string
+        }
+        Insert: {
+          config?: Json
+          enabled?: boolean
+          key: string
+        }
+        Update: {
+          config?: Json
+          enabled?: boolean
+          key?: string
+        }
+        Relationships: []
+      }
       generated_content: {
         Row: {
           ai_reasoning: string | null
@@ -46,12 +94,13 @@ export type Database = {
           category_id: string | null
           content: string
           created_at: string
+          deleted_at: string | null
           hashtags: string[] | null
           id: string
           linkedin_post_url: string | null
           performance_prediction: Json | null
           published_at: string | null
-          status: string
+          status: Database["public"]["Enums"]["content_status"]
           suggested_improvements: string[] | null
           title: string
           updated_at: string
@@ -66,12 +115,13 @@ export type Database = {
           category_id?: string | null
           content: string
           created_at?: string
+          deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
           published_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["content_status"]
           suggested_improvements?: string[] | null
           title: string
           updated_at?: string
@@ -86,12 +136,13 @@ export type Database = {
           category_id?: string | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
           published_at?: string | null
-          status?: string
+          status?: Database["public"]["Enums"]["content_status"]
           suggested_improvements?: string[] | null
           title?: string
           updated_at?: string
@@ -109,6 +160,59 @@ export type Database = {
           },
         ]
       }
+      generation_jobs: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          current_stage: string | null
+          error: string | null
+          id: string
+          progress: number
+          response: Json | null
+          retry_count: number
+          status: Database["public"]["Enums"]["content_status"]
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          current_stage?: string | null
+          error?: string | null
+          id?: string
+          progress?: number
+          response?: Json | null
+          retry_count?: number
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          current_stage?: string | null
+          error?: string | null
+          id?: string
+          progress?: number
+          response?: Json | null
+          retry_count?: number
+          status?: Database["public"]["Enums"]["content_status"]
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "generated_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generation_logs: {
         Row: {
           content_id: string | null
@@ -116,6 +220,7 @@ export type Database = {
           duration_ms: number | null
           error_message: string | null
           id: string
+          retry_count: number
           stages: Json | null
           status: string
           user_id: string
@@ -126,6 +231,7 @@ export type Database = {
           duration_ms?: number | null
           error_message?: string | null
           id?: string
+          retry_count?: number
           stages?: Json | null
           status?: string
           user_id: string
@@ -136,6 +242,7 @@ export type Database = {
           duration_ms?: number | null
           error_message?: string | null
           id?: string
+          retry_count?: number
           stages?: Json | null
           status?: string
           user_id?: string
@@ -159,6 +266,9 @@ export type Database = {
           daily_credits_used: number
           full_name: string | null
           id: string
+          linkedin_access_token: string | null
+          linkedin_expires_at: string | null
+          linkedin_refresh_token: string | null
           monthly_credits: number
           plan: string
           preferences: Json | null
@@ -173,6 +283,9 @@ export type Database = {
           daily_credits_used?: number
           full_name?: string | null
           id: string
+          linkedin_access_token?: string | null
+          linkedin_expires_at?: string | null
+          linkedin_refresh_token?: string | null
           monthly_credits?: number
           plan?: string
           preferences?: Json | null
@@ -187,11 +300,59 @@ export type Database = {
           daily_credits_used?: number
           full_name?: string | null
           id?: string
+          linkedin_access_token?: string | null
+          linkedin_expires_at?: string | null
+          linkedin_refresh_token?: string | null
           monthly_credits?: number
           plan?: string
           preferences?: Json | null
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -230,10 +391,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      content_status: "draft" | "generating" | "ready" | "posted" | "failed"
+      subscription_status: "active" | "past_due" | "cancelled" | "trialing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -360,6 +529,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      content_status: ["draft", "generating", "ready", "posted", "failed"],
+      subscription_status: ["active", "past_due", "cancelled", "trialing"],
+    },
   },
 } as const
