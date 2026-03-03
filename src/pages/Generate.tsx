@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Zap, Sparkles, CheckCircle2 } from "lucide-react";
 
+// Force remount after hook refactor
 export default function Generate() {
   const navigate = useNavigate();
   const { toast } = useToast();
