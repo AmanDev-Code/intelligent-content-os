@@ -26,41 +26,38 @@ export function useGenerationJob({
     }
   }, []);
 
-  const processRow = useCallback((row: {
-    status: string;
-    progress: number;
-    current_stage: string | null;
-    content_id: string | null;
-    error: string | null;
-  }) => {
-    console.log('[useGenerationJob] Row update:', row.status, row.progress, row.current_stage);
-    callbacksRef.current.onProgress?.(row.progress, row.current_stage);
-
-    if (row.status === 'ready') {
-      callbacksRef.current.onComplete?.(row.content_id);
-    } else if (row.status === 'failed') {
-      callbacksRef.current.onFailed?.(row.error);
-    }
-  }, []);
-
   useEffect(() => {
     if (!jobId) return;
 
-    // Fetch current state immediately to catch updates that happened before subscribing
-    const fetchCurrentState = async () => {
-      const { data } = await supabase
-        .from('generation_jobs')
-        .select('status, progress, current_stage, content_id, error')
-        .eq('id', jobId)
-        .single();
+    const processRow = (row: {
+      status: string;
+      progress: number;
+      current_stage: string | null;
+      content_id: string | null;
+      error: string | null;
+    }) => {
+      console.log('[useGenerationJob] Row update:', row.status, row.progress, row.current_stage);
+      callbacksRef.current.onProgress?.(row.progress, row.current_stage);
 
-      if (data && (data.progress > 0 || data.status === 'ready' || data.status === 'failed')) {
-        console.log('[useGenerationJob] Initial fetch caught state:', data);
-        processRow(data);
+      if (row.status === 'ready') {
+        callbacksRef.current.onComplete?.(row.content_id);
+      } else if (row.status === 'failed') {
+        callbacksRef.current.onFailed?.(row.error);
       }
     };
 
-    fetchCurrentState();
+    // Fetch current state immediately to catch updates that happened before subscribing
+    supabase
+      .from('generation_jobs')
+      .select('status, progress, current_stage, content_id, error')
+      .eq('id', jobId)
+      .single()
+      .then(({ data }) => {
+        if (data && (data.progress > 0 || data.status === 'ready' || data.status === 'failed')) {
+          console.log('[useGenerationJob] Initial fetch caught state:', data);
+          processRow(data);
+        }
+      });
 
     // Subscribe to realtime updates
     const channel = supabase
@@ -74,14 +71,7 @@ export function useGenerationJob({
           filter: `id=eq.${jobId}`,
         },
         (payload) => {
-          const row = payload.new as {
-            status: string;
-            progress: number;
-            current_stage: string | null;
-            content_id: string | null;
-            error: string | null;
-          };
-          processRow(row);
+          processRow(payload.new as Parameters<typeof processRow>[0]);
         }
       )
       .subscribe((status) => {
@@ -91,7 +81,7 @@ export function useGenerationJob({
     channelRef.current = channel;
 
     return unsubscribe;
-  }, [jobId, unsubscribe, processRow]);
+  }, [jobId, unsubscribe]);
 
   return { unsubscribe };
 }
