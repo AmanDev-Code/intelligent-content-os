@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useGenerationProgress } from "@/hooks/useGenerationProgress";
 import { useGenerationJob } from "@/hooks/useGenerationJob";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,45 +13,56 @@ export default function Generate() {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
-
-  const { progress, stage, isComplete, complete, reset } =
-    useGenerationProgress(isGenerating);
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState<string | null>("Starting...");
+  const [isComplete, setIsComplete] = useState(false);
 
   const handleComplete = useCallback(
-    (contentId: string | null) => {
-      complete();
+    (_contentId: string | null) => {
+      setProgress(100);
+      setIsComplete(true);
       setIsGenerating(false);
       setJobId(null);
       toast({ title: "Content generated!", description: "Your post is ready." });
       navigate("/content");
     },
-    [complete, navigate, toast]
+    [navigate, toast]
   );
 
   const handleFailed = useCallback(
     (error: string | null) => {
       setIsGenerating(false);
       setJobId(null);
-      reset();
+      setProgress(0);
+      setStage(null);
       toast({
         title: "Generation failed",
         description: error || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     },
-    [reset, toast]
+    [toast]
   );
+
+  const handleProgress = useCallback((p: number, s: string | null) => {
+    setProgress(p);
+    setStage(s);
+  }, []);
 
   useGenerationJob({
     jobId,
     onComplete: handleComplete,
     onFailed: handleFailed,
+    onProgress: handleProgress,
   });
 
   const handleGenerate = async () => {
     if (isGenerating) return;
 
     setIsGenerating(true);
+    setProgress(0);
+    setStage("Starting...");
+    setIsComplete(false);
 
     const { data, error } = await supabase.functions.invoke("generate-post");
 
@@ -91,7 +101,7 @@ export default function Generate() {
           </CardTitle>
           <CardDescription>
             {isGenerating
-              ? stage
+              ? stage || "Processing…"
               : isComplete
                 ? "Your content is ready."
                 : "AI will scan trends, write content, and design visuals for you."}
