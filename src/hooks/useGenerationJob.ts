@@ -26,9 +26,43 @@ export function useGenerationJob({
     }
   }, []);
 
+  const processRow = useCallback((row: {
+    status: string;
+    progress: number;
+    current_stage: string | null;
+    content_id: string | null;
+    error: string | null;
+  }) => {
+    console.log('[useGenerationJob] Row update:', row.status, row.progress, row.current_stage);
+    callbacksRef.current.onProgress?.(row.progress, row.current_stage);
+
+    if (row.status === 'ready') {
+      callbacksRef.current.onComplete?.(row.content_id);
+    } else if (row.status === 'failed') {
+      callbacksRef.current.onFailed?.(row.error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!jobId) return;
 
+    // Fetch current state immediately to catch updates that happened before subscribing
+    const fetchCurrentState = async () => {
+      const { data } = await supabase
+        .from('generation_jobs')
+        .select('status, progress, current_stage, content_id, error')
+        .eq('id', jobId)
+        .single();
+
+      if (data && (data.progress > 0 || data.status === 'ready' || data.status === 'failed')) {
+        console.log('[useGenerationJob] Initial fetch caught state:', data);
+        processRow(data);
+      }
+    };
+
+    fetchCurrentState();
+
+    // Subscribe to realtime updates
     const channel = supabase
       .channel(`generation-job-${jobId}`)
       .on(
@@ -47,22 +81,17 @@ export function useGenerationJob({
             content_id: string | null;
             error: string | null;
           };
-
-          callbacksRef.current.onProgress?.(row.progress, row.current_stage);
-
-          if (row.status === 'ready') {
-            callbacksRef.current.onComplete?.(row.content_id);
-          } else if (row.status === 'failed') {
-            callbacksRef.current.onFailed?.(row.error);
-          }
+          processRow(row);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[useGenerationJob] Channel status:', status);
+      });
 
     channelRef.current = channel;
 
     return unsubscribe;
-  }, [jobId, unsubscribe]);
+  }, [jobId, unsubscribe, processRow]);
 
   return { unsubscribe };
 }
