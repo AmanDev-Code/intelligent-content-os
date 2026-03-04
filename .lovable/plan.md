@@ -1,67 +1,33 @@
 
 
-## Unified Implementation Plan
+## Plan: Smooth Optimistic Progress with Backend Synchronization
 
-This combines all previously approved work plus the new edge function and Generate page into one consolidated plan.
+### Problem
+Progress bar jumps abruptly (0→20→60→100) because it directly mirrors discrete database values.
 
-### Already Completed (No Changes Needed)
+### Solution
+Create a `useSmoothProgress` hook that interpolates `displayProgress` toward a `targetProgress` using `requestAnimationFrame`, while `useGenerationJob` sets the target from backend updates.
 
-- Database schema: array types (`TEXT[]`), `app_role` enum -- already correct
-- `handle_new_user()` trigger: assigns default `'user'` role on signup -- done
-- `created_at DESC` index on `generated_content` -- done
-- `UNIQUE(user_id)` constraint on `subscriptions` -- done
-- `useGenerationProgress` hook (fake latency masking) -- done
-- `useGenerationJob` hook (Supabase Realtime subscription) -- done
-- `useCountUp` hook, KPI cards, content feed, animations, accessibility -- done
+### New File: `src/hooks/useSmoothProgress.ts`
+- Maintains two values: `targetProgress` (ref) and `displayProgress` (state)
+- Runs a `requestAnimationFrame` loop that increments `displayProgress` by ~1% per ~80ms toward `targetProgress`
+- Exposes `setTarget(n)` to update the target and `displayProgress` for rendering
+- When target is 100, snaps immediately to 100
+- Cleanup cancels the animation frame
 
-### What Will Be Implemented Now
+### Changes to `src/pages/Generate.tsx`
+- Replace the `progress` state with `useSmoothProgress()`
+- In `handleGenerate`: immediately call `setTarget(20)` after getting jobId (gives instant visual feedback)
+- In `handleProgress`: call `setTarget(backendProgress)` instead of `setProgress`
+- In `handleComplete`: call `setTarget(100)`
+- In `handleFailed`: reset to 0
+- Progress bar and percentage text use `displayProgress` instead of `progress`
 
-#### 1. Edge Function: `supabase/functions/generate-post/index.ts`
+### Behavior Timeline
+1. Click Generate → `setTarget(20)` → bar animates 0→1→2→...→20
+2. Backend sends 60 → `setTarget(60)` → bar animates 20→21→...→60
+3. Backend sends 100 / status=ready → `setTarget(100)` → bar completes → navigate
 
-- CORS headers for browser preflight
-- `verify_jwt = false` in config.toml + manual auth via `getClaims()` (required by Supabase signing-keys)
-- Extract `userId` from JWT `sub` claim -- never from request body
-- Create `generation_jobs` row (`status: 'generating'`, `progress: 0`, `current_stage: 'Starting...'`)
-- Return 500 if job creation fails
-- Call `N8N_WEBHOOK_URL` secret in try/catch -- on failure, update job to `status: 'failed'`, `error: 'Webhook failed'`
-- Return `{ jobId }` on success
-
-#### 2. Update `supabase/config.toml`
-
-```toml
-project_id = "pfrhlcmkgpfiuyrfdmee"
-
-[functions.generate-post]
-verify_jwt = false
-```
-
-#### 3. Create `src/pages/Generate.tsx`
-
-Full generation page with:
-- `const [isGenerating, setIsGenerating] = useState(false)`
-- `const [jobId, setJobId] = useState<string | null>(null)`
-- Generate button with `disabled={isGenerating}` to prevent double clicks
-- On click: `setIsGenerating(true)` then `supabase.functions.invoke('generate-post')` then `setJobId(result.jobId)`
-- `useGenerationProgress(isGenerating)` -- smooth fake progress bar for UX
-- `useGenerationJob({ jobId, onComplete, onFailed, onProgress })` -- real-time sync with backend
-- `onComplete`: call `complete()` then `setIsGenerating(false)` then `navigate("/content")`
-- `onFailed`: `setIsGenerating(false)` then show error toast
-- UI: progress bar, current stage text, thinking pulse animation, card layout using existing components
-
-#### 4. Update `src/App.tsx`
-
-Add `/generate` route inside the protected layout alongside the existing `/` route.
-
-#### 5. Secret: `N8N_WEBHOOK_URL`
-
-Will use the secrets tool to prompt for the n8n webhook URL. The edge function will not work without it.
-
-### Files to Create/Edit
-
-| Action | File |
-|--------|------|
-| Create | `supabase/functions/generate-post/index.ts` |
-| Edit   | `supabase/config.toml` |
-| Create | `src/pages/Generate.tsx` |
-| Edit   | `src/App.tsx` |
+### No changes to `useGenerationJob.ts`
+The hook remains the source of truth for backend data. Only the consumer (Generate.tsx) adds the smoothing layer on top.
 
