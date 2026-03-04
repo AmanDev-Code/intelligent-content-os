@@ -28,52 +28,20 @@ export function useGenerationJob({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const pollRef = useRef<number | null>(null);
   const isTerminalRef = useRef(false);
-  const lastSnapshotRef = useRef<string>('');
+  const lastSnapshotRef = useRef('');
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
   callbacksRef.current = { onComplete, onFailed, onProgress };
 
-  const stopPolling = useCallback(() => {
+  const cleanup = useCallback(() => {
     if (pollRef.current) {
       window.clearInterval(pollRef.current);
       pollRef.current = null;
     }
-  }, []);
-
-  const unsubscribe = useCallback(() => {
-    stopPolling();
-
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
-  }, [stopPolling]);
-
-  const processRow = useCallback((row: JobRow) => {
-    const snapshot = `${row.status}|${row.progress}|${row.current_stage ?? ''}|${row.content_id ?? ''}|${row.error ?? ''}`;
-    if (snapshot === lastSnapshotRef.current) return;
-    lastSnapshotRef.current = snapshot;
-
-    callbacksRef.current.onProgress?.(row.progress, row.current_stage);
-
-    if (row.status === 'ready') {
-      isTerminalRef.current = true;
-      callbacksRef.current.onComplete?.(row.content_id);
-    } else if (row.status === 'failed') {
-      isTerminalRef.current = true;
-      callbacksRef.current.onFailed?.(row.error);
-    }
   }, []);
-
-  const fetchLatest = useCallback(async (currentJobId: string) => {
-    const { data } = await supabase
-      .from('generation_jobs')
-      .select('status, progress, current_stage, content_id, error')
-      .eq('id', currentJobId)
-      .maybeSingle();
-
-    if (!data || isTerminalRef.current) return;
-    processRow(data as JobRow);
-  }, [processRow]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -81,48 +49,59 @@ export function useGenerationJob({
     isTerminalRef.current = false;
     lastSnapshotRef.current = '';
 
-    void fetchLatest(jobId);
+    const processRow = (row: JobRow) => {
+      const snap = `${row.status}|${row.progress}|${row.current_stage ?? ''}|${row.content_id ?? ''}|${row.error ?? ''}`;
+      if (snap === lastSnapshotRef.current) return;
+      lastSnapshotRef.current = snap;
 
-    pollRef.current = window.setInterval(() => {
-      if (!isTerminalRef.current) {
-        void fetchLatest(jobId);
+      callbacksRef.current.onProgress?.(row.progress, row.current_stage);
+
+      if (row.status === 'ready') {
+        isTerminalRef.current = true;
+        callbacksRef.current.onComplete?.(row.content_id);
+      } else if (row.status === 'failed') {
+        isTerminalRef.current = true;
+        callbacksRef.current.onFailed?.(row.error);
       }
-    }, POLL_INTERVAL_MS);
-
-    const createChannel = () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-
-      channelRef.current = supabase
-        .channel(`generation-job-${jobId}-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'generation_jobs',
-            filter: `id=eq.${jobId}`,
-          },
-          (payload) => {
-            if (!isTerminalRef.current) {
-              processRow(payload.new as JobRow);
-            }
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-            // Realtime can flap in browser sessions; polling keeps UI synced anyway.
-            // Try to resubscribe, but keep a single channel alive.
-            createChannel();
-          }
-        });
     };
 
-    createChannel();
+    const fetchLatest = async () => {
+      if (isTerminalRef.current) return;
+      const { data } = await supabase
+        .from('generation_jobs')
+        .select('status, progress, current_stage, content_id, error')
+        .eq('id', jobId)
+        .maybeSingle();
+      if (data) processRow(data as JobRow);
+    };
 
-    return unsubscribe;
-  }, [jobId, unsubscribe, fetchLatest, processRow]);
+    // Initial fetch + polling fallback
+    void fetchLatest();
+    pollRef.current = window.setInterval(fetchLatest, POLL_INTERVAL_MS);
 
-  return { unsubscribe };
+    // Realtime subscription
+    const channel = supabase
+      .channel(`generation-job-${jobId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'generation_jobs',
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          if (!isTerminalRef.current) {
+            processRow(payload.new as JobRow);
+          }
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return cleanup;
+  }, [jobId, cleanup]);
+
+  return { unsubscribe: cleanup };
 }
