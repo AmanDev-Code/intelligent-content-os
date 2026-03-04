@@ -9,6 +9,16 @@ interface UseGenerationJobOptions {
   onProgress?: (progress: number, stage: string | null) => void;
 }
 
+type JobRow = {
+  status: string;
+  progress: number;
+  current_stage: string | null;
+  content_id: string | null;
+  error: string | null;
+};
+
+const POLL_INTERVAL_MS = 1500;
+
 export function useGenerationJob({
   jobId,
   onComplete,
@@ -16,72 +26,103 @@ export function useGenerationJob({
   onProgress,
 }: UseGenerationJobOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const pollRef = useRef<number | null>(null);
+  const isTerminalRef = useRef(false);
+  const lastSnapshotRef = useRef<string>('');
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
   callbacksRef.current = { onComplete, onFailed, onProgress };
 
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
   const unsubscribe = useCallback(() => {
+    stopPolling();
+
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+  }, [stopPolling]);
+
+  const processRow = useCallback((row: JobRow) => {
+    const snapshot = `${row.status}|${row.progress}|${row.current_stage ?? ''}|${row.content_id ?? ''}|${row.error ?? ''}`;
+    if (snapshot === lastSnapshotRef.current) return;
+    lastSnapshotRef.current = snapshot;
+
+    callbacksRef.current.onProgress?.(row.progress, row.current_stage);
+
+    if (row.status === 'ready') {
+      isTerminalRef.current = true;
+      callbacksRef.current.onComplete?.(row.content_id);
+    } else if (row.status === 'failed') {
+      isTerminalRef.current = true;
+      callbacksRef.current.onFailed?.(row.error);
+    }
   }, []);
+
+  const fetchLatest = useCallback(async (currentJobId: string) => {
+    const { data } = await supabase
+      .from('generation_jobs')
+      .select('status, progress, current_stage, content_id, error')
+      .eq('id', currentJobId)
+      .maybeSingle();
+
+    if (!data || isTerminalRef.current) return;
+    processRow(data as JobRow);
+  }, [processRow]);
 
   useEffect(() => {
     if (!jobId) return;
 
-    const processRow = (row: {
-      status: string;
-      progress: number;
-      current_stage: string | null;
-      content_id: string | null;
-      error: string | null;
-    }) => {
-      console.log('[useGenerationJob] Row update:', row.status, row.progress, row.current_stage);
-      callbacksRef.current.onProgress?.(row.progress, row.current_stage);
+    isTerminalRef.current = false;
+    lastSnapshotRef.current = '';
 
-      if (row.status === 'ready') {
-        callbacksRef.current.onComplete?.(row.content_id);
-      } else if (row.status === 'failed') {
-        callbacksRef.current.onFailed?.(row.error);
+    void fetchLatest(jobId);
+
+    pollRef.current = window.setInterval(() => {
+      if (!isTerminalRef.current) {
+        void fetchLatest(jobId);
       }
+    }, POLL_INTERVAL_MS);
+
+    const createChannel = () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+
+      channelRef.current = supabase
+        .channel(`generation-job-${jobId}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'generation_jobs',
+            filter: `id=eq.${jobId}`,
+          },
+          (payload) => {
+            if (!isTerminalRef.current) {
+              processRow(payload.new as JobRow);
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            // Realtime can flap in browser sessions; polling keeps UI synced anyway.
+            // Try to resubscribe, but keep a single channel alive.
+            createChannel();
+          }
+        });
     };
 
-    // Fetch current state immediately to catch updates that happened before subscribing
-    supabase
-      .from('generation_jobs')
-      .select('status, progress, current_stage, content_id, error')
-      .eq('id', jobId)
-      .single()
-      .then(({ data }) => {
-        if (data && (data.progress > 0 || data.status === 'ready' || data.status === 'failed')) {
-          console.log('[useGenerationJob] Initial fetch caught state:', data);
-          processRow(data);
-        }
-      });
-
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel(`generation-job-${jobId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'generation_jobs',
-          filter: `id=eq.${jobId}`,
-        },
-        (payload) => {
-          processRow(payload.new as Parameters<typeof processRow>[0]);
-        }
-      )
-      .subscribe((status) => {
-        console.log('[useGenerationJob] Channel status:', status);
-      });
-
-    channelRef.current = channel;
+    createChannel();
 
     return unsubscribe;
-  }, [jobId, unsubscribe]);
+  }, [jobId, unsubscribe, fetchLatest, processRow]);
 
   return { unsubscribe };
 }
