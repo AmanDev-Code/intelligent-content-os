@@ -2,39 +2,39 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useGenerationJob } from "@/hooks/useGenerationJob";
+import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Zap, Sparkles, CheckCircle2 } from "lucide-react";
 
-// Force remount after hook refactor
 export default function Generate() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<string | null>("Starting...");
   const [isComplete, setIsComplete] = useState(false);
+  const { displayProgress, setTarget } = useSmoothProgress();
 
   const handleComplete = useCallback(
     (_contentId: string | null) => {
-      setProgress(100);
+      setTarget(100);
       setIsComplete(true);
       setIsGenerating(false);
       setJobId(null);
       toast({ title: "Content generated!", description: "Your post is ready." });
       navigate("/content");
     },
-    [navigate, toast]
+    [navigate, toast, setTarget]
   );
 
   const handleFailed = useCallback(
     (error: string | null) => {
       setIsGenerating(false);
       setJobId(null);
-      setProgress(0);
+      setTarget(0);
       setStage(null);
       toast({
         title: "Generation failed",
@@ -42,13 +42,13 @@ export default function Generate() {
         variant: "destructive",
       });
     },
-    [toast]
+    [toast, setTarget]
   );
 
   const handleProgress = useCallback((p: number, s: string | null) => {
-    setProgress(p);
+    setTarget(p);
     setStage(s);
-  }, []);
+  }, [setTarget]);
 
   useGenerationJob({
     jobId,
@@ -61,7 +61,7 @@ export default function Generate() {
     if (isGenerating) return;
 
     setIsGenerating(true);
-    setProgress(0);
+    setTarget(0);
     setStage("Starting...");
     setIsComplete(false);
 
@@ -78,6 +78,7 @@ export default function Generate() {
     }
 
     setJobId(data.jobId);
+    setTarget(20); // Immediate optimistic progress
   };
 
   return (
@@ -112,9 +113,9 @@ export default function Generate() {
         <CardContent className="space-y-6">
           {isGenerating && (
             <div className="space-y-2 animate-fade-in">
-              <Progress value={progress} className="h-2" />
+              <Progress value={displayProgress} className="h-2" />
               <p className="text-xs text-muted-foreground text-center">
-                {Math.round(progress)}%
+                {Math.round(displayProgress)}%
               </p>
             </div>
           )}
