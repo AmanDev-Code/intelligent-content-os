@@ -13,12 +13,13 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Generate from "./pages/Generate";
 import Content from "./pages/Content";
+import PostDetail from "./pages/PostDetail";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/generate" element={<Generate />} />
                 <Route path="/content" element={<Content />} />
+                <Route path="/content/:slug" element={<PostDetail />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

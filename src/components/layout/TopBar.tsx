@@ -9,13 +9,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Bell } from "lucide-react";
+import { LogOut, User, Bell, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 
 export function TopBar() {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   const initials = (profile?.full_name || user?.email || "U")
     .split(" ")
@@ -35,8 +37,22 @@ export function TopBar() {
           {profile?.plan || "free"}
         </Badge>
 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+          ) : (
+            <Moon className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+          )}
+        </Button>
+
         <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
-          <Bell className="h-4 w-4 text-muted-foreground" />
+          <Bell className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
         </Button>
 
         <DropdownMenu>

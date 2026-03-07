@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { FileText, Sparkles, Zap, Calendar, Hash, Image, LayoutGrid } from "lucide-react";
 import { format } from "date-fns";
+import { createPostSlug } from "@/lib/slug";
 import type { ContentStatus } from "@/types/content";
 
 interface ContentRow {
@@ -39,6 +40,7 @@ function scoreColor(score: number): string {
 
 export default function Content() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [content, setContent] = useState<ContentRow[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -121,13 +123,16 @@ export default function Content() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {content.map((item, i) => (
-            <Card
-              key={item.id}
-              className="glass group hover:glow-primary transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up hover:border-primary/30"
-              style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
-            >
-              <CardContent className="p-5">
+          {content.map((item, i) => {
+            const slug = createPostSlug(item.title);
+            return (
+              <Card
+                key={item.id}
+                className="glass group hover:glow-primary transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up hover:border-primary/30"
+                style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
+                onClick={() => navigate(`/content/${slug}`)}
+              >
+                <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   {item.visual_url ? (
                     <img
@@ -146,9 +151,12 @@ export default function Content() {
                       <p className="font-semibold text-sm truncate">{item.title}</p>
                       <div className="flex items-center gap-2 shrink-0">
                         {item.ai_score != null && (
-                          <span className={`text-xs font-medium ${scoreColor(item.ai_score)}`}>
-                            {String(item.ai_score)}/10
-                          </span>
+                          <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/50">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase">AI</span>
+                            <span className={`text-xs font-bold ${scoreColor(item.ai_score)}`}>
+                              {String(item.ai_score)}
+                            </span>
+                          </div>
                         )}
                         <Badge variant="secondary" className={statusColors[item.status] || ""}>
                           {item.status}
@@ -199,7 +207,8 @@ export default function Content() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
