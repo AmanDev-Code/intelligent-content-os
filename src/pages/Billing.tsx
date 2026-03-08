@@ -135,10 +135,10 @@ export default function Billing() {
       </div>
 
       {/* Plans - 3 columns on lg, 2 on sm with 3rd full width */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         {plans.map((plan) => (
           <Card key={plan.id} className={cn(
-            "relative flex flex-col",
+            "relative flex flex-col h-full",
             plan.popular && "ring-2 ring-primary",
             plan.current && "bg-primary/5"
           )}>
