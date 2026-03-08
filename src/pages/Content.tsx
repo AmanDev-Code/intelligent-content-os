@@ -87,7 +87,7 @@ export default function Content() {
               <SelectItem value="failed">Failed</SelectItem>
             </SelectContent>
           </Select>
-        <Link to="/ai-agent">
+          <Link to="/generate">
             <Button size="sm" className="gradient-primary text-primary-foreground">
               <Zap className="h-4 w-4 mr-1" />
               Generate
@@ -99,7 +99,7 @@ export default function Content() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="border border-border">
+            <Card key={i} className="glass">
               <CardContent className="p-5">
                 <div className="h-5 w-3/4 bg-muted rounded animate-pulse" />
                 <div className="h-3 w-full bg-muted rounded animate-pulse mt-3" />
@@ -109,11 +109,11 @@ export default function Content() {
           ))}
         </div>
       ) : content.length === 0 ? (
-        <Card className="border border-border">
+        <Card className="glass">
           <CardContent className="p-12 text-center">
             <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 animate-pulse" />
             <p className="text-muted-foreground mb-4">Your generated content will appear here.</p>
-            <Link to="/ai-agent">
+            <Link to="/generate">
               <Button className="gradient-primary text-primary-foreground">
                 <Zap className="h-4 w-4 mr-2" />
                 Generate your first post
@@ -128,7 +128,7 @@ export default function Content() {
             return (
               <Card
                 key={item.id}
-                className="border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                className="glass group hover:glow-primary transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up hover:border-primary/30"
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
                 onClick={() => navigate(`/content/${slug}`)}
               >

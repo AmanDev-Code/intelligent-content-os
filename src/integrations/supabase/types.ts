@@ -97,7 +97,6 @@ export type Database = {
           deleted_at: string | null
           hashtags: string[] | null
           id: string
-          job_id: string | null
           linkedin_post_url: string | null
           performance_prediction: Json | null
           published_at: string | null
@@ -119,7 +118,6 @@ export type Database = {
           deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
-          job_id?: string | null
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
           published_at?: string | null
@@ -141,7 +139,6 @@ export type Database = {
           deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
-          job_id?: string | null
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
           published_at?: string | null
@@ -159,13 +156,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "content_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "generated_content_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "generation_jobs"
             referencedColumns: ["id"]
           },
         ]
