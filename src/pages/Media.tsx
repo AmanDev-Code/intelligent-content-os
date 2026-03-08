@@ -345,7 +345,7 @@ export default function Media() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="secondary">
                         Used in {item.usedIn} posts
                       </Badge>
