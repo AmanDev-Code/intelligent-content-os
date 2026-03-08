@@ -257,7 +257,7 @@ export function CalendarView({
             {weekDays.map((day, index) => {
               const dayPosts = getPostsForDate(day);
               const isCurrentDay = isToday(day);
-              const isPastDay = day < new Date().setHours(0, 0, 0, 0);
+              const isPastDay = day.getTime() < new Date(new Date().setHours(0, 0, 0, 0)).getTime();
               
               return (
                 <div key={index} className="space-y-2">
