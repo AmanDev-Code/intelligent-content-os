@@ -145,7 +145,7 @@ export default function Media() {
                       <Badge key={tag} variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-1 mt-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1.5">
                     <Button variant="outline" size="sm" className="h-6 sm:h-7 text-[9px] sm:text-[10px] w-full px-0.5">
                       <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0 mr-0.5" />View
                     </Button>
