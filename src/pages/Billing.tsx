@@ -99,23 +99,23 @@ export default function Billing() {
         </Card>
 
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="h-5 w-5 shrink-0" />
-              <h2 className="text-lg font-bold">Usage This Month</h2>
+              <h2 className="text-base font-bold">Usage This Month</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[
                 { label: 'Posts Published', ...usageData.posts },
                 { label: 'AI Credits', ...usageData.aiCredits },
                 { label: 'Connected Channels', ...usageData.channels },
               ].map((item) => (
                 <div key={item.label}>
-                  <div className="flex justify-between text-sm mb-1.5">
+                  <div className="flex justify-between text-xs sm:text-sm mb-1">
                     <span>{item.label}</span>
                     <span className="font-medium">{item.used} / {item.limit}</span>
                   </div>
-                  <Progress value={(item.used / item.limit) * 100} className="h-2" />
+                  <Progress value={(item.used / item.limit) * 100} className="h-1.5" />
                 </div>
               ))}
             </div>
