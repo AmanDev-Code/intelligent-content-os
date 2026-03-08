@@ -765,7 +765,7 @@ export default function Agent() {
             <div className="flex flex-col max-h-[90vh] bg-card" style={{ maxWidth: '100%' }}>
               <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
                 {/* Header */}
-                <div className="flex items-start gap-2 p-3 pb-0" style={{ maxWidth: '100%' }}>
+                <div className="flex items-start gap-2 p-4 pb-0" style={{ maxWidth: '100%' }}>
                   <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
                     <AvatarImage src="/placeholder-avatar.jpg" />
                     <AvatarFallback className="bg-primary text-primary-foreground text-base font-bold sm:text-lg">
@@ -802,7 +802,7 @@ export default function Agent() {
                 </div>
 
                 {/* Body */}
-                <div className="px-3 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
+                <div className="px-4 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
                   <div className="overflow-hidden" style={{ maxWidth: '100%', textAlign: 'justify' }}>
                     {previewContent.split("\n").map((line, index) => (
                       <p
@@ -816,7 +816,24 @@ export default function Agent() {
                           maxWidth: '100%',
                         }}
                       >
-                        {line || "\u00A0"}
+                        {line
+                          ? line.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                              /^https?:\/\//.test(part) ? (
+                                <a
+                                  key={i}
+                                  href={part}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                  style={{ wordBreak: 'break-all' }}
+                                >
+                                  {part.length > 50 ? part.substring(0, 50) + "..." : part}
+                                </a>
+                              ) : (
+                                <span key={i}>{part}</span>
+                              )
+                            )
+                          : "\u00A0"}
                       </p>
                     ))}
                   </div>
@@ -833,7 +850,7 @@ export default function Agent() {
                 </div>
 
                 {/* Reactions */}
-                <div className="px-3 py-1.5">
+                <div className="px-4 py-1.5">
                   <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
                     <div className="flex items-center gap-1 shrink-0">
                       <div className="flex -space-x-1">
@@ -850,7 +867,7 @@ export default function Agent() {
                   </div>
                 </div>
 
-                <div className="mx-3 border-t border-border" />
+                <div className="mx-4 border-t border-border" />
 
                 {/* Action buttons — LinkedIn mobile style */}
                 <div className="flex items-center justify-around py-1 px-0">
