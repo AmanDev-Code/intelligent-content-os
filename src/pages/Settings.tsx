@@ -64,43 +64,41 @@ export default function Settings() {
       </div>
 
       {/* Two-column layout on large screens */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Profile */}
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
+        {/* Profile - takes 2 cols */}
+        <Card className="xl:col-span-2">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <User className="h-5 w-5 shrink-0 text-primary" />
               <h2 className="text-base font-semibold">Profile Information</h2>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="firstName" className="text-xs">First Name</Label>
-                    <Input id="firstName" defaultValue="Aman" className="mt-1" />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName" className="text-xs">Last Name</Label>
-                    <Input id="lastName" defaultValue="Ahuja" className="mt-1" />
-                  </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="firstName" className="text-xs">First Name</Label>
+                  <Input id="firstName" defaultValue="Aman" className="mt-1" />
                 </div>
                 <div>
-                  <Label htmlFor="email" className="text-xs">Email Address</Label>
-                  <Input id="email" type="email" defaultValue="amanahuja@gmail.com" className="mt-1" />
+                  <Label htmlFor="lastName" className="text-xs">Last Name</Label>
+                  <Input id="lastName" defaultValue="Ahuja" className="mt-1" />
                 </div>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="bio" className="text-xs">Bio</Label>
-                  <Textarea id="bio" placeholder="Tell us about yourself..." className="resize-none mt-1 h-[104px]" />
-                </div>
+              <div>
+                <Label htmlFor="email" className="text-xs">Email Address</Label>
+                <Input id="email" type="email" defaultValue="amanahuja@gmail.com" className="mt-1" />
               </div>
+              <div>
+                <Label htmlFor="bio" className="text-xs">Bio</Label>
+                <Textarea id="bio" placeholder="Tell us about yourself..." className="resize-none mt-1" rows={3} />
+              </div>
+              <Button className="bg-primary text-primary-foreground gap-2" size="sm">
+                <Save className="h-4 w-4" /> Save Changes
+              </Button>
             </div>
-            <Button className="bg-primary text-primary-foreground gap-2 mt-4" size="sm">
-              <Save className="h-4 w-4" /> Save Changes
-            </Button>
           </CardContent>
         </Card>
+
+        {/* Appearance - takes 1 col */}
 
         {/* Appearance */}
         <Card>
