@@ -35,7 +35,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
     .slice(0, 2);
 
   return (
-    <header className="h-14 md:h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+    <header className="h-14 md:h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg flex items-center justify-between px-3 sm:px-4 md:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-2">
         {isMobile && (
           <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onMobileMenuToggle} aria-label="Open menu">

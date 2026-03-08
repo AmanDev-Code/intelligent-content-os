@@ -21,7 +21,6 @@ import {
   Globe,
   Hash,
   CheckCircle2,
-  X,
   Heart,
   MessageCircle,
   Repeat2,
