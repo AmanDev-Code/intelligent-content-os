@@ -26,7 +26,7 @@ import {
   Facebook
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
+import { XIcon } from "@/components/icons/XIcon";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
