@@ -145,12 +145,12 @@ export default function Media() {
                       <Badge key={tag} variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-1.5">
-                    <Button variant="outline" size="sm" className="h-6 sm:h-7 text-[9px] sm:text-[10px] w-full px-0.5">
-                      <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0 mr-0.5" />View
+                  <div className="flex flex-col md:flex-row gap-1 mt-1.5">
+                    <Button variant="outline" size="sm" className="h-6 md:h-7 text-[9px] md:text-[10px] w-full px-0.5">
+                      <Eye className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0 mr-0.5" />View
                     </Button>
-                    <Button variant="outline" size="sm" className="h-6 sm:h-7 text-[9px] sm:text-[10px] w-full px-0.5">
-                      <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0 mr-0.5" />Download
+                    <Button variant="outline" size="sm" className="h-6 md:h-7 text-[9px] md:text-[10px] w-full px-0.5">
+                      <Download className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0 mr-0.5" />Download
                     </Button>
                   </div>
                 </CardContent>
