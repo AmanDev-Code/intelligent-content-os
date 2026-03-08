@@ -51,15 +51,15 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+    <div className="flex-1 space-y-4 sm:space-y-6 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-primary/10 rounded-xl shrink-0">
           <SettingsIcon className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
-          <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Manage your account and preferences</p>
         </div>
       </div>
 
