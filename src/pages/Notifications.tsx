@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
-  Bell, Check, CheckCheck, Trash2,
+  Bell, Check, CheckCheck,
   Zap, TrendingUp, AlertTriangle, Info, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
