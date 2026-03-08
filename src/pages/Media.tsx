@@ -125,7 +125,7 @@ export default function Media() {
           {filteredMedia.map((item) => {
             const TypeIcon = getTypeIcon(item.type);
             return (
-              <Card key={item.id} className="group overflow-hidden">
+              <Card key={item.id} className="group overflow-hidden flex flex-col">
                 <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                     <TypeIcon className="h-8 w-8 sm:h-10 sm:w-10 text-primary/60" />
@@ -134,23 +134,23 @@ export default function Media() {
                     {item.type === 'carousel' ? 'Carousel' : item.format}
                   </Badge>
                 </div>
-                <CardContent className="p-2 sm:p-2.5">
+                <CardContent className="p-2 sm:p-2.5 flex flex-col flex-1">
                   <h3 className="font-medium text-[11px] sm:text-xs mb-0.5 truncate">{item.name}</h3>
                   <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground">
                     <span>{item.dimensions}</span>
                     <span>{item.size}</span>
                   </div>
-                  <div className="flex flex-wrap gap-0.5 mt-1">
+                  <div className="flex flex-wrap gap-0.5 mt-1 min-h-[1rem]">
                     {item.tags.slice(0, 2).map((tag) => (
                       <Badge key={tag} variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="flex flex-col md:flex-row gap-1 mt-1.5">
-                    <Button variant="outline" size="sm" className="h-6 md:h-7 text-[9px] md:text-[10px] w-full px-0.5">
-                      <Eye className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0 mr-0.5" />View
+                  <div className="flex flex-col lg:flex-row gap-1 mt-auto pt-1.5">
+                    <Button variant="outline" size="sm" className="h-6 lg:h-7 text-[9px] lg:text-[10px] w-full px-0.5">
+                      <Eye className="h-2.5 w-2.5 lg:h-3 lg:w-3 shrink-0 mr-0.5" />View
                     </Button>
-                    <Button variant="outline" size="sm" className="h-6 md:h-7 text-[9px] md:text-[10px] w-full px-0.5">
-                      <Download className="h-2.5 w-2.5 md:h-3 md:w-3 shrink-0 mr-0.5" />Download
+                    <Button variant="outline" size="sm" className="h-6 lg:h-7 text-[9px] lg:text-[10px] w-full px-0.5">
+                      <Download className="h-2.5 w-2.5 lg:h-3 lg:w-3 shrink-0 mr-0.5" />Download
                     </Button>
                   </div>
                 </CardContent>

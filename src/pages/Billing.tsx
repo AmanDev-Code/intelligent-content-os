@@ -138,7 +138,7 @@ export default function Billing() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         {plans.map((plan) => (
           <Card key={plan.id} className={cn(
-            "relative",
+            "relative flex flex-col",
             plan.popular && "ring-2 ring-primary",
             plan.current && "bg-primary/5"
           )}>
@@ -150,7 +150,7 @@ export default function Billing() {
                 </Badge>
               </div>
             )}
-            <CardContent className="p-4 sm:p-5 pt-6">
+            <CardContent className="p-4 sm:p-5 pt-6 flex flex-col flex-1">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-lg font-bold">{plan.name}</h3>
                 {plan.id === 'ultimate' && <Crown className="h-4 w-4 text-primary" />}
@@ -165,7 +165,7 @@ export default function Billing() {
                 <p className="text-xs text-muted-foreground mb-1">${plan.price.yearly} billed yearly</p>
               )}
               <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
-              <ul className="space-y-1.5 mb-4">
+              <ul className="space-y-1.5 mb-4 flex-1">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-xs">
                     <Check className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -174,7 +174,7 @@ export default function Billing() {
                 ))}
               </ul>
               <Button
-                className={cn("w-full", plan.popular && !plan.current && "bg-primary text-primary-foreground")}
+                className={cn("w-full mt-auto", plan.popular && !plan.current && "bg-primary text-primary-foreground")}
                 variant={plan.current ? "outline" : "default"}
                 disabled={plan.current}
                 size="sm"
