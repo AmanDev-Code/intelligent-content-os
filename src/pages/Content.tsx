@@ -109,7 +109,7 @@ export default function Content() {
           ))}
         </div>
       ) : content.length === 0 ? (
-        <Card className="glass">
+        <Card className="border border-border">
           <CardContent className="p-12 text-center">
             <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 animate-pulse" />
             <p className="text-muted-foreground mb-4">Your generated content will appear here.</p>
