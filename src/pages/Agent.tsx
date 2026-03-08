@@ -750,124 +750,126 @@ export default function Agent() {
 
       {/* LinkedIn Post Preview Modal */}
       <Dialog open={showContentModal} onOpenChange={setShowContentModal}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-[550px] max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl">
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-[560px] max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Content Preview</DialogTitle>
           </DialogHeader>
 
           {selectedContent && (
             <div className="flex flex-col max-h-[90vh] bg-card">
-              {/* Scrollable post area */}
-              <div className="flex-1 overflow-y-auto">
-
-                {/* === LinkedIn Header === */}
-                <div className="flex items-start gap-2.5 p-3 pb-0">
-                  <Avatar className="h-12 w-12 shrink-0 ring-0">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+                {/* Header */}
+                <div className="flex items-start gap-2.5 p-3 pb-0 min-w-0">
+                  <Avatar className="h-12 w-12 shrink-0">
                     <AvatarImage src="/placeholder-avatar.jpg" />
-                    <AvatarFallback className="bg-[hsl(221,83%,53%)] text-[hsl(0,0%,100%)] text-lg font-bold">
-                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                      {user?.email?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
+
                   <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold text-sm text-foreground leading-tight">
-                        {user?.email?.split('@')[0] || 'Your Name'}
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="font-bold text-sm text-foreground truncate">
+                        {user?.email?.split("@")[0] || "Your Name"}
                       </span>
-                      <span className="text-xs text-muted-foreground font-normal">· 3rd+</span>
+                      <span className="text-xs text-muted-foreground shrink-0">· 3rd+</span>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-snug line-clamp-1 mt-px">
-                      {selectedContent.title || 'Content Creator | AI Enthusiast'}
+
+                    <p className="text-xs text-muted-foreground leading-snug truncate mt-px">
+                      {selectedContent.title || "Content Creator | AI Enthusiast"}
                     </p>
+
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-px">
                       <span>2d</span>
                       <span>·</span>
                       <span>Edited</span>
                       <span>·</span>
-                      <Globe className="h-3 w-3 inline" />
+                      <Globe className="h-3 w-3" />
                     </div>
                   </div>
-                  <span className="text-[hsl(221,83%,53%)] text-sm font-bold flex items-center gap-1 shrink-0 pt-1 cursor-pointer hover:underline">
+
+                  <span className="text-primary text-sm font-bold shrink-0 pt-1 cursor-pointer hover:underline">
                     + Follow
                   </span>
                 </div>
 
-                {/* === Post Body === */}
-                <div className="px-3 pt-3 pb-2">
-                  <div className="text-[14px] text-foreground leading-[1.45] whitespace-pre-line break-words">
+                {/* Body */}
+                <div className="px-3 pt-3 pb-2 min-w-0">
+                  <div className="text-[14px] text-foreground leading-[1.45] whitespace-pre-line break-words [overflow-wrap:anywhere] min-w-0">
                     {selectedContent.content}
                   </div>
 
                   {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="mt-1.5 text-[14px] text-[hsl(221,83%,53%)] font-semibold">
+                    <div className="mt-1.5 text-[14px] text-primary font-semibold break-words [overflow-wrap:anywhere]">
                       {selectedContent.hashtags.map((tag: string, index: number) => (
-                        <span key={index} className="mr-1 cursor-pointer hover:underline">
-                          {tag.startsWith('#') ? tag : `#${tag}`}
+                        <span key={index} className="mr-1 hover:underline cursor-pointer">
+                          {tag.startsWith("#") ? tag : `#${tag}`}
                         </span>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* === Reactions Row === */}
-                <div className="px-3 py-1.5">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                {/* Reactions */}
+                <div className="px-3 py-1.5 min-w-0">
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground min-w-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <div className="flex -space-x-1">
-                        <div className="w-[18px] h-[18px] rounded-full bg-[hsl(221,83%,53%)] flex items-center justify-center">
-                          <ThumbsUp className="h-2.5 w-2.5 text-[hsl(0,0%,100%)]" />
+                        <div className="w-[18px] h-[18px] rounded-full bg-primary flex items-center justify-center">
+                          <ThumbsUp className="h-2.5 w-2.5 text-primary-foreground" />
                         </div>
-                        <div className="w-[18px] h-[18px] rounded-full bg-[hsl(0,84%,60%)] flex items-center justify-center">
-                          <Heart className="h-2.5 w-2.5 text-[hsl(0,0%,100%)]" />
+                        <div className="w-[18px] h-[18px] rounded-full bg-destructive flex items-center justify-center">
+                          <Heart className="h-2.5 w-2.5 text-destructive-foreground" />
                         </div>
                       </div>
                       <span className="ml-0.5">73</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span>22 comments</span>
+
+                    <div className="flex items-center gap-1 min-w-0 text-right">
+                      <span className="truncate">22 comments</span>
                       <span>·</span>
-                      <span>3 reposts</span>
+                      <span className="truncate">3 reposts</span>
                     </div>
                   </div>
                 </div>
 
-                {/* === Divider === */}
                 <div className="mx-3 border-t border-border" />
 
-                {/* === Action Buttons Bar (LinkedIn style) === */}
-                <div className="flex items-center justify-around px-1 py-0.5">
+                {/* Action buttons */}
+                <div className="grid grid-cols-4 items-center px-1 py-0.5 min-w-0">
                   {[
-                    { icon: ThumbsUp, label: 'Like' },
-                    { icon: MessageCircle, label: 'Comment' },
-                    { icon: Repeat2, label: 'Repost' },
-                    { icon: Send, label: 'Send' },
+                    { icon: ThumbsUp, label: "Like" },
+                    { icon: MessageCircle, label: "Comment" },
+                    { icon: Repeat2, label: "Repost" },
+                    { icon: Send, label: "Send" },
                   ].map(({ icon: Icon, label }) => (
                     <button
                       key={label}
-                      className="flex items-center gap-1.5 py-3 px-2 sm:px-4 rounded hover:bg-muted/70 transition-colors text-muted-foreground"
+                      className="flex min-w-0 items-center justify-center gap-1 py-2.5 px-1 rounded hover:bg-muted/70 transition-colors text-muted-foreground"
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs sm:text-sm font-semibold">{label}</span>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="text-xs font-semibold truncate">{label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* === Bottom bar with AI info & actions === */}
-              <div className="border-t border-border px-3 py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="gap-1 text-xs h-6">
+              {/* Footer */}
+              <div className="border-t border-border px-3 py-2.5 flex items-center justify-between gap-2 bg-card min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
+                  <Badge variant="outline" className="gap-1 text-xs h-6 shrink-0">
                     <Sparkles className="h-3 w-3" />
                     AI
                   </Badge>
                   {selectedContent.ai_score && (
-                    <Badge variant="secondary" className="text-xs h-6">Score: {selectedContent.ai_score}</Badge>
+                    <Badge variant="secondary" className="text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
                   )}
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex gap-2 shrink-0">
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowContentModal(false)}>
                     Close
                   </Button>
-                  <Button size="sm" className="h-7 text-xs">Schedule</Button>
                 </div>
               </div>
             </div>
