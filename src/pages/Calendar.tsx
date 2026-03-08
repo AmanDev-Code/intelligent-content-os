@@ -152,44 +152,35 @@ export default function Calendar() {
   };
 
   return (
-    <div className="flex-1 space-y-8 p-6 max-w-7xl mx-auto">
-      {/* Modern Header */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl">
-                <CalendarIcon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  Content Calendar
-                </h1>
-                <p className="text-muted-foreground">
-                  Your content strategy command center
-                </p>
-              </div>
+    <div className="flex-1 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-xl shrink-0">
+              <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Content Calendar</h1>
+              <p className="text-sm text-muted-foreground">Your content strategy command center</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filter
+              <Filter className="h-4 w-4" /><span className="hidden sm:inline">Filter</span>
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
-              <Search className="h-4 w-4" />
-              Search
+              <Search className="h-4 w-4" /><span className="hidden sm:inline">Search</span>
             </Button>
-            <Button className="gradient-primary gap-2 shadow-lg shadow-primary/25">
-              <Wand2 className="h-4 w-4" />
-              Create Post
+            <Button className="bg-primary text-primary-foreground gap-2">
+              <Wand2 className="h-4 w-4" /><span className="hidden sm:inline">Create Post</span>
             </Button>
           </div>
         </div>
       </div>
 
       {/* Modern Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/50 dark:to-blue-900/20">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent" />
           <CardContent className="p-6 relative">
@@ -271,29 +262,27 @@ export default function Calendar() {
         </Card>
       </div>
 
-      {/* Modern Calendar Controls */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" className="h-9 w-9">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-6">
+            <div className="flex items-center gap-1 sm:gap-3">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="text-center">
-                <h2 className="text-2xl font-bold">{formatDate(currentDate)}</h2>
-                <p className="text-sm text-muted-foreground">12 posts scheduled this month</p>
+              <div className="text-center min-w-[140px] sm:min-w-[200px]">
+                <h2 className="text-lg sm:text-2xl font-bold">{formatDate(currentDate)}</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">12 posts scheduled this month</p>
               </div>
-              <Button variant="outline" size="icon" className="h-9 w-9">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Target className="h-4 w-4" />
-              Today
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+              <Target className="h-4 w-4" /> Today
             </Button>
           </div>
           
-          <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 w-full sm:w-auto overflow-x-auto">
             {viewModes.map((mode) => (
               <Button
                 key={mode.id}
@@ -301,12 +290,12 @@ export default function Calendar() {
                 size="sm"
                 onClick={() => setCurrentView(mode.id)}
                 className={cn(
-                  "gap-2 transition-all",
-                  currentView === mode.id && "gradient-primary shadow-lg shadow-primary/25"
+                  "gap-1 sm:gap-2 transition-all text-xs sm:text-sm flex-1 sm:flex-none",
+                  currentView === mode.id && "bg-primary text-primary-foreground"
                 )}
               >
                 <mode.icon className="h-4 w-4" />
-                {mode.label}
+                <span className="hidden sm:inline">{mode.label}</span>
               </Button>
             ))}
           </div>
@@ -314,26 +303,25 @@ export default function Calendar() {
       </div>
 
       {/* Modern Connected Channels */}
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
+      <Card className="border-0">
+        <CardHeader className="pb-4 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
                 <Globe className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-xl">Social Channels</CardTitle>
-                <p className="text-sm text-muted-foreground">Manage your connected platforms</p>
+                <CardTitle className="text-base sm:text-xl">Social Channels</CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground">Manage your connected platforms</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Channel
+            <Button variant="outline" size="sm" className="gap-2 self-start sm:self-center">
+              <Plus className="h-4 w-4" /> Add Channel
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="px-4 sm:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {socialPlatforms.map((platform) => (
               <Card
                 key={platform.name}
@@ -400,14 +388,14 @@ export default function Calendar() {
       {currentView === 'month' && (
         <Card className="border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="grid grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4 mb-4 sm:mb-6">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                 <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-3 border-b">
                   {day}
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {Array.from({ length: 35 }, (_, i) => {
                 const dayNumber = i - 5; // Adjust for month start
                 const isCurrentMonth = dayNumber > 0 && dayNumber <= 31;
@@ -417,8 +405,7 @@ export default function Calendar() {
                 return (
                   <div
                     key={i}
-                    className={cn(
-                      "min-h-[140px] p-3 rounded-xl transition-all hover:shadow-md",
+                    className={cn("min-h-[48px] sm:min-h-[80px] md:min-h-[140px] p-1 sm:p-2 md:p-3 rounded-md sm:rounded-xl transition-all",
                       isCurrentMonth 
                         ? "bg-card border border-border/50" 
                         : "bg-muted/20 border border-transparent",

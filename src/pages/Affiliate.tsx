@@ -12,7 +12,7 @@ import {
 
 export default function Affiliate() {
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -42,7 +42,7 @@ export default function Affiliate() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6 sm:my-8">
               <div className="text-center p-4">
                 <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-3">
                   <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -84,7 +84,7 @@ export default function Affiliate() {
       {/* Features Preview */}
       <div className="max-w-4xl mx-auto">
         <h3 className="text-xl font-bold text-center mb-6">What to Expect</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

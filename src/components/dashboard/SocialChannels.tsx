@@ -2,60 +2,19 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Globe, 
-  Plus,
-  Linkedin,
-  Twitter,
-  Instagram,
-  Facebook
-} from "lucide-react";
+import { Globe, Plus, Linkedin, Twitter, Instagram, Facebook } from "lucide-react";
 import { SOCIAL_PLATFORMS } from "@/lib/constants";
 
 interface SocialChannel {
-  id: string;
-  name: string;
-  connected: boolean;
-  followers?: string;
-  engagement?: string;
-  posts?: number;
+  id: string; name: string; connected: boolean; followers?: string; engagement?: string; posts?: number;
 }
 
 export function SocialChannels() {
-  // Mock data - in real app this would come from API
   const [channels] = useState<SocialChannel[]>([
-    {
-      id: 'linkedin',
-      name: 'LinkedIn',
-      connected: false, // Set to false as requested
-      followers: '0',
-      engagement: '0%',
-      posts: 0
-    },
-    {
-      id: 'twitter',
-      name: 'Twitter',
-      connected: false,
-      followers: '0',
-      engagement: '0%',
-      posts: 0
-    },
-    {
-      id: 'instagram',
-      name: 'Instagram',
-      connected: false,
-      followers: '0',
-      engagement: '0%',
-      posts: 0
-    },
-    {
-      id: 'facebook',
-      name: 'Facebook',
-      connected: false,
-      followers: '0',
-      engagement: '0%',
-      posts: 0
-    }
+    { id: 'linkedin', name: 'LinkedIn', connected: false, followers: '0', engagement: '0%', posts: 0 },
+    { id: 'twitter', name: 'Twitter', connected: false, followers: '0', engagement: '0%', posts: 0 },
+    { id: 'instagram', name: 'Instagram', connected: false, followers: '0', engagement: '0%', posts: 0 },
+    { id: 'facebook', name: 'Facebook', connected: false, followers: '0', engagement: '0%', posts: 0 }
   ]);
 
   const getIcon = (platformId: string) => {
@@ -74,84 +33,55 @@ export function SocialChannels() {
   };
 
   const handleConnect = (channelId: string) => {
-    // This would trigger OAuth flow in real app
     console.log(`Connecting to ${channelId}`);
-    // For now, just show a message
     alert(`OAuth connection for ${channelId} would be implemented here`);
   };
 
   return (
     <Card className="border-0">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-4 px-4 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
               <Globe className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Social Channels</CardTitle>
-              <p className="text-sm text-muted-foreground">Connect your social media accounts</p>
+              <CardTitle className="text-base sm:text-lg">Social Channels</CardTitle>
+              <p className="text-xs sm:text-sm text-muted-foreground">Connect your social media accounts</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Channel
+          <Button variant="outline" size="sm" className="gap-2 self-start sm:self-center">
+            <Plus className="h-4 w-4" /> Add Channel
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <CardContent className="px-4 sm:px-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {channels.map((channel) => {
             const Icon = getIcon(channel.id);
             const platformColor = getPlatformColor(channel.id);
-            
             return (
-              <Card
-                key={channel.id}
-                className="border transition-all hover:shadow-sm"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-                      style={{ backgroundColor: platformColor }}
-                    >
-                      <Icon className="h-5 w-5" />
+              <Card key={channel.id} className="border transition-all">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: platformColor }}>
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
                     {channel.connected && (
-                      <Badge variant="secondary" className="gap-1 text-xs">
-                        Connected
-                      </Badge>
+                      <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs hidden sm:flex">Connected</Badge>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">{channel.name}</h3>
+                  <div className="space-y-1 sm:space-y-2">
+                    <h3 className="font-semibold text-sm">{channel.name}</h3>
                     {channel.connected ? (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Followers</span>
-                          <span className="font-medium">{channel.followers}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Engagement</span>
-                          <span className="font-medium">{channel.engagement}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Posts</span>
-                          <span className="font-medium">{channel.posts} this month</span>
-                        </div>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Followers</span><span className="font-medium">{channel.followers}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Engagement</span><span className="font-medium">{channel.engagement}</span></div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">Not connected</p>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="w-full"
-                          onClick={() => handleConnect(channel.id)}
-                        >
-                          Connect
-                        </Button>
+                      <div className="space-y-1 sm:space-y-2">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected</p>
+                        <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleConnect(channel.id)}>Connect</Button>
                       </div>
                     )}
                   </div>

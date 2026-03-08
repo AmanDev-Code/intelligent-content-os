@@ -37,9 +37,9 @@ export default function Settings() {
   });
 
   return (
-    <div className="flex-1 space-y-6 p-6 max-w-4xl mx-auto">
+    <div className="flex-1 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl">
             <SettingsIcon className="h-6 w-6 text-primary" />
@@ -55,7 +55,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Settings Navigation */}
         <div className="lg:col-span-1">
           <Card className="border-0 shadow-lg">

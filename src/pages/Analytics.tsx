@@ -99,29 +99,21 @@ const insights = [
 
 export default function Analytics() {
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground">
-            Track your content performance and audience growth
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">Track your content performance and audience growth</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Last 30 Days
-          </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" size="sm"><Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Report</span></Button>
+          <Button variant="outline" size="sm"><Calendar className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Last 30 Days</span></Button>
         </div>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
@@ -240,7 +232,7 @@ export default function Analytics() {
         <CardContent>
           <div className="space-y-4">
             {topPosts.map((post, index) => (
-              <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={post.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
                     <span className="text-sm font-bold text-primary">#{index + 1}</span>
@@ -256,7 +248,7 @@ export default function Analytics() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Heart className="h-4 w-4 text-red-500" />
@@ -289,7 +281,7 @@ export default function Analytics() {
         <CardContent>
           <div className="space-y-4">
             {performanceData.map((platform, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
                   <div>
@@ -297,7 +289,7 @@ export default function Analytics() {
                     <p className="text-sm text-muted-foreground">{platform.posts} posts published</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
                   <div className="text-center">
                     <p className="text-lg font-bold">{platform.reach.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Reach</p>

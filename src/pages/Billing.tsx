@@ -145,18 +145,15 @@ export default function Billing() {
   const yearlyDiscount = billingCycle === 'yearly' ? 0.2 : 0;
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Billing & Subscription</h1>
-          <p className="text-muted-foreground">
-            Manage your subscription and billing information
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Billing & Subscription</h1>
+          <p className="text-sm text-muted-foreground">Manage your subscription and billing information</p>
         </div>
         <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" />
-          Download Invoice
+          <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Download Invoice</span>
         </Button>
       </div>
 
@@ -273,7 +270,7 @@ export default function Billing() {
           </Card>
 
           {/* Plans Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {plans.map((plan) => (
               <Card key={plan.id} className={cn(
                 "relative",
@@ -358,7 +355,7 @@ export default function Billing() {
         <CardContent>
           <div className="space-y-4">
             {billingHistory.map((bill) => (
-              <div key={bill.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={bill.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <CreditCard className="h-4 w-4 text-primary" />
@@ -370,7 +367,7 @@ export default function Billing() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                   <span className="font-medium">{bill.amount}</span>
                   <Badge variant={bill.status === 'paid' ? 'default' : 'secondary'}>
                     {bill.status === 'paid' ? 'Paid' : 'Pending'}
