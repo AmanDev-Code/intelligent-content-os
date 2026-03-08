@@ -801,12 +801,19 @@ export default function Agent() {
 
                 {/* Body */}
                 <div className="px-3 pt-3 pb-2 min-w-0">
-                  <div className="text-[14px] text-foreground leading-[1.45] whitespace-pre-line break-words [overflow-wrap:anywhere] min-w-0">
-                    {selectedContent.content}
+                  <div className="space-y-2 min-w-0">
+                    {previewContent.split("\n").map((line, index) => (
+                      <p
+                        key={index}
+                        className="text-[14px] text-foreground leading-[1.45] break-all [overflow-wrap:anywhere] min-w-0"
+                      >
+                        {line || "\u00A0"}
+                      </p>
+                    ))}
                   </div>
 
                   {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="mt-1.5 text-[14px] text-primary font-semibold break-words [overflow-wrap:anywhere]">
+                    <div className="mt-1.5 text-[14px] text-primary font-semibold break-all [overflow-wrap:anywhere] min-w-0">
                       {selectedContent.hashtags.map((tag: string, index: number) => (
                         <span key={index} className="mr-1 hover:underline cursor-pointer">
                           {tag.startsWith("#") ? tag : `#${tag}`}
