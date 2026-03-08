@@ -810,9 +810,9 @@ export default function Agent() {
                         className="text-[13px] sm:text-[14px] text-foreground mb-1.5"
                         style={{
                           lineHeight: 1.5,
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto',
+                          wordBreak: 'normal',
+                          overflowWrap: 'normal',
+                          hyphens: 'none',
                           maxWidth: '100%',
                         }}
                       >
