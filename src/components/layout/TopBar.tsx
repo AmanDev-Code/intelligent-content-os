@@ -66,39 +66,31 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] max-w-80 p-0">
-            <div className="flex items-center justify-between p-3 sm:p-4 border-b">
-              <h3 className="font-semibold">Notifications</h3>
-              <Badge variant="secondary" className="text-xs">{notifications} new</Badge>
+          <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)] p-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <h3 className="font-semibold text-sm">Notifications</h3>
+              <Badge variant="secondary" className="text-[10px]">{notifications} new</Badge>
             </div>
-            <div className="max-h-[56vh] overflow-y-auto">
-              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-primary rounded-full shrink-0"></div>
-                  <span className="font-medium text-sm">Content Generated</span>
-                  <span className="text-xs text-muted-foreground ml-auto">2m ago</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Your AI content has been generated successfully.</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-accent rounded-full shrink-0"></div>
-                  <span className="font-medium text-sm">Post Scheduled</span>
-                  <span className="text-xs text-muted-foreground ml-auto">1h ago</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Your post is scheduled for tomorrow at 10:00 AM.</p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-destructive rounded-full shrink-0"></div>
-                  <span className="font-medium text-sm">AI Credits Low</span>
-                  <span className="text-xs text-muted-foreground ml-auto">3h ago</span>
-                </div>
-                <p className="text-sm text-muted-foreground">You have 5 AI credits remaining.</p>
-              </DropdownMenuItem>
+            <div className="max-h-[50vh] overflow-y-auto divide-y divide-border">
+              {[
+                { dot: "bg-primary", title: "Content Generated", time: "2m ago", msg: "Your AI content has been generated successfully." },
+                { dot: "bg-muted-foreground", title: "Post Scheduled", time: "1h ago", msg: "Your post is scheduled for tomorrow at 10:00 AM." },
+                { dot: "bg-destructive", title: "AI Credits Low", time: "3h ago", msg: "You have 5 AI credits remaining." },
+              ].map((n, i) => (
+                <DropdownMenuItem key={i} className="px-4 py-3 flex items-start gap-2.5 cursor-pointer focus:bg-accent">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.dot}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-sm truncate">{n.title}</span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.msg}</p>
+                  </div>
+                </DropdownMenuItem>
+              ))}
             </div>
-            <div className="p-3 border-t">
-              <Button variant="outline" className="w-full text-sm" onClick={() => navigate("/notifications")}>
+            <div className="p-2 border-t">
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => navigate("/notifications")}>
                 View All Notifications
               </Button>
             </div>
