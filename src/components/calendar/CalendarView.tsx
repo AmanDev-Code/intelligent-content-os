@@ -99,7 +99,7 @@ export function CalendarView({
             {days.map((date, index) => {
               const dayPosts = getPostsForDate(date);
               const isCurrentDay = isToday(date);
-              const isPastDay = date && date < new Date().setHours(0, 0, 0, 0);
+              const isPastDay = date ? date.getTime() < new Date(new Date().setHours(0, 0, 0, 0)).getTime() : false;
               
               return (
                 <div
