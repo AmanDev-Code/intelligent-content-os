@@ -26,6 +26,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [notifications] = useState(3);
+  const [notifOpen, setNotifOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const initials = (profile?.full_name || user?.email || "U")
