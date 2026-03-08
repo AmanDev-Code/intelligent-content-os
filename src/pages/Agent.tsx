@@ -750,49 +750,55 @@ export default function Agent() {
 
       {/* LinkedIn-styled Content Modal */}
       <Dialog open={showContentModal} onOpenChange={setShowContentModal}>
-        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-2xl max-h-[86vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle>Generated Content Preview</DialogTitle>
+        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-xl max-h-[90vh] overflow-hidden p-0 gap-0 rounded-lg">
+          {/* Hidden title for accessibility */}
+          <DialogHeader className="sr-only">
+            <DialogTitle>Content Preview</DialogTitle>
           </DialogHeader>
 
           {selectedContent && (
-            <div className="space-y-3 sm:space-y-4">
-              <div className="bg-card border border-border rounded-lg">
-                <div className="p-3 sm:p-4 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+            <div className="flex flex-col max-h-[90vh]">
+              {/* LinkedIn Post Card */}
+              <div className="flex-1 overflow-y-auto">
+                {/* Author Header */}
+                <div className="p-3 sm:p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-12 w-12 shrink-0">
                       <AvatarImage src="/placeholder-avatar.jpg" />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
                         {user?.email?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold truncate">{user?.email?.split('@')[0] || 'Your Name'}</h3>
-                        <Badge variant="secondary" className="text-xs">You</Badge>
+                        <span className="font-semibold text-foreground">{user?.email?.split('@')[0] || 'Your Name'}</span>
+                        <span className="text-xs text-muted-foreground">• 3rd+</span>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">SDE | Content Creator | AI Enthusiast</p>
-                      <p className="text-xs text-muted-foreground">5h • Edited</p>
+                      <p className="text-xs text-muted-foreground leading-snug line-clamp-1">
+                        {selectedContent.title || 'Content Creator | AI Enthusiast'}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                        <span>Just now</span>
+                        <span>•</span>
+                        <Globe className="h-3 w-3" />
+                      </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground">
+                      <MoreHorizontal className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="p-3 sm:p-4 space-y-4">
-                  <div>
-                    {selectedContent.content?.split('\n').map((paragraph: string, index: number) => (
-                      <p key={index} className="mb-3 text-foreground leading-relaxed">
-                        {paragraph}
-                      </p>
-                    ))}
+                {/* Post Content */}
+                <div className="px-3 sm:px-4 pb-3">
+                  <div className="text-sm sm:text-[15px] text-foreground leading-[1.6] whitespace-pre-line break-words">
+                    {selectedContent.content}
                   </div>
 
                   {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="mt-2 text-sm text-primary font-medium">
                       {selectedContent.hashtags.map((tag: string, index: number) => (
-                        <span key={index} className="text-primary text-sm">
+                        <span key={index} className="mr-1">
                           {tag.startsWith('#') ? tag : `#${tag}`}
                         </span>
                       ))}
@@ -800,64 +806,64 @@ export default function Agent() {
                   )}
                 </div>
 
-                <div className="px-3 sm:px-4 py-2 border-t border-border">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex -space-x-1">
-                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                          <ThumbsUp className="h-3 w-3 text-primary-foreground" />
-                        </div>
-                        <div className="w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                          <Heart className="h-3 w-3 text-accent-foreground" />
-                        </div>
+                {/* Reactions summary */}
+                <div className="px-3 sm:px-4 py-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex -space-x-0.5">
+                        <span className="text-base">👍</span>
+                        <span className="text-base">❤️</span>
+                        <span className="text-base">💡</span>
                       </div>
-                      <span>324 reactions</span>
+                      <span>73</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span>23 comments</span>
-                      <span>14 reposts</span>
+                    <div className="flex items-center gap-2">
+                      <span>22 comments</span>
+                      <span>·</span>
+                      <span>3 reposts</span>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center py-1 border-t border-border">
-                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
-                      <ThumbsUp className="h-4 w-4" />
-                      Like
-                    </Button>
-                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
-                      <MessageCircle className="h-4 w-4" />
-                      Comment
-                    </Button>
-                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
-                      <Repeat2 className="h-4 w-4" />
-                      Repost
-                    </Button>
-                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
-                      <Send className="h-4 w-4" />
-                      Send
-                    </Button>
+                {/* Action Bar */}
+                <div className="border-t border-border mx-3 sm:mx-4">
+                  <div className="flex items-center justify-between py-1">
+                    <button className="flex items-center gap-1.5 px-3 py-2.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                      <ThumbsUp className="h-5 w-5" />
+                      <span className="text-xs sm:text-sm font-semibold">Like</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-2.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                      <MessageCircle className="h-5 w-5" />
+                      <span className="text-xs sm:text-sm font-semibold">Comment</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-2.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                      <Repeat2 className="h-5 w-5" />
+                      <span className="text-xs sm:text-sm font-semibold">Repost</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 px-3 py-2.5 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                      <Send className="h-5 w-5" />
+                      <span className="text-xs sm:text-sm font-semibold">Send</span>
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="gap-1">
+              {/* Bottom Actions */}
+              <div className="border-t border-border p-3 sm:p-4 flex items-center justify-between gap-2 bg-card">
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  <Badge variant="outline" className="gap-1 shrink-0">
                     <Sparkles className="h-3 w-3" />
-                    AI Generated
+                    AI
                   </Badge>
-                  {selectedContent.ai_score && <Badge variant="secondary">Score: {selectedContent.ai_score}</Badge>}
-                  {selectedContent.job_id && (
-                    <Badge variant="outline" className="text-xs">
-                      Job: {selectedContent.job_id.substring(0, 8)}...
-                    </Badge>
+                  {selectedContent.ai_score && (
+                    <Badge variant="secondary" className="shrink-0">Score: {selectedContent.ai_score}</Badge>
                   )}
                 </div>
-                <div className="flex gap-2 sm:justify-end">
-                  <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setShowContentModal(false)}>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setShowContentModal(false)}>
                     Close
                   </Button>
-                  <Button className="flex-1 sm:flex-none">Schedule Post</Button>
+                  <Button size="sm">Schedule</Button>
                 </div>
               </div>
             </div>
