@@ -86,19 +86,19 @@ export default function Media() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1 overflow-x-auto shrink min-w-0">
           {mediaTypes.map((type) => (
-            <Button key={type.id} variant={selectedType === type.id ? "default" : "outline"} size="sm" onClick={() => setSelectedType(type.id)} className="text-xs shrink-0 h-8">
-              <type.icon className="h-3.5 w-3.5 sm:mr-1" />
+            <Button key={type.id} variant={selectedType === type.id ? "default" : "outline"} size="sm" onClick={() => setSelectedType(type.id)} className="text-[10px] sm:text-xs shrink-0 h-7 sm:h-8 px-2 sm:px-3">
+              <type.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1" />
               <span className="hidden sm:inline">{type.label}</span>
             </Button>
           ))}
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-full sm:w-48" />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="relative hidden sm:block">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 w-36 md:w-44 h-8 text-xs" />
           </div>
           <div className="flex items-center gap-0.5 border rounded-lg p-0.5">
             <Button variant={viewMode === 'grid' ? "default" : "ghost"} size="sm" onClick={() => setViewMode('grid')} className="h-7 w-7 p-0">
@@ -111,38 +111,46 @@ export default function Media() {
         </div>
       </div>
 
+      {/* Mobile Search */}
+      <div className="sm:hidden">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs" />
+        </div>
+      </div>
+
       {/* Media Grid */}
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
           {filteredMedia.map((item) => {
             const TypeIcon = getTypeIcon(item.type);
             return (
               <Card key={item.id} className="group overflow-hidden">
-                <div className="relative aspect-square bg-muted overflow-hidden">
+                <div className="relative aspect-[4/3] bg-muted overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <TypeIcon className="h-8 w-8 sm:h-12 sm:w-12 text-primary/60" />
+                    <TypeIcon className="h-8 w-8 sm:h-10 sm:w-10 text-primary/60" />
                   </div>
-                  <Badge variant="secondary" className="absolute top-2 left-2 text-[10px]">
+                  <Badge variant="secondary" className="absolute top-1.5 left-1.5 text-[9px] sm:text-[10px] px-1.5 py-0">
                     {item.type === 'carousel' ? 'Carousel' : item.format}
                   </Badge>
                 </div>
-                <CardContent className="p-2.5 sm:p-3">
-                  <h3 className="font-medium text-xs sm:text-sm mb-1 truncate">{item.name}</h3>
-                  <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
+                <CardContent className="p-2 sm:p-2.5">
+                  <h3 className="font-medium text-[11px] sm:text-xs mb-0.5 truncate">{item.name}</h3>
+                  <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground">
                     <span>{item.dimensions}</span>
                     <span>{item.size}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-1.5">
+                  <div className="flex flex-wrap gap-0.5 mt-1">
                     {item.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                      <Badge key={tag} variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-1 mt-2">
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] sm:text-xs w-full px-1">
-                      <Eye className="h-3 w-3 shrink-0 mr-0.5" /><span>View</span>
+                  <div className="grid grid-cols-2 gap-1 mt-1.5">
+                    <Button variant="outline" size="sm" className="h-6 sm:h-7 text-[9px] sm:text-[10px] w-full px-0.5">
+                      <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0 mr-0.5" />View
                     </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-[10px] sm:text-xs w-full px-1">
-                      <Download className="h-3 w-3 shrink-0 mr-0.5" /><span>Download</span>
+                    <Button variant="outline" size="sm" className="h-6 sm:h-7 text-[9px] sm:text-[10px] w-full px-0.5">
+                      <Download className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0 mr-0.5" />Download
                     </Button>
                   </div>
                 </CardContent>
