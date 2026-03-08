@@ -186,30 +186,26 @@ export default function Billing() {
         ))}
       </div>
 
-      {/* Billing History + Payment Method - side by side on desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+      {/* Billing History + Payment Method */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="h-5 w-5 shrink-0" />
-              <h2 className="text-lg font-bold">Billing History</h2>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="h-4 w-4 shrink-0" />
+              <h2 className="text-sm sm:text-base font-bold">Billing History</h2>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {billingHistory.map((bill) => (
-                <div key={bill.id} className="p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
-                      <CreditCard className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{bill.description}</h3>
-                      <p className="text-xs text-muted-foreground">{new Date(bill.date).toLocaleDateString()} • {bill.invoice}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-medium text-sm">{bill.amount}</span>
-                      <Badge variant="default" className="text-[10px]">Paid</Badge>
-                    </div>
+                <div key={bill.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg">
+                  <div className="p-1.5 bg-primary/10 rounded-lg shrink-0 hidden sm:flex">
+                    <CreditCard className="h-3.5 w-3.5 text-primary" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-xs sm:text-sm truncate">{bill.description}</h3>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{new Date(bill.date).toLocaleDateString()} • {bill.invoice}</p>
+                  </div>
+                  <span className="font-medium text-xs sm:text-sm shrink-0">{bill.amount}</span>
+                  <Badge variant="default" className="text-[10px] shrink-0">Paid</Badge>
                 </div>
               ))}
             </div>
@@ -217,23 +213,21 @@ export default function Billing() {
         </Card>
 
         <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="h-5 w-5 shrink-0" />
-              <h2 className="text-lg font-bold">Payment Method</h2>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="h-4 w-4 shrink-0" />
+              <h2 className="text-sm sm:text-base font-bold">Payment Method</h2>
             </div>
-            <div className="p-3 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-sm">•••• •••• •••• 4242</h3>
-                  <p className="text-xs text-muted-foreground">Expires 12/28</p>
-                </div>
-                <Badge variant="secondary" className="text-[10px] shrink-0">Primary</Badge>
-                <Button variant="outline" size="sm" className="h-7 text-xs shrink-0">Update</Button>
+            <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border rounded-lg">
+              <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
+                <CreditCard className="h-3.5 w-3.5 text-primary" />
               </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-xs sm:text-sm">•••• •••• •••• 4242</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Expires 12/28</p>
+              </div>
+              <Badge variant="secondary" className="text-[10px] shrink-0">Primary</Badge>
+              <Button variant="outline" size="sm" className="h-7 text-xs shrink-0">Update</Button>
             </div>
           </CardContent>
         </Card>
