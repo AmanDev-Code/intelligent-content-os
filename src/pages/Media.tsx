@@ -117,8 +117,8 @@ export default function Media() {
           {filteredMedia.map((item) => {
             const TypeIcon = getTypeIcon(item.type);
             return (
-              <Card key={item.id} className="group">
-                <div className="relative aspect-square bg-muted rounded-t-lg overflow-hidden">
+              <Card key={item.id} className="group overflow-hidden">
+                <div className="relative aspect-square bg-muted overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                     <TypeIcon className="h-8 w-8 sm:h-12 sm:w-12 text-primary/60" />
                   </div>
@@ -126,23 +126,23 @@ export default function Media() {
                     {item.type === 'carousel' ? 'Carousel' : item.format}
                   </Badge>
                 </div>
-                <CardContent className="p-3">
-                  <h3 className="font-medium text-xs sm:text-sm mb-1.5 truncate">{item.name}</h3>
+                <CardContent className="p-2.5 sm:p-3">
+                  <h3 className="font-medium text-xs sm:text-sm mb-1 truncate">{item.name}</h3>
                   <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
                     <span>{item.dimensions}</span>
                     <span>{item.size}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {item.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
+                      <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 mt-2">
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] sm:text-xs w-full">
-                      <Eye className="h-3 w-3 mr-1" /> View
+                  <div className="grid grid-cols-2 gap-1 mt-2">
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] sm:text-xs w-full px-1">
+                      <Eye className="h-3 w-3 shrink-0 mr-0.5" /><span>View</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8 text-[10px] sm:text-xs w-full">
-                      <Download className="h-3 w-3 mr-1" /> Download
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] sm:text-xs w-full px-1">
+                      <Download className="h-3 w-3 shrink-0 mr-0.5" /><span>Download</span>
                     </Button>
                   </div>
                 </CardContent>
