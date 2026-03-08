@@ -867,7 +867,7 @@ export default function Agent() {
                   </div>
                 </div>
 
-                <div className="mx-3 border-t border-border" />
+                <div className="mx-4 border-t border-border" />
 
                 {/* Action buttons — LinkedIn mobile style */}
                 <div className="flex items-center justify-around py-1 px-0">
