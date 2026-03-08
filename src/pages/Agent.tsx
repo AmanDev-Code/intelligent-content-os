@@ -345,16 +345,14 @@ export default function Agent() {
   return (
     <div className="flex-1 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Content Agent</h1>
-          <p className="text-sm text-muted-foreground">Generate strategic content from trending topics or custom ideas</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">AI Content Agent</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Generate strategic content from trending topics or custom ideas</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1">
-            <Sparkles className="h-3 w-3" /> 47 Credits Available
-          </Badge>
-        </div>
+        <Badge variant="secondary" className="gap-1 shrink-0 whitespace-nowrap w-fit">
+          <Sparkles className="h-3 w-3" /> 47 Credits Available
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
