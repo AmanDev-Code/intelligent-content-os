@@ -367,23 +367,23 @@ export default function Agent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {contentTypes.map((type) => (
                   <div
                     key={type.id}
                     className={cn(
-                      "p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md",
+                      "p-2.5 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md",
                       selectedType === type.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     )}
                     onClick={() => setSelectedType(type.id)}
                   >
-                    <div className="flex items-center gap-3 mb-2">
-                      <type.icon className="h-5 w-5" />
-                      <h3 className="font-medium">{type.label}</h3>
+                    <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                      <type.icon className="h-4 w-4 shrink-0" />
+                      <h3 className="font-medium text-xs sm:text-sm">{type.label}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground">{type.description}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{type.description}</p>
                   </div>
                 ))}
               </div>
