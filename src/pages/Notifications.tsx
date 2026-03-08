@@ -59,7 +59,7 @@ export default function Notifications() {
 
   const markAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const markAllAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  const deleteNotification = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id));
+  
 
   const readFilters = [
     { id: 'all', label: 'All' },
