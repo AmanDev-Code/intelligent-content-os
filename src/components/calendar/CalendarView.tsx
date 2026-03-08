@@ -75,7 +75,7 @@ export function CalendarView({
 
     return (
       <Card className="border-0">
-        <CardContent className="p-2 sm:p-4 md:p-6">
+        <CardContent className="p-2 sm:p-3 md:p-4">
           <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4 mb-2 md:mb-4">
             {weekDays.map((day, i) => (
               <div key={day} className="text-center text-xs sm:text-sm font-medium text-muted-foreground py-1 md:py-2">

@@ -80,7 +80,7 @@ export default function Dashboard() {
   const handleCreatePost = (date?: Date) => navigate('/agent');
 
   return (
-    <div className="flex-1 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+    <div className="flex-1 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
