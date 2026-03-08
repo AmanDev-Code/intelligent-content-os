@@ -372,18 +372,18 @@ export default function Agent() {
                   <div
                     key={type.id}
                     className={cn(
-                      "p-2 sm:p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md text-center sm:text-left",
+                      "p-2 sm:p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md",
                       selectedType === type.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     )}
                     onClick={() => setSelectedType(type.id)}
                   >
-                    <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
-                      <type.icon className="h-4 w-4 shrink-0" />
-                      <h3 className="font-medium text-[11px] sm:text-xs md:text-sm leading-tight">{type.label}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <type.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <h3 className="font-medium text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{type.label}</h3>
                     </div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground hidden md:block leading-tight">{type.description}</p>
+                    <p className="text-[10px] md:text-xs text-muted-foreground hidden md:block leading-tight mt-1">{type.description}</p>
                   </div>
                 ))}
               </div>
@@ -393,22 +393,24 @@ export default function Agent() {
           {/* Generation Mode Tabs */}
           <Card>
             <CardHeader>
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={generationMode === 'trending' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('trending')}
-                    className={cn("w-full sm:w-auto", generationMode === 'trending' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full text-xs sm:text-sm", generationMode === 'trending' && "bg-primary text-primary-foreground")}
+                    size="sm"
                   >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Find Viral Topic
+                    <TrendingUp className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
+                    <span className="truncate">Find Viral Topic</span>
                   </Button>
                   <Button
                     variant={generationMode === 'custom' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('custom')}
-                    className={cn("w-full sm:w-auto", generationMode === 'custom' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full text-xs sm:text-sm", generationMode === 'custom' && "bg-primary text-primary-foreground")}
+                    size="sm"
                   >
-                    <Globe className="h-4 w-4 mr-2" />
-                    Custom Topic
+                    <Globe className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
+                    <span className="truncate">Custom Topic</span>
                   </Button>
                 </div>
             </CardHeader>
