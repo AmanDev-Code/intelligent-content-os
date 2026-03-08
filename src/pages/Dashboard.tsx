@@ -83,31 +83,31 @@ export default function Dashboard() {
   return (
     <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-xl shrink-0">
             <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Your content strategy overview</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold leading-tight">Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-tight">Your content strategy overview</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search posts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-40 md:w-52 h-8"
+              className="pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full h-8"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring h-8"
+            className="px-2 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring h-8 shrink-0"
           >
             <option value="all">All Posts</option>
             <option value="published">Published</option>
