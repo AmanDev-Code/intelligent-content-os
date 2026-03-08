@@ -395,7 +395,7 @@ export default function Calendar() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {Array.from({ length: 35 }, (_, i) => {
                 const dayNumber = i - 5; // Adjust for month start
                 const isCurrentMonth = dayNumber > 0 && dayNumber <= 31;
