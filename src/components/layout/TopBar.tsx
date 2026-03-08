@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LogOut, User, Bell, Sun, Moon, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
@@ -25,6 +26,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [notifications] = useState(3);
+  const [notifOpen, setNotifOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const initials = (profile?.full_name || user?.email || "U")
@@ -52,8 +54,8 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
         )}
 
         {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Popover open={notifOpen} onOpenChange={setNotifOpen}>
+          <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notifications">
               <Bell className="h-4 w-4 text-muted-foreground" />
               {notifications > 0 && (
@@ -65,8 +67,8 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
                 </Badge>
               )}
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)] p-0">
+          </PopoverTrigger>
+          <PopoverContent align="end" sideOffset={8} className="w-80 p-0 rounded-xl shadow-lg">
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <h3 className="font-semibold text-sm">Notifications</h3>
               <Badge variant="secondary" className="text-[10px]">{notifications} new</Badge>
@@ -77,7 +79,11 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
                 { dot: "bg-muted-foreground", title: "Post Scheduled", time: "1h ago", msg: "Your post is scheduled for tomorrow at 10:00 AM." },
                 { dot: "bg-destructive", title: "AI Credits Low", time: "3h ago", msg: "You have 5 AI credits remaining." },
               ].map((n, i) => (
-                <DropdownMenuItem key={i} className="px-4 py-3 flex items-start gap-2.5 cursor-pointer focus:bg-accent">
+                <button
+                  key={i}
+                  className="w-full px-4 py-3 flex items-start gap-2.5 text-left hover:bg-accent transition-colors"
+                  onClick={() => { setNotifOpen(false); navigate("/notifications"); }}
+                >
                   <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.dot}`} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
@@ -86,16 +92,16 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.msg}</p>
                   </div>
-                </DropdownMenuItem>
+                </button>
               ))}
             </div>
             <div className="p-2 border-t">
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => navigate("/notifications")}>
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { setNotifOpen(false); navigate("/notifications"); }}>
                 View All Notifications
               </Button>
             </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </PopoverContent>
+        </Popover>
 
         <Button
           variant="ghost"
