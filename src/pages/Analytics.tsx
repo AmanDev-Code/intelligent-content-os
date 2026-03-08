@@ -103,20 +103,12 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground">
-            Track your content performance and audience growth
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted-foreground">Track your content performance and audience growth</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-          <Button variant="outline" size="sm">
-            <Calendar className="h-4 w-4 mr-2" />
-            Last 30 Days
-          </Button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" size="sm"><Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Export Report</span></Button>
+          <Button variant="outline" size="sm"><Calendar className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Last 30 Days</span></Button>
         </div>
       </div>
 
