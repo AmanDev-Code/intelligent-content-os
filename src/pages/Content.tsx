@@ -99,7 +99,7 @@ export default function Content() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="glass">
+            <Card key={i} className="border border-border">
               <CardContent className="p-5">
                 <div className="h-5 w-3/4 bg-muted rounded animate-pulse" />
                 <div className="h-3 w-full bg-muted rounded animate-pulse mt-3" />
