@@ -802,7 +802,7 @@ export default function Agent() {
                 </div>
 
                 {/* Body */}
-                <div className="px-3 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
+                <div className="px-4 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
                   <div className="overflow-hidden" style={{ maxWidth: '100%', textAlign: 'justify' }}>
                     {previewContent.split("\n").map((line, index) => (
                       <p
@@ -816,7 +816,24 @@ export default function Agent() {
                           maxWidth: '100%',
                         }}
                       >
-                        {line || "\u00A0"}
+                        {line
+                          ? line.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                              /^https?:\/\//.test(part) ? (
+                                <a
+                                  key={i}
+                                  href={part}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline"
+                                  style={{ wordBreak: 'break-all' }}
+                                >
+                                  {part.length > 50 ? part.substring(0, 50) + "..." : part}
+                                </a>
+                              ) : (
+                                <span key={i}>{part}</span>
+                              )
+                            )
+                          : "\u00A0"}
                       </p>
                     ))}
                   </div>
