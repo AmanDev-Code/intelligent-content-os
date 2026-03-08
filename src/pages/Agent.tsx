@@ -393,22 +393,24 @@ export default function Agent() {
           {/* Generation Mode Tabs */}
           <Card>
             <CardHeader>
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={generationMode === 'trending' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('trending')}
-                    className={cn("w-full sm:w-auto", generationMode === 'trending' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full text-xs sm:text-sm", generationMode === 'trending' && "bg-primary text-primary-foreground")}
+                    size="sm"
                   >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Find Viral Topic
+                    <TrendingUp className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
+                    <span className="truncate">Find Viral Topic</span>
                   </Button>
                   <Button
                     variant={generationMode === 'custom' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('custom')}
-                    className={cn("w-full sm:w-auto", generationMode === 'custom' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full text-xs sm:text-sm", generationMode === 'custom' && "bg-primary text-primary-foreground")}
+                    size="sm"
                   >
-                    <Globe className="h-4 w-4 mr-2" />
-                    Custom Topic
+                    <Globe className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
+                    <span className="truncate">Custom Topic</span>
                   </Button>
                 </div>
             </CardHeader>
