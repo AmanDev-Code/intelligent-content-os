@@ -355,7 +355,7 @@ export default function Billing() {
         <CardContent>
           <div className="space-y-4">
             {billingHistory.map((bill) => (
-              <div key={bill.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={bill.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <CreditCard className="h-4 w-4 text-primary" />
