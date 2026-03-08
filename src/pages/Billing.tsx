@@ -21,18 +21,9 @@ const plans = [
     name: 'Standard',
     price: { monthly: 29, yearly: 278 },
     description: 'Perfect for individual creators',
-    features: ['5 channels', '400 posts per month', 'AI auto-complete', 'AI copilots', 'AI Autocomplete', '3 AI Videos per month', 'Basic analytics', 'Email support'],
+    features: ['5 channels', '400 posts per month', 'AI auto-complete', 'AI copilots', '3 AI Videos per month', 'Basic analytics', 'Email support'],
     popular: false,
     current: true
-  },
-  {
-    id: 'team',
-    name: 'Team',
-    price: { monthly: 39, yearly: 374 },
-    description: 'Great for small teams',
-    features: ['10 channels', 'Unlimited posts', 'Unlimited members', 'AI auto-complete', 'AI copilots', '10 AI Videos/month', 'Advanced analytics', 'Priority support'],
-    popular: false,
-    current: false
   },
   {
     id: 'pro',
@@ -146,7 +137,7 @@ export default function Billing() {
       </div>
 
       {/* Plans - 4 columns on xl, 2 on md, 1 on mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {plans.map((plan) => (
           <Card key={plan.id} className={cn(
             "relative",
