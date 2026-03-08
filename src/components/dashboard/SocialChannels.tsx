@@ -21,7 +21,7 @@ export function SocialChannels() {
   const getIcon = (platformId: string) => {
     switch (platformId) {
       case 'linkedin': return Linkedin;
-      case 'twitter': return Twitter;
+      case 'twitter': return ({ className }: { className?: string }) => <XIcon className={className} />;
       case 'instagram': return Instagram;
       case 'facebook': return Facebook;
       default: return Globe;

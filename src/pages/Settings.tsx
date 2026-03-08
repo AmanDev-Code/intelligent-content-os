@@ -40,7 +40,7 @@ export default function Settings() {
 
   const integrations = [
     { name: 'LinkedIn', id: 'linkedin', icon: Linkedin, connected: false, color: '#0A66C2' },
-    { name: 'Twitter', id: 'twitter', icon: Twitter, connected: false, color: '#000000' },
+    { name: 'X', id: 'twitter', icon: ({ className }: { className?: string }) => <XIcon className={className} />, connected: false, color: '#000000' },
     { name: 'Instagram', id: 'instagram', icon: Instagram, connected: false, color: '#E4405F' },
     { name: 'Facebook', id: 'facebook', icon: Facebook, connected: false, color: '#1877F2' },
   ];
