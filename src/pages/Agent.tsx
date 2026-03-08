@@ -762,30 +762,32 @@ export default function Agent() {
           </DialogHeader>
 
           {selectedContent && (
-            <div className="flex flex-col max-h-[90vh] bg-card">
-              <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+            <div className="flex flex-col max-h-[90vh] bg-card" style={{ maxWidth: '100%' }}>
+              <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
                 {/* Header */}
-                <div className="flex items-start gap-2.5 p-3 pb-0 min-w-0">
-                  <Avatar className="h-12 w-12 shrink-0">
+                <div className="flex items-start gap-2 p-3 pb-0" style={{ maxWidth: '100%' }}>
+                  <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
                     <AvatarImage src="/placeholder-avatar.jpg" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-base font-bold sm:text-lg">
                       {user?.email?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <span className="font-bold text-sm text-foreground truncate">
+                  <div className="flex-1 overflow-hidden pt-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-[13px] sm:text-sm text-foreground truncate block">
                         {user?.email?.split("@")[0] || "Your Name"}
                       </span>
-                      <span className="text-xs text-muted-foreground shrink-0">· 3rd+</span>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground shrink-0">· 3rd+</span>
                     </div>
 
-                    <p className="text-xs text-muted-foreground leading-snug truncate mt-px">
-                      {selectedContent.title || "Content Creator | AI Enthusiast"}
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-px overflow-hidden text-ellipsis whitespace-nowrap">
+                      {(selectedContent.title || "Content Creator | AI Enthusiast").length > 45
+                        ? (selectedContent.title || "Content Creator | AI Enthusiast").substring(0, 45) + "..."
+                        : (selectedContent.title || "Content Creator | AI Enthusiast")}
                     </p>
 
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-px">
+                    <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground mt-px">
                       <span>2d</span>
                       <span>·</span>
                       <span>Edited</span>
@@ -794,18 +796,25 @@ export default function Agent() {
                     </div>
                   </div>
 
-                  <span className="text-primary text-sm font-bold shrink-0 pt-1 cursor-pointer hover:underline">
+                  <span className="text-primary text-[13px] sm:text-sm font-bold shrink-0 pt-1 cursor-pointer hover:underline">
                     + Follow
                   </span>
                 </div>
 
                 {/* Body */}
-                <div className="px-3 pt-3 pb-2 min-w-0">
-                  <div className="space-y-2 min-w-0">
+                <div className="px-3 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
+                  <div className="overflow-hidden" style={{ maxWidth: '100%', textAlign: 'justify' }}>
                     {previewContent.split("\n").map((line, index) => (
                       <p
                         key={index}
-                        className="text-[14px] text-foreground leading-[1.45] break-all [overflow-wrap:anywhere] min-w-0"
+                        className="text-[13px] sm:text-[14px] text-foreground mb-1.5"
+                        style={{
+                          lineHeight: 1.5,
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          hyphens: 'auto',
+                          maxWidth: '100%',
+                        }}
                       >
                         {line || "\u00A0"}
                       </p>
@@ -813,9 +822,9 @@ export default function Agent() {
                   </div>
 
                   {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="mt-1.5 text-[14px] text-primary font-semibold break-all [overflow-wrap:anywhere] min-w-0">
+                    <div className="mt-1.5 flex flex-wrap gap-x-1" style={{ maxWidth: '100%' }}>
                       {selectedContent.hashtags.map((tag: string, index: number) => (
-                        <span key={index} className="mr-1 hover:underline cursor-pointer">
+                        <span key={index} className="text-[13px] sm:text-[14px] text-primary font-semibold hover:underline cursor-pointer">
                           {tag.startsWith("#") ? tag : `#${tag}`}
                         </span>
                       ))}
@@ -824,32 +833,27 @@ export default function Agent() {
                 </div>
 
                 {/* Reactions */}
-                <div className="px-3 py-1.5 min-w-0">
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground min-w-0">
+                <div className="px-3 py-1.5">
+                  <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
                     <div className="flex items-center gap-1 shrink-0">
                       <div className="flex -space-x-1">
-                        <div className="w-[18px] h-[18px] rounded-full bg-primary flex items-center justify-center">
-                          <ThumbsUp className="h-2.5 w-2.5 text-primary-foreground" />
+                        <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full bg-primary flex items-center justify-center">
+                          <ThumbsUp className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-primary-foreground" />
                         </div>
-                        <div className="w-[18px] h-[18px] rounded-full bg-destructive flex items-center justify-center">
-                          <Heart className="h-2.5 w-2.5 text-destructive-foreground" />
+                        <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full bg-destructive flex items-center justify-center">
+                          <Heart className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-destructive-foreground" />
                         </div>
                       </div>
-                      <span className="ml-0.5">73</span>
+                      <span>73</span>
                     </div>
-
-                    <div className="flex items-center gap-1 min-w-0 text-right">
-                      <span className="truncate">22 comments</span>
-                      <span>·</span>
-                      <span className="truncate">3 reposts</span>
-                    </div>
+                    <span>22 comments · 3 reposts</span>
                   </div>
                 </div>
 
                 <div className="mx-3 border-t border-border" />
 
-                {/* Action buttons */}
-                <div className="grid grid-cols-4 items-center px-1 py-0.5 min-w-0">
+                {/* Action buttons — LinkedIn mobile style */}
+                <div className="flex items-center justify-around py-1 px-0">
                   {[
                     { icon: ThumbsUp, label: "Like" },
                     { icon: MessageCircle, label: "Comment" },
@@ -858,32 +862,29 @@ export default function Agent() {
                   ].map(({ icon: Icon, label }) => (
                     <button
                       key={label}
-                      className="flex min-w-0 items-center justify-center gap-1 py-2.5 px-1 rounded hover:bg-muted/70 transition-colors text-muted-foreground"
+                      className="flex flex-col items-center gap-0.5 py-2 px-2 sm:px-3 rounded hover:bg-muted/70 transition-colors text-muted-foreground"
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="text-xs font-semibold truncate">{label}</span>
+                      <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+                      <span className="text-[10px] sm:text-xs font-semibold leading-none">{label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="border-t border-border px-3 py-2.5 flex items-center justify-between gap-2 bg-card min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
-                  <Badge variant="outline" className="gap-1 text-xs h-6 shrink-0">
+              <div className="border-t border-border px-3 py-2 flex items-center justify-between gap-2 bg-card">
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs h-6 shrink-0">
                     <Sparkles className="h-3 w-3" />
                     AI
                   </Badge>
                   {selectedContent.ai_score && (
-                    <Badge variant="secondary" className="text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
                   )}
                 </div>
-
-                <div className="flex gap-2 shrink-0">
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowContentModal(false)}>
-                    Close
-                  </Button>
-                </div>
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowContentModal(false)}>
+                  Close
+                </Button>
               </div>
             </div>
           )}
