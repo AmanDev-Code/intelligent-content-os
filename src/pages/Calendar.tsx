@@ -388,7 +388,7 @@ export default function Calendar() {
       {currentView === 'month' && (
         <Card className="border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="grid grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-4 mb-4 sm:mb-6">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
                 <div key={day} className="text-center text-sm font-semibold text-muted-foreground py-3 border-b">
                   {day}
