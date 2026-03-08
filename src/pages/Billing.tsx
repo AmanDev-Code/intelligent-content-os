@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
@@ -71,7 +71,7 @@ export default function Billing() {
   const currentPlan = plans.find(plan => plan.current);
 
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+    <div className="flex-1 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -83,73 +83,70 @@ export default function Billing() {
         </Button>
       </div>
 
-      {/* Current Plan */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <Crown className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl font-bold">Current Plan</h2>
-              <h3 className="text-xl sm:text-2xl font-bold mt-1">{currentPlan?.name}</h3>
-              <p className="text-sm text-muted-foreground">{currentPlan?.description}</p>
-              <div className="flex items-baseline gap-1 mt-2">
-                <span className="text-2xl sm:text-3xl font-bold">${currentPlan?.price.monthly}</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
-              <Badge variant="secondary" className="mt-2 text-xs">
-                Billed monthly • Renews March 14, 2026
-              </Badge>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">Change Plan</Button>
-            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">Cancel</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Usage */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="h-5 w-5 shrink-0" />
-            <h2 className="text-lg font-bold">Usage This Month</h2>
-          </div>
-          <div className="space-y-4">
-            {[
-              { label: 'Posts Published', ...usageData.posts },
-              { label: 'AI Credits', ...usageData.aiCredits },
-              { label: 'Connected Channels', ...usageData.channels },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span>{item.label}</span>
-                  <span className="font-medium">{item.used} / {item.limit}</span>
+      {/* Current Plan + Usage - side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <Crown className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold">Current Plan</h2>
+                <h3 className="text-xl font-bold mt-1">{currentPlan?.name}</h3>
+                <p className="text-sm text-muted-foreground">{currentPlan?.description}</p>
+                <div className="flex items-baseline gap-1 mt-2">
+                  <span className="text-2xl font-bold">${currentPlan?.price.monthly}</span>
+                  <span className="text-muted-foreground text-sm">/month</span>
                 </div>
-                <Progress value={(item.used / item.limit) * 100} className="h-2" />
+                <Badge variant="secondary" className="mt-2 text-xs">
+                  Billed monthly • Renews March 14, 2026
+                </Badge>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">Change Plan</Button>
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none">Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 shrink-0" />
+              <h2 className="text-lg font-bold">Usage This Month</h2>
+            </div>
+            <div className="space-y-4">
+              {[
+                { label: 'Posts Published', ...usageData.posts },
+                { label: 'AI Credits', ...usageData.aiCredits },
+                { label: 'Connected Channels', ...usageData.channels },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span>{item.label}</span>
+                    <span className="font-medium">{item.used} / {item.limit}</span>
+                  </div>
+                  <Progress value={(item.used / item.limit) * 100} className="h-2" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Billing Toggle */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <span className={cn("text-sm font-medium", billingCycle === 'monthly' && "text-primary")}>Monthly</span>
-            <Switch
-              checked={billingCycle === 'yearly'}
-              onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
-            />
-            <span className={cn("text-sm font-medium", billingCycle === 'yearly' && "text-primary")}>Yearly</span>
-            <Badge variant="secondary" className="text-xs">20% Off</Badge>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center gap-3 sm:gap-4 py-2">
+        <span className={cn("text-sm font-medium", billingCycle === 'monthly' && "text-primary")}>Monthly</span>
+        <Switch
+          checked={billingCycle === 'yearly'}
+          onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
+        />
+        <span className={cn("text-sm font-medium", billingCycle === 'yearly' && "text-primary")}>Yearly</span>
+        <Badge variant="secondary" className="text-xs">20% Off</Badge>
+      </div>
 
-      {/* Plans */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      {/* Plans - 4 columns on xl, 2 on md, 1 on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         {plans.map((plan) => (
           <Card key={plan.id} className={cn(
             "relative",
@@ -164,13 +161,13 @@ export default function Billing() {
                 </Badge>
               </div>
             )}
-            <CardContent className="p-4 sm:p-6 pt-6">
+            <CardContent className="p-4 sm:p-5 pt-6">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-lg font-bold">{plan.name}</h3>
-                {plan.id === 'ultimate' && <Crown className="h-4 w-4 text-yellow-500" />}
+                {plan.id === 'ultimate' && <Crown className="h-4 w-4 text-primary" />}
               </div>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-2xl sm:text-3xl font-bold">
+                <span className="text-2xl font-bold">
                   ${billingCycle === 'yearly' ? Math.round(plan.price.yearly / 12) : plan.price.monthly}
                 </span>
                 <span className="text-sm text-muted-foreground">/month</span>
@@ -178,11 +175,11 @@ export default function Billing() {
               {billingCycle === 'yearly' && (
                 <p className="text-xs text-muted-foreground mb-1">${plan.price.yearly} billed yearly</p>
               )}
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3">{plan.description}</p>
+              <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
               <ul className="space-y-1.5 mb-4">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs sm:text-sm">
-                    <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                  <li key={i} className="flex items-center gap-2 text-xs">
+                    <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -200,60 +197,58 @@ export default function Billing() {
         ))}
       </div>
 
-      {/* Billing History */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 shrink-0" />
-            <h2 className="text-lg font-bold">Billing History</h2>
-          </div>
-          <div className="space-y-3">
-            {billingHistory.map((bill) => (
-              <div key={bill.id} className="p-3 border rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
-                    <CreditCard className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm">{bill.description}</h3>
-                    <p className="text-xs text-muted-foreground">{new Date(bill.date).toLocaleDateString()} • {bill.invoice}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-2 ml-9">
-                  <span className="font-medium text-sm">{bill.amount}</span>
-                  <Badge variant="default" className="text-[10px]">Paid</Badge>
-                  <Button variant="outline" size="sm" className="ml-auto h-7 text-xs">
-                    <Download className="h-3 w-3 mr-1" /> Invoice
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Method */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="h-5 w-5 shrink-0" />
-            <h2 className="text-lg font-bold">Payment Method</h2>
-          </div>
-          <div className="p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
-                <CreditCard className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm">•••• •••• •••• 4242</h3>
-                <p className="text-xs text-muted-foreground">Expires 12/28</p>
-              </div>
-              <Badge variant="secondary" className="text-[10px] shrink-0">Primary</Badge>
-              <Button variant="outline" size="sm" className="h-7 text-xs shrink-0">Update</Button>
+      {/* Billing History + Payment Method - side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="h-5 w-5 shrink-0" />
+              <h2 className="text-lg font-bold">Billing History</h2>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-3">
+              {billingHistory.map((bill) => (
+                <div key={bill.id} className="p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm truncate">{bill.description}</h3>
+                      <p className="text-xs text-muted-foreground">{new Date(bill.date).toLocaleDateString()} • {bill.invoice}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-medium text-sm">{bill.amount}</span>
+                      <Badge variant="default" className="text-[10px]">Paid</Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="h-5 w-5 shrink-0" />
+              <h2 className="text-lg font-bold">Payment Method</h2>
+            </div>
+            <div className="p-3 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-sm">•••• •••• •••• 4242</h3>
+                  <p className="text-xs text-muted-foreground">Expires 12/28</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px] shrink-0">Primary</Badge>
+                <Button variant="outline" size="sm" className="h-7 text-xs shrink-0">Update</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
