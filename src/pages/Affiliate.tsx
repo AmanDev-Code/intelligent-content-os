@@ -12,7 +12,7 @@ import {
 
 export default function Affiliate() {
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
