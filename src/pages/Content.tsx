@@ -113,7 +113,7 @@ export default function Content() {
           <CardContent className="p-12 text-center">
             <Sparkles className="h-10 w-10 text-primary mx-auto mb-4 animate-pulse" />
             <p className="text-muted-foreground mb-4">Your generated content will appear here.</p>
-            <Link to="/generate">
+            <Link to="/ai-agent">
               <Button className="gradient-primary text-primary-foreground">
                 <Zap className="h-4 w-4 mr-2" />
                 Generate your first post
