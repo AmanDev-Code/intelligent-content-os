@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard,
   Wand2,
-  Search
+  Search,
+  CalendarDays
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,57 +81,58 @@ export default function Dashboard() {
   const handleCreatePost = (date?: Date) => navigate('/agent');
 
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl shrink-0">
-              <LayoutDashboard className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">Your content strategy overview</p>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-xl shrink-0">
+            <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search posts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-40 md:w-52 h-8"
-              />
-            </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-2 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring h-8"
-            >
-              <option value="all">All Posts</option>
-              <option value="published">Published</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="draft">Draft</option>
-            </select>
-            <Button className="bg-primary text-primary-foreground shrink-0 h-8 text-xs sm:text-sm" size="sm" onClick={() => handleCreatePost()}>
-              <Wand2 className="h-3.5 w-3.5 sm:mr-1" />
-              <span className="hidden sm:inline">Create Post</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Your content strategy overview</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search posts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-40 md:w-52 h-8"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-2 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring h-8"
+          >
+            <option value="all">All Posts</option>
+            <option value="published">Published</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="draft">Draft</option>
+          </select>
+          <Button className="bg-primary text-primary-foreground shrink-0 h-8 text-xs sm:text-sm" size="sm" onClick={() => handleCreatePost()}>
+            <Wand2 className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Create Post</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
         </div>
       </div>
 
+      {/* KPI Stats */}
       <StatsCards />
+
+      {/* Social Channels */}
       <SocialChannels />
 
-      {/* Calendar Section */}
-      <div className="space-y-4 sm:space-y-6">
+      {/* Content Calendar */}
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-            <LayoutDashboard className="h-5 w-5 text-primary" />
+            <CalendarDays className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-semibold">Content Calendar</h2>
