@@ -145,7 +145,7 @@ export default function Notifications() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-6 max-w-4xl mx-auto">
+    <div className="flex-1 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
