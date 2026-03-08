@@ -336,6 +336,12 @@ export default function Agent() {
     }
   };
 
+  const previewContent = (selectedContent?.content ?? "")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1: $2")
+    .replace(/\((https?:\/\/[^\s)]+)\)/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
   return (
     <div className="flex-1 space-y-4 sm:space-y-6">
       {/* Header */}
