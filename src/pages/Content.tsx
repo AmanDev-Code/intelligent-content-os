@@ -128,7 +128,7 @@ export default function Content() {
             return (
               <Card
                 key={item.id}
-                className="glass group hover:glow-primary transition-all duration-300 hover:-translate-y-0.5 cursor-pointer animate-fade-in-up hover:border-primary/30"
+                className="border border-border hover:bg-muted/50 cursor-pointer transition-colors"
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
                 onClick={() => navigate(`/content/${slug}`)}
               >
