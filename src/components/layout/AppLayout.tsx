@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { AppSidebar } from "./AppSidebar";
+import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
 
@@ -9,8 +9,8 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
-      <div className={cn("transition-all duration-300", collapsed ? "ml-16" : "ml-60")}>
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <div className={cn("transition-all duration-200", collapsed ? "ml-14" : "ml-56")}>
         <TopBar />
         <main className="p-6">
           <Outlet />
