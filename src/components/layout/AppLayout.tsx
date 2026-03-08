@@ -25,7 +25,7 @@ export function AppLayout() {
         )}
       >
         <TopBar onMobileMenuToggle={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+        <main className="flex-1 px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

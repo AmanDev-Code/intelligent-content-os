@@ -184,7 +184,7 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: A
   if (isMobile) {
     return (
       <Sheet open={mobileOpen} onOpenChange={(open) => !open && onMobileClose?.()}>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-[86vw] max-w-72" hideClose>
           <SidebarContent collapsed={false} onToggle={() => onMobileClose?.()} onItemClick={onMobileClose} />
         </SheetContent>
       </Sheet>

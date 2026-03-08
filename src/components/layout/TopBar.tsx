@@ -35,7 +35,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
     .slice(0, 2);
 
   return (
-    <header className="h-14 md:h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+    <header className="h-14 md:h-16 border-b border-border/50 bg-background/80 backdrop-blur-lg flex items-center justify-between px-3 sm:px-4 md:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-2">
         {isMobile && (
           <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onMobileMenuToggle} aria-label="Open menu">
@@ -66,31 +66,31 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72 md:w-80">
-            <div className="flex items-center justify-between p-4 border-b">
+          <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] max-w-80 p-0">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b">
               <h3 className="font-semibold">Notifications</h3>
               <Badge variant="secondary" className="text-xs">{notifications} new</Badge>
             </div>
-            <div className="max-h-60 md:max-h-96 overflow-y-auto">
-              <DropdownMenuItem className="p-4 flex flex-col items-start space-y-1">
+            <div className="max-h-[56vh] overflow-y-auto">
+              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
                 <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full shrink-0"></div>
                   <span className="font-medium text-sm">Content Generated</span>
                   <span className="text-xs text-muted-foreground ml-auto">2m ago</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Your AI content has been generated successfully.</p>
               </DropdownMenuItem>
-              <DropdownMenuItem className="p-4 flex flex-col items-start space-y-1">
+              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
                 <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
+                  <div className="w-2 h-2 bg-accent rounded-full shrink-0"></div>
                   <span className="font-medium text-sm">Post Scheduled</span>
                   <span className="text-xs text-muted-foreground ml-auto">1h ago</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Your post is scheduled for tomorrow at 10:00 AM.</p>
               </DropdownMenuItem>
-              <DropdownMenuItem className="p-4 flex flex-col items-start space-y-1">
+              <DropdownMenuItem className="p-3 sm:p-4 flex flex-col items-start space-y-1">
                 <div className="flex items-center gap-2 w-full">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full shrink-0"></div>
+                  <div className="w-2 h-2 bg-destructive rounded-full shrink-0"></div>
                   <span className="font-medium text-sm">AI Credits Low</span>
                   <span className="text-xs text-muted-foreground ml-auto">3h ago</span>
                 </div>

@@ -21,7 +21,6 @@ import {
   Globe,
   Hash,
   CheckCircle2,
-  X,
   Heart,
   MessageCircle,
   Repeat2,
@@ -338,7 +337,7 @@ export default function Agent() {
   };
 
   return (
-    <div className="flex-1 space-y-6">
+    <div className="flex-1 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -390,11 +389,11 @@ export default function Agent() {
           {/* Generation Mode Tabs */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
                   <Button
                     variant={generationMode === 'trending' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('trending')}
-                    className={cn(generationMode === 'trending' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full sm:w-auto", generationMode === 'trending' && "bg-primary text-primary-foreground")}
                   >
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Find Viral Topic
@@ -402,12 +401,12 @@ export default function Agent() {
                   <Button
                     variant={generationMode === 'custom' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('custom')}
-                    className={cn(generationMode === 'custom' && "bg-primary text-primary-foreground")}
+                    className={cn("w-full sm:w-auto", generationMode === 'custom' && "bg-primary text-primary-foreground")}
                   >
                     <Globe className="h-4 w-4 mr-2" />
                     Custom Topic
                   </Button>
-              </div>
+                </div>
             </CardHeader>
             <CardContent>
               {generationMode === 'trending' ? (
@@ -751,66 +750,49 @@ export default function Agent() {
 
       {/* LinkedIn-styled Content Modal */}
       <Dialog open={showContentModal} onOpenChange={setShowContentModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-2xl max-h-[86vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Generated Content Preview</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowContentModal(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
+            <DialogTitle>Generated Content Preview</DialogTitle>
           </DialogHeader>
-          
+
           {selectedContent && (
-            <div className="space-y-4">
-              {/* LinkedIn Post Container */}
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                {/* Post Header */}
-                <div className="p-4 border-b border-gray-100">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="bg-card border border-border rounded-lg">
+                <div className="p-3 sm:p-4 border-b border-border">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                       <AvatarImage src="/placeholder-avatar.jpg" />
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {user?.email?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">
-                          {user?.email?.split('@')[0] || 'Your Name'}
-                        </h3>
+                        <h3 className="font-semibold truncate">{user?.email?.split('@')[0] || 'Your Name'}</h3>
                         <Badge variant="secondary" className="text-xs">You</Badge>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        SDE | Content Creator | AI Enthusiast
-                      </p>
-                      <p className="text-xs text-gray-500">5h • Edited •</p>
+                      <p className="text-sm text-muted-foreground truncate">SDE | Content Creator | AI Enthusiast</p>
+                      <p className="text-xs text-muted-foreground">5h • Edited</p>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Post Content */}
-                <div className="p-4">
-                  <div className="prose prose-sm max-w-none">
+                <div className="p-3 sm:p-4 space-y-4">
+                  <div>
                     {selectedContent.content?.split('\n').map((paragraph: string, index: number) => (
-                      <p key={index} className="mb-3 text-gray-900 leading-relaxed">
+                      <p key={index} className="mb-3 text-foreground leading-relaxed">
                         {paragraph}
                       </p>
                     ))}
                   </div>
-                  
-                  {/* Hashtags */}
+
                   {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {selectedContent.hashtags.map((tag: string, index: number) => (
-                        <span key={index} className="text-blue-600 hover:underline cursor-pointer">
+                        <span key={index} className="text-primary text-sm">
                           {tag.startsWith('#') ? tag : `#${tag}`}
                         </span>
                       ))}
@@ -818,41 +800,39 @@ export default function Agent() {
                   )}
                 </div>
 
-                {/* Post Engagement */}
-                <div className="px-4 py-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+                <div className="px-3 sm:px-4 py-2 border-t border-border">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
                     <div className="flex items-center gap-2">
                       <div className="flex -space-x-1">
-                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <ThumbsUp className="h-3 w-3 text-white" />
+                        <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <ThumbsUp className="h-3 w-3 text-primary-foreground" />
                         </div>
-                        <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                          <Heart className="h-3 w-3 text-white" />
+                        <div className="w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                          <Heart className="h-3 w-3 text-accent-foreground" />
                         </div>
                       </div>
                       <span>324 reactions</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <span>23 comments</span>
                       <span>14 reposts</span>
                     </div>
                   </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-around py-2 border-t border-gray-100">
-                    <Button variant="ghost" className="flex-1 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
+
+                  <div className="flex items-center py-1 border-t border-border">
+                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
                       <ThumbsUp className="h-4 w-4" />
                       Like
                     </Button>
-                    <Button variant="ghost" className="flex-1 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
+                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
                       <MessageCircle className="h-4 w-4" />
                       Comment
                     </Button>
-                    <Button variant="ghost" className="flex-1 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
+                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
                       <Repeat2 className="h-4 w-4" />
                       Repost
                     </Button>
-                    <Button variant="ghost" className="flex-1 flex items-center justify-center gap-2 text-gray-600 hover:bg-gray-50">
+                    <Button variant="ghost" className="flex-1 h-9 gap-2 text-xs sm:text-sm">
                       <Send className="h-4 w-4" />
                       Send
                     </Button>
@@ -860,31 +840,24 @@ export default function Agent() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="gap-1">
                     <Sparkles className="h-3 w-3" />
                     AI Generated
                   </Badge>
-                  {selectedContent.ai_score && (
-                    <Badge variant="secondary">
-                      Score: {selectedContent.ai_score}
-                    </Badge>
-                  )}
+                  {selectedContent.ai_score && <Badge variant="secondary">Score: {selectedContent.ai_score}</Badge>}
                   {selectedContent.job_id && (
                     <Badge variant="outline" className="text-xs">
                       Job: {selectedContent.job_id.substring(0, 8)}...
                     </Badge>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setShowContentModal(false)}>
+                <div className="flex gap-2 sm:justify-end">
+                  <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setShowContentModal(false)}>
                     Close
                   </Button>
-                  <Button className="bg-primary text-primary-foreground">
-                    Schedule Post
-                  </Button>
+                  <Button className="flex-1 sm:flex-none">Schedule Post</Button>
                 </div>
               </div>
             </div>
