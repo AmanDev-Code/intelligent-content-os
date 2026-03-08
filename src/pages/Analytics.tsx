@@ -281,7 +281,7 @@ export default function Analytics() {
         <CardContent>
           <div className="space-y-4">
             {performanceData.map((platform, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
                   <div>
