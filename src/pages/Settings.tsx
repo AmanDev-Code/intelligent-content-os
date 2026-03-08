@@ -55,7 +55,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Settings Navigation */}
         <div className="lg:col-span-1">
           <Card className="border-0 shadow-lg">

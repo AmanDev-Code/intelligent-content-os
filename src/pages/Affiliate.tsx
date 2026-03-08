@@ -84,7 +84,7 @@ export default function Affiliate() {
       {/* Features Preview */}
       <div className="max-w-4xl mx-auto">
         <h3 className="text-xl font-bold text-center mb-6">What to Expect</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

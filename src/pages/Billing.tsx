@@ -367,7 +367,7 @@ export default function Billing() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                   <span className="font-medium">{bill.amount}</span>
                   <Badge variant={bill.status === 'paid' ? 'default' : 'secondary'}>
                     {bill.status === 'paid' ? 'Paid' : 'Pending'}

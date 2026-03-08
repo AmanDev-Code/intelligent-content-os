@@ -176,7 +176,7 @@ export default function Notifications() {
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Filters:</span>
