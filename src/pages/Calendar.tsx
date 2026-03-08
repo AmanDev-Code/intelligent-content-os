@@ -405,8 +405,7 @@ export default function Calendar() {
                 return (
                   <div
                     key={i}
-                    className={cn(
-                      "min-h-[140px] p-3 rounded-xl transition-all hover:shadow-md",
+                    className={cn("min-h-[48px] sm:min-h-[80px] md:min-h-[140px] p-1 sm:p-2 md:p-3 rounded-md sm:rounded-xl transition-all",
                       isCurrentMonth 
                         ? "bg-card border border-border/50" 
                         : "bg-muted/20 border border-transparent",
