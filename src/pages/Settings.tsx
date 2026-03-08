@@ -187,7 +187,7 @@ export default function Settings() {
         </Card>
 
         {/* Integrations */}
-        <Card>
+        <Card className="xl:col-span-2">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Globe className="h-5 w-5 shrink-0 text-primary" />
