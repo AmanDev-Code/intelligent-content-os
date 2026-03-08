@@ -317,8 +317,8 @@ export default function Media() {
               {filteredMedia.map((item, index) => {
                 const TypeIcon = getTypeIcon(item.type);
                 return (
-                  <div key={item.id} className={cn(
-                    "flex items-center justify-between p-4 hover:bg-muted/50 transition-colors",
+                   <div key={item.id} className={cn(
+                    "flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 hover:bg-muted/50 transition-colors gap-3",
                     index !== filteredMedia.length - 1 && "border-b"
                   )}>
                     <div className="flex items-center gap-4">
