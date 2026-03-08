@@ -372,18 +372,18 @@ export default function Agent() {
                   <div
                     key={type.id}
                     className={cn(
-                      "p-2 sm:p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md text-center sm:text-left",
+                      "p-2 sm:p-3 md:p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md",
                       selectedType === type.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     )}
                     onClick={() => setSelectedType(type.id)}
                   >
-                    <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
-                      <type.icon className="h-4 w-4 shrink-0" />
-                      <h3 className="font-medium text-[11px] sm:text-xs md:text-sm leading-tight">{type.label}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <type.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <h3 className="font-medium text-[10px] sm:text-xs md:text-sm whitespace-nowrap">{type.label}</h3>
                     </div>
-                    <p className="text-[10px] md:text-xs text-muted-foreground hidden md:block leading-tight">{type.description}</p>
+                    <p className="text-[10px] md:text-xs text-muted-foreground hidden md:block leading-tight mt-1">{type.description}</p>
                   </div>
                 ))}
               </div>
