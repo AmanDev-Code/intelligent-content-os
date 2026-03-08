@@ -82,40 +82,40 @@ export default function Dashboard() {
   return (
     <div className="flex-1 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-xl shrink-0">
-              <LayoutDashboard className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <LayoutDashboard className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Your content strategy overview</p>
+              <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Your content strategy overview</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative flex-1 sm:flex-none">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search posts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-48 md:w-64"
+                className="pl-8 pr-3 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring w-full sm:w-40 md:w-52 h-8"
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="px-2 py-1.5 border border-input rounded-md bg-background text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring h-8"
             >
               <option value="all">All Posts</option>
               <option value="published">Published</option>
               <option value="scheduled">Scheduled</option>
               <option value="draft">Draft</option>
             </select>
-            <Button className="bg-primary text-primary-foreground gap-2 shrink-0" onClick={() => handleCreatePost()}>
-              <Wand2 className="h-4 w-4" />
+            <Button className="bg-primary text-primary-foreground shrink-0 h-8 text-xs sm:text-sm" size="sm" onClick={() => handleCreatePost()}>
+              <Wand2 className="h-3.5 w-3.5 sm:mr-1" />
               <span className="hidden sm:inline">Create Post</span>
               <span className="sm:hidden">Create</span>
             </Button>
