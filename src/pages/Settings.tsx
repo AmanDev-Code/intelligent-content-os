@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { XIcon } from "@/components/icons/XIcon";
-
+import { toast } from "sonner";
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
