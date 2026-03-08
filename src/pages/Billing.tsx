@@ -189,7 +189,7 @@ export default function Billing() {
       </div>
 
       {/* Billing History + Payment Method - side by side on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
