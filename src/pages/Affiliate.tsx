@@ -42,7 +42,7 @@ export default function Affiliate() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6 sm:my-8">
               <div className="text-center p-4">
                 <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-3">
                   <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
