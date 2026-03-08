@@ -13,7 +13,7 @@ interface SocialChannel {
 export function SocialChannels() {
   const [channels] = useState<SocialChannel[]>([
     { id: 'linkedin', name: 'LinkedIn', connected: false, followers: '0', engagement: '0%', posts: 0 },
-    { id: 'twitter', name: 'Twitter', connected: false, followers: '0', engagement: '0%', posts: 0 },
+    { id: 'twitter', name: 'X', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'instagram', name: 'Instagram', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'facebook', name: 'Facebook', connected: false, followers: '0', engagement: '0%', posts: 0 }
   ]);
