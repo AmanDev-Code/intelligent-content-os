@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Plus, Linkedin, Twitter, Instagram, Facebook } from "lucide-react";
+import { Globe, Plus, Linkedin, Instagram, Facebook } from "lucide-react";
+import { XIcon } from "@/components/icons/XIcon";
 import { SOCIAL_PLATFORMS } from "@/lib/constants";
 
 interface SocialChannel {

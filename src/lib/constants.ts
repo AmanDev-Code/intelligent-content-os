@@ -27,10 +27,10 @@ export const SOCIAL_PLATFORMS = [
   },
   {
     id: 'twitter',
-    name: 'Twitter',
+    name: 'X',
     icon: 'twitter',
-    color: '#1DA1F2',
-    bgColor: 'bg-[#1DA1F2]'
+    color: '#000000',
+    bgColor: 'bg-[#000000]'
   },
   {
     id: 'instagram',

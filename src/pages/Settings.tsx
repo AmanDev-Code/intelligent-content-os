@@ -22,7 +22,6 @@ import {
   Eye,
   EyeOff,
   Linkedin,
-  Twitter,
   Instagram,
   Facebook
 } from "lucide-react";
