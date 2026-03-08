@@ -289,7 +289,7 @@ export default function Analytics() {
                     <p className="text-sm text-muted-foreground">{platform.posts} posts published</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-4 sm:gap-8 flex-wrap">
                   <div className="text-center">
                     <p className="text-lg font-bold">{platform.reach.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">Reach</p>
