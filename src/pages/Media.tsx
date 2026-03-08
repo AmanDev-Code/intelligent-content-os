@@ -137,12 +137,12 @@ export default function Media() {
                       <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
                     ))}
                   </div>
-                  <div className="flex gap-1.5 mt-2">
-                    <Button variant="outline" size="sm" className="flex-1 h-7 text-[10px] sm:text-xs">
-                      <Eye className="h-3 w-3 mr-0.5" /> View
+                  <div className="grid grid-cols-2 gap-1.5 mt-2">
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] sm:text-xs w-full">
+                      <Eye className="h-3 w-3 mr-1" /> View
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 h-7 text-[10px] sm:text-xs">
-                      <Download className="h-3 w-3 mr-0.5" /> Download
+                    <Button variant="outline" size="sm" className="h-8 text-[10px] sm:text-xs w-full">
+                      <Download className="h-3 w-3 mr-1" /> Download
                     </Button>
                   </div>
                 </CardContent>

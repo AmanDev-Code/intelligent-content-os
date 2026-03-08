@@ -71,7 +71,7 @@ export default function Billing() {
   const currentPlan = plans.find(plan => plan.current);
 
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6">
+    <div className="flex-1 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
