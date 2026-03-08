@@ -262,29 +262,27 @@ export default function Calendar() {
         </Card>
       </div>
 
-      {/* Modern Calendar Controls */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" className="h-9 w-9">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-6">
+            <div className="flex items-center gap-1 sm:gap-3">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="text-center">
-                <h2 className="text-2xl font-bold">{formatDate(currentDate)}</h2>
-                <p className="text-sm text-muted-foreground">12 posts scheduled this month</p>
+              <div className="text-center min-w-[140px] sm:min-w-[200px]">
+                <h2 className="text-lg sm:text-2xl font-bold">{formatDate(currentDate)}</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground">12 posts scheduled this month</p>
               </div>
-              <Button variant="outline" size="icon" className="h-9 w-9">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Target className="h-4 w-4" />
-              Today
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+              <Target className="h-4 w-4" /> Today
             </Button>
           </div>
           
-          <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 w-full sm:w-auto overflow-x-auto">
             {viewModes.map((mode) => (
               <Button
                 key={mode.id}
@@ -292,12 +290,12 @@ export default function Calendar() {
                 size="sm"
                 onClick={() => setCurrentView(mode.id)}
                 className={cn(
-                  "gap-2 transition-all",
-                  currentView === mode.id && "gradient-primary shadow-lg shadow-primary/25"
+                  "gap-1 sm:gap-2 transition-all text-xs sm:text-sm flex-1 sm:flex-none",
+                  currentView === mode.id && "bg-primary text-primary-foreground"
                 )}
               >
                 <mode.icon className="h-4 w-4" />
-                {mode.label}
+                <span className="hidden sm:inline">{mode.label}</span>
               </Button>
             ))}
           </div>
