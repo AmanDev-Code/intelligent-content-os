@@ -765,7 +765,7 @@ export default function Agent() {
             <div className="flex flex-col max-h-[90vh] bg-card" style={{ maxWidth: '100%' }}>
               <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
                 {/* Header */}
-                <div className="flex items-start gap-2 p-3 pb-0" style={{ maxWidth: '100%' }}>
+                <div className="flex items-start gap-2 p-4 pb-0" style={{ maxWidth: '100%' }}>
                   <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
                     <AvatarImage src="/placeholder-avatar.jpg" />
                     <AvatarFallback className="bg-primary text-primary-foreground text-base font-bold sm:text-lg">
