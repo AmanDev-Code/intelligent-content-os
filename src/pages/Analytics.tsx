@@ -248,7 +248,7 @@ export default function Analytics() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Heart className="h-4 w-4 text-red-500" />
