@@ -303,26 +303,25 @@ export default function Calendar() {
       </div>
 
       {/* Modern Connected Channels */}
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
+      <Card className="border-0">
+        <CardHeader className="pb-4 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
                 <Globe className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-xl">Social Channels</CardTitle>
-                <p className="text-sm text-muted-foreground">Manage your connected platforms</p>
+                <CardTitle className="text-base sm:text-xl">Social Channels</CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground">Manage your connected platforms</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Channel
+            <Button variant="outline" size="sm" className="gap-2 self-start sm:self-center">
+              <Plus className="h-4 w-4" /> Add Channel
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="px-4 sm:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {socialPlatforms.map((platform) => (
               <Card
                 key={platform.name}
