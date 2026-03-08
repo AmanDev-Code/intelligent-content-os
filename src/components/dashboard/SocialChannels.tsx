@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Plus, Linkedin, Twitter, Instagram, Facebook } from "lucide-react";
+import { Globe, Plus, Linkedin, Instagram, Facebook } from "lucide-react";
+import { XIcon } from "@/components/icons/XIcon";
 import { SOCIAL_PLATFORMS } from "@/lib/constants";
 
 interface SocialChannel {
@@ -12,7 +13,7 @@ interface SocialChannel {
 export function SocialChannels() {
   const [channels] = useState<SocialChannel[]>([
     { id: 'linkedin', name: 'LinkedIn', connected: false, followers: '0', engagement: '0%', posts: 0 },
-    { id: 'twitter', name: 'Twitter', connected: false, followers: '0', engagement: '0%', posts: 0 },
+    { id: 'twitter', name: 'X', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'instagram', name: 'Instagram', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'facebook', name: 'Facebook', connected: false, followers: '0', engagement: '0%', posts: 0 }
   ]);
@@ -20,7 +21,7 @@ export function SocialChannels() {
   const getIcon = (platformId: string) => {
     switch (platformId) {
       case 'linkedin': return Linkedin;
-      case 'twitter': return Twitter;
+      case 'twitter': return ({ className }: { className?: string }) => <XIcon className={className} />;
       case 'instagram': return Instagram;
       case 'facebook': return Facebook;
       default: return Globe;
