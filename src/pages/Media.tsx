@@ -145,23 +145,19 @@ export default function Media() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Media Library</h1>
-          <p className="text-muted-foreground">
-            Manage your images, carousels, and visual content
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Media Library</h1>
+          <p className="text-sm text-muted-foreground">Manage your images, carousels, and visual content</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Media
+            <Upload className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Upload Media</span>
           </Button>
-          <Button className="gradient-primary">
-            <ImageIcon className="h-4 w-4 mr-2" />
-            Generate Image
+          <Button className="bg-primary text-primary-foreground">
+            <ImageIcon className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Generate Image</span>
           </Button>
         </div>
       </div>
