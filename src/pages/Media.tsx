@@ -219,48 +219,29 @@ export default function Media() {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {/* Type Filter */}
-          <div className="flex items-center gap-2">
-            {mediaTypes.map((type) => (
-              <Button
-                key={type.id}
-                variant={selectedType === type.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedType(type.id)}
-                className={cn(
-                  selectedType === type.id && "gradient-primary"
-                )}
-              >
-                <type.icon className="h-4 w-4 mr-2" />
-                {type.label}
-              </Button>
-            ))}
-          </div>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          {mediaTypes.map((type) => (
+            <Button
+              key={type.id}
+              variant={selectedType === type.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedType(type.id)}
+              className="text-xs sm:text-sm"
+            >
+              <type.icon className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{type.label}</span>
+            </Button>
+          ))}
         </div>
-
-        <div className="flex items-center gap-4">
-          {/* Search */}
-          <div className="relative">
+        <div className="flex items-center gap-2 sm:gap-4 w-full lg:w-auto">
+          <div className="relative flex-1 lg:flex-none">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search media..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
-            />
+            <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-full lg:w-64" />
           </div>
-
-          {/* View Mode */}
           <div className="flex items-center gap-1 border rounded-lg p-1">
             {viewModes.map((mode) => (
-              <Button
-                key={mode.id}
-                variant={viewMode === mode.id ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode(mode.id)}
-              >
+              <Button key={mode.id} variant={viewMode === mode.id ? "default" : "ghost"} size="sm" onClick={() => setViewMode(mode.id)}>
                 <mode.icon className="h-4 w-4" />
               </Button>
             ))}
