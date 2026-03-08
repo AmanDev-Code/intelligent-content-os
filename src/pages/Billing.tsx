@@ -145,18 +145,15 @@ export default function Billing() {
   const yearlyDiscount = billingCycle === 'yearly' ? 0.2 : 0;
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Billing & Subscription</h1>
-          <p className="text-muted-foreground">
-            Manage your subscription and billing information
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Billing & Subscription</h1>
+          <p className="text-sm text-muted-foreground">Manage your subscription and billing information</p>
         </div>
         <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" />
-          Download Invoice
+          <Download className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Download Invoice</span>
         </Button>
       </div>
 
