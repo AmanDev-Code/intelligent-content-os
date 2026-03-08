@@ -136,8 +136,8 @@ export default function Billing() {
         <Badge variant="secondary" className="text-xs">20% Off</Badge>
       </div>
 
-      {/* Plans - 4 columns on xl, 2 on md, 1 on mobile */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Plans - 3 columns on lg, 2 on sm with 3rd full width */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         {plans.map((plan) => (
           <Card key={plan.id} className={cn(
             "relative",
