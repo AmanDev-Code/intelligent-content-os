@@ -130,13 +130,13 @@ export default function Settings() {
         </Card>
 
         {/* Security */}
-        <Card>
+        <Card className="xl:col-span-2">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="h-5 w-5 shrink-0 text-primary" />
               <h2 className="text-base font-semibold">Security</h2>
             </div>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="currentPassword" className="text-xs">Current Password</Label>
                 <div className="relative mt-1">
@@ -150,10 +150,10 @@ export default function Settings() {
                 <Label htmlFor="newPassword" className="text-xs">New Password</Label>
                 <Input id="newPassword" type="password" placeholder="Enter new password" className="mt-1" />
               </div>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Lock className="h-4 w-4" /> Update Password
-              </Button>
             </div>
+            <Button variant="outline" size="sm" className="gap-2 mt-3">
+              <Lock className="h-4 w-4" /> Update Password
+            </Button>
           </CardContent>
         </Card>
 
