@@ -232,7 +232,7 @@ export default function Analytics() {
         <CardContent>
           <div className="space-y-4">
             {topPosts.map((post, index) => (
-              <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={post.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
                     <span className="text-sm font-bold text-primary">#{index + 1}</span>
