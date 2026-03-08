@@ -850,7 +850,7 @@ export default function Agent() {
                 </div>
 
                 {/* Reactions */}
-                <div className="px-3 py-1.5">
+                <div className="px-4 py-1.5">
                   <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
                     <div className="flex items-center gap-1 shrink-0">
                       <div className="flex -space-x-1">
