@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const FAST_INTERVAL_MS = 80;   // speed when catching up to target
-const SLOW_INTERVAL_MS = 400;  // speed when drifting past target (waiting for next update)
-const MAX_DRIFT = 95;          // never drift past 95% without backend confirmation
+const FAST_INTERVAL_MS = 100;   // speed when catching up to target
+const SLOW_INTERVAL_MS = 800;   // speed when drifting past target (waiting for next update)
+const MAX_DRIFT = 98;           // never drift past 98% without backend confirmation
 
 export function useSmoothProgress() {
   const [displayProgress, setDisplayProgress] = useState(0);
@@ -28,13 +28,15 @@ export function useSmoothProgress() {
       lastTickRef.current = now;
 
       if (isBehind) {
-        // Catching up to backend target — move fast
-        return Math.min(prev + 1, target);
+        // Catching up to backend target — move fast but smoothly
+        const increment = target > 80 ? 0.5 : 1; // Slower near completion
+        return Math.min(prev + increment, target);
       }
 
       // Already at or past target — drift slowly, cap at MAX_DRIFT
       if (prev < MAX_DRIFT) {
-        return prev + 0.5;
+        const driftIncrement = prev > 90 ? 0.1 : 0.3; // Very slow near end
+        return prev + driftIncrement;
       }
 
       return prev;

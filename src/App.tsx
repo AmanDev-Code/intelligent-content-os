@@ -11,8 +11,14 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
-import Generate from "./pages/Generate";
-import Content from "./pages/Content";
+import Calendar from "./pages/Calendar";
+import Agent from "./pages/Agent";
+import Analytics from "./pages/Analytics";
+import Media from "./pages/Media";
+import Affiliate from "./pages/Affiliate";
+import Billing from "./pages/Billing";
+import Settings from "./pages/Settings";
+import Notifications from "./pages/Notifications";
 import PostDetail from "./pages/PostDetail";
 
 const queryClient = new QueryClient();
@@ -36,8 +42,14 @@ const App = () => (
                 }
               >
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/generate" element={<Generate />} />
-                <Route path="/content" element={<Content />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/agent" element={<Agent />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/media" element={<Media />} />
+                <Route path="/affiliate" element={<Affiliate />} />
+                <Route path="/billing" element={<Billing />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="/content/:slug" element={<PostDetail />} />
               </Route>
               <Route path="*" element={<NotFound />} />
