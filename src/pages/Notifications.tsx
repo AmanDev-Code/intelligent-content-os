@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
-  Bell, Check, CheckCheck, Trash2,
+  Bell, Check, CheckCheck,
   Zap, TrendingUp, AlertTriangle, Info, Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -59,7 +59,7 @@ export default function Notifications() {
 
   const markAsRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const markAllAsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  const deleteNotification = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id));
+  
 
   const readFilters = [
     { id: 'all', label: 'All' },
@@ -157,9 +157,6 @@ export default function Notifications() {
                             <Check className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteNotification(n.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
                       </div>
                     </div>
                   </div>
