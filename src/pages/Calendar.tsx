@@ -152,37 +152,28 @@ export default function Calendar() {
   };
 
   return (
-    <div className="flex-1 space-y-8 p-6 max-w-7xl mx-auto">
-      {/* Modern Header */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl">
-                <CalendarIcon className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  Content Calendar
-                </h1>
-                <p className="text-muted-foreground">
-                  Your content strategy command center
-                </p>
-              </div>
+    <div className="flex-1 space-y-6 md:space-y-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-xl shrink-0">
+              <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">Content Calendar</h1>
+              <p className="text-sm text-muted-foreground">Your content strategy command center</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filter
+              <Filter className="h-4 w-4" /><span className="hidden sm:inline">Filter</span>
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
-              <Search className="h-4 w-4" />
-              Search
+              <Search className="h-4 w-4" /><span className="hidden sm:inline">Search</span>
             </Button>
-            <Button className="gradient-primary gap-2 shadow-lg shadow-primary/25">
-              <Wand2 className="h-4 w-4" />
-              Create Post
+            <Button className="bg-primary text-primary-foreground gap-2">
+              <Wand2 className="h-4 w-4" /><span className="hidden sm:inline">Create Post</span>
             </Button>
           </div>
         </div>
