@@ -87,7 +87,7 @@ export default function Content() {
               <SelectItem value="failed">Failed</SelectItem>
             </SelectContent>
           </Select>
-          <Link to="/generate">
+        <Link to="/ai-agent">
             <Button size="sm" className="gradient-primary text-primary-foreground">
               <Zap className="h-4 w-4 mr-1" />
               Generate
