@@ -19,5 +19,6 @@ jobs:
           script: |
             cd /home/workatkatana/postra-stack/postra-frontend
             git pull origin main
+            cd ..
             docker compose build postra-frontend
             docker compose up -d postra-frontend
