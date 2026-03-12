@@ -76,7 +76,7 @@ export default function Auth() {
             <span className="text-sm font-medium text-primary-foreground">AI-Powered Content OS</span>
           </div>
           <h1 className="text-4xl font-bold text-primary-foreground mb-4 tracking-tight">
-            ContentOS AI
+            Postra AI
           </h1>
           <p className="text-primary-foreground/80 text-lg leading-relaxed">
             The operating system for AI content creation. Discover, create, publish, and grow — all from one intelligent workspace.
@@ -88,7 +88,7 @@ export default function Auth() {
       <div className="flex-1 flex items-center justify-center p-6 bg-background">
         <div className="w-full max-w-sm space-y-8 animate-fade-in-up">
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-2xl font-bold gradient-text">ContentOS AI</h1>
+            <h1 className="text-2xl font-bold gradient-text">Postra AI</h1>
           </div>
 
           <div>

@@ -21,7 +21,7 @@ export default function Affiliate() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Affiliate Program</h1>
           <p className="text-muted-foreground text-lg">
-            Earn money by referring ContentOS AI to your network
+            Earn money by referring Postra AI to your network
           </p>
         </div>
       </div>
@@ -38,7 +38,7 @@ export default function Affiliate() {
               <h2 className="text-2xl font-bold">Coming Soon!</h2>
               <p className="text-muted-foreground">
                 We're building an amazing affiliate program that will let you earn generous commissions 
-                by sharing ContentOS AI with your audience.
+                by sharing Postra AI with your audience.
               </p>
             </div>
 

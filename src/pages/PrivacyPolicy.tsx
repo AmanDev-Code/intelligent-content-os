@@ -12,7 +12,7 @@ const collectionItems = [
 
 const useItems = [
   "To authenticate users, maintain secure sessions, and protect accounts from unauthorized access.",
-  "To generate, improve, schedule, publish, and manage AI-assisted content workflows inside ContentOS.",
+  "To generate, improve, schedule, publish, and manage AI-assisted content workflows inside Postra.",
   "To connect with third-party platforms, execute your requested actions, and return platform data back to your workspace.",
   "To calculate usage, enforce quotas, manage subscriptions, process billing operations, and prevent fraud or abuse.",
   "To monitor performance, investigate incidents, maintain logs, troubleshoot failures, and improve reliability and security.",
@@ -48,9 +48,9 @@ export default function PrivacyPolicy() {
             <Shield className="h-4 w-4" />
             Privacy Policy
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">ContentOS Privacy Policy</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Postra Privacy Policy</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Effective date: March 12, 2026. This Privacy Policy explains how ContentOS AI collects,
+            Effective date: March 12, 2026. This Privacy Policy explains how Postra AI collects,
             uses, stores, secures, and discloses information when you use our AI content strategy,
             creation, scheduling, publishing, analytics, media, billing, and connected-platform features.
           </p>
@@ -66,9 +66,9 @@ export default function PrivacyPolicy() {
 
         <div className="space-y-10 text-sm leading-7 text-foreground/90">
           <section className="space-y-3">
-            <h2 className="text-2xl font-semibold">1. What ContentOS Is Made For</h2>
+            <h2 className="text-2xl font-semibold">1. What Postra Is Made For</h2>
             <p>
-              ContentOS is built to help individuals, teams, brands, creators, and businesses discover topics,
+              Postra is built to help individuals, teams, brands, creators, and businesses discover topics,
               create content with AI assistance, organize media, schedule and publish posts, review performance,
               manage quotas and billing, and connect approved third-party platforms from one secure workspace.
             </p>
@@ -123,7 +123,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold">5. Third-Party Platforms and Service Providers</h2>
             <p>
-              When you connect a third-party service such as LinkedIn, you authorize ContentOS to access and process
+              When you connect a third-party service such as LinkedIn, you authorize Postra to access and process
               data made available under that platform's API scopes and developer rules. Your use of those platforms also
               remains subject to their own terms, privacy notices, and compliance requirements.
             </p>
@@ -155,7 +155,7 @@ export default function PrivacyPolicy() {
               7. International Compliance and Regulatory Understanding
             </h2>
             <p>
-              ContentOS is designed with privacy, platform integrity, content governance, and security obligations in mind.
+              Postra is designed with privacy, platform integrity, content governance, and security obligations in mind.
               Depending on where users are located and how the service is used, the product may be subject to oversight,
               guidance, or enforcement from multiple data protection, consumer protection, and online platform authorities.
             </p>
@@ -186,7 +186,7 @@ export default function PrivacyPolicy() {
               9. Children's Data
             </h2>
             <p>
-              ContentOS is not intended for children and should be used only by persons legally permitted to enter into
+              Postra is not intended for children and should be used only by persons legally permitted to enter into
               binding agreements under applicable law. We do not knowingly collect personal information from children.
             </p>
           </section>
@@ -203,7 +203,7 @@ export default function PrivacyPolicy() {
           <section className="space-y-3 border-t pt-8">
             <h2 className="text-2xl font-semibold">11. Contact</h2>
             <p>
-              For privacy, compliance, or security inquiries relating to ContentOS AI, please contact the service operator
+              For privacy, compliance, or security inquiries relating to Postra AI, please contact the service operator
               through the official support or business contact channel made available in the application or company materials.
             </p>
           </section>

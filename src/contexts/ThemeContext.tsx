@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Check localStorage first
-    const stored = localStorage.getItem("contentos-theme");
+    const stored = localStorage.getItem("Postra-theme");
     if (stored === "light" || stored === "dark") {
       return stored;
     }
@@ -34,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.add(theme);
     
     // Save to localStorage
-    localStorage.setItem("contentos-theme", theme);
+    localStorage.setItem("Postra-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

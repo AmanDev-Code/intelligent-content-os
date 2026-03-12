@@ -59,7 +59,7 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold text-foreground">ContentOS</span>
+            <span className="text-lg font-bold text-foreground">Postra</span>
           </div>
         )}
         {collapsed && (

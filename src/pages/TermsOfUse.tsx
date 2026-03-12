@@ -32,9 +32,9 @@ export default function TermsOfUse() {
             <FileText className="h-4 w-4" />
             Terms of Use
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">ContentOS Terms of Use</h1>
+          <h1 className="text-4xl font-bold tracking-tight">Postra Terms of Use</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-            Effective date: March 12, 2026. These Terms govern your access to and use of ContentOS AI,
+            Effective date: March 12, 2026. These Terms govern your access to and use of Postra AI,
             including its AI content generation, scheduling, publishing, analytics, billing, media, API,
             and connected-platform features.
           </p>
@@ -53,14 +53,14 @@ export default function TermsOfUse() {
             <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
             <p>
               By creating an account, accessing the service, connecting a third-party platform, or using any
-              ContentOS feature, you agree to these Terms. If you do not agree, you must not use the service.
+              Postra feature, you agree to these Terms. If you do not agree, you must not use the service.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold">2. What the Service Provides</h2>
             <p>
-              ContentOS is an AI-assisted content operations platform designed to help users discover topics,
+              Postra is an AI-assisted content operations platform designed to help users discover topics,
               generate content drafts, manage media, schedule posts, connect external platforms, publish content,
               review account-level or platform-level results where available, and manage quotas, plans, and workflows.
             </p>
@@ -85,7 +85,7 @@ export default function TermsOfUse() {
 
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold">4. Acceptable Use</h2>
-            <p>You may use ContentOS only for lawful, authorized, and legitimate business or creator purposes.</p>
+            <p>You may use Postra only for lawful, authorized, and legitimate business or creator purposes.</p>
             <ul className="list-disc space-y-2 pl-6">
               {prohibitedUseItems.map((item) => (
                 <li key={item}>{item}</li>
@@ -108,7 +108,7 @@ export default function TermsOfUse() {
               6. Platform, Regulatory, and Country-Level Compliance
             </h2>
             <p>
-              You are responsible for ensuring that your use of ContentOS complies with the laws, platform policies,
+              You are responsible for ensuring that your use of Postra complies with the laws, platform policies,
               disclosure standards, and regulatory expectations applicable to your content, audience, geography, and industry.
             </p>
             <ul className="list-disc space-y-2 pl-6">
@@ -127,7 +127,7 @@ export default function TermsOfUse() {
             <h2 className="text-2xl font-semibold">7. AI Output and Content Disclaimer</h2>
             <p>
               AI-generated results may be incomplete, inaccurate, biased, or inappropriate for your specific use case.
-              ContentOS does not guarantee that any generated output is correct, compliant, original, non-infringing,
+              Postra does not guarantee that any generated output is correct, compliant, original, non-infringing,
               fit for publication, or suitable for any legal or commercial purpose.
             </p>
             <p>
@@ -138,7 +138,7 @@ export default function TermsOfUse() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold">8. Connected Accounts and Third-Party Services</h2>
             <p>
-              By connecting LinkedIn or any other platform, you authorize ContentOS to act within the permissions granted
+              By connecting LinkedIn or any other platform, you authorize Postra to act within the permissions granted
               by you and permitted by that platform's API terms. Third-party services may limit available features,
               analytics, or actions, and those limitations are outside our direct control.
             </p>
@@ -160,7 +160,7 @@ export default function TermsOfUse() {
           <section className="space-y-3">
             <h2 className="text-2xl font-semibold">10. Intellectual Property</h2>
             <p>
-              We retain all rights in the ContentOS service, software, design, branding, documentation, and related
+              We retain all rights in the Postra service, software, design, branding, documentation, and related
               materials, except for rights expressly granted to you. You retain ownership of content you submit,
               subject to the rights necessary for us to host, process, secure, transmit, and operate the service.
             </p>
@@ -212,7 +212,7 @@ export default function TermsOfUse() {
           <section className="space-y-3 border-t pt-8">
             <h2 className="text-2xl font-semibold">15. Contact</h2>
             <p>
-              For legal, compliance, or platform-governance matters related to ContentOS AI, please contact the operator
+              For legal, compliance, or platform-governance matters related to Postra AI, please contact the operator
               through the official support or business contact channel provided by the service.
             </p>
           </section>
