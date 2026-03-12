@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,19 @@ export default function ResetPassword() {
             {loading ? <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" /> : "Update password"}
           </Button>
         </form>
+        <div className="border-t pt-4 text-center text-xs text-muted-foreground">
+          <p>
+            Review our{" "}
+            <Link to="/terms-of-use" className="text-primary hover:underline">
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy-policy" className="text-primary hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
       </div>
     </div>
   );

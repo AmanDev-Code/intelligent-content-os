@@ -17,7 +17,8 @@ type JobRow = {
   error: string | null;
 };
 
-const POLL_INTERVAL_MS = 1500;
+const POLL_INTERVAL_MS = 3000; // Poll every 3 seconds (Realtime should handle updates faster)
+const MAX_POLL_TIME_MS = 120000; // Maximum 2 minutes
 
 export function useGenerationJob({
   jobId,
@@ -44,34 +45,43 @@ export function useGenerationJob({
   }, []);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId) {
+      console.log('⏸️ useGenerationJob: No jobId, skipping');
+      return;
+    }
 
+    console.log('🚀 useGenerationJob: Starting to watch jobId:', jobId);
     isTerminalRef.current = false;
     lastSnapshotRef.current = '';
 
     const processRow = (row: JobRow) => {
-      const snap = `${row.status}|${row.progress}|${row.current_stage ?? ''}|${row.content_id ?? ''}|${row.error ?? ''}`;
+      const snap = `${row.status}|${row.progress}|${row.content_id ?? ''}`;
       if (snap === lastSnapshotRef.current) return;
       lastSnapshotRef.current = snap;
 
       callbacksRef.current.onProgress?.(row.progress, row.current_stage);
 
-      if (row.status === 'ready') {
+      // Simple: check if content_id exists OR status is ready
+      if (row.content_id && !isTerminalRef.current) {
         isTerminalRef.current = true;
+        cleanup(); // Stop polling immediately
         callbacksRef.current.onComplete?.(row.content_id);
       } else if (row.status === 'failed') {
         isTerminalRef.current = true;
+        cleanup(); // Stop polling immediately
         callbacksRef.current.onFailed?.(row.error);
       }
     };
 
     const fetchLatest = async () => {
       if (isTerminalRef.current) return;
+      
       const { data } = await supabase
         .from('generation_jobs')
         .select('status, progress, current_stage, content_id, error')
         .eq('id', jobId)
         .maybeSingle();
+      
       if (data) processRow(data as JobRow);
     };
 

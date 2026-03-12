@@ -1,22 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Plus, Linkedin, Instagram, Facebook } from "lucide-react";
 import { XIcon } from "@/components/icons/XIcon";
-import { SOCIAL_PLATFORMS } from "@/lib/constants";
+import { SOCIAL_PLATFORMS, API_CONFIG } from "@/lib/constants";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLinkedIn } from "@/contexts/LinkedInContext";
 
 interface SocialChannel {
   id: string; name: string; connected: boolean; followers?: string; engagement?: string; posts?: number;
 }
 
 export function SocialChannels() {
-  const [channels] = useState<SocialChannel[]>([
+  const { user } = useAuth();
+  const { isConnected: linkedinConnected, metrics: linkedinMetrics, needsReauth } = useLinkedIn();
+  const [channels, setChannels] = useState<SocialChannel[]>([
     { id: 'linkedin', name: 'LinkedIn', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'twitter', name: 'X', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'instagram', name: 'Instagram', connected: false, followers: '0', engagement: '0%', posts: 0 },
     { id: 'facebook', name: 'Facebook', connected: false, followers: '0', engagement: '0%', posts: 0 }
   ]);
+
+  // Update LinkedIn channel data when context changes
+  useEffect(() => {
+    setChannels(prev =>
+      prev.map(channel =>
+        channel.id === "linkedin"
+          ? {
+              ...channel,
+              connected: linkedinConnected,
+              followers: linkedinMetrics?.followers?.toLocaleString() || '0',
+              engagement: linkedinMetrics?.engagement || '0%',
+              posts: linkedinMetrics?.posts || 0,
+            }
+          : channel
+      )
+    );
+  }, [linkedinConnected, linkedinMetrics]);
 
   const getIcon = (platformId: string) => {
     switch (platformId) {
@@ -34,8 +55,19 @@ export function SocialChannels() {
   };
 
   const handleConnect = (channelId: string) => {
-    console.log(`Connecting to ${channelId}`);
-    alert(`OAuth connection for ${channelId} would be implemented here`);
+    if (!user) {
+      alert("Please sign in to connect your account.");
+      return;
+    }
+
+    if (channelId === "linkedin") {
+      // Start LinkedIn OAuth by redirecting to backend with state=user.id
+      const state = encodeURIComponent(user.id);
+      window.location.href = `${API_CONFIG.BASE_URL}/linkedin/auth?state=${state}`;
+      return;
+    }
+
+    alert(`OAuth connection for ${channelId} will be implemented later.`);
   };
 
   return (
@@ -72,10 +104,19 @@ export function SocialChannels() {
                 <div className="flex flex-col flex-1">
                   <h3 className="font-semibold text-sm">{channel.name}</h3>
                   {channel.connected ? (
-                    <div className="space-y-1 text-xs mt-1">
-                      <div className="flex justify-between"><span className="text-muted-foreground">Followers</span><span className="font-medium">{channel.followers}</span></div>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Engagement</span><span className="font-medium">{channel.engagement}</span></div>
-                    </div>
+                    channel.id === 'linkedin' && needsReauth ? (
+                      <div className="flex flex-col flex-1 mt-1">
+                        <p className="text-[10px] sm:text-xs text-orange-600">Needs re-auth</p>
+                        <div className="mt-auto pt-2">
+                          <Button size="sm" variant="outline" className="w-full text-xs border-orange-200 text-orange-600" onClick={() => handleConnect(channel.id)}>Reconnect</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1 text-xs mt-1">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Followers</span><span className="font-medium">{channel.followers}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Engagement</span><span className="font-medium">{channel.engagement}</span></div>
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-col flex-1 mt-1">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Not connected</p>

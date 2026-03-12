@@ -4,6 +4,8 @@ import {
   Clock, Users, BarChart3, Zap, TrendingUp, TrendingDown
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuota } from "@/contexts/QuotaContext";
+import { useLinkedIn } from "@/contexts/LinkedInContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface StatsData {
@@ -16,17 +18,21 @@ interface StatsData {
 
 export function StatsCards() {
   const { user } = useAuth();
+  const { quota: userQuota } = useQuota();
+  const { isConnected: linkedinConnected, metrics: linkedinMetrics } = useLinkedIn();
   const [stats, setStats] = useState<StatsData>({
-    scheduledPosts: 0, connectedChannels: 0, monthlyPosts: 0, aiCredits: 50,
+    scheduledPosts: 0, connectedChannels: 0, monthlyPosts: 0, aiCredits: 0,
     trends: { scheduledPosts: 0, connectedChannels: 0, monthlyPosts: 0, aiCredits: 0 }
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (user) fetchStats(); }, [user]);
+  useEffect(() => { if (user) fetchStats(); }, [user, linkedinConnected]);
 
   const fetchStats = async () => {
     try {
       setLoading(true);
+      
+      // Fetch posts data
       const { data: scheduledPosts } = await supabase
         .from('generated_content').select('id').eq('user_id', user?.id)
         .gte('created_at', new Date().toISOString()).is('deleted_at', null);
@@ -37,16 +43,30 @@ export function StatsCards() {
         .gte('created_at', startOfMonth.toISOString()).is('deleted_at', null);
 
       setStats({
-        scheduledPosts: scheduledPosts?.length || 0, connectedChannels: 0,
-        monthlyPosts: monthlyPosts?.length || 0, aiCredits: 50,
+        scheduledPosts: scheduledPosts?.length || 0, 
+        connectedChannels: linkedinConnected ? 1 : 0, // Count LinkedIn if connected
+        monthlyPosts: monthlyPosts?.length || 0, 
+        aiCredits: userQuota?.remainingCredits ?? 0,
         trends: {
-          scheduledPosts: 0, connectedChannels: 0,
-          monthlyPosts: monthlyPosts?.length ? 15 : 0, aiCredits: -3
+          scheduledPosts: 0, 
+          connectedChannels: linkedinConnected ? 1 : 0,
+          monthlyPosts: monthlyPosts?.length ? 15 : 0, 
+          aiCredits: 0
         }
       });
     } catch (error) { console.error('Error fetching stats:', error); }
     finally { setLoading(false); }
   };
+
+  // Re-run fetchStats when quota changes (e.g. after generation) so AI Credits card updates
+  useEffect(() => {
+    if (user && userQuota != null) {
+      setStats(prev => ({
+        ...prev,
+        aiCredits: userQuota.remainingCredits,
+      }));
+    }
+  }, [user, userQuota?.remainingCredits]);
 
   const statCards = [
     { title: "Scheduled Posts", value: stats.scheduledPosts, trend: stats.trends.scheduledPosts,
@@ -57,8 +77,8 @@ export function StatsCards() {
       icon: Users },
     { title: "This Month", value: stats.monthlyPosts, trend: stats.trends.monthlyPosts,
       subtitle: `${stats.monthlyPosts} posts published`, icon: BarChart3 },
-    { title: "AI Credits", value: stats.aiCredits, trend: stats.trends.aiCredits,
-      subtitle: `${Math.abs(stats.trends.aiCredits)} used today`, icon: Zap }
+    { title: "AI Credits", value: userQuota?.remainingCredits ?? stats.aiCredits, trend: stats.trends.aiCredits,
+      subtitle: userQuota ? `${userQuota.usedCredits}/${userQuota.totalCredits} used (${userQuota.planType})` : "Loading...", icon: Zap }
   ];
 
   if (loading) {

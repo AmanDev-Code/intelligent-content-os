@@ -1,4 +1,4 @@
-import { API_CONFIG } from "@/lib/constants";
+import { api } from "@/lib/apiClient";
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds, default 3600 (1 hour)
@@ -6,11 +6,7 @@ export interface CacheOptions {
 
 export class CacheService {
   private static instance: CacheService;
-  private baseUrl: string;
-
-  private constructor() {
-    this.baseUrl = API_CONFIG.BASE_URL;
-  }
+  private constructor() {}
 
   public static getInstance(): CacheService {
     if (!CacheService.instance) {
@@ -24,24 +20,12 @@ export class CacheService {
    */
   async get<T = any>(key: string): Promise<T | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/cache/get/${encodeURIComponent(key)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.log(`Cache miss for key: ${key}`);
-        return null;
-      }
-
-      const result = await response.json();
-      if (result.data) {
+      const result = await api.cache.get(encodeURIComponent(key));
+      if (result?.data) {
         console.log(`Cache hit for key: ${key}`);
-        return result.data;
+        return result.data as T;
       }
-
+      console.log(`Cache miss for key: ${key}`);
       return null;
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error);
@@ -55,26 +39,9 @@ export class CacheService {
   async set<T = any>(key: string, data: T, options: CacheOptions = {}): Promise<boolean> {
     try {
       const { ttl = 3600 } = options;
-
-      const response = await fetch(`${this.baseUrl}/cache/set`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key,
-          data,
-          ttl,
-        }),
-      });
-
-      if (response.ok) {
-        console.log(`Cache set successful for key: ${key}`);
-        return true;
-      }
-
-      console.error(`Cache set failed for key: ${key}`);
-      return false;
+      await api.cache.set(key, data, ttl);
+      console.log(`Cache set successful for key: ${key}`);
+      return true;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
       return false;
@@ -86,19 +53,9 @@ export class CacheService {
    */
   async delete(key: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/cache/delete/${encodeURIComponent(key)}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        console.log(`Cache delete successful for key: ${key}`);
-        return true;
-      }
-
-      return false;
+      await api.cache.delete(encodeURIComponent(key));
+      console.log(`Cache delete successful for key: ${key}`);
+      return true;
     } catch (error) {
       console.error(`Cache delete error for key ${key}:`, error);
       return false;
@@ -110,19 +67,9 @@ export class CacheService {
    */
   async invalidateUser(userId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/cache/invalidate/user/${encodeURIComponent(userId)}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        console.log(`User cache invalidated for: ${userId}`);
-        return true;
-      }
-
-      return false;
+      await api.cache.invalidateUser(encodeURIComponent(userId));
+      console.log(`User cache invalidated for: ${userId}`);
+      return true;
     } catch (error) {
       console.error(`Cache invalidate error for user ${userId}:`, error);
       return false;

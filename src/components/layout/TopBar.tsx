@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuota } from "@/contexts/QuotaContext";
 
 interface TopBarProps {
   onMobileMenuToggle?: () => void;
@@ -28,6 +29,9 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const [notifications] = useState(3);
   const [notifOpen, setNotifOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { quota: userQuota } = useQuota();
+
+  const planLabel = (userQuota?.planType || profile?.plan || "free") as string;
 
   const initials = (profile?.full_name || user?.email || "U")
     .split(" ")
@@ -49,7 +53,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
       <div className="flex items-center gap-2 md:gap-3">
         {!isMobile && (
           <Badge variant="secondary" className="text-xs capitalize">
-            {profile?.plan || "free"}
+            {planLabel}
           </Badge>
         )}
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -195,6 +195,20 @@ export default function Auth() {
                 )}
               </>
             )}
+          </div>
+
+          <div className="border-t pt-4 text-center text-xs text-muted-foreground">
+            <p>
+              By continuing, you agree to our{" "}
+              <Link to="/terms-of-use" className="text-primary hover:underline">
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy-policy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </div>
         </div>
       </div>

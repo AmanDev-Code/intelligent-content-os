@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,10 +26,17 @@ import {
   Facebook
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useSearchParams } from "react-router-dom";
 import { XIcon } from "@/components/icons/XIcon";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLinkedIn } from "@/contexts/LinkedInContext";
+import { API_CONFIG } from "@/lib/constants";
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { isConnected: linkedinConnected, refreshConnection, refreshMetrics, disconnect: disconnectLinkedIn } = useLinkedIn();
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
@@ -38,15 +45,78 @@ export default function Settings() {
     updates: true
   });
 
-  const integrations = [
-    { name: 'LinkedIn', id: 'linkedin', icon: Linkedin, connected: false, color: '#0A66C2' },
+  const [integrations, setIntegrations] = useState([
+    { name: 'LinkedIn', id: 'linkedin', icon: Linkedin, connected: linkedinConnected, color: '#0A66C2' },
     { name: 'X', id: 'twitter', icon: ({ className }: { className?: string }) => <XIcon className={className} />, connected: false, color: '#000000' },
     { name: 'Instagram', id: 'instagram', icon: Instagram, connected: false, color: '#E4405F' },
     { name: 'Facebook', id: 'facebook', icon: Facebook, connected: false, color: '#1877F2' },
-  ];
+  ]);
+
+  useEffect(() => {
+    // If we were redirected back with ?linkedin=connected, refresh LinkedIn context
+    const linkedinParam = searchParams.get("linkedin");
+    if (linkedinParam === "connected") {
+      toast.success("LinkedIn account connected successfully.");
+      // Trigger a refresh of LinkedIn connection status across the app
+      refreshConnection();
+      refreshMetrics();
+      // Also trigger localStorage event for other tabs
+      localStorage.setItem('linkedin-connected', 'true');
+      localStorage.removeItem('linkedin-connected'); // Trigger the event
+    }
+  }, [searchParams, refreshConnection, refreshMetrics]);
+
+  // Update integrations state when LinkedIn context changes
+  useEffect(() => {
+    setIntegrations(prev =>
+      prev.map(integration =>
+        integration.id === "linkedin"
+          ? { ...integration, connected: linkedinConnected }
+          : integration
+      )
+    );
+  }, [linkedinConnected]);
 
   const handleConnect = (id: string) => {
-    toast.info(`OAuth connection for ${id} will be implemented`);
+    if (!user) {
+      toast.error("Please sign in to connect your account.");
+      return;
+    }
+
+    if (id === "linkedin") {
+      const state = encodeURIComponent(user.id);
+      window.location.href = `${API_CONFIG.BASE_URL}/linkedin/auth?state=${state}`;
+      return;
+    }
+
+    toast.info(`OAuth connection for ${id} will be implemented later`);
+  };
+
+  const handleDisconnect = async (id: string) => {
+    if (!user) {
+      toast.error("Please sign in to disconnect your account.");
+      return;
+    }
+
+    if (id === "linkedin") {
+      try {
+        console.log('🔗 Settings: Starting LinkedIn disconnect...');
+        await disconnectLinkedIn();
+        console.log('✅ Settings: LinkedIn disconnect successful');
+        toast.success("LinkedIn account disconnected successfully.");
+      } catch (error) {
+        console.error("❌ Settings: Error disconnecting LinkedIn:", error);
+        console.error("Error details:", {
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name
+        });
+        toast.error(`Failed to disconnect LinkedIn account: ${error?.message || 'Unknown error'}`);
+      }
+      return;
+    }
+
+    toast.info(`Disconnect for ${id} will be implemented later`);
   };
 
   return (
@@ -209,9 +279,19 @@ export default function Settings() {
                       </div>
                     </div>
                     {integration.connected ? (
-                      <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-                        <Zap className="h-3 w-3 text-green-500" /> Connected
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="secondary" className="gap-1 text-xs">
+                          <Zap className="h-3 w-3 text-green-500" /> Connected
+                        </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" 
+                          onClick={() => handleDisconnect(integration.id)}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
                     ) : (
                       <Button variant="outline" size="sm" className="shrink-0 h-8 text-xs" onClick={() => handleConnect(integration.id)}>
                         Connect

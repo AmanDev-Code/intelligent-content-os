@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -13,8 +14,13 @@ import {
   X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuota } from "@/contexts/QuotaContext";
+import { getQuotaColor } from "@/services/dataService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -38,6 +44,8 @@ const bottomNavItems = [
 
 function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boolean; onToggle: () => void; onItemClick?: () => void }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const { quota: userQuota, loading: loadingQuota } = useQuota();
 
   return (
     <div className="flex flex-col h-full">
@@ -137,6 +145,83 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
           );
         })}
       </nav>
+
+      {/* Credits Progress Bar */}
+      {!collapsed && userQuota && (
+        <div className="px-6 py-4 border-t border-border/50 shrink-0">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">AI Credits</span>
+              </div>
+              <Badge 
+                variant={
+                  userQuota.percentageUsed < 20 
+                    ? 'default' 
+                    : userQuota.percentageUsed < 80
+                    ? 'secondary'
+                    : 'destructive'
+                }
+                className="text-xs"
+              >
+                {userQuota.percentageUsed.toFixed(0)}%
+              </Badge>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="w-full bg-muted/30 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    userQuota.percentageUsed < 20 
+                      ? 'bg-green-500' 
+                      : userQuota.percentageUsed < 80
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
+                  }`}
+                  style={{ 
+                    width: `${Math.max(100 - userQuota.percentageUsed, 0)}%` 
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{userQuota.remainingCredits} left</span>
+                <span>{userQuota.totalCredits} total</span>
+              </div>
+            </div>
+
+            {userQuota.percentageUsed >= 80 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-xs h-7 hover:bg-primary/5 hover:text-primary"
+                onClick={() => window.location.href = '/billing'}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Upgrade
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Collapsed Credits Indicator */}
+      {collapsed && userQuota && (
+        <div className="px-2 py-2 border-t border-border/50 shrink-0">
+          <div className="flex flex-col items-center space-y-1">
+            <div className={`w-8 h-1.5 rounded-full ${
+              userQuota.percentageUsed < 20 
+                ? 'bg-green-500' 
+                : userQuota.percentageUsed < 80
+                ? 'bg-orange-500'
+                : 'bg-red-500'
+            }`} />
+            <span className="text-xs text-muted-foreground font-medium">
+              {userQuota.remainingCredits}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <div className="border-t border-border/50 shrink-0">

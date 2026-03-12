@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useGenerationJob } from "@/hooks/useGenerationJob";
 import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Zap, Sparkles, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { api } from "@/lib/apiClient";
 
 export default function Generate() {
   const navigate = useNavigate();
@@ -58,19 +58,7 @@ export default function Generate() {
     setStage("Retrying...");
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-      const response = await fetch(`${backendUrl}/generation/job/${jobId}/retry`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await api.generation.retry(jobId);
       
       toast({
         title: "Retry initiated",
@@ -111,22 +99,7 @@ export default function Generate() {
     setIsComplete(false);
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-      const response = await fetch(`${backendUrl}/generation/start`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          preferences: {},
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await api.generation.start({});
 
       if (!data?.jobId) {
         throw new Error("No job ID returned from server");

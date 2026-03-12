@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { cacheService, userKey, jobKey } from "./cacheService";
+import { API_CONFIG } from "@/lib/constants";
+import { api } from "@/lib/apiClient";
 
 export interface GeneratedContent {
   id: string;
@@ -27,6 +29,30 @@ export interface GenerationJob {
   stage: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
+export interface UserQuota {
+  userId: string;
+  totalCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+  percentageUsed: number;
+  planType: 'free' | 'standard' | 'pro' | 'ultimate';
+  resetDate: string;
 }
 
 export class DataService {
@@ -80,16 +106,16 @@ export class DataService {
   }
 
   /**
-   * Get recent generated content for a user with cache-first strategy
+   * Get recent generated content for a user with cache-first strategy (limited to 3 for preview)
    */
-  async getRecentContent(userId: string, limit: number = 10): Promise<GeneratedContent[]> {
+  async getRecentContent(userId: string, limit: number = 3): Promise<GeneratedContent[]> {
     const cacheKey = userKey(userId, 'recent_generations');
     
     // Try cache first
     const cachedData = await cacheService.get<GeneratedContent[]>(cacheKey);
     if (cachedData) {
       console.log('Recent content found in cache for user:', userId);
-      return cachedData;
+      return cachedData.slice(0, limit);
     }
 
     // Fallback to database
@@ -115,6 +141,58 @@ export class DataService {
     }
     
     return result;
+  }
+
+  /**
+   * Get paginated generated content for a user using backend API
+   */
+  async getPaginatedContent(
+    userId: string, 
+    page: number = 1, 
+    limit: number = 20
+  ): Promise<PaginatedResponse<GeneratedContent>> {
+    try {
+      return await api.generation.content(page, limit);
+    } catch (error) {
+      console.error('Error fetching paginated content:', error);
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+          hasPrev: false,
+        },
+      };
+    }
+  }
+
+  /**
+   * Get paginated scheduled content for calendar view
+   */
+  async getPaginatedScheduledContent(
+    userId: string, 
+    page: number = 1, 
+    limit: number = 20
+  ): Promise<PaginatedResponse<GeneratedContent>> {
+    try {
+      return await api.generation.scheduled(page, limit);
+    } catch (error) {
+      console.error('Error fetching scheduled content:', error);
+      return {
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+          hasPrev: false,
+        },
+      };
+    }
   }
 
   /**
@@ -180,3 +258,44 @@ export class DataService {
 
 // Export singleton instance
 export const dataService = DataService.getInstance();
+
+// Quota Management Functions
+export const getUserQuota = async (userId: string): Promise<UserQuota> => {
+  try {
+    return await api.quota.get();
+  } catch (error) {
+    console.error('Error fetching user quota:', error);
+    // Return default quota on error
+    return {
+      userId,
+      totalCredits: 10000,
+      usedCredits: 0,
+      remainingCredits: 10000,
+      percentageUsed: 0,
+      planType: 'ultimate',
+      resetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+};
+
+export const checkQuotaAvailable = async (userId: string): Promise<{ hasQuota: boolean; quota: UserQuota }> => {
+  try {
+    return await api.quota.check();
+  } catch (error) {
+    console.error('Error checking quota:', error);
+    const defaultQuota = await getUserQuota(userId);
+    return {
+      hasQuota: defaultQuota.remainingCredits > 0,
+      quota: defaultQuota,
+    };
+  }
+};
+
+export const getQuotaColor = (percentageUsed: number): 'green' | 'orange' | 'red' => {
+  // Green when you have more than 80% remaining (less than 20% used)
+  if (percentageUsed < 20) return 'green';
+  // Orange when you have 20-80% remaining (20-80% used) 
+  if (percentageUsed < 80) return 'orange';
+  // Red when you have less than 20% remaining (more than 80% used)
+  return 'red';
+};
