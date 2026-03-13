@@ -1,224 +1,496 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
-  Upload, Search, Grid3X3, List,
-  Image as ImageIcon, Video, FileText,
-  Download, MoreHorizontal, Eye, Layers
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Trash2, Download, Eye, Search, Filter, Upload, Image, FileText, Grid, List } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-const mediaTypes = [
-  { id: 'all', label: 'All', icon: Grid3X3 },
-  { id: 'images', label: 'Images', icon: ImageIcon },
-  { id: 'carousels', label: 'Carousels', icon: Layers },
-  { id: 'videos', label: 'Videos', icon: Video },
-];
+interface MediaFile {
+  id: string;
+  file_name: string;
+  file_type: 'image' | 'pdf' | 'carousel';
+  file_size: number;
+  public_url: string;
+  created_at: string;
+  content_id?: string;
+}
 
-const mockMedia = [
-  { id: 1, name: "AI Revolution Infographic", type: "image", format: "PNG", size: "2.4 MB", dimensions: "1080×1080", createdAt: "2026-03-06", usedIn: 3, tags: ["AI", "Technology", "Infographic"] },
-  { id: 2, name: "Startup Growth Carousel", type: "carousel", format: "Multi-slide", size: "5.2 MB", dimensions: "1080×1080", createdAt: "2026-03-05", usedIn: 1, tags: ["Startup", "Growth", "Business"] },
-  { id: 3, name: "Remote Work Tips", type: "image", format: "JPG", size: "1.8 MB", dimensions: "1200×630", createdAt: "2026-03-04", usedIn: 2, tags: ["Remote Work", "Productivity"] },
-  { id: 4, name: "Tech Trends 2026", type: "carousel", format: "Multi-slide", size: "4.8 MB", dimensions: "1080×1080", createdAt: "2026-03-03", usedIn: 5, tags: ["Technology", "Trends"] },
-  { id: 5, name: "LinkedIn Algorithm Guide", type: "image", format: "PNG", size: "3.1 MB", dimensions: "1080×1350", createdAt: "2026-03-02", usedIn: 4, tags: ["LinkedIn", "Algorithm"] },
-  { id: 6, name: "Funding Strategies", type: "image", format: "JPG", size: "2.2 MB", dimensions: "1080×1080", createdAt: "2026-03-01", usedIn: 1, tags: ["Funding", "Startup"] },
-];
+interface MediaUsage {
+  totalFiles: number;
+  totalSizeMB: number;
+  byType: Record<string, number>;
+}
 
 export default function Media() {
-  const [selectedType, setSelectedType] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [usage, setUsage] = useState<MediaUsage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const filteredMedia = mockMedia.filter(item => {
-    const matchesType = selectedType === 'all' || (selectedType === 'images' && item.type === 'image') || (selectedType === 'carousels' && item.type === 'carousel') || (selectedType === 'videos' && item.type === 'video');
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesType && matchesSearch;
-  });
+  useEffect(() => {
+    fetchMediaFiles();
+    fetchUsage();
+  }, [page, typeFilter]);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'image': return ImageIcon;
-      case 'carousel': return Layers;
-      case 'video': return Video;
-      default: return FileText;
+  const fetchMediaFiles = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+      });
+
+      if (typeFilter !== 'all') {
+        params.append('type', typeFilter);
+      }
+
+      const response = await apiClient.get(`/media/files?${params}`);
+      
+      if (response.success) {
+        setMediaFiles(response.files);
+        setTotalPages(response.totalPages);
+      }
+    } catch (error) {
+      console.error('Failed to fetch media files:', error);
+      toast.error('Failed to load media files');
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="flex-1 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Media Library</h1>
-          <p className="text-sm text-muted-foreground">Manage your images, carousels, and visual content</p>
+  const fetchUsage = async () => {
+    try {
+      const response = await apiClient.get('/media/usage');
+      if (response.success) {
+        setUsage(response.usage);
+      }
+    } catch (error) {
+      console.error('Failed to fetch usage:', error);
+    }
+  };
+
+  const deleteFile = async (fileId: string) => {
+    try {
+      await apiClient.delete(`/media/files/${fileId}`);
+      toast.success('File deleted successfully');
+      fetchMediaFiles();
+      fetchUsage();
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      toast.error('Failed to delete file');
+    }
+  };
+
+  const downloadFile = (file: MediaFile) => {
+    const link = document.createElement('a');
+    link.href = file.public_url;
+    link.download = file.file_name;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileTypeIcon = (type: string) => {
+    switch (type) {
+      case 'image':
+        return <Image className="w-4 h-4" />;
+      case 'pdf':
+        return <FileText className="w-4 h-4" />;
+      default:
+        return <FileText className="w-4 h-4" />;
+    }
+  };
+
+  const getFileTypeBadgeColor = (type: string) => {
+    switch (type) {
+      case 'image':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'pdf':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
+  const filteredFiles = mediaFiles.filter(file =>
+    file.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading && mediaFiles.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Upload</span>
-          </Button>
-          <Button className="bg-primary text-primary-foreground" size="sm">
-            <ImageIcon className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Generate</span>
-          </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Media Library</h1>
+          <p className="text-muted-foreground">
+            Manage your generated images, carousels, and documents
+          </p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { title: "Total Files", value: mockMedia.length, sub: "Across all formats", icon: FileText },
-          { title: "Storage Used", value: "19.5 MB", sub: "of 1GB available", icon: Upload },
-          { title: "Images", value: mockMedia.filter(m => m.type === 'image').length, sub: "Single images", icon: ImageIcon },
-          { title: "Carousels", value: mockMedia.filter(m => m.type === 'carousel').length, sub: "Multi-slide posts", icon: Layers },
-        ].map((s) => (
-          <Card key={s.title}>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm font-medium text-muted-foreground">{s.title}</p>
-                <s.icon className="h-4 w-4 text-muted-foreground" />
+      {/* Usage Stats */}
+      {usage && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Files</p>
+                  <p className="text-2xl font-bold">{usage.totalFiles}</p>
+                </div>
+                <Upload className="w-8 h-8 text-muted-foreground" />
               </div>
-              <div className="text-xl sm:text-2xl font-bold">{s.value}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">{s.sub}</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Filters */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1 overflow-x-auto shrink min-w-0">
-          {mediaTypes.map((type) => (
-            <Button key={type.id} variant={selectedType === type.id ? "default" : "outline"} size="sm" onClick={() => setSelectedType(type.id)} className="text-[10px] sm:text-xs shrink-0 h-7 sm:h-8 px-2 sm:px-3">
-              <type.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 sm:mr-1" />
-              <span className="hidden sm:inline">{type.label}</span>
-            </Button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 w-36 md:w-44 h-8 text-xs" />
-          </div>
-          <div className="flex items-center gap-0.5 border rounded-lg p-0.5">
-            <Button variant={viewMode === 'grid' ? "default" : "ghost"} size="sm" onClick={() => setViewMode('grid')} className="h-7 w-7 p-0">
-              <Grid3X3 className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant={viewMode === 'list' ? "default" : "ghost"} size="sm" onClick={() => setViewMode('list')} className="h-7 w-7 p-0">
-              <List className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Search */}
-      <div className="sm:hidden">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search media..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs" />
-        </div>
-      </div>
-
-      {/* Media Grid */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-          {filteredMedia.map((item) => {
-            const TypeIcon = getTypeIcon(item.type);
-            return (
-              <Card key={item.id} className="group overflow-hidden flex flex-col">
-                <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                    <TypeIcon className="h-8 w-8 sm:h-10 sm:w-10 text-primary/60" />
-                  </div>
-                  <Badge variant="secondary" className="absolute top-1.5 left-1.5 text-[9px] sm:text-[10px] px-1.5 py-0">
-                    {item.type === 'carousel' ? 'Carousel' : item.format}
-                  </Badge>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Storage Used</p>
+                  <p className="text-2xl font-bold">{usage.totalSizeMB} MB</p>
                 </div>
-                <CardContent className="p-2 sm:p-2.5 flex flex-col flex-1">
-                  <h3 className="font-medium text-[11px] sm:text-xs mb-0.5 truncate">{item.name}</h3>
-                  <div className="flex justify-between text-[9px] sm:text-[10px] text-muted-foreground">
-                    <span>{item.dimensions}</span>
-                    <span>{item.size}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-0.5 mt-1 min-h-[1rem]">
-                    {item.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">{tag}</Badge>
-                    ))}
-                  </div>
-                  <div className="flex flex-col lg:flex-row gap-1 mt-auto pt-1.5">
-                    <Button variant="outline" size="sm" className="h-6 lg:h-7 text-[9px] lg:text-[10px] w-full px-0.5">
-                      <Eye className="h-2.5 w-2.5 lg:h-3 lg:w-3 shrink-0 mr-0.5" />View
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-6 lg:h-7 text-[9px] lg:text-[10px] w-full px-0.5">
-                      <Download className="h-2.5 w-2.5 lg:h-3 lg:w-3 shrink-0 mr-0.5" />Download
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            {filteredMedia.map((item, index) => {
-              const TypeIcon = getTypeIcon(item.type);
-              return (
-                <div key={item.id} className={cn("p-3 sm:p-4", index !== filteredMedia.length - 1 && "border-b")}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                      <TypeIcon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                      <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                        <span>{item.format}</span>
-                        <span>•</span>
-                        <span>{item.dimensions}</span>
-                        <span>•</span>
-                        <span>{item.size}</span>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="hidden sm:inline">{new Date(item.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {item.tags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Badge variant="secondary" className="text-[10px] hidden sm:flex">{item.usedIn} posts</Badge>
-                      <Button variant="outline" size="sm" className="h-7 text-xs hidden sm:flex">
-                        <Eye className="h-3 w-3 mr-1" /> View
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-7 text-xs hidden sm:flex">
-                        <Download className="h-3 w-3 mr-1" /> Download
-                      </Button>
-                      <Button variant="outline" size="icon" className="h-7 w-7">
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
+                <FileText className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Images</p>
+                  <p className="text-2xl font-bold">{usage.byType.image || 0}</p>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                <Image className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Documents</p>
+                  <p className="text-2xl font-bold">{usage.byType.pdf || 0}</p>
+                </div>
+                <FileText className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {filteredMedia.length === 0 && (
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search files..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="image">Images</SelectItem>
+                <SelectItem value="pdf">Documents</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Media Files */}
+      {filteredFiles.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <ImageIcon className="h-10 w-10 text-muted-foreground mb-3" />
-            <h3 className="font-medium mb-1">No media found</h3>
-            <p className="text-sm text-muted-foreground text-center mb-3">
-              {searchQuery ? "No media matches your search" : "Upload or generate your first media"}
+          <CardContent className="p-8 text-center">
+            <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No media files found</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || typeFilter !== 'all' 
+                ? 'Try adjusting your search or filters'
+                : 'Generate some content to see your media files here'
+              }
             </p>
-            <Button className="bg-primary text-primary-foreground" size="sm">
-              <Upload className="h-4 w-4 mr-2" /> Upload Media
-            </Button>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredFiles.map((file) => (
+                <Card key={file.id} className="group hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
+                      {file.file_type === 'image' ? (
+                        <img
+                          src={file.public_url}
+                          alt={file.file_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FileText className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge className={cn('text-xs', getFileTypeBadgeColor(file.file_type))}>
+                          {getFileTypeIcon(file.file_type)}
+                          <span className="ml-1 capitalize">{file.file_type}</span>
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(file.file_size)}
+                        </span>
+                      </div>
+
+                      <h4 className="font-medium text-sm truncate" title={file.file_name}>
+                        {file.file_name}
+                      </h4>
+
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(file.created_at).toLocaleDateString()}
+                      </p>
+
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => setSelectedFile(file)}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl">
+                            <DialogHeader>
+                              <DialogTitle>{selectedFile?.file_name}</DialogTitle>
+                            </DialogHeader>
+                            {selectedFile && (
+                              <div className="space-y-4">
+                                {selectedFile.file_type === 'image' ? (
+                                  <img
+                                    src={selectedFile.public_url}
+                                    alt={selectedFile.file_name}
+                                    className="w-full max-h-96 object-contain rounded-lg"
+                                  />
+                                ) : (
+                                  <div className="text-center p-8">
+                                    <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                    <p className="text-muted-foreground">
+                                      Document preview not available
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="flex gap-2">
+                                  <Button onClick={() => downloadFile(selectedFile)} className="flex-1">
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => deleteFile(selectedFile.id)}
+                                    className="flex-1"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadFile(file)}
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteFile(file.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <div className="space-y-0">
+                  {filteredFiles.map((file, index) => (
+                    <div
+                      key={file.id}
+                      className={cn(
+                        'flex items-center justify-between p-4 hover:bg-muted/50',
+                        index !== filteredFiles.length - 1 && 'border-b'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        {file.file_type === 'image' ? (
+                          <img
+                            src={file.public_url}
+                            alt={file.file_name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="font-medium">{file.file_name}</h4>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Badge className={cn('text-xs', getFileTypeBadgeColor(file.file_type))}>
+                              {getFileTypeIcon(file.file_type)}
+                              <span className="ml-1 capitalize">{file.file_type}</span>
+                            </Badge>
+                            <span>{formatFileSize(file.file_size)}</span>
+                            <span>{new Date(file.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedFile(file)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => downloadFile(file)}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteFile(file.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <Button
+                    key={pageNum}
+                    variant={page === pageNum ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPage(pageNum)}
+                    className="w-10"
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                disabled={page === totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

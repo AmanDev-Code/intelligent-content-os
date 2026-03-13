@@ -84,8 +84,21 @@ class ApiClient {
   }
 
   // HTTP Methods
-  async get(endpoint: string): Promise<any> {
-    return this.request(endpoint, { method: 'GET' });
+  async get(endpoint: string, options?: { params?: Record<string, any> }): Promise<any> {
+    let url = endpoint;
+    if (options?.params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += (endpoint.includes('?') ? '&' : '?') + queryString;
+      }
+    }
+    return this.request(url, { method: 'GET' });
   }
 
   async post(endpoint: string, data?: any): Promise<any> {
@@ -185,6 +198,26 @@ export const api = {
     organization: () => apiClient.get('/linkedin/organization'),
     publish: (contentId: string) => apiClient.post('/linkedin/publish', { contentId }),
     disconnect: () => apiClient.post('/linkedin/disconnect'),
+  },
+
+  // Media endpoints
+  media: {
+    generateImage: (data: any) => apiClient.post('/media/generate-image', data),
+    generateCarousel: (data: any) => apiClient.post('/media/generate-carousel', data),
+    getFiles: (params?: any) => apiClient.get(`/media/files${params ? `?${new URLSearchParams(params)}` : ''}`),
+    deleteFile: (fileId: string) => apiClient.delete(`/media/files/${fileId}`),
+    getUsage: () => apiClient.get('/media/usage'),
+  },
+
+  // Posts endpoints
+  posts: {
+    publish: (data: any) => apiClient.post('/posts/publish', data),
+    schedule: (data: any) => apiClient.post('/posts/schedule', data),
+    getScheduled: (params?: any) => apiClient.get(`/posts/scheduled${params ? `?${new URLSearchParams(params)}` : ''}`),
+    getPublished: (params?: any) => apiClient.get(`/posts/published${params ? `?${new URLSearchParams(params)}` : ''}`),
+    cancelScheduled: (jobId: string) => apiClient.delete(`/posts/scheduled/${jobId}`),
+    getCalendar: (params?: any) => apiClient.get(`/posts/calendar${params ? `?${new URLSearchParams(params)}` : ''}`),
+    getAnalytics: (params?: any) => apiClient.get(`/posts/analytics${params ? `?${new URLSearchParams(params)}` : ''}`),
   },
 
   // Health check

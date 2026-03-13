@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
@@ -35,7 +36,13 @@ import {
   Eye,
   ArrowRight,
   Copy,
-  BarChart3
+  BarChart3,
+  Bold,
+  Italic,
+  Underline,
+  Smile,
+  Upload,
+  Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -45,6 +52,8 @@ import { useGenerationJob } from "@/hooks/useGenerationJob";
 import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { dataService, getQuotaColor } from "@/services/dataService";
 import { api } from "@/lib/apiClient";
+import { apiClient } from "@/lib/apiClient";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 const contentTypes = [
   { id: 'post', label: 'Text Post', icon: FileText, description: 'LinkedIn text post' },
@@ -73,7 +82,33 @@ export default function Agent() {
   const [showHashtagsModal, setShowHashtagsModal] = useState(false);
   const [popularHashtags, setPopularHashtags] = useState<Array<{tag: string, count: number, trend: 'up' | 'down' | 'stable'}>>([]);
   const [loadingHashtags, setLoadingHashtags] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [scheduleDateTime, setScheduleDateTime] = useState('');
+  const [selectedContentForAction, setSelectedContentForAction] = useState<any>(null);
+  const [isSchedulingExpanded, setIsSchedulingExpanded] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [editedHashtags, setEditedHashtags] = useState<string[]>([]);
+  const [newHashtagInput, setNewHashtagInput] = useState('');
   const { quota: userQuota, loading: loadingQuota, refreshQuota } = useQuota();
+
+  // Helper function to calculate credit cost
+  const calculateCreditCost = (content: any, isScheduling: boolean = false) => {
+    const hasValidImage = content?.visual_url?.startsWith('http') || 
+                         (content?.media_urls && content.media_urls.length > 0) ||
+                         uploadedImages.length > 0;
+    const hasCarousel = content?.carousel_urls && content.carousel_urls.length > 0;
+    
+    if (hasCarousel) {
+      return isScheduling ? 15 : 12;
+    } else if (hasValidImage) {
+      return isScheduling ? 7.5 : 6;
+    } else {
+      return isScheduling ? 4 : 2.5;
+    }
+  };
   const { displayProgress, setTarget } = useSmoothProgress();
 
   // Function declarations (moved before handleComplete to avoid hoisting issues)
@@ -277,6 +312,14 @@ export default function Agent() {
       return;
     }
 
+    // Check if user has enough credits
+    if (userQuota && userQuota.usedCredits + 1.5 > userQuota.totalCredits) {
+      toast.error("Insufficient credits. Content generation requires 1.5 credits. Please upgrade your plan.", {
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsGenerating(true);
     setTarget(0);
     setStage("Starting topic generation...");
@@ -292,6 +335,9 @@ export default function Agent() {
         contentType: 'topics',
       });
       
+      // Refresh quota after successful start
+      await refreshQuota();
+      
       if (data.jobId) {
         setJobId(data.jobId);
         setCurrentJobId(data.jobId); // Store current job ID for tracking
@@ -306,10 +352,22 @@ export default function Agent() {
       
     } catch (error) {
       console.error('Error generating topics:', error);
-      toast.error(error.message || "Failed to start topic generation. Please try again.");
+      
+      // Handle insufficient credits error
+      if (error.message?.includes('Insufficient credits')) {
+        toast.error("Not enough credits. Content generation requires 1.5 credits. Please upgrade your plan.", {
+          duration: 5000,
+        });
+      } else {
+        toast.error(error.message || "Failed to start topic generation. Please try again.");
+      }
+      
       setIsGenerating(false);
       setTarget(0);
       setStage(null);
+      
+      // Refresh quota to get updated balance
+      await refreshQuota();
     }
   };
 
@@ -379,6 +437,153 @@ export default function Agent() {
     .replace(/\((https?:\/\/[^\s)]+)\)/g, "$1")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  // Publishing functions
+  const handlePublishNow = async (content: any) => {
+    try {
+      setIsPublishing(true);
+      
+      // First generate media if needed
+      if (selectedType === 'image') {
+        const mediaResponse = await apiClient.post('/media/generate-image', {
+          prompt: content.visual?.imagePrompt || `Professional image for: ${content.title}`,
+          contentId: content.id,
+        });
+        
+        if (!mediaResponse.success) {
+          throw new Error('Failed to generate image');
+        }
+      } else if (selectedType === 'carousel') {
+        const slides = content.visual?.carouselSlides || [
+          {
+            headline: content.title,
+            body: content.content.substring(0, 100),
+            imagePrompt: `Professional image for: ${content.title}`,
+          }
+        ];
+        
+        const mediaResponse = await apiClient.post('/media/generate-carousel', {
+          slides,
+          contentId: content.id,
+        });
+        
+        if (!mediaResponse.success) {
+          throw new Error('Failed to generate carousel');
+        }
+      }
+
+      // Publish the post
+      const publishResponse = await apiClient.post('/posts/publish', {
+        contentId: content.id,
+        platform: 'linkedin',
+      });
+
+      if (publishResponse.success) {
+        toast.success('Post published successfully to LinkedIn!');
+        fetchRecentGenerations(); // Refresh the list
+        refreshQuota(); // IMMEDIATE QUOTA REFRESH
+      } else {
+        throw new Error(publishResponse.message || 'Failed to publish post');
+      }
+    } catch (error) {
+      console.error('Publishing error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to publish post';
+      
+      if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
+        toast.error(errorMessage, { duration: 5000 });
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleSchedulePost = async () => {
+    if (!selectedContentForAction || !scheduleDateTime) {
+      toast.error('Please select a date and time');
+      return;
+    }
+
+    try {
+      setIsScheduling(true);
+      
+      // First generate media if needed
+      if (selectedType === 'image') {
+        const mediaResponse = await apiClient.post('/media/generate-image', {
+          prompt: selectedContentForAction.visual?.imagePrompt || `Professional image for: ${selectedContentForAction.title}`,
+          contentId: selectedContentForAction.id,
+        });
+        
+        if (!mediaResponse.success) {
+          throw new Error('Failed to generate image');
+        }
+      } else if (selectedType === 'carousel') {
+        const slides = selectedContentForAction.visual?.carouselSlides || [
+          {
+            headline: selectedContentForAction.title,
+            body: selectedContentForAction.content.substring(0, 100),
+            imagePrompt: `Professional image for: ${selectedContentForAction.title}`,
+          }
+        ];
+        
+        const mediaResponse = await apiClient.post('/media/generate-carousel', {
+          slides,
+          contentId: selectedContentForAction.id,
+        });
+        
+        if (!mediaResponse.success) {
+          throw new Error('Failed to generate carousel');
+        }
+      }
+
+      // Schedule the post
+      const scheduleResponse = await apiClient.post('/posts/schedule', {
+        contentId: selectedContentForAction.id,
+        scheduledFor: scheduleDateTime,
+        platform: 'linkedin',
+      });
+
+      if (scheduleResponse.success) {
+        const scheduledTime = new Date(scheduleDateTime).toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+        toast.success(`Post scheduled for ${scheduledTime} IST`);
+        setShowScheduleDialog(false);
+        setScheduleDateTime('');
+        setSelectedContentForAction(null);
+        fetchRecentGenerations(); // Refresh the list
+        refreshQuota(); // IMMEDIATE QUOTA REFRESH
+      } else {
+        throw new Error(scheduleResponse.message || 'Failed to schedule post');
+      }
+    } catch (error) {
+      console.error('Scheduling error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to schedule post';
+      
+      if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
+        toast.error(errorMessage, { duration: 5000 });
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
+  const openScheduleDialog = (content: any) => {
+    setSelectedContentForAction(content);
+    setShowScheduleDialog(true);
+    // Set default to 1 hour from now
+    const defaultTime = new Date();
+    defaultTime.setHours(defaultTime.getHours() + 1);
+    setScheduleDateTime(defaultTime.toISOString().slice(0, 16));
+  };
 
   return (
     <div className="flex-1 space-y-4 sm:space-y-6">
@@ -651,11 +856,7 @@ export default function Agent() {
                         {generatedContent.map((content) => (
                           <div
                             key={content.id}
-                            className="p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md border-border hover:border-primary/50"
-                            onClick={() => {
-                              setShowContentModal(true);
-                              setSelectedContent(content);
-                            }}
+                            className="p-4 border-2 rounded-lg transition-all hover:shadow-md border-border"
                           >
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
@@ -669,15 +870,62 @@ export default function Agent() {
                                 <Badge variant="outline">{content.ai_score || 'N/A'}</Badge>
                               </div>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm text-muted-foreground mb-3 cursor-pointer"
+                               onClick={() => {
+                                 setShowContentModal(true);
+                                 setSelectedContent(content);
+                               }}>
                               {content.content?.substring(0, 150)}...
                             </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Badge variant="secondary">{content.content_type || 'Post'}</Badge>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                              <Badge variant="secondary">{selectedType === 'post' ? 'Text Post' : selectedType === 'image' ? 'Image Post' : 'Carousel'}</Badge>
                               <span>•</span>
                               <span>Job ID: {content.job_id}</span>
                               <span>•</span>
-                              <span className="text-primary">Click to view full content</span>
+                              <span 
+                                className="text-primary cursor-pointer hover:underline"
+                                onClick={() => {
+                                  setShowContentModal(true);
+                                  setSelectedContent(content);
+                                }}
+                              >
+                                Click to view full content
+                              </span>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
+                                onClick={() => handlePublishNow(content)}
+                                disabled={isPublishing}
+                              >
+                                {isPublishing ? (
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4 mr-2" />
+                                )}
+                                {isPublishing ? 'Publishing...' : `Post now (${calculateCreditCost(content, false)} credits)`}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                  setSelectedContent(content);
+                                  setShowContentModal(true);
+                                  setIsSchedulingExpanded(true); // Directly show schedule area
+                                  // Initialize edited content
+                                  setEditedContent(content.content || '');
+                                  setEditedHashtags(content.hashtags || []);
+                                  setUploadedImages(content.media_urls || []);
+                                }}
+                                disabled={isScheduling}
+                              >
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Schedule ({calculateCreditCost(content, true)} credits)
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -782,7 +1030,7 @@ export default function Agent() {
                 )}
               </Button>
               <p className="text-center text-sm text-muted-foreground mt-2">
-                This will use 1 AI credit • Generation takes 30-60 seconds
+                This will use 1.5 AI credits • Generation takes 30-60 seconds
               </p>
             </CardContent>
           </Card>
@@ -1083,15 +1331,24 @@ export default function Agent() {
       </Dialog>
 
       {/* LinkedIn Post Preview Modal */}
-      <Dialog open={showContentModal} onOpenChange={setShowContentModal}>
-        <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-[560px] max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden">
+      <Dialog open={showContentModal} onOpenChange={(open) => {
+        setShowContentModal(open);
+        if (!open) {
+          setIsSchedulingExpanded(false);
+          setEditedHashtags([]);
+          setNewHashtagInput('');
+        }
+      }}>
+        <DialogContent className={`w-[calc(100vw-1rem)] sm:w-full ${isSchedulingExpanded ? 'max-w-4xl' : 'max-w-[560px]'} max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden transition-all duration-300`}>
           <DialogHeader className="sr-only">
             <DialogTitle>Content Preview</DialogTitle>
           </DialogHeader>
 
           {selectedContent && (
-            <div className="flex flex-col max-h-[90vh] bg-card" style={{ maxWidth: '100%' }}>
-              <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
+            <div className={`flex ${isSchedulingExpanded ? 'flex-col sm:flex-row' : 'flex-col'} max-h-[90vh] bg-card`} style={{ maxWidth: '100%' }}>
+              {/* LinkedIn Preview Panel */}
+              <div className={`${isSchedulingExpanded ? 'w-full sm:w-1/2 sm:border-r border-border' : 'w-full'} flex flex-col ${isSchedulingExpanded ? 'max-h-[45vh] sm:max-h-[90vh]' : 'max-h-[90vh]'}`}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
                 {/* Header */}
                 <div className="flex items-start gap-2 p-4 pb-0" style={{ maxWidth: '100%' }}>
                   <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
@@ -1175,6 +1432,56 @@ export default function Agent() {
                       ))}
                     </div>
                   )}
+
+                  {/* Uploaded Images Preview */}
+                  {uploadedImages.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {uploadedImages.length === 1 ? (
+                        <img
+                          src={uploadedImages[0]}
+                          alt="Post media"
+                          className="w-full rounded-lg border border-border object-cover max-h-96"
+                        />
+                      ) : (
+                        <div className={cn(
+                          "grid gap-2",
+                          uploadedImages.length === 2 ? "grid-cols-2" : "grid-cols-2"
+                        )}>
+                          {uploadedImages.slice(0, 4).map((url, index) => (
+                            <div key={index} className="relative aspect-square">
+                              <img
+                                src={url}
+                                alt={`Post media ${index + 1}`}
+                                className="w-full h-full rounded-lg border border-border object-cover"
+                              />
+                              {index === 3 && uploadedImages.length > 4 && (
+                                <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                                  <span className="text-white text-2xl font-bold">+{uploadedImages.length - 4}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* AI Generated Visual */}
+                  {selectedContent.visual_url && 
+                   selectedContent.visual_url.startsWith('http') && 
+                   !uploadedImages.length && (
+                    <div className="mt-3">
+                      <img
+                        src={selectedContent.visual_url}
+                        alt="AI generated visual"
+                        className="w-full rounded-lg border border-border object-cover max-h-96"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Reactions */}
@@ -1216,23 +1523,575 @@ export default function Agent() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="border-t border-border px-3 py-2 flex items-center justify-between gap-2 bg-card">
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs h-6 shrink-0">
-                    <Sparkles className="h-3 w-3" />
-                    AI
-                  </Badge>
-                  {selectedContent.ai_score && (
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
-                  )}
+              {/* Footer with Enhanced Actions - Only show when not expanded */}
+              {!isSchedulingExpanded && (
+                <div className="border-t border-border bg-card">
+                {/* AI Score and Info */}
+                <div className="px-3 py-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs h-6 shrink-0">
+                      <Sparkles className="h-3 w-3" />
+                      AI
+                    </Badge>
+                    {selectedContent.ai_score && (
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
+                    )}
+                  </div>
                 </div>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowContentModal(false)}>
-                  Close
-                </Button>
+
+                {/* Action Buttons */}
+                <div className="px-3 pb-3">
+                  <div className="flex gap-2">
+                    {/* Post Now Button */}
+                    <Button
+                      className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white"
+                      onClick={async () => {
+                        try {
+                          setIsPublishing(true);
+                          const response = await apiClient.post('/posts/publish', {
+                            contentId: selectedContent.id,
+                            content: editedContent || selectedContent.content,
+                            mediaUrls: uploadedImages,
+                          });
+                          toast.success('Post published successfully!');
+                          setShowContentModal(false);
+                          setIsPublishing(false);
+                          fetchRecentGenerations();
+                          refreshQuota(); // IMMEDIATE QUOTA REFRESH
+                        } catch (error: any) {
+                          setIsPublishing(false);
+                          toast.error(error.response?.data?.message || 'Failed to publish post');
+                        }
+                      }}
+                      disabled={isPublishing}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {isPublishing ? 'Publishing...' : `Post Now (${calculateCreditCost(selectedContent, false)} credits)`}
+                    </Button>
+                    
+                    {/* Schedule Button */}
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                      onClick={() => {
+                        setEditedContent(selectedContent.content || '');
+                        setEditedHashtags(selectedContent.hashtags || []);
+                        setIsSchedulingExpanded(true);
+                      }}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Schedule ({calculateCreditCost(selectedContent, true)} credits)
+                    </Button>
+                  </div>
+                </div>
+                </div>
+              )}
               </div>
+
+              {/* NEW Scheduling Configuration Panel */}
+              {isSchedulingExpanded && (
+                <div className="w-full sm:w-1/2 flex flex-col bg-gradient-to-br from-background to-muted/20 border-t sm:border-t-0 border-l-0 sm:border-l border-border max-h-[45vh] sm:max-h-[90vh]">
+                  {/* Scheduling Header */}
+                  <div className="p-4 sm:p-6 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-foreground">Schedule Configuration</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Set up your post for perfect timing</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsSchedulingExpanded(false)}
+                        className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Scheduling Content - Scrollable */}
+                  <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 sm:space-y-8">
+                    {/* Date & Time Configuration */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <h4 className="font-semibold text-foreground">When to Publish</h4>
+                      </div>
+                      
+                      <DateTimePicker
+                        value={scheduleDateTime || new Date().toISOString()}
+                        onChange={setScheduleDateTime}
+                        minDate={new Date().toISOString().split('T')[0]}
+                        label="Schedule Date & Time"
+                      />
+                      
+                      {/* Quick Time Presets */}
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { label: 'In 1 hour', hours: 1 },
+                          { label: 'Tomorrow 9 AM', hours: 24, time: '09:00' },
+                          { label: 'Next Monday', days: 7, time: '10:00' },
+                        ].map((preset) => (
+                          <Button
+                            key={preset.label}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const now = new Date();
+                              if (preset.hours) {
+                                now.setHours(now.getHours() + preset.hours);
+                              }
+                              if (preset.days) {
+                                now.setDate(now.getDate() + preset.days);
+                              }
+                              if (preset.time) {
+                                const [hours, minutes] = preset.time.split(':');
+                                now.setHours(parseInt(hours), parseInt(minutes));
+                              }
+                              const formatted = now.toISOString().slice(0, 16) + ':00';
+                              setScheduleDateTime(formatted);
+                            }}
+                            className="text-xs hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
+                          >
+                            {preset.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Content Customization */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <h4 className="font-semibold text-foreground">Content Customization</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">Edit Post Content</Label>
+                        <div className="border border-border/60 rounded-lg bg-background overflow-hidden">
+                          {/* Rich Text Toolbar */}
+                          <div className="flex items-center justify-between p-2 sm:p-3 border-b border-border/60 bg-muted/30">
+                            <div className="flex items-center space-x-1 overflow-x-auto">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+                                onClick={() => {
+                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
+                                  if (textarea) {
+                                    const start = textarea.selectionStart;
+                                    const end = textarea.selectionEnd;
+                                    const selectedText = editedContent.substring(start, end);
+                                    const newText = editedContent.substring(0, start) + `**${selectedText}**` + editedContent.substring(end);
+                                    setEditedContent(newText);
+                                  }
+                                }}
+                              >
+                                <Bold className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+                                onClick={() => {
+                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
+                                  if (textarea) {
+                                    const start = textarea.selectionStart;
+                                    const end = textarea.selectionEnd;
+                                    const selectedText = editedContent.substring(start, end);
+                                    const newText = editedContent.substring(0, start) + `*${selectedText}*` + editedContent.substring(end);
+                                    setEditedContent(newText);
+                                  }
+                                }}
+                              >
+                                <Italic className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+                                onClick={() => {
+                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
+                                  if (textarea) {
+                                    const start = textarea.selectionStart;
+                                    const end = textarea.selectionEnd;
+                                    const selectedText = editedContent.substring(start, end);
+                                    const newText = editedContent.substring(0, start) + `__${selectedText}__` + editedContent.substring(end);
+                                    setEditedContent(newText);
+                                  }
+                                }}
+                              >
+                                <Underline className="h-4 w-4" />
+                              </Button>
+                              <div className="w-px h-6 bg-border/60 mx-1" />
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+                                onClick={() => {
+                                  setEditedContent(editedContent + ' 😊');
+                                }}
+                              >
+                                <Smile className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
+                                onClick={() => {
+                                  setEditedContent(editedContent + ' #');
+                                }}
+                              >
+                                <Hash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="text-xs text-muted-foreground shrink-0 ml-2">
+                              {editedContent.length}/3000
+                            </div>
+                          </div>
+                          
+                          <Textarea
+                            value={editedContent}
+                            onChange={(e) => setEditedContent(e.target.value)}
+                            placeholder="Customize your post content..."
+                            className="border-0 resize-none focus:ring-0 min-h-[120px] sm:min-h-[140px] bg-transparent"
+                            maxLength={3000}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Media Upload */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                        <h4 className="font-semibold text-foreground">Media Upload</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-foreground">Upload Custom Images</Label>
+                        
+                        {/* Upload Button */}
+                        <div className="border-2 border-dashed border-border/60 rounded-lg p-6 hover:border-pink-500 transition-colors cursor-pointer bg-muted/20">
+                          <input
+                            type="file"
+                            id="image-upload"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const files = e.target.files;
+                              if (!files || files.length === 0) return;
+
+                              const toastId = toast.loading('Uploading images...');
+                              
+                              try {
+                                const uploadPromises = Array.from(files).map(async (file) => {
+                                  const reader = new FileReader();
+                                  return new Promise<string>((resolve, reject) => {
+                                    reader.onload = async () => {
+                                      try {
+                                        const base64 = reader.result as string;
+                                        const response = await apiClient.post('/media/upload', {
+                                          image: base64,
+                                          filename: file.name,
+                                        });
+                                        console.log('Upload response:', response);
+                                        if (response && response.url) {
+                                          resolve(response.url);
+                                        } else {
+                                          console.error('No URL in response:', response);
+                                          reject(new Error('No URL returned'));
+                                        }
+                                      } catch (error) {
+                                        console.error('Upload error:', error);
+                                        reject(error);
+                                      }
+                                    };
+                                    reader.onerror = () => reject(new Error('Failed to read file'));
+                                    reader.readAsDataURL(file);
+                                  });
+                                });
+
+                                const urls = await Promise.all(uploadPromises);
+                                setUploadedImages([...uploadedImages, ...urls]);
+                                toast.success(`${urls.length} image(s) uploaded successfully!`, { id: toastId });
+                                
+                                // Reset the input
+                                e.target.value = '';
+                              } catch (error: any) {
+                                console.error('Upload failed:', error);
+                                toast.error(error.response?.data?.message || error.message || 'Failed to upload images', { id: toastId });
+                              }
+                            }}
+                          />
+                          <label htmlFor="image-upload" className="flex flex-col items-center justify-center cursor-pointer">
+                            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                            <p className="text-sm font-medium text-foreground">Click to upload images</p>
+                            <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB</p>
+                          </label>
+                        </div>
+
+                        {/* Uploaded Images Preview */}
+                        {uploadedImages.length > 0 && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-muted-foreground">Uploaded Images ({uploadedImages.length})</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {uploadedImages.map((url, index) => (
+                                <div key={index} className="relative group rounded-lg overflow-hidden border border-border/60 aspect-square">
+                                  <img
+                                    src={url}
+                                    alt={`Uploaded ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+                                      toast.success('Image removed');
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hashtags Management */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <h4 className="font-semibold text-foreground">Hashtags & Tags</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {editedHashtags && editedHashtags.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium text-muted-foreground mb-2 block">Current Hashtags</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {editedHashtags.map((tag: string, index: number) => (
+                                <Badge 
+                                  key={index} 
+                                  variant="secondary" 
+                                  className="text-xs px-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                  onClick={() => {
+                                    setEditedHashtags(editedHashtags.filter((_, i) => i !== index));
+                                  }}
+                                >
+                                  {tag.startsWith("#") ? tag : `#${tag}`}
+                                  <X className="h-3 w-3 ml-1" />
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-foreground mb-2 block">Add More Tags</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={newHashtagInput}
+                              onChange={(e) => setNewHashtagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (newHashtagInput.trim()) {
+                                    const newTags = newHashtagInput.split(',').map(t => t.trim()).filter(t => t);
+                                    setEditedHashtags([...editedHashtags, ...newTags]);
+                                    setNewHashtagInput('');
+                                  }
+                                }
+                              }}
+                              placeholder="Add hashtags separated by commas..."
+                              className="bg-background border-border/60 focus:border-purple-500 flex-1"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (newHashtagInput.trim()) {
+                                  const newTags = newHashtagInput.split(',').map(t => t.trim()).filter(t => t);
+                                  setEditedHashtags([...editedHashtags, ...newTags]);
+                                  setNewHashtagInput('');
+                                }
+                              }}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Platform Settings */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <h4 className="font-semibold text-foreground">Platform Settings</h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-card/50 rounded-lg border border-border/60">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">in</span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">LinkedIn</p>
+                              <p className="text-xs text-muted-foreground">Professional Network</p>
+                            </div>
+                          </div>
+                          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            Connected
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="p-4 sm:p-6 border-t border-border/60 bg-card/30 backdrop-blur-sm shrink-0">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            setIsScheduling(true);
+                            
+                            // Update the content temporarily in the database
+                            await apiClient.put(`/content/${selectedContent.id}`, {
+                              content: editedContent,
+                              hashtags: editedHashtags,
+                            });
+                            
+                            const response = await apiClient.post('/posts/schedule', {
+                              contentId: selectedContent.id,
+                              scheduledFor: new Date(scheduleDateTime).toISOString(),
+                              content: editedContent,
+                              mediaUrls: uploadedImages,
+                              hashtags: editedHashtags,
+                            });
+                            const scheduledTime = new Date(scheduleDateTime).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
+                            });
+                            toast.success(`Post scheduled for ${scheduledTime} IST`);
+                            setShowContentModal(false);
+                            setIsSchedulingExpanded(false);
+                            setIsScheduling(false);
+                            refreshQuota(); // IMMEDIATE QUOTA REFRESH
+                            fetchRecentGenerations();
+                          } catch (error: any) {
+                            setIsScheduling(false);
+                            toast.error(error.response?.data?.message || 'Failed to schedule post');
+                          }
+                        }}
+                        disabled={!scheduleDateTime || isScheduling}
+                        className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <Calendar className="h-5 w-5 mr-2" />
+                        {isScheduling ? 'Scheduling...' : `Schedule Post (${calculateCreditCost(selectedContent, true)} credits)`}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            setIsPublishing(true);
+                            
+                            // Update the content temporarily in the database
+                            await apiClient.put(`/content/${selectedContent.id}`, {
+                              content: editedContent,
+                              hashtags: editedHashtags,
+                            });
+                            
+                            const response = await apiClient.post('/posts/publish', {
+                              contentId: selectedContent.id,
+                              content: editedContent,
+                              mediaUrls: uploadedImages,
+                              hashtags: editedHashtags,
+                            });
+                            toast.success('Post published successfully!');
+                            setShowContentModal(false);
+                            setIsSchedulingExpanded(false);
+                            setIsPublishing(false);
+                            fetchRecentGenerations();
+                            refreshQuota(); // IMMEDIATE QUOTA REFRESH
+                          } catch (error: any) {
+                            setIsPublishing(false);
+                            toast.error(error.response?.data?.message || 'Failed to publish post');
+                          }
+                        }}
+                        disabled={isPublishing}
+                        className="h-12 px-6 border-2 hover:bg-muted/50 font-medium transition-all"
+                      >
+                        <Send className="h-5 w-5 mr-2" />
+                        {isPublishing ? 'Publishing...' : `Post Now (${calculateCreditCost(selectedContent, false)} credits)`}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* OLD Schedule Post Dialog - Replaced by enhanced modal */}
+      <Dialog open={false} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule Post</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="schedule-datetime">Select Date and Time</Label>
+              <Input
+                id="schedule-datetime"
+                type="datetime-local"
+                value={scheduleDateTime}
+                onChange={(e) => setScheduleDateTime(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="mt-1"
+              />
+            </div>
+            
+            {selectedContentForAction && (
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <h4 className="font-medium text-sm mb-1">{selectedContentForAction.title}</h4>
+                <p className="text-xs text-muted-foreground">
+                  {selectedContentForAction.content?.substring(0, 100)}...
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowScheduleDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSchedulePost}
+                disabled={isScheduling || !scheduleDateTime}
+                className="flex-1"
+              >
+                {isScheduling ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Calendar className="h-4 w-4 mr-2" />
+                )}
+                Schedule Post
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

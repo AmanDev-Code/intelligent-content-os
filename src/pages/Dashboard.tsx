@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/apiClient";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { SocialChannels } from "@/components/dashboard/SocialChannels";
 import { CalendarView } from "@/components/calendar/CalendarView";
@@ -34,31 +35,61 @@ export default function Dashboard() {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
-      const { data, error } = await supabase
-        .from('generated_content')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString())
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+      // Use the new calendar API
+      const response = await apiClient.get('/posts/calendar', {
+        params: {
+          startDate: startOfMonth.toISOString(),
+          endDate: endOfMonth.toISOString()
+        }
+      });
 
-      if (error) { console.error('Error fetching posts:', error); return; }
+      if (response.data && response.data.posts) {
+        const transformedPosts = response.data.posts.map((post: any) => ({
+          id: post.id,
+          title: post.title || 'Untitled Post',
+          content: post.content || '',
+          scheduledFor: post.created_at || post.scheduled_for,
+          status: post.publish_status === 'published' ? 'published' : post.is_scheduled ? 'scheduled' : 'draft',
+          platforms: ['LinkedIn'],
+          type: post.visual_type || 'text'
+        }));
 
-      const transformedPosts = (data || []).map(post => ({
-        id: post.id,
-        title: post.title || 'Untitled Post',
-        content: post.content || '',
-        scheduledFor: post.created_at,
-        status: 'published',
-        platforms: ['LinkedIn'],
-        type: 'text'
-      }));
-
-      setPosts(transformedPosts);
-      setFilteredPosts(transformedPosts);
+        setPosts(transformedPosts);
+        setFilteredPosts(transformedPosts);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
+      // Fallback to direct Supabase query if API fails
+      try {
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        
+        const { data, error: supabaseError } = await supabase
+          .from('generated_content')
+          .select('*')
+          .eq('user_id', user?.id)
+          .gte('created_at', startOfMonth.toISOString())
+          .lte('created_at', endOfMonth.toISOString())
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+
+        if (!supabaseError && data) {
+          const transformedPosts = data.map((post: any) => ({
+            id: post.id,
+            title: post.title || 'Untitled Post',
+            content: post.content || '',
+            scheduledFor: post.created_at,
+            status: post.publish_status === 'published' ? 'published' : post.is_scheduled ? 'scheduled' : 'draft',
+            platforms: ['LinkedIn'],
+            type: post.visual_type || 'text'
+          }));
+
+          setPosts(transformedPosts);
+          setFilteredPosts(transformedPosts);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
