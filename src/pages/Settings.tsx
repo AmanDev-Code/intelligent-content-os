@@ -27,18 +27,20 @@ import {
   Facebook,
   CheckCircle,
   Wrench,
-  Info
+  Info,
+  Mail,
+  ExternalLink
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiClient } from '@/lib/apiClient';
 import { useTheme } from "next-themes";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { XIcon } from "@/components/icons/XIcon";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLinkedIn } from "@/contexts/LinkedInContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useAdmin, ADMIN_USER_ID } from "@/hooks/useAdmin";
 import { API_CONFIG } from "@/lib/constants";
 import AdminNotifications from "@/components/AdminNotifications";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -761,6 +763,32 @@ export default function Settings() {
               >
                 <AdminNotifications />
               </ErrorBoundary>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Email Dashboard - Admin only, accessible from Settings */}
+        {isAdmin && (
+          <Card className="xl:col-span-3">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 shrink-0 text-primary" />
+                  <h2 className="text-base font-semibold">Email Dashboard</h2>
+                  <Badge variant="destructive" className="text-xs">Admin Only</Badge>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/email-templates">
+                    Open <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Manage email templates, view logs, and configure SMTP settings.
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Admin user ID: <code className="font-mono">{ADMIN_USER_ID}</code> (must match backend AdminGuard)
+              </p>
             </CardContent>
           </Card>
         )}

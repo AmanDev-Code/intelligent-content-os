@@ -11,8 +11,7 @@ import {
   Users,
   Sparkles,
   Menu,
-  X,
-  Mail
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +19,6 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
-import { useAdmin } from "@/hooks/useAdmin";
 import { getQuotaColor } from "@/services/dataService";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -48,7 +46,6 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
   const location = useLocation();
   const { user } = useAuth();
   const { quota: userQuota, loading: loadingQuota } = useQuota();
-  const { isAdmin } = useAdmin();
 
   return (
     <div className="flex flex-col h-full">
@@ -229,34 +226,6 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
       {/* Bottom Navigation */}
       <div className="border-t border-border/50 shrink-0">
         <nav className={cn("py-4 space-y-1", collapsed ? "px-2" : "px-6")}>
-          {/* Admin Email Templates Link */}
-          {isAdmin && (
-            <NavLink
-              to="/email-templates"
-              onClick={onItemClick}
-              className={cn(
-                "flex items-center transition-all duration-200 group relative",
-                collapsed
-                  ? "justify-center w-full h-12 rounded-xl"
-                  : "gap-3 rounded-lg px-3 py-2",
-                "text-sm font-medium",
-                location.pathname === "/email-templates"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-              aria-current={location.pathname === "/email-templates" ? "page" : undefined}
-              title={collapsed ? "Email Templates" : undefined}
-            >
-              <Mail className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
-              {!collapsed && <span>Email Dashboard</span>}
-              {collapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                  Email Dashboard
-                </div>
-              )}
-            </NavLink>
-          )}
-          
           {bottomNavItems.map((item) => {
             const isActive = location.pathname.startsWith(item.to);
             return (
