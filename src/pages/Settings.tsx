@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -23,27 +24,146 @@ import {
   EyeOff,
   Linkedin,
   Instagram,
-  Facebook
+  Facebook,
+  CheckCircle,
+  Wrench,
+  Info
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { apiClient } from '@/lib/apiClient';
 import { useTheme } from "next-themes";
 import { useSearchParams } from "react-router-dom";
 import { XIcon } from "@/components/icons/XIcon";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLinkedIn } from "@/contexts/LinkedInContext";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { API_CONFIG } from "@/lib/constants";
+import AdminNotifications from "@/components/AdminNotifications";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { isConnected: linkedinConnected, refreshConnection, refreshMetrics, disconnect: disconnectLinkedIn } = useLinkedIn();
+  const { isAdmin } = useAdmin();
   const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    marketing: true,
-    updates: true
+  const [quickActionLoading, setQuickActionLoading] = useState(false);
+  
+  const [quickActionDialogs, setQuickActionDialogs] = useState({
+    featureUpdate: false,
+    maintenance: false,
+    educational: false,
   });
+
+  const [quickForms, setQuickForms] = useState({
+    featureUpdate: {
+      featureName: '',
+      description: '',
+      benefits: '',
+      releaseDate: '',
+    },
+    maintenance: {
+      maintenanceType: '',
+      startTime: '',
+      endTime: '',
+      affectedServices: '',
+      reason: '',
+    },
+    educational: {
+      topic: '',
+      content: '',
+      targetAudience: '',
+      callToAction: '',
+    },
+  });
+  
+  // Get notification settings with error handling
+  let notificationSettings = {
+    soundEnabled: true,
+    emailEnabled: true,
+    pushEnabled: false,
+    marketingEnabled: true,
+    updatesEnabled: true,
+  };
+  let updateNotificationSettings = (settings: any) => {
+    console.log('Notification settings update:', settings);
+  };
+
+  try {
+    const notificationContext = useNotifications();
+    notificationSettings = notificationContext.settings;
+    updateNotificationSettings = notificationContext.updateSettings;
+  } catch (error) {
+    console.warn('Notification context not available, using default settings');
+  }
+
+  const handleQuickAction = async (type: 'featureUpdate' | 'maintenance' | 'educational') => {
+    let title = '';
+    let message = '';
+    let notificationType: 'info' | 'warning' | 'success' = 'info';
+    let priority = 0;
+
+    switch (type) {
+      case 'featureUpdate': {
+        const formData = quickForms.featureUpdate;
+        title = `🎉 New Feature: ${formData.featureName}`;
+        message = `${formData.description}\n\nBenefits:\n${formData.benefits}${formData.releaseDate ? `\n\nAvailable: ${formData.releaseDate}` : ''}`;
+        notificationType = 'success';
+        priority = 1;
+        break;
+      }
+      case 'maintenance': {
+        const formData = quickForms.maintenance;
+        title = `⚠️ Scheduled Maintenance: ${formData.maintenanceType}`;
+        message = `We will be performing ${formData.maintenanceType.toLowerCase()} from ${formData.startTime} to ${formData.endTime}.\n\nAffected services: ${formData.affectedServices}\n\nReason: ${formData.reason}`;
+        notificationType = 'warning';
+        priority = 2;
+        break;
+      }
+      case 'educational': {
+        const formData = quickForms.educational;
+        title = `💡 ${formData.topic}`;
+        message = `${formData.content}${formData.targetAudience ? `\n\nFor: ${formData.targetAudience}` : ''}${formData.callToAction ? `\n\n${formData.callToAction}` : ''}`;
+        notificationType = 'info';
+        priority = 0;
+        break;
+      }
+    }
+
+    try {
+      setQuickActionLoading(true);
+      const response = await apiClient.post('/admin/notifications/broadcast', {
+        title,
+        message,
+        type: notificationType,
+        category: type === 'maintenance' ? 'announcement' : 'marketing',
+        priority,
+      });
+      
+      if (response.success) {
+        toast.success(`${type === 'featureUpdate' ? 'Feature update' : type === 'maintenance' ? 'Maintenance notice' : 'Educational content'} sent successfully!`);
+        setQuickActionDialogs(prev => ({ ...prev, [type]: false }));
+        // Reset form
+        setQuickForms(prev => ({
+          ...prev,
+          [type]: type === 'featureUpdate' ? 
+            { featureName: '', description: '', benefits: '', releaseDate: '' } :
+            type === 'maintenance' ?
+            { maintenanceType: '', startTime: '', endTime: '', affectedServices: '', reason: '' } :
+            { topic: '', content: '', targetAudience: '', callToAction: '' }
+        }));
+      } else {
+        toast.error(`Failed to send ${type}`);
+      }
+    } catch (error: any) {
+      console.error(`Failed to send ${type}:`, error);
+      toast.error(error.response?.data?.message || `Failed to send ${type}`);
+    } finally {
+      setQuickActionLoading(false);
+    }
+  };
 
   const [integrations, setIntegrations] = useState([
     { name: 'LinkedIn', id: 'linkedin', icon: Linkedin, connected: linkedinConnected, color: '#0A66C2' },
@@ -166,37 +286,61 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Appearance - takes 1 col */}
-
-        {/* Appearance */}
-        <Card>
+                {/* Notifications */}
+                <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Palette className="h-5 w-5 shrink-0 text-primary" />
-              <h2 className="text-base font-semibold">Appearance</h2>
+              <Bell className="h-5 w-5 shrink-0 text-primary" />
+              <h2 className="text-base font-semibold">Notifications</h2>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Choose your preferred theme</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2">
               {[
-                { id: 'light', label: 'Light', icon: Sun },
-                { id: 'dark', label: 'Dark', icon: Moon },
-                { id: 'system', label: 'System', icon: Monitor },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setTheme(opt.id)}
-                  className={`p-3 border-2 rounded-lg flex flex-col items-center gap-1.5 transition-all ${
-                    theme === opt.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <opt.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="text-xs font-medium">{opt.label}</span>
-                </button>
+                { 
+                  id: 'soundEnabled', 
+                  label: 'Sound Notifications', 
+                  description: 'Play sound when new notifications arrive', 
+                  checked: notificationSettings.soundEnabled 
+                },
+                { 
+                  id: 'emailEnabled', 
+                  label: 'Email Notifications', 
+                  description: 'Receive notifications via email', 
+                  checked: notificationSettings.emailEnabled 
+                },
+                { 
+                  id: 'pushEnabled', 
+                  label: 'Push Notifications', 
+                  description: 'Browser push notifications', 
+                  checked: notificationSettings.pushEnabled 
+                },
+                { 
+                  id: 'marketingEnabled', 
+                  label: 'Marketing Emails', 
+                  description: 'New features and tips', 
+                  checked: notificationSettings.marketingEnabled 
+                },
+                { 
+                  id: 'updatesEnabled', 
+                  label: 'Product Updates', 
+                  description: 'Important product changes', 
+                  checked: notificationSettings.updatesEnabled 
+                },
+              ].map((n) => (
+                <div key={n.id} className="flex items-center justify-between p-2.5 border rounded-lg gap-3">
+                  <div className="min-w-0">
+                    <h4 className="font-medium text-sm">{n.label}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{n.description}</p>
+                  </div>
+                  <Switch
+                    checked={n.checked}
+                    onCheckedChange={(checked) => updateNotificationSettings({ [n.id]: checked })}
+                  />
+                </div>
               ))}
             </div>
           </CardContent>
         </Card>
+
 
         {/* Security */}
         <Card className="xl:col-span-2">
@@ -226,34 +370,43 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
+        {/* Appearance */}
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Bell className="h-5 w-5 shrink-0 text-primary" />
-              <h2 className="text-base font-semibold">Notifications</h2>
+              <Palette className="h-5 w-5 shrink-0 text-primary" />
+              <h2 className="text-base font-semibold">Appearance</h2>
             </div>
-            <div className="space-y-2">
-              {[
-                { id: 'email', label: 'Email Notifications', description: 'Receive notifications via email', checked: notifications.email },
-                { id: 'push', label: 'Push Notifications', description: 'Browser push notifications', checked: notifications.push },
-                { id: 'marketing', label: 'Marketing Emails', description: 'New features and tips', checked: notifications.marketing },
-                { id: 'updates', label: 'Product Updates', description: 'Important product changes', checked: notifications.updates },
-              ].map((n) => (
-                <div key={n.id} className="flex items-center justify-between p-2.5 border rounded-lg gap-3">
-                  <div className="min-w-0">
-                    <h4 className="font-medium text-sm">{n.label}</h4>
-                    <p className="text-xs text-muted-foreground truncate">{n.description}</p>
-                  </div>
-                  <Switch
-                    checked={n.checked}
-                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, [n.id]: checked }))}
-                  />
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs font-medium">Theme</Label>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {[
+                    { id: 'light', label: 'Light', icon: Sun },
+                    { id: 'dark', label: 'Dark', icon: Moon },
+                    { id: 'system', label: 'System', icon: Monitor },
+                  ].map((t) => {
+                    const Icon = t.icon;
+                    return (
+                      <Button
+                        key={t.id}
+                        variant={theme === t.id ? "default" : "outline"}
+                        size="sm"
+                        className="justify-start gap-2"
+                        onClick={() => setTheme(t.id)}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-xs">{t.label}</span>
+                      </Button>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
             </div>
           </CardContent>
         </Card>
+
+
 
         {/* Integrations */}
         <Card className="xl:col-span-2">
@@ -303,6 +456,314 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Admin Quick Actions - Only show for admin users, positioned next to integrations */}
+        {isAdmin && (
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-5 w-5 shrink-0 text-primary" />
+                <h2 className="text-base font-semibold">Quick Actions</h2>
+                <Badge variant="destructive" className="text-xs">Admin Only</Badge>
+              </div>
+              <ErrorBoundary
+                fallback={
+                  <div className="p-4 text-center text-muted-foreground">
+                    <p>Quick actions temporarily unavailable.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => window.location.reload()}
+                      className="mt-2"
+                    >
+                      Refresh Page
+                    </Button>
+                  </div>
+                }
+              >
+                <div className="grid gap-3">
+                  {/* Feature Update Dialog */}
+                  <Dialog open={quickActionDialogs.featureUpdate} onOpenChange={(open) => setQuickActionDialogs(prev => ({ ...prev, featureUpdate: open }))}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-auto p-3 flex flex-col items-center gap-2"
+                        disabled={quickActionLoading}
+                      >
+                        <CheckCircle className="h-5 w-5 text-blue-500" />
+                        <div className="text-center">
+                          <div className="font-medium text-sm">Feature Update</div>
+                          <div className="text-xs text-muted-foreground">Marketing campaign</div>
+                        </div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>🎉 Feature Update Notification</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Feature Name</Label>
+                          <Input
+                            placeholder="e.g., AI Content Scheduler"
+                            value={quickForms.featureUpdate.featureName}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              featureUpdate: { ...prev.featureUpdate, featureName: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            placeholder="Describe the new feature..."
+                            value={quickForms.featureUpdate.description}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              featureUpdate: { ...prev.featureUpdate, description: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Benefits</Label>
+                          <Textarea
+                            placeholder="What benefits does this feature provide?"
+                            value={quickForms.featureUpdate.benefits}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              featureUpdate: { ...prev.featureUpdate, benefits: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Release Date (Optional)</Label>
+                          <Input
+                            type="date"
+                            value={quickForms.featureUpdate.releaseDate}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              featureUpdate: { ...prev.featureUpdate, releaseDate: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleQuickAction('featureUpdate')} 
+                          disabled={quickActionLoading || !quickForms.featureUpdate.featureName || !quickForms.featureUpdate.description}
+                          className="w-full"
+                        >
+                          Send Feature Update
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Maintenance Notice Dialog */}
+                  <Dialog open={quickActionDialogs.maintenance} onOpenChange={(open) => setQuickActionDialogs(prev => ({ ...prev, maintenance: open }))}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-auto p-3 flex flex-col items-center gap-2"
+                        disabled={quickActionLoading}
+                      >
+                        <Wrench className="h-5 w-5 text-yellow-500" />
+                        <div className="text-center">
+                          <div className="font-medium text-sm">Maintenance Notice</div>
+                          <div className="text-xs text-muted-foreground">System announcement</div>
+                        </div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>⚠️ Maintenance Notification</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Maintenance Type</Label>
+                          <Select 
+                            value={quickForms.maintenance.maintenanceType} 
+                            onValueChange={(value) => setQuickForms(prev => ({
+                              ...prev,
+                              maintenance: { ...prev.maintenance, maintenanceType: value }
+                            }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select maintenance type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Scheduled Maintenance">Scheduled Maintenance</SelectItem>
+                              <SelectItem value="Emergency Maintenance">Emergency Maintenance</SelectItem>
+                              <SelectItem value="Database Maintenance">Database Maintenance</SelectItem>
+                              <SelectItem value="Server Updates">Server Updates</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Start Time</Label>
+                            <Input
+                              type="datetime-local"
+                              value={quickForms.maintenance.startTime}
+                              onChange={(e) => setQuickForms(prev => ({
+                                ...prev,
+                                maintenance: { ...prev.maintenance, startTime: e.target.value }
+                              }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>End Time</Label>
+                            <Input
+                              type="datetime-local"
+                              value={quickForms.maintenance.endTime}
+                              onChange={(e) => setQuickForms(prev => ({
+                                ...prev,
+                                maintenance: { ...prev.maintenance, endTime: e.target.value }
+                              }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Affected Services</Label>
+                          <Input
+                            placeholder="e.g., Content Generation, Publishing"
+                            value={quickForms.maintenance.affectedServices}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              maintenance: { ...prev.maintenance, affectedServices: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Reason</Label>
+                          <Textarea
+                            placeholder="Why is this maintenance needed?"
+                            value={quickForms.maintenance.reason}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              maintenance: { ...prev.maintenance, reason: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleQuickAction('maintenance')} 
+                          disabled={quickActionLoading || !quickForms.maintenance.maintenanceType || !quickForms.maintenance.startTime}
+                          className="w-full"
+                        >
+                          Send Maintenance Notice
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Educational Content Dialog */}
+                  <Dialog open={quickActionDialogs.educational} onOpenChange={(open) => setQuickActionDialogs(prev => ({ ...prev, educational: open }))}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="h-auto p-3 flex flex-col items-center gap-2"
+                        disabled={quickActionLoading}
+                      >
+                        <Info className="h-5 w-5 text-green-500" />
+                        <div className="text-center">
+                          <div className="font-medium text-sm">Educational Content</div>
+                          <div className="text-xs text-muted-foreground">Marketing campaign</div>
+                        </div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>💡 Educational Content</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Topic</Label>
+                          <Input
+                            placeholder="e.g., Tips & Tricks, Best Practices"
+                            value={quickForms.educational.topic}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              educational: { ...prev.educational, topic: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Content</Label>
+                          <Textarea
+                            placeholder="Share your educational content..."
+                            rows={4}
+                            value={quickForms.educational.content}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              educational: { ...prev.educational, content: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Target Audience (Optional)</Label>
+                          <Input
+                            placeholder="e.g., New users, Pro users, Content creators"
+                            value={quickForms.educational.targetAudience}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              educational: { ...prev.educational, targetAudience: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Call to Action (Optional)</Label>
+                          <Input
+                            placeholder="e.g., Try it now, Learn more"
+                            value={quickForms.educational.callToAction}
+                            onChange={(e) => setQuickForms(prev => ({
+                              ...prev,
+                              educational: { ...prev.educational, callToAction: e.target.value }
+                            }))}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleQuickAction('educational')} 
+                          disabled={quickActionLoading || !quickForms.educational.topic || !quickForms.educational.content}
+                          className="w-full"
+                        >
+                          Send Educational Content
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </ErrorBoundary>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Full Admin Notifications - Only show for admin users, full width below */}
+        {isAdmin && (
+          <Card className="xl:col-span-3">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-5 w-5 shrink-0 text-primary" />
+                <h2 className="text-base font-semibold">Admin Notifications</h2>
+                <Badge variant="destructive" className="text-xs">Admin Only</Badge>
+              </div>
+              <ErrorBoundary
+                fallback={
+                  <div className="p-4 text-center text-muted-foreground">
+                    <p>Admin notifications temporarily unavailable.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => window.location.reload()}
+                      className="mt-2"
+                    >
+                      Refresh Page
+                    </Button>
+                  </div>
+                }
+              >
+                <AdminNotifications />
+              </ErrorBoundary>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

@@ -37,6 +37,7 @@ import {
   Heart,
   Upload,
   Trash2,
+  Coins,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService, type GeneratedContent, type PaginatedResponse } from '@/services/dataService';
@@ -51,6 +52,8 @@ const statusColors = {
   published: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
   scheduled: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  failed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  publishing: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
 };
 
 const contentTypeIcons = {
@@ -121,7 +124,11 @@ export default function Generations() {
       }
       
       if (status !== 'all') {
-        filteredData = filteredData.filter(item => item.status === status);
+        filteredData = filteredData.filter(item => {
+          // Use publish_status for filtering, fallback to 'ready' if not set
+          const itemStatus = item.publish_status || 'ready';
+          return itemStatus === status;
+        });
       }
       
       setContent(filteredData);
@@ -182,7 +189,7 @@ export default function Generations() {
           variant={i === currentPage ? 'default' : 'outline'}
           size="sm"
           onClick={() => handlePageChange(i)}
-          className="w-10 h-10"
+          className="w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm p-0"
         >
           {i}
         </Button>
@@ -190,23 +197,26 @@ export default function Generations() {
     }
 
     return (
-      <div className="flex items-center justify-between mt-8">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 sm:mt-8">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+          <span className="hidden sm:inline">
             Showing {Math.min((currentPage - 1) * pagination.limit + 1, pagination.total)} to{' '}
             {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} results
           </span>
+          <span className="sm:hidden">
+            {Math.min((currentPage - 1) * pagination.limit + 1, pagination.total)}-{Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total}
+          </span>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={!pagination.hasPrev}
-            className="w-10 h-10"
+            className="w-8 h-8 sm:w-10 sm:h-10 p-0"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
           
           {pages}
@@ -216,9 +226,9 @@ export default function Generations() {
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={!pagination.hasMore}
-            className="w-10 h-10"
+            className="w-8 h-8 sm:w-10 sm:h-10 p-0"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </div>
@@ -228,21 +238,22 @@ export default function Generations() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="mb-4 sm:mb-8">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => window.history.back()}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 sm:gap-2 h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 shrink-0"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             Back
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">All Generations</h1>
-            <p className="text-muted-foreground">
-              Manage and view all your AI-generated content
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">All Generations</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+              <span className="hidden sm:inline">Manage and view all your AI-generated content</span>
+              <span className="sm:hidden">View all AI content</span>
             </p>
           </div>
         </div>
@@ -270,6 +281,8 @@ export default function Generations() {
               <SelectItem value="published">Published</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="publishing">Publishing</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -332,55 +345,57 @@ export default function Generations() {
                   setShowContentModal(true);
                 }}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      {getContentTypeIcon(item.visual_type)}
+                <CardContent className="p-3 sm:p-4 md:p-6">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3 md:mb-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="shrink-0">
+                        {getContentTypeIcon(item.visual_type)}
+                      </div>
                       <Badge 
                         variant="secondary"
-                        className={statusColors[item.status as keyof typeof statusColors] || statusColors.draft}
+                        className={`${statusColors[(item.publish_status || 'ready') as keyof typeof statusColors] || statusColors.ready} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`}
                       >
-                        {item.status}
+                        {(item.publish_status || 'ready').charAt(0).toUpperCase() + (item.publish_status || 'ready').slice(1)}
                       </Badge>
                     </div>
                     {item.ai_score && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-[10px] sm:text-xs shrink-0">
                         {item.ai_score}/100
                       </Badge>
                     )}
                   </div>
 
-                  <h3 className="font-semibold text-lg mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-sm sm:text-base md:text-lg mb-2 sm:mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                     {item.title}
                   </h3>
 
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                  <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3">
                     {item.content}
                   </p>
 
                   {item.hashtags && item.hashtags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
+                    <div className="flex flex-wrap gap-1 mb-3 sm:mb-4">
                       {item.hashtags.slice(0, 3).map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                        <Badge key={index} variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0.5">
                           {tag}
                         </Badge>
                       ))}
                       {item.hashtags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 py-0.5">
                           +{item.hashtags.length - 3}
                         </Badge>
                       )}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatDate(item.created_at)}
+                      <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      <span className="truncate">{formatDate(item.created_at)}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Eye className="h-3 w-3" />
-                      View
+                    <div className="flex items-center gap-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <Eye className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      <span className="hidden sm:inline">View</span>
                     </div>
                   </div>
                 </CardContent>
@@ -632,7 +647,13 @@ export default function Generations() {
                           disabled={isPublishing}
                         >
                           <Send className="h-4 w-4 mr-2" />
-                          {isPublishing ? 'Publishing...' : `Post Now (${calculateCreditCost(selectedContent, false)} credits)`}
+                          <span className="flex items-center">
+                            {isPublishing ? 'Publishing...' : (
+                              <>
+                                Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
+                              </>
+                            )}
+                          </span>
                         </Button>
                         
                         {/* Schedule Button */}
@@ -645,7 +666,9 @@ export default function Generations() {
                           }}
                         >
                           <Calendar className="h-4 w-4 mr-2" />
-                          Schedule ({calculateCreditCost(selectedContent, true)} credits)
+                          <span className="flex items-center">
+                            Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -659,18 +682,47 @@ export default function Generations() {
                   {/* Scheduling Header */}
                   <div className="p-4 sm:p-6 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg sm:text-xl font-bold text-foreground">Schedule Configuration</h3>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">Set up your post for perfect timing</p>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsSchedulingExpanded(false)}
-                        className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={async () => {
+                            try {
+                              const response = await apiClient.post('/posts/draft', {
+                                contentId: selectedContent.id,
+                                content: editedContent,
+                                hashtags: editedHashtags,
+                                mediaUrls: uploadedImages,
+                              });
+                              
+                              if (response.success) {
+                                toast.success('Draft saved successfully!');
+                                // Refresh content list to show updated status
+                                fetchContent(currentPage, searchTerm, statusFilter);
+                              }
+                            } catch (error: any) {
+                              toast.error(error.response?.data?.message || 'Failed to save draft');
+                            }
+                          }}
+                          className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 gap-1.5"
+                        >
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Save Draft</span>
+                          <span className="sm:hidden">Draft</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setIsSchedulingExpanded(false)}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -968,7 +1020,9 @@ export default function Generations() {
                         className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                       >
                         <Calendar className="h-5 w-5 mr-2" />
-                        Schedule Post ({calculateCreditCost(selectedContent, true)} credits)
+                        <span className="flex items-center">
+                          Schedule Post ({calculateCreditCost(selectedContent, true)} <Coins className="h-4 w-4 ml-0.5 inline" />)
+                        </span>
                       </Button>
                       <Button
                         variant="outline"
@@ -996,7 +1050,9 @@ export default function Generations() {
                         className="h-12 px-6 border-2 hover:bg-muted/50 font-medium transition-all"
                       >
                         <Send className="h-5 w-5 mr-2" />
-                        Post Now ({calculateCreditCost(selectedContent, false)} credits)
+                        <span className="flex items-center">
+                          Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-4 w-4 ml-0.5 inline" />)
+                        </span>
                       </Button>
                     </div>
                   </div>

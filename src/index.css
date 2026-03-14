@@ -309,3 +309,37 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
+
+  /* Toast notification animations */
+  @keyframes toast-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .toast-progress {
+    animation: toast-progress 8s linear forwards;
+  }
+
+  /* Hide scrollbar but keep scroll - notification dropdown */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Toast positioning for mobile */
+  @media (max-width: 640px) {
+    [data-sonner-toaster] {
+      left: 8px !important;
+      right: 8px !important;
+      width: auto !important;
+    }
+    
+    [data-sonner-toast] {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+    }
+  }

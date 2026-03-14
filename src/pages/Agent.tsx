@@ -42,7 +42,8 @@ import {
   Underline,
   Smile,
   Upload,
-  Trash2
+  Trash2,
+  Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -142,11 +143,17 @@ export default function Agent() {
     try {
       console.log('Fetching recent generations for user:', user.id);
       
-      // Get first page to get total count
+      // Get first page to get total count - filter for 'ready' status only
       const paginatedData = await dataService.getPaginatedContent(user.id, 1, 3);
-      console.log('Recent generations data:', paginatedData.data?.length || 0, 'items, total:', paginatedData.pagination.total);
       
-      setRecentGenerations(paginatedData.data || []);
+      // Filter for only 'ready' status posts (not published, scheduled, or draft)
+      const readyPosts = paginatedData.data?.filter(post => 
+        post.publish_status === 'ready' || !post.publish_status
+      ) || [];
+      
+      console.log('Recent ready generations data:', readyPosts.length, 'items');
+      
+      setRecentGenerations(readyPosts);
       setTotalGenerationsCount(paginatedData.pagination.total || 0);
     } catch (error) {
       console.error('Error fetching recent generations:', error);
@@ -837,94 +844,132 @@ export default function Agent() {
 
                   {/* Generated Content Display */}
                   {isComplete && generatedContent.length > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          Generated content from this job - click to view
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          <span className="hidden sm:inline">Generated content from this job - click to view</span>
+                          <span className="sm:hidden">Generated content - tap to view</span>
                         </p>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={generateViralTopics}
                           disabled={isGenerating}
+                          className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
                         >
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Generate New Content
+                          <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Generate New Content</span>
+                          <span className="sm:hidden">Generate New</span>
                         </Button>
                       </div>
                       <div className="space-y-3">
                         {generatedContent.map((content) => (
                           <div
                             key={content.id}
-                            className="p-4 border-2 rounded-lg transition-all hover:shadow-md border-border"
+                            className="p-3 sm:p-4 border-2 rounded-lg transition-all hover:shadow-md border-border bg-card"
                           >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{content.title || 'Generated Content'}</h3>
-                                <Badge variant="secondary" className="gap-1">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Generated
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">{content.ai_score || 'N/A'}</Badge>
-                              </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3 cursor-pointer"
-                               onClick={() => {
-                                 setShowContentModal(true);
-                                 setSelectedContent(content);
-                               }}>
-                              {content.content?.substring(0, 150)}...
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                              <Badge variant="secondary">{selectedType === 'post' ? 'Text Post' : selectedType === 'image' ? 'Image Post' : 'Carousel'}</Badge>
-                              <span>•</span>
-                              <span>Job ID: {content.job_id}</span>
-                              <span>•</span>
-                              <span 
-                                className="text-primary cursor-pointer hover:underline"
+                            {/* Header Section */}
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h3 
+                                className="font-semibold text-sm sm:text-base line-clamp-2 flex-1 cursor-pointer hover:text-primary transition-colors"
                                 onClick={() => {
                                   setShowContentModal(true);
                                   setSelectedContent(content);
                                 }}
                               >
-                                Click to view full content
+                                {content.title || 'Generated Content'}
+                              </h3>
+                              <Badge variant="outline" className="shrink-0 text-xs">
+                                {content.ai_score || 'N/A'}
+                              </Badge>
+                            </div>
+
+                            {/* Content Preview */}
+                            <p 
+                              className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2 cursor-pointer hover:text-foreground transition-colors"
+                              onClick={() => {
+                                setShowContentModal(true);
+                                setSelectedContent(content);
+                              }}
+                            >
+                              {content.content?.substring(0, 120)}...
+                            </p>
+
+                            {/* Metadata Row */}
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3">
+                              <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                {selectedType === 'post' ? 'Text' : selectedType === 'image' ? 'Image' : 'Carousel'}
+                              </Badge>
+                              <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                <span className="hidden sm:inline">Generated</span>
+                                <span className="sm:hidden">Gen</span>
+                              </Badge>
+                              <span className="hidden sm:inline text-xs text-muted-foreground">•</span>
+                              <span className="hidden md:inline text-xs text-muted-foreground truncate max-w-[120px]">
+                                {content.job_id?.substring(0, 8)}...
                               </span>
+                              <span className="hidden sm:inline text-xs text-muted-foreground">•</span>
+                              <button
+                                className="text-[10px] sm:text-xs text-primary hover:underline cursor-pointer"
+                                onClick={() => {
+                                  setShowContentModal(true);
+                                  setSelectedContent(content);
+                                }}
+                              >
+                                View full
+                              </button>
                             </div>
                             
                             {/* Action Buttons */}
                             <div className="flex gap-2">
                               <Button
                                 size="sm"
-                                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"
+                                className="flex-1 bg-pink-500 hover:bg-pink-600 text-white text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-9"
                                 onClick={() => handlePublishNow(content)}
                                 disabled={isPublishing}
                               >
                                 {isPublishing ? (
-                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                  <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5 animate-spin" />
                                 ) : (
-                                  <Send className="h-4 w-4 mr-2" />
+                                  <Send className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />
                                 )}
-                                {isPublishing ? 'Publishing...' : `Post now (${calculateCreditCost(content, false)} credits)`}
+                                <span className="truncate flex items-center">
+                                  {isPublishing ? 'Publishing...' : (
+                                    <>
+                                      <span className="hidden sm:inline flex items-center">
+                                        Post now ({calculateCreditCost(content, false)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                                      </span>
+                                      <span className="sm:hidden flex items-center">
+                                        Post ({calculateCreditCost(content, false)} <Coins className="h-2.5 w-2.5 ml-0.5 inline" />)
+                                      </span>
+                                    </>
+                                  )}
+                                </span>
                               </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="flex-1"
+                                className="flex-1 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-9"
                                 onClick={() => {
                                   setSelectedContent(content);
                                   setShowContentModal(true);
-                                  setIsSchedulingExpanded(true); // Directly show schedule area
-                                  // Initialize edited content
+                                  setIsSchedulingExpanded(true);
                                   setEditedContent(content.content || '');
                                   setEditedHashtags(content.hashtags || []);
                                   setUploadedImages(content.media_urls || []);
                                 }}
                                 disabled={isScheduling}
                               >
-                                <Calendar className="h-4 w-4 mr-2" />
-                                Schedule ({calculateCreditCost(content, true)} credits)
+                                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />
+                                <span className="truncate flex items-center">
+                                  <span className="hidden sm:inline flex items-center">
+                                    Schedule ({calculateCreditCost(content, true)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                                  </span>
+                                  <span className="sm:hidden flex items-center">
+                                    Schedule ({calculateCreditCost(content, true)} <Coins className="h-2.5 w-2.5 ml-0.5 inline" />)
+                                  </span>
+                                </span>
                               </Button>
                             </div>
                           </div>
@@ -1029,8 +1074,8 @@ export default function Agent() {
                   </>
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground mt-2">
-                This will use 1.5 AI credits • Generation takes 30-60 seconds
+              <p className="text-center text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
+                This will use 1.5 <Coins className="h-3.5 w-3.5 inline" /> • Generation takes 30-60 seconds
               </p>
             </CardContent>
           </Card>
@@ -1566,7 +1611,18 @@ export default function Agent() {
                       disabled={isPublishing}
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      {isPublishing ? 'Publishing...' : `Post Now (${calculateCreditCost(selectedContent, false)} credits)`}
+                      <span className="truncate flex items-center">
+                        {isPublishing ? 'Publishing...' : (
+                          <>
+                            <span className="hidden sm:inline flex items-center">
+                              Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
+                            </span>
+                            <span className="sm:hidden flex items-center">
+                              Post ({calculateCreditCost(selectedContent, false)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                            </span>
+                          </>
+                        )}
+                      </span>
                     </Button>
                     
                     {/* Schedule Button */}
@@ -1579,7 +1635,14 @@ export default function Agent() {
                       }}
                     >
                       <Calendar className="h-4 w-4 mr-2" />
-                      Schedule ({calculateCreditCost(selectedContent, true)} credits)
+                      <span className="truncate flex items-center">
+                        <span className="hidden sm:inline flex items-center">
+                          Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
+                        </span>
+                        <span className="sm:hidden flex items-center">
+                          Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                        </span>
+                      </span>
                     </Button>
                   </div>
                 </div>
@@ -1593,18 +1656,45 @@ export default function Agent() {
                   {/* Scheduling Header */}
                   <div className="p-4 sm:p-6 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg sm:text-xl font-bold text-foreground">Schedule Configuration</h3>
                         <p className="text-xs sm:text-sm text-muted-foreground mt-1">Set up your post for perfect timing</p>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setIsSchedulingExpanded(false)}
-                        className="h-9 w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={async () => {
+                            try {
+                              const response = await apiClient.post('/posts/draft', {
+                                contentId: selectedContent.id,
+                                content: editedContent,
+                                hashtags: editedHashtags,
+                                mediaUrls: uploadedImages,
+                              });
+                              
+                              if (response.success) {
+                                toast.success('Draft saved successfully!');
+                              }
+                            } catch (error: any) {
+                              toast.error(error.response?.data?.message || 'Failed to save draft');
+                            }
+                          }}
+                          className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 gap-1.5"
+                        >
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="hidden sm:inline">Save Draft</span>
+                          <span className="sm:hidden">Draft</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setIsSchedulingExpanded(false)}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -1993,10 +2083,21 @@ export default function Agent() {
                           }
                         }}
                         disabled={!scheduleDateTime || isScheduling}
-                        className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+                        className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all text-sm sm:text-base"
                       >
-                        <Calendar className="h-5 w-5 mr-2" />
-                        {isScheduling ? 'Scheduling...' : `Schedule Post (${calculateCreditCost(selectedContent, true)} credits)`}
+                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                        <span className="truncate flex items-center">
+                          {isScheduling ? 'Scheduling...' : (
+                            <>
+                              <span className="hidden sm:inline flex items-center">
+                                Schedule Post ({calculateCreditCost(selectedContent, true)} <Coins className="h-4 w-4 ml-0.5 inline" />)
+                              </span>
+                              <span className="sm:hidden flex items-center">
+                                Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                              </span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                       <Button
                         variant="outline"
@@ -2028,10 +2129,21 @@ export default function Agent() {
                           }
                         }}
                         disabled={isPublishing}
-                        className="h-12 px-6 border-2 hover:bg-muted/50 font-medium transition-all"
+                        className="h-12 px-4 sm:px-6 border-2 hover:bg-muted/50 font-medium transition-all text-sm sm:text-base"
                       >
-                        <Send className="h-5 w-5 mr-2" />
-                        {isPublishing ? 'Publishing...' : `Post Now (${calculateCreditCost(selectedContent, false)} credits)`}
+                        <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                        <span className="truncate flex items-center">
+                          {isPublishing ? 'Publishing...' : (
+                            <>
+                              <span className="hidden sm:inline flex items-center">
+                                Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-4 w-4 ml-0.5 inline" />)
+                              </span>
+                              <span className="sm:hidden flex items-center">
+                                Post ({calculateCreditCost(selectedContent, false)} <Coins className="h-3 w-3 ml-0.5 inline" />)
+                              </span>
+                            </>
+                          )}
+                        </span>
                       </Button>
                     </div>
                   </div>

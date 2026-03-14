@@ -14,6 +14,12 @@ export interface GeneratedContent {
   visual_url: string | null;
   carousel_urls: string[] | null;
   status: string;
+  publish_status?: string;
+  linkedin_post_id?: string;
+  scheduled_for?: string;
+  is_scheduled?: boolean;
+  media_urls?: string[];
+  pdf_url?: string;
   user_id: string;
   job_id?: string;
   created_at: string;

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QuotaProvider } from "@/contexts/QuotaContext";
 import { LinkedInProvider } from "@/contexts/LinkedInContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ThemeProvider } from "next-themes";
@@ -23,6 +24,7 @@ import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 import PostDetail from "./pages/PostDetail";
 import Generations from "./pages/Generations";
+import EmailDashboard from "./pages/EmailDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 
@@ -35,6 +37,7 @@ const App = () => (
         <AuthProvider>
           <QuotaProvider>
             <LinkedInProvider>
+              <NotificationProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -60,11 +63,13 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/generations" element={<Generations />} />
+                <Route path="/email-templates" element={<EmailDashboard />} />
                 <Route path="/content/:slug" element={<PostDetail />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+              </NotificationProvider>
             </LinkedInProvider>
           </QuotaProvider>
         </AuthProvider>
