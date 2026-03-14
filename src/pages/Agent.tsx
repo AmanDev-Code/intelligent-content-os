@@ -143,17 +143,13 @@ export default function Agent() {
     try {
       console.log('Fetching recent generations for user:', user.id);
       
-      // Get first page to get total count - filter for 'ready' status only
+      // Get first page (3 most recent items) - show all completed content
       const paginatedData = await dataService.getPaginatedContent(user.id, 1, 3);
+      const posts = paginatedData.data || [];
       
-      // Filter for only 'ready' status posts (not published, scheduled, or draft)
-      const readyPosts = paginatedData.data?.filter(post => 
-        post.publish_status === 'ready' || !post.publish_status
-      ) || [];
+      console.log('Recent generations data:', posts.length, 'items');
       
-      console.log('Recent ready generations data:', readyPosts.length, 'items');
-      
-      setRecentGenerations(readyPosts);
+      setRecentGenerations(posts);
       setTotalGenerationsCount(paginatedData.pagination.total || 0);
     } catch (error) {
       console.error('Error fetching recent generations:', error);
