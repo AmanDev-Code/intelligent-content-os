@@ -32,30 +32,64 @@ export function StatsCards() {
     try {
       setLoading(true);
       
-      // Fetch posts data
+      // Fetch scheduled posts (from scheduled_posts table, not generated_content)
       const { data: scheduledPosts } = await supabase
-        .from('generated_content').select('id').eq('user_id', user?.id)
-        .gte('created_at', new Date().toISOString()).is('deleted_at', null);
+        .from('scheduled_posts')
+        .select('id')
+        .eq('user_id', user?.id)
+        .in('status', ['scheduled', 'processing']);
 
-      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0, 0, 0, 0);
+      // Fetch published posts this month
+      const startOfMonth = new Date(); 
+      startOfMonth.setDate(1); 
+      startOfMonth.setHours(0, 0, 0, 0);
+      
       const { data: monthlyPosts } = await supabase
-        .from('generated_content').select('id').eq('user_id', user?.id)
-        .gte('created_at', startOfMonth.toISOString()).is('deleted_at', null);
+        .from('generated_content')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('publish_status', 'published')
+        .gte('published_at', startOfMonth.toISOString())
+        .is('deleted_at', null);
+
+      // Get previous month data for trends
+      const startOfPrevMonth = new Date(startOfMonth);
+      startOfPrevMonth.setMonth(startOfPrevMonth.getMonth() - 1);
+      const endOfPrevMonth = new Date(startOfMonth);
+      endOfPrevMonth.setDate(0);
+      
+      const { data: prevMonthPosts } = await supabase
+        .from('generated_content')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('publish_status', 'published')
+        .gte('published_at', startOfPrevMonth.toISOString())
+        .lte('published_at', endOfPrevMonth.toISOString())
+        .is('deleted_at', null);
+
+      const currentMonthCount = monthlyPosts?.length || 0;
+      const prevMonthCount = prevMonthPosts?.length || 0;
+      const monthlyTrend = prevMonthCount > 0 
+        ? Math.round(((currentMonthCount - prevMonthCount) / prevMonthCount) * 100)
+        : currentMonthCount > 0 ? 100 : 0;
 
       setStats({
         scheduledPosts: scheduledPosts?.length || 0, 
-        connectedChannels: linkedinConnected ? 1 : 0, // Count LinkedIn if connected
-        monthlyPosts: monthlyPosts?.length || 0, 
+        connectedChannels: linkedinConnected ? 1 : 0,
+        monthlyPosts: currentMonthCount, 
         aiCredits: userQuota?.remainingCredits ?? 0,
         trends: {
-          scheduledPosts: 0, 
-          connectedChannels: linkedinConnected ? 1 : 0,
-          monthlyPosts: monthlyPosts?.length ? 15 : 0, 
-          aiCredits: 0
+          scheduledPosts: 0, // No trend calculation for scheduled posts yet
+          connectedChannels: linkedinConnected ? 1 : 0, // Show +1% if connected
+          monthlyPosts: monthlyTrend, 
+          aiCredits: 0 // No trend calculation for credits
         }
       });
-    } catch (error) { console.error('Error fetching stats:', error); }
-    finally { setLoading(false); }
+    } catch (error) { 
+      console.error('Error fetching stats:', error); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   // Re-run fetchStats when quota changes (e.g. after generation) so AI Credits card updates

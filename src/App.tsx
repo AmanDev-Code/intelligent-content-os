@@ -25,6 +25,7 @@ import Notifications from "./pages/Notifications";
 import PostDetail from "./pages/PostDetail";
 import Generations from "./pages/Generations";
 import EmailDashboard from "./pages/EmailDashboard";
+import ScheduledPosts from "./pages/ScheduledPosts";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/generations" element={<Generations />} />
+                <Route path="/scheduled-posts" element={<ScheduledPosts />} />
                 <Route path="/email-templates" element={<EmailDashboard />} />
                 <Route path="/content/:slug" element={<PostDetail />} />
               </Route>

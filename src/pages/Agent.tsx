@@ -48,6 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
+import { ScheduleModal } from '@/components/schedule/ScheduleModal';
 import { toast } from "sonner";
 import { useGenerationJob } from "@/hooks/useGenerationJob";
 import { useSmoothProgress } from "@/hooks/useSmoothProgress";
@@ -1070,78 +1071,89 @@ export default function Agent() {
                   </>
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                This will use 1.5 <Coins className="h-3.5 w-3.5 inline" /> • Generation takes 30-60 seconds
+              <p className="text-center text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
+                This will use 1.5 <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 inline" /> • Generation takes 30-60 seconds
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Sidebar */}
-        <div className="lg:col-span-2 xl:col-span-3 space-y-4 min-w-0">
+        <div className="lg:col-span-2 xl:col-span-3 space-y-3 sm:space-y-4 min-w-0">
           {/* Recent Generations */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Clock className="h-4 w-4 shrink-0 text-primary" />
+                <CardTitle className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base">
+                  <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-primary" />
                   <span>Recent Generations</span>
                 </CardTitle>
                 {totalGenerationsCount > 0 && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs">
                     {totalGenerationsCount}
                   </Badge>
                 )}
               </div>
             </CardHeader>
-            <CardContent className="p-3">
-              <div className="space-y-2.5">
+            <CardContent className="p-2 sm:p-3">
+              <div className="space-y-2 sm:space-y-2.5">
                 {recentGenerations.length > 0 ? (
                   recentGenerations.map((generation) => (
                     <div 
                       key={generation.id} 
-                      className="group p-3 border rounded-lg hover:border-primary/30 hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+                      className="group p-2 sm:p-3 border rounded-lg hover:border-primary/30 hover:bg-muted/30 transition-all duration-200 cursor-pointer"
                       onClick={() => {
                         setShowContentModal(true);
                         setSelectedContent(generation);
                       }}
                     >
-                      <div className="flex items-start justify-between mb-1.5 gap-2">
-                        <h4 className="font-medium text-sm line-clamp-1 flex-1 group-hover:text-primary transition-colors">
+                      <div className="flex items-start justify-between mb-1 sm:mb-1.5 gap-2">
+                        <h4 className="font-medium text-xs sm:text-sm line-clamp-1 flex-1 group-hover:text-primary transition-colors">
                           {generation.title || 'Untitled Content'}
                         </h4>
-                        <Badge 
-                          variant={generation.status === 'published' ? 'default' : 'secondary'} 
-                          className="text-xs shrink-0"
-                        >
-                          {generation.status || 'Draft'}
-                        </Badge>
+                        {(() => {
+                          const status = generation.publish_status || generation.status || 'ready';
+                          const statusMap: Record<string, { label: string; classes: string }> = {
+                            ready: { label: 'Ready', classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+                            published: { label: 'Published', classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+                            scheduled: { label: 'Scheduled', classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+                            draft: { label: 'Draft', classes: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' },
+                            failed: { label: 'Failed', classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
+                            publishing: { label: 'Publishing', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+                          };
+                          const s = statusMap[status] || statusMap.ready;
+                          return (
+                            <Badge variant="secondary" className={`text-xs shrink-0 ${s.classes}`}>
+                              {s.label}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       
                       {generation.content && (
-                        <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 sm:mb-1.5 line-clamp-1">
                           {generation.content.substring(0, 90)}...
                         </p>
                       )}
                       
                       {generation.hashtags && generation.hashtags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-1.5">
+                        <div className="flex flex-wrap gap-0.5 sm:gap-1 mb-1 sm:mb-1.5">
                           {generation.hashtags.slice(0, 3).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs px-1.5 py-0">
+                            <Badge key={index} variant="outline" className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0">
                               {tag}
                             </Badge>
                           ))}
                           {generation.hashtags.length > 3 && (
-                            <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            <Badge variant="outline" className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0">
                               +{generation.hashtags.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
                       
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <FileText className="h-3 w-3" />
+                      <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1 sm:gap-1.5">
+                          <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                           <span>{generation.content_type || 'Post'}</span>
                           {generation.ai_score && (
                             <>
@@ -1201,64 +1213,64 @@ export default function Agent() {
 
           {/* Quick Actions */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Quick Actions</CardTitle>
-              <p className="text-xs text-muted-foreground">Navigate to key features</p>
+            <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4">
+              <CardTitle className="text-sm sm:text-base">Quick Actions</CardTitle>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Navigate to key features</p>
             </CardHeader>
-            <CardContent className="space-y-2 p-3">
+            <CardContent className="space-y-1.5 sm:space-y-2 p-2 sm:p-3">
               <Button 
                 variant="outline" 
-                className="w-full justify-between h-9 text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
+                className="w-full justify-between h-8 sm:h-9 text-xs sm:text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
                 onClick={() => window.location.href = '/dashboard'}
               >
                 <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  View Calendar
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="truncate">View Calendar</span>
                 </div>
-                <Badge variant="secondary" className="text-xs">
-                  {recentGenerations.filter(g => g.status === 'scheduled').length || 0}
+                <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
+                  {recentGenerations.filter(g => (g.publish_status || g.status) === 'scheduled').length || 0}
                 </Badge>
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full justify-between h-9 text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
+                className="w-full justify-between h-8 sm:h-9 text-xs sm:text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
                 onClick={() => {
                   setShowHashtagsModal(true);
                   fetchPopularHashtags();
                 }}
               >
                 <div className="flex items-center">
-                  <Hash className="h-4 w-4 mr-2" />
-                  Popular Hashtags
+                  <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="truncate">Popular Hashtags</span>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                   {Array.from(new Set(recentGenerations.flatMap(g => g.hashtags || []))).length || 0}
                 </Badge>
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full justify-between h-9 text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
+                className="w-full justify-between h-8 sm:h-9 text-xs sm:text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
                 onClick={() => window.location.href = '/analytics'}
               >
                 <div className="flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Analytics
+                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="truncate">Analytics</span>
                 </div>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
                   {recentGenerations.length > 0 ? Math.round(recentGenerations.reduce((acc, g) => acc + (g.ai_score || 0), 0) / recentGenerations.length) : 0}/100
                 </Badge>
               </Button>
               
               {/* Quick Stats */}
-              <div className="pt-2 mt-2 border-t border-border/50">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="text-center p-2 bg-muted/30 rounded-md">
+              <div className="pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 border-t border-border/50">
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+                  <div className="text-center p-1.5 sm:p-2 bg-muted/30 rounded-md">
                     <div className="font-semibold text-primary">{totalGenerationsCount || 0}</div>
                     <div className="text-muted-foreground">Total Posts</div>
                   </div>
-                  <div className="text-center p-2 bg-muted/30 rounded-md">
+                  <div className="text-center p-1.5 sm:p-2 bg-muted/30 rounded-md">
                     <div className="font-semibold text-green-600">
-                      {recentGenerations.filter(g => g.status === 'published').length}
+                      {recentGenerations.filter(g => (g.publish_status || g.status) === 'published').length}
                     </div>
                     <div className="text-muted-foreground">Published</div>
                   </div>
@@ -1371,837 +1383,14 @@ export default function Agent() {
         </DialogContent>
       </Dialog>
 
-      {/* LinkedIn Post Preview Modal */}
-      <Dialog open={showContentModal} onOpenChange={(open) => {
-        setShowContentModal(open);
-        if (!open) {
-          setIsSchedulingExpanded(false);
-          setEditedHashtags([]);
-          setNewHashtagInput('');
-        }
-      }}>
-        <DialogContent className={`w-[calc(100vw-1rem)] sm:w-full ${isSchedulingExpanded ? 'max-w-4xl' : 'max-w-[560px]'} max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden transition-all duration-300`}>
-          <DialogHeader className="sr-only">
-            <DialogTitle>Content Preview</DialogTitle>
-          </DialogHeader>
-
-          {selectedContent && (
-            <div className={`flex ${isSchedulingExpanded ? 'flex-col sm:flex-row' : 'flex-col'} max-h-[90vh] bg-card`} style={{ maxWidth: '100%' }}>
-              {/* LinkedIn Preview Panel */}
-              <div className={`${isSchedulingExpanded ? 'w-full sm:w-1/2 sm:border-r border-border' : 'w-full'} flex flex-col ${isSchedulingExpanded ? 'max-h-[45vh] sm:max-h-[90vh]' : 'max-h-[90vh]'}`}>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxWidth: '100%' }}>
-                {/* Header */}
-                <div className="flex items-start gap-2 p-4 pb-0" style={{ maxWidth: '100%' }}>
-                  <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
-                    <AvatarImage src="/placeholder-avatar.jpg" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-base font-bold sm:text-lg">
-                      {user?.email?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 overflow-hidden pt-0.5">
-                    <div className="flex items-center gap-1">
-                      <span className="font-bold text-[13px] sm:text-sm text-foreground truncate block">
-                        {user?.email?.split("@")[0] || "Your Name"}
-                      </span>
-                      <span className="text-[11px] sm:text-xs text-muted-foreground shrink-0">· 3rd+</span>
-                    </div>
-
-                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-px overflow-hidden text-ellipsis whitespace-nowrap">
-                      {(selectedContent.title || "Content Creator | AI Enthusiast").length > 45
-                        ? (selectedContent.title || "Content Creator | AI Enthusiast").substring(0, 45) + "..."
-                        : (selectedContent.title || "Content Creator | AI Enthusiast")}
-                    </p>
-
-                    <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground mt-px">
-                      <span>2d</span>
-                      <span>·</span>
-                      <span>Edited</span>
-                      <span>·</span>
-                      <Globe className="h-3 w-3" />
-                    </div>
-                  </div>
-
-                  <span className="text-primary text-[13px] sm:text-sm font-bold shrink-0 pt-1 cursor-pointer hover:underline">
-                    + Follow
-                  </span>
-                </div>
-
-                {/* Body */}
-                <div className="px-4 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
-                  <div className="overflow-hidden" style={{ maxWidth: '100%', textAlign: 'justify' }}>
-                    {previewContent.split("\n").map((line, index) => (
-                      <p
-                        key={index}
-                        className="text-[13px] sm:text-[14px] text-foreground mb-1.5"
-                        style={{
-                          lineHeight: 1.5,
-                          wordBreak: 'normal',
-                          overflowWrap: 'normal',
-                          hyphens: 'none',
-                          maxWidth: '100%',
-                        }}
-                      >
-                        {line
-                          ? line.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-                              /^https?:\/\//.test(part) ? (
-                                <a
-                                  key={i}
-                                  href={part}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline"
-                                  style={{ wordBreak: 'break-all' }}
-                                >
-                                  {part.length > 50 ? part.substring(0, 50) + "..." : part}
-                                </a>
-                              ) : (
-                                <span key={i}>{part}</span>
-                              )
-                            )
-                          : "\u00A0"}
-                      </p>
-                    ))}
-                  </div>
-
-                  {selectedContent.hashtags && selectedContent.hashtags.length > 0 && (
-                    <div className="mt-1.5 flex flex-wrap gap-x-1" style={{ maxWidth: '100%' }}>
-                      {selectedContent.hashtags.map((tag: string, index: number) => (
-                        <span key={index} className="text-[13px] sm:text-[14px] text-primary font-semibold hover:underline cursor-pointer">
-                          {tag.startsWith("#") ? tag : `#${tag}`}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Uploaded Images Preview */}
-                  {uploadedImages.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {uploadedImages.length === 1 ? (
-                        <img
-                          src={uploadedImages[0]}
-                          alt="Post media"
-                          className="w-full rounded-lg border border-border object-cover max-h-96"
-                        />
-                      ) : (
-                        <div className={cn(
-                          "grid gap-2",
-                          uploadedImages.length === 2 ? "grid-cols-2" : "grid-cols-2"
-                        )}>
-                          {uploadedImages.slice(0, 4).map((url, index) => (
-                            <div key={index} className="relative aspect-square">
-                              <img
-                                src={url}
-                                alt={`Post media ${index + 1}`}
-                                className="w-full h-full rounded-lg border border-border object-cover"
-                              />
-                              {index === 3 && uploadedImages.length > 4 && (
-                                <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
-                                  <span className="text-white text-2xl font-bold">+{uploadedImages.length - 4}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* AI Generated Visual */}
-                  {selectedContent.visual_url && 
-                   selectedContent.visual_url.startsWith('http') && 
-                   !uploadedImages.length && (
-                    <div className="mt-3">
-                      <img
-                        src={selectedContent.visual_url}
-                        alt="AI generated visual"
-                        className="w-full rounded-lg border border-border object-cover max-h-96"
-                        onError={(e) => {
-                          // Hide image if it fails to load
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Reactions */}
-                <div className="px-4 py-1.5">
-                  <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1 shrink-0">
-                      <div className="flex -space-x-1">
-                        <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full bg-primary flex items-center justify-center">
-                          <ThumbsUp className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-primary-foreground" />
-                        </div>
-                        <div className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full bg-destructive flex items-center justify-center">
-                          <Heart className="h-2 w-2 sm:h-2.5 sm:w-2.5 text-destructive-foreground" />
-                        </div>
-                      </div>
-                      <span>73</span>
-                    </div>
-                    <span>22 comments · 3 reposts</span>
-                  </div>
-                </div>
-
-                <div className="mx-4 border-t border-border" />
-
-                {/* Action buttons — LinkedIn mobile style */}
-                <div className="flex items-center justify-around py-1 px-0">
-                  {[
-                    { icon: ThumbsUp, label: "Like" },
-                    { icon: MessageCircle, label: "Comment" },
-                    { icon: Repeat2, label: "Repost" },
-                    { icon: Send, label: "Send" },
-                  ].map(({ icon: Icon, label }) => (
-                    <button
-                      key={label}
-                      className="flex flex-col items-center gap-0.5 py-2 px-2 sm:px-3 rounded hover:bg-muted/70 transition-colors text-muted-foreground"
-                    >
-                      <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
-                      <span className="text-[10px] sm:text-xs font-semibold leading-none">{label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Footer with Enhanced Actions - Only show when not expanded */}
-              {!isSchedulingExpanded && (
-                <div className="border-t border-border bg-card">
-                {/* AI Score and Info */}
-                <div className="px-3 py-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="gap-1 text-[10px] sm:text-xs h-6 shrink-0">
-                      <Sparkles className="h-3 w-3" />
-                      AI
-                    </Badge>
-                    {selectedContent.ai_score && (
-                      <Badge variant="secondary" className="text-[10px] sm:text-xs h-6 shrink-0">Score: {selectedContent.ai_score}</Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="px-3 pb-3">
-                  <div className="flex gap-2">
-                    {/* Post Now Button */}
-                    <Button
-                      className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white"
-                      onClick={async () => {
-                        try {
-                          setIsPublishing(true);
-                          const response = await apiClient.post('/posts/publish', {
-                            contentId: selectedContent.id,
-                            content: editedContent || selectedContent.content,
-                            mediaUrls: uploadedImages,
-                          });
-                          toast.success('Post published successfully!');
-                          setShowContentModal(false);
-                          setIsPublishing(false);
-                          fetchRecentGenerations();
-                          refreshQuota(); // IMMEDIATE QUOTA REFRESH
-                        } catch (error: any) {
-                          setIsPublishing(false);
-                          toast.error(error.response?.data?.message || 'Failed to publish post');
-                        }
-                      }}
-                      disabled={isPublishing}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      <span className="truncate flex items-center">
-                        {isPublishing ? 'Publishing...' : (
-                          <>
-                            <span className="hidden sm:inline flex items-center">
-                              Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
-                            </span>
-                            <span className="sm:hidden flex items-center">
-                              Post ({calculateCreditCost(selectedContent, false)} <Coins className="h-3 w-3 ml-0.5 inline" />)
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    </Button>
-                    
-                    {/* Schedule Button */}
-                    <Button 
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                      onClick={() => {
-                        setEditedContent(selectedContent.content || '');
-                        setEditedHashtags(selectedContent.hashtags || []);
-                        setIsSchedulingExpanded(true);
-                      }}
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span className="truncate flex items-center">
-                        <span className="hidden sm:inline flex items-center">
-                          Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3.5 w-3.5 ml-0.5 inline" />)
-                        </span>
-                        <span className="sm:hidden flex items-center">
-                          Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3 w-3 ml-0.5 inline" />)
-                        </span>
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-                </div>
-              )}
-              </div>
-
-              {/* NEW Scheduling Configuration Panel */}
-              {isSchedulingExpanded && (
-                <div className="w-full sm:w-1/2 flex flex-col bg-gradient-to-br from-background to-muted/20 border-t sm:border-t-0 border-l-0 sm:border-l border-border max-h-[45vh] sm:max-h-[90vh]">
-                  {/* Scheduling Header */}
-                  <div className="p-4 sm:p-6 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-foreground">Schedule Configuration</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">Set up your post for perfect timing</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={async () => {
-                            try {
-                              const response = await apiClient.post('/posts/draft', {
-                                contentId: selectedContent.id,
-                                content: editedContent,
-                                hashtags: editedHashtags,
-                                mediaUrls: uploadedImages,
-                              });
-                              
-                              if (response.success) {
-                                toast.success('Draft saved successfully!');
-                              }
-                            } catch (error: any) {
-                              toast.error(error.response?.data?.message || 'Failed to save draft');
-                            }
-                          }}
-                          className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3 gap-1.5"
-                        >
-                          <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Save Draft</span>
-                          <span className="sm:hidden">Draft</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setIsSchedulingExpanded(false)}
-                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                        >
-                          <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Scheduling Content - Scrollable */}
-                  <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 sm:space-y-8">
-                    {/* Date & Time Configuration */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <h4 className="font-semibold text-foreground">When to Publish</h4>
-                      </div>
-                      
-                      <DateTimePicker
-                        value={scheduleDateTime || new Date().toISOString()}
-                        onChange={setScheduleDateTime}
-                        minDate={new Date().toISOString().split('T')[0]}
-                        label="Schedule Date & Time"
-                      />
-                      
-                      {/* Quick Time Presets */}
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { label: 'In 1 hour', hours: 1 },
-                          { label: 'Tomorrow 9 AM', hours: 24, time: '09:00' },
-                          { label: 'Next Monday', days: 7, time: '10:00' },
-                        ].map((preset) => (
-                          <Button
-                            key={preset.label}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const now = new Date();
-                              if (preset.hours) {
-                                now.setHours(now.getHours() + preset.hours);
-                              }
-                              if (preset.days) {
-                                now.setDate(now.getDate() + preset.days);
-                              }
-                              if (preset.time) {
-                                const [hours, minutes] = preset.time.split(':');
-                                now.setHours(parseInt(hours), parseInt(minutes));
-                              }
-                              const formatted = now.toISOString().slice(0, 16) + ':00';
-                              setScheduleDateTime(formatted);
-                            }}
-                            className="text-xs hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
-                          >
-                            {preset.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Content Customization */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <h4 className="font-semibold text-foreground">Content Customization</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-foreground">Edit Post Content</Label>
-                        <div className="border border-border/60 rounded-lg bg-background overflow-hidden">
-                          {/* Rich Text Toolbar */}
-                          <div className="flex items-center justify-between p-2 sm:p-3 border-b border-border/60 bg-muted/30">
-                            <div className="flex items-center space-x-1 overflow-x-auto">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-                                onClick={() => {
-                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
-                                  if (textarea) {
-                                    const start = textarea.selectionStart;
-                                    const end = textarea.selectionEnd;
-                                    const selectedText = editedContent.substring(start, end);
-                                    const newText = editedContent.substring(0, start) + `**${selectedText}**` + editedContent.substring(end);
-                                    setEditedContent(newText);
-                                  }
-                                }}
-                              >
-                                <Bold className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-                                onClick={() => {
-                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
-                                  if (textarea) {
-                                    const start = textarea.selectionStart;
-                                    const end = textarea.selectionEnd;
-                                    const selectedText = editedContent.substring(start, end);
-                                    const newText = editedContent.substring(0, start) + `*${selectedText}*` + editedContent.substring(end);
-                                    setEditedContent(newText);
-                                  }
-                                }}
-                              >
-                                <Italic className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-                                onClick={() => {
-                                  const textarea = document.querySelector('textarea[placeholder="Customize your post content..."]') as HTMLTextAreaElement;
-                                  if (textarea) {
-                                    const start = textarea.selectionStart;
-                                    const end = textarea.selectionEnd;
-                                    const selectedText = editedContent.substring(start, end);
-                                    const newText = editedContent.substring(0, start) + `__${selectedText}__` + editedContent.substring(end);
-                                    setEditedContent(newText);
-                                  }
-                                }}
-                              >
-                                <Underline className="h-4 w-4" />
-                              </Button>
-                              <div className="w-px h-6 bg-border/60 mx-1" />
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-                                onClick={() => {
-                                  setEditedContent(editedContent + ' 😊');
-                                }}
-                              >
-                                <Smile className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted shrink-0"
-                                onClick={() => {
-                                  setEditedContent(editedContent + ' #');
-                                }}
-                              >
-                                <Hash className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="text-xs text-muted-foreground shrink-0 ml-2">
-                              {editedContent.length}/3000
-                            </div>
-                          </div>
-                          
-                          <Textarea
-                            value={editedContent}
-                            onChange={(e) => setEditedContent(e.target.value)}
-                            placeholder="Customize your post content..."
-                            className="border-0 resize-none focus:ring-0 min-h-[120px] sm:min-h-[140px] bg-transparent"
-                            maxLength={3000}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Media Upload */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
-                        <h4 className="font-semibold text-foreground">Media Upload</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-foreground">Upload Custom Images</Label>
-                        
-                        {/* Upload Button */}
-                        <div className="border-2 border-dashed border-border/60 rounded-lg p-6 hover:border-pink-500 transition-colors cursor-pointer bg-muted/20">
-                          <input
-                            type="file"
-                            id="image-upload"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={async (e) => {
-                              const files = e.target.files;
-                              if (!files || files.length === 0) return;
-
-                              const toastId = toast.loading('Uploading images...');
-                              
-                              try {
-                                const uploadPromises = Array.from(files).map(async (file) => {
-                                  const reader = new FileReader();
-                                  return new Promise<string>((resolve, reject) => {
-                                    reader.onload = async () => {
-                                      try {
-                                        const base64 = reader.result as string;
-                                        const response = await apiClient.post('/media/upload', {
-                                          image: base64,
-                                          filename: file.name,
-                                        });
-                                        console.log('Upload response:', response);
-                                        if (response && response.url) {
-                                          resolve(response.url);
-                                        } else {
-                                          console.error('No URL in response:', response);
-                                          reject(new Error('No URL returned'));
-                                        }
-                                      } catch (error) {
-                                        console.error('Upload error:', error);
-                                        reject(error);
-                                      }
-                                    };
-                                    reader.onerror = () => reject(new Error('Failed to read file'));
-                                    reader.readAsDataURL(file);
-                                  });
-                                });
-
-                                const urls = await Promise.all(uploadPromises);
-                                setUploadedImages([...uploadedImages, ...urls]);
-                                toast.success(`${urls.length} image(s) uploaded successfully!`, { id: toastId });
-                                
-                                // Reset the input
-                                e.target.value = '';
-                              } catch (error: any) {
-                                console.error('Upload failed:', error);
-                                toast.error(error.response?.data?.message || error.message || 'Failed to upload images', { id: toastId });
-                              }
-                            }}
-                          />
-                          <label htmlFor="image-upload" className="flex flex-col items-center justify-center cursor-pointer">
-                            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                            <p className="text-sm font-medium text-foreground">Click to upload images</p>
-                            <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 10MB</p>
-                          </label>
-                        </div>
-
-                        {/* Uploaded Images Preview */}
-                        {uploadedImages.length > 0 && (
-                          <div className="space-y-2">
-                            <Label className="text-sm font-medium text-muted-foreground">Uploaded Images ({uploadedImages.length})</Label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {uploadedImages.map((url, index) => (
-                                <div key={index} className="relative group rounded-lg overflow-hidden border border-border/60 aspect-square">
-                                  <img
-                                    src={url}
-                                    alt={`Uploaded ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      setUploadedImages(uploadedImages.filter((_, i) => i !== index));
-                                      toast.success('Image removed');
-                                    }}
-                                    className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Hashtags Management */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <h4 className="font-semibold text-foreground">Hashtags & Tags</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        {editedHashtags && editedHashtags.length > 0 && (
-                          <div>
-                            <Label className="text-sm font-medium text-muted-foreground mb-2 block">Current Hashtags</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {editedHashtags.map((tag: string, index: number) => (
-                                <Badge 
-                                  key={index} 
-                                  variant="secondary" 
-                                  className="text-xs px-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                  onClick={() => {
-                                    setEditedHashtags(editedHashtags.filter((_, i) => i !== index));
-                                  }}
-                                >
-                                  {tag.startsWith("#") ? tag : `#${tag}`}
-                                  <X className="h-3 w-3 ml-1" />
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-foreground mb-2 block">Add More Tags</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              value={newHashtagInput}
-                              onChange={(e) => setNewHashtagInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  if (newHashtagInput.trim()) {
-                                    const newTags = newHashtagInput.split(',').map(t => t.trim()).filter(t => t);
-                                    setEditedHashtags([...editedHashtags, ...newTags]);
-                                    setNewHashtagInput('');
-                                  }
-                                }
-                              }}
-                              placeholder="Add hashtags separated by commas..."
-                              className="bg-background border-border/60 focus:border-purple-500 flex-1"
-                            />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                if (newHashtagInput.trim()) {
-                                  const newTags = newHashtagInput.split(',').map(t => t.trim()).filter(t => t);
-                                  setEditedHashtags([...editedHashtags, ...newTags]);
-                                  setNewHashtagInput('');
-                                }
-                              }}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Platform Settings */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                        <h4 className="font-semibold text-foreground">Platform Settings</h4>
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-card/50 rounded-lg border border-border/60">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                              <span className="text-white text-xs font-bold">in</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">LinkedIn</p>
-                              <p className="text-xs text-muted-foreground">Professional Network</p>
-                            </div>
-                          </div>
-                          <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            Connected
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-4 sm:p-6 border-t border-border/60 bg-card/30 backdrop-blur-sm shrink-0">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={async () => {
-                          try {
-                            setIsScheduling(true);
-                            
-                            // Update the content temporarily in the database
-                            await apiClient.put(`/content/${selectedContent.id}`, {
-                              content: editedContent,
-                              hashtags: editedHashtags,
-                            });
-                            
-                            const response = await apiClient.post('/posts/schedule', {
-                              contentId: selectedContent.id,
-                              scheduledFor: new Date(scheduleDateTime).toISOString(),
-                              content: editedContent,
-                              mediaUrls: uploadedImages,
-                              hashtags: editedHashtags,
-                            });
-                            const scheduledTime = new Date(scheduleDateTime).toLocaleString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true,
-                            });
-                            toast.success(`Post scheduled for ${scheduledTime} IST`);
-                            setShowContentModal(false);
-                            setIsSchedulingExpanded(false);
-                            setIsScheduling(false);
-                            refreshQuota(); // IMMEDIATE QUOTA REFRESH
-                            fetchRecentGenerations();
-                          } catch (error: any) {
-                            setIsScheduling(false);
-                            toast.error(error.response?.data?.message || 'Failed to schedule post');
-                          }
-                        }}
-                        disabled={!scheduleDateTime || isScheduling}
-                        className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all text-sm sm:text-base"
-                      >
-                        <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-                        <span className="truncate flex items-center">
-                          {isScheduling ? 'Scheduling...' : (
-                            <>
-                              <span className="hidden sm:inline flex items-center">
-                                Schedule Post ({calculateCreditCost(selectedContent, true)} <Coins className="h-4 w-4 ml-0.5 inline" />)
-                              </span>
-                              <span className="sm:hidden flex items-center">
-                                Schedule ({calculateCreditCost(selectedContent, true)} <Coins className="h-3 w-3 ml-0.5 inline" />)
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            setIsPublishing(true);
-                            
-                            // Update the content temporarily in the database
-                            await apiClient.put(`/content/${selectedContent.id}`, {
-                              content: editedContent,
-                              hashtags: editedHashtags,
-                            });
-                            
-                            const response = await apiClient.post('/posts/publish', {
-                              contentId: selectedContent.id,
-                              content: editedContent,
-                              mediaUrls: uploadedImages,
-                              hashtags: editedHashtags,
-                            });
-                            toast.success('Post published successfully!');
-                            setShowContentModal(false);
-                            setIsSchedulingExpanded(false);
-                            setIsPublishing(false);
-                            fetchRecentGenerations();
-                            refreshQuota(); // IMMEDIATE QUOTA REFRESH
-                          } catch (error: any) {
-                            setIsPublishing(false);
-                            toast.error(error.response?.data?.message || 'Failed to publish post');
-                          }
-                        }}
-                        disabled={isPublishing}
-                        className="h-12 px-4 sm:px-6 border-2 hover:bg-muted/50 font-medium transition-all text-sm sm:text-base"
-                      >
-                        <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
-                        <span className="truncate flex items-center">
-                          {isPublishing ? 'Publishing...' : (
-                            <>
-                              <span className="hidden sm:inline flex items-center">
-                                Post Now ({calculateCreditCost(selectedContent, false)} <Coins className="h-4 w-4 ml-0.5 inline" />)
-                              </span>
-                              <span className="sm:hidden flex items-center">
-                                Post ({calculateCreditCost(selectedContent, false)} <Coins className="h-3 w-3 ml-0.5 inline" />)
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* OLD Schedule Post Dialog - Replaced by enhanced modal */}
-      <Dialog open={false} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Schedule Post</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="schedule-datetime">Select Date and Time</Label>
-              <Input
-                id="schedule-datetime"
-                type="datetime-local"
-                value={scheduleDateTime}
-                onChange={(e) => setScheduleDateTime(e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
-                className="mt-1"
-              />
-            </div>
-            
-            {selectedContentForAction && (
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <h4 className="font-medium text-sm mb-1">{selectedContentForAction.title}</h4>
-                <p className="text-xs text-muted-foreground">
-                  {selectedContentForAction.content?.substring(0, 100)}...
-                </p>
-              </div>
-            )}
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowScheduleDialog(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSchedulePost}
-                disabled={isScheduling || !scheduleDateTime}
-                className="flex-1"
-              >
-                {isScheduling ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Calendar className="h-4 w-4 mr-2" />
-                )}
-                Schedule Post
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Schedule Modal */}
+      <ScheduleModal
+        open={showContentModal}
+        onOpenChange={setShowContentModal}
+        content={selectedContent}
+        onSuccess={fetchRecentGenerations}
+        calculateCreditCost={calculateCreditCost}
+      />
     </div>
   );
 }

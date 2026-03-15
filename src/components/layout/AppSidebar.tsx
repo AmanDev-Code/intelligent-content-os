@@ -11,7 +11,8 @@ import {
   Users,
   Sparkles,
   Menu,
-  X
+  X,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/agent", icon: Zap, label: "AI Agent" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/scheduled-posts", icon: Calendar, label: "Scheduled Posts" },
   { to: "/media", icon: Image, label: "Media" },
 ];
 
