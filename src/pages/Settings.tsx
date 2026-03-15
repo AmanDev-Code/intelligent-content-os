@@ -41,18 +41,35 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLinkedIn } from "@/contexts/LinkedInContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useAdmin, ADMIN_USER_ID } from "@/hooks/useAdmin";
+import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import AdminNotifications from "@/components/AdminNotifications";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
+  const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
   const { isConnected: linkedinConnected, refreshConnection, refreshMetrics, disconnect: disconnectLinkedIn } = useLinkedIn();
   const { isAdmin } = useAdmin();
   const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [quickActionLoading, setQuickActionLoading] = useState(false);
   
+  const [profileForm, setProfileForm] = useState({ username: "", full_name: "", avatar_url: "" });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        username: profile.username || "",
+        full_name: profile.full_name || "",
+        avatar_url: profile.avatar_url || "",
+      });
+    }
+  }, [profile]);
+
   const [quickActionDialogs, setQuickActionDialogs] = useState({
     featureUpdate: false,
     maintenance: false,
@@ -199,6 +216,60 @@ export default function Settings() {
     );
   }, [linkedinConnected]);
 
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setProfileSaving(true);
+    try {
+      const res = await apiClient.patch("/profile", {
+        username: profileForm.username.trim() || undefined,
+        full_name: profileForm.full_name.trim() || undefined,
+        avatar_url: profileForm.avatar_url.trim() || undefined,
+      });
+      if (res.success) {
+        toast.success("Profile updated successfully");
+        refetchProfile();
+      } else {
+        throw new Error(res.error);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update profile");
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file (JPEG, PNG, GIF, WebP)");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      setProfileForm((prev) => ({ ...prev, avatar_url: publicUrl }));
+      await apiClient.patch("/profile", { avatar_url: publicUrl });
+      toast.success("Avatar updated");
+      refetchProfile();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to upload avatar");
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = "";
+    }
+  };
+
   const handleConnect = (id: string) => {
     if (!user) {
       toast.error("Please sign in to connect your account.");
@@ -263,29 +334,88 @@ export default function Settings() {
               <User className="h-5 w-5 shrink-0 text-primary" />
               <h2 className="text-base font-semibold">Profile Information</h2>
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="firstName" className="text-xs">First Name</Label>
-                  <Input id="firstName" defaultValue="Aman" className="mt-1" />
+            {profileLoading ? (
+              <div className="h-32 flex items-center justify-center">
+                <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {profileForm.avatar_url ? (
+                      <img src={profileForm.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-10 w-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs">Profile Photo</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload manually or sync from Google sign-in. JPG, PNG, GIF, WebP. Max 2MB.
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="sr-only"
+                      id="avatar-upload"
+                      onChange={handleAvatarUpload}
+                      disabled={avatarUploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => document.getElementById("avatar-upload")?.click()}
+                      disabled={avatarUploading}
+                    >
+                      {avatarUploading ? "Uploading..." : "Upload Photo"}
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="username" className="text-xs">Username</Label>
+                    <Input
+                      id="username"
+                      placeholder="johndoe"
+                      value={profileForm.username}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, username: e.target.value.replace(/[^a-zA-Z0-9_-]/g, "") }))}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Letters, numbers, underscores, hyphens. Must be unique.</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="fullName" className="text-xs">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      placeholder="John Doe"
+                      value={profileForm.full_name}
+                      onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <Label htmlFor="lastName" className="text-xs">Last Name</Label>
-                  <Input id="lastName" defaultValue="Ahuja" className="mt-1" />
+                  <Label className="text-xs">Email Address</Label>
+                  <Input value={user?.email ?? ""} className="mt-1" disabled />
+                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed here.</p>
                 </div>
+                <Button
+                  className="bg-primary text-primary-foreground gap-2"
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  disabled={profileSaving}
+                >
+                  {profileSaving ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save Changes
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="email" className="text-xs">Email Address</Label>
-                <Input id="email" type="email" defaultValue="amanahuja@gmail.com" className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="bio" className="text-xs">Bio</Label>
-                <Textarea id="bio" placeholder="Tell us about yourself..." className="resize-none mt-1" rows={3} />
-              </div>
-              <Button className="bg-primary text-primary-foreground gap-2" size="sm">
-                <Save className="h-4 w-4" /> Save Changes
-              </Button>
-            </div>
+            )}
           </CardContent>
         </Card>
                 {/* Notifications */}

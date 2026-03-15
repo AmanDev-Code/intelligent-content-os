@@ -38,9 +38,6 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <TooltipProvider>
         <AuthProvider>
-          <QuotaProvider>
-            <LinkedInProvider>
-              <NotificationProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -54,7 +51,13 @@ const App = () => (
               <Route
                 element={
                   <ProtectedRoute>
-                    <AppLayout />
+                    <QuotaProvider>
+                      <LinkedInProvider>
+                        <NotificationProvider>
+                          <AppLayout />
+                        </NotificationProvider>
+                      </LinkedInProvider>
+                    </QuotaProvider>
                   </ProtectedRoute>
                 }
               >
@@ -75,9 +78,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-              </NotificationProvider>
-            </LinkedInProvider>
-          </QuotaProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
