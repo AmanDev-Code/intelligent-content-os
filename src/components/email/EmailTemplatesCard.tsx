@@ -10,56 +10,9 @@ import {
   Send,
   Eye,
   Settings,
-  Users,
-  CreditCard,
-  UserPlus,
-  Shield,
 } from 'lucide-react';
-
-const EMAIL_TEMPLATES = [
-  {
-    id: 'verification',
-    name: 'Email Verification',
-    description: 'Sent to new users to verify their email address',
-    icon: Shield,
-    category: 'Authentication',
-  },
-  {
-    id: 'password-reset',
-    name: 'Password Reset',
-    description: 'Sent when users request a password reset',
-    icon: Shield,
-    category: 'Authentication',
-  },
-  {
-    id: 'welcome',
-    name: 'Welcome Email',
-    description: 'Sent to users after email verification',
-    icon: UserPlus,
-    category: 'Onboarding',
-  },
-  {
-    id: 'upgrade',
-    name: 'Account Upgrade',
-    description: 'Sent when users upgrade their subscription',
-    icon: CreditCard,
-    category: 'Billing',
-  },
-  {
-    id: 'order-receipt',
-    name: 'Order Receipt',
-    description: 'Sent after successful payment',
-    icon: CreditCard,
-    category: 'Billing',
-  },
-  {
-    id: 'invitation',
-    name: 'User Invitation',
-    description: 'Sent to invite new users to the platform',
-    icon: Users,
-    category: 'Social',
-  },
-];
+import { EMAIL_TEMPLATES } from '@/templates/email/emailTemplates';
+import { API_CONFIG } from '@/lib/constants';
 
 interface EmailTemplatesCardProps {
   onEmailSent?: () => void;
@@ -264,7 +217,7 @@ export function EmailTemplatesCard({ onEmailSent }: EmailTemplatesCardProps) {
               <div>
                 <Label className="text-sm font-medium">Webhook URL</Label>
                 <code className="text-sm bg-muted px-2 py-1 rounded mt-1 block break-all">
-                  https://alfonso-pseudooriental-cyclonically.ngrok-free.dev/webhook/email-delivery
+                  {API_CONFIG.BASE_URL}/webhook/email-delivery
                 </code>
                 <p className="text-xs text-muted-foreground mt-1">
                   Configure this URL in SMTP2GO with JSON output type

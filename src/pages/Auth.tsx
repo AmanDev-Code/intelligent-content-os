@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,11 +27,8 @@ export default function Auth() {
     setLoading(true);
     try {
       if (isForgot) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (error) throw error;
-        toast({ title: "Check your email", description: "Password reset link sent." });
+        await apiClient.post('/auth/forgot-password', { email });
+        toast({ title: "Check your email", description: "If an account exists, a password reset link has been sent." });
         setIsForgot(false);
       } else if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
