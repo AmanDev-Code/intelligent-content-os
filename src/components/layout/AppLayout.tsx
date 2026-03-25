@@ -1,11 +1,12 @@
+"use client";
+
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-export function AppLayout() {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -26,7 +27,7 @@ export function AppLayout() {
       >
         <TopBar onMobileMenuToggle={() => setMobileOpen(true)} />
         <main className="flex-1 px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-5 overflow-x-hidden w-full min-w-0">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

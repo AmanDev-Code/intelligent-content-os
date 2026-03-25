@@ -12,6 +12,11 @@ interface SocialChannel {
   id: string; name: string; connected: boolean; followers?: string; engagement?: string; posts?: number;
 }
 
+function XPlatformIcon({ className }: { className?: string }) {
+  return <XIcon className={className} />;
+}
+XPlatformIcon.displayName = "XPlatformIcon";
+
 export function SocialChannels() {
   const { user } = useAuth();
   const { isConnected: linkedinConnected, metrics: linkedinMetrics, needsReauth } = useLinkedIn();
@@ -42,7 +47,7 @@ export function SocialChannels() {
   const getIcon = (platformId: string) => {
     switch (platformId) {
       case 'linkedin': return Linkedin;
-      case 'twitter': return ({ className }: { className?: string }) => <XIcon className={className} />;
+      case 'twitter': return XPlatformIcon;
       case 'instagram': return Instagram;
       case 'facebook': return Facebook;
       default: return Globe;

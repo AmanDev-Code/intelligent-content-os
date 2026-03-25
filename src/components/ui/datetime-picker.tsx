@@ -103,7 +103,7 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(selectedDate);
     const firstDay = getFirstDayOfMonth(selectedDate);
-    const days = [];
+    const days: React.ReactElement[] = [];
     const today = new Date();
     const minDateObj = minDate ? new Date(minDate) : null;
 
@@ -117,7 +117,7 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
       const currentDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day);
       const isToday = currentDate.toDateString() === today.toDateString();
       const isSelected = currentDate.toDateString() === selectedDate.toDateString();
-      const isDisabled = minDateObj && currentDate < minDateObj;
+      const isDisabled = Boolean(minDateObj && currentDate < minDateObj);
 
       days.push(
         <button

@@ -42,9 +42,10 @@ class ApiClient {
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
     try {
-      // Only include Content-Type header if we have a body
+      // JSON Content-Type only for non-FormData bodies (multipart sets its own boundary)
       const hasBody = options.body !== undefined;
-      const headers = await this.getAuthHeaders(hasBody);
+      const isFormData = options.body instanceof FormData;
+      const headers = await this.getAuthHeaders(hasBody && !isFormData);
       const url = `${this.baseURL}${endpoint}`;
 
       console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`, hasBody ? 'with body' : 'no body');
@@ -101,16 +102,21 @@ class ApiClient {
     return this.request(url, { method: 'GET' });
   }
 
-  async post(endpoint: string, data?: any): Promise<any> {
+  async post(
+    endpoint: string,
+    data?: any,
+    init?: Omit<RequestInit, 'method' | 'body'>
+  ): Promise<any> {
     const options: RequestInit = {
       method: 'POST',
+      ...init,
     };
-    
-    // Only set JSON content-type and body if we have data
-    if (data !== undefined) {
+    if (data instanceof FormData) {
+      options.body = data;
+    } else if (data !== undefined) {
       options.body = JSON.stringify(data);
     }
-    
+
     return this.request(endpoint, options);
   }
 
@@ -164,6 +170,9 @@ export const api = {
     update: (planType: string, billingCycle: string) => 
       apiClient.put('/subscription/update', { planType, billingCycle }),
     cancel: () => apiClient.post('/subscription/cancel'),
+    changePlan: (planType: 'standard' | 'pro' | 'ultimate', billingCycle: 'monthly' | 'yearly') =>
+      apiClient.post('/subscription/change-plan', { planType, billingCycle }),
+    invoiceUrl: (transactionId: string) => apiClient.get(`/subscription/invoice/${transactionId}`),
     usage: () => apiClient.get('/subscription/usage'),
   },
 
@@ -222,4 +231,29 @@ export const api = {
 
   // Health check
   health: () => apiClient.get('/health'),
+
+  // Onboarding endpoints
+  onboarding: {
+    status: () => apiClient.get('/onboarding/status'),
+    complete: (answers: {
+      role?: string;
+      goal?: string;
+      teamSize?: string;
+      postingFrequency?: string;
+      focusArea?: string;
+      referralSource?: string;
+    }) => apiClient.post('/onboarding/complete', answers),
+    tourComplete: () => apiClient.post('/onboarding/tour-complete', {}),
+  },
+
+  // Admin onboarding endpoints
+  admin: {
+    getOnboardingConfig: () => apiClient.get('/admin/onboarding/config'),
+    updateOnboardingConfig: (payload: {
+      enabled?: boolean;
+      enabledAt?: string | null;
+      questionVersion?: number;
+      tourVersion?: number;
+    }) => apiClient.put('/admin/onboarding/config', payload),
+  },
 };

@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { NavLink } from "@/components/NavLink";
+import { usePathname } from "next/navigation";
+import { TrndinnLogo } from "@/components/brand/TrndinnLogo";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -45,7 +48,7 @@ const bottomNavItems = [
 ];
 
 function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boolean; onToggle: () => void; onItemClick?: () => void }) {
-  const location = useLocation();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { quota: userQuota, loading: loadingQuota } = useQuota();
 
@@ -57,17 +60,14 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
         collapsed ? "justify-center px-2" : "justify-between px-6"
       )}>
         {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold text-foreground">Postra</span>
-          </div>
+          <Link href="/" className="flex flex-1 items-center justify-center min-w-0" aria-label="Trndinn home">
+            <TrndinnLogo variant="full" priority className="shrink-0" />
+          </Link>
         )}
         {collapsed && (
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <Link href="/" className="flex justify-center" aria-label="Trndinn home">
+            <TrndinnLogo variant="icon" priority className="h-11 w-11" />
+          </Link>
         )}
         {!collapsed && (
           <Button
@@ -99,8 +99,9 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
 
       {/* Create Post button */}
       <div className={cn("py-4 shrink-0", collapsed ? "px-2" : "px-6")}>
-        <NavLink to="/agent" onClick={onItemClick}>
+        <NavLink href="/agent" onClick={onItemClick}>
           <Button
+            data-tour="create-post"
             className={cn(
               "w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
               collapsed ? "h-12 rounded-xl" : "rounded-lg"
@@ -117,12 +118,23 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
       <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-2" : "px-6")}>
         {navItems.map((item) => {
           const isActive =
-            item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+            item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          const tourAttr =
+            item.to === "/"
+              ? "nav-dashboard"
+              : item.to === "/scheduled-posts"
+                ? "nav-scheduled-posts"
+                : item.to === "/media"
+                  ? "nav-media"
+                  : item.to === "/agent"
+                    ? "nav-agent"
+                    : undefined;
           return (
             <NavLink
               key={item.to}
-              to={item.to}
+              href={item.to}
               onClick={onItemClick}
+              data-tour={tourAttr}
               className={cn(
                 "flex items-center transition-all duration-200 group relative",
                 collapsed
@@ -229,12 +241,19 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
       <div className="border-t border-border/50 shrink-0">
         <nav className={cn("py-4 space-y-1", collapsed ? "px-2" : "px-6")}>
           {bottomNavItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.to);
+            const isActive = pathname.startsWith(item.to);
+            const tourAttr =
+              item.to === "/settings"
+                ? "nav-settings"
+                : item.to === "/notifications"
+                  ? "nav-notifications"
+                  : undefined;
             return (
               <NavLink
                 key={item.to}
-                to={item.to}
+                href={item.to}
                 onClick={onItemClick}
+                data-tour={tourAttr}
                 className={cn(
                   "flex items-center transition-all duration-200 group relative",
                   collapsed

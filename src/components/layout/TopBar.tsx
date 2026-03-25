@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Sun, Moon, Menu } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuota } from "@/contexts/QuotaContext";
@@ -21,9 +21,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
   const { quota: userQuota } = useQuota();
@@ -77,7 +77,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => navigate("/settings")}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               <User className="mr-2 h-4 w-4" /> Profile
             </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>

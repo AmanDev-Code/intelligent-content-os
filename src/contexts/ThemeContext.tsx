@@ -8,13 +8,22 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
+const THEME_STORAGE_KEY = "Trndinn-theme";
+
+const readStoredTheme = (): Theme | null => {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") {
+    return stored;
+  }
+  return null;
+};
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem("Postra-theme");
-    if (stored === "light" || stored === "dark") {
+    const stored = readStoredTheme();
+    if (stored) {
       return stored;
     }
     // Check system preference
@@ -34,7 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.add(theme);
     
     // Save to localStorage
-    localStorage.setItem("Postra-theme", theme);
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   const toggleTheme = () => {

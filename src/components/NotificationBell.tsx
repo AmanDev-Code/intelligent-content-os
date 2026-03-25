@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface NotificationData {
@@ -99,8 +99,8 @@ export const NotificationBell: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  
+  const router = useRouter();
+
   const { 
     notifications, 
     unreadCount, 
@@ -145,6 +145,13 @@ export const NotificationBell: React.FC = () => {
     }
   }, [isOpen, fetchNotifications]);
 
+  // Tour hook: allow ProductTour to open the bell dropdown
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener('trndinn:tour-open-notifications', handler as EventListener);
+    return () => window.removeEventListener('trndinn:tour-open-notifications', handler as EventListener);
+  }, []);
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -162,6 +169,7 @@ export const NotificationBell: React.FC = () => {
           size="sm"
           className="relative p-2 hover:bg-primary/10 transition-colors"
           onClick={() => setIsOpen(!isOpen)}
+          data-tour="header-notifications-bell"
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -226,7 +234,7 @@ export const NotificationBell: React.FC = () => {
                     size="sm"
                     onClick={() => {
                       setIsOpen(false);
-                      navigate('/notifications');
+                      router.push('/notifications');
                     }}
                     className="text-xs w-full"
                   >
@@ -307,7 +315,7 @@ export const NotificationBell: React.FC = () => {
                     size="sm"
                     onClick={() => {
                       setIsOpen(false);
-                      navigate('/notifications');
+                      router.push('/notifications');
                     }}
                     className="text-xs w-full"
                   >

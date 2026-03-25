@@ -1,16 +1,31 @@
+"use client";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useVerificationStatus } from "@/hooks/useVerificationStatus";
-import { Navigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const router = useRouter();
   const { session, loading } = useAuth();
   const { verified, loading: verificationLoading } = useVerificationStatus();
 
-  // Auth loading
+  useEffect(() => {
+    if (!loading && !session) {
+      router.replace("/auth");
+    }
+  }, [loading, session, router]);
+
+  useEffect(() => {
+    if (!loading && !verificationLoading && session && verified === false) {
+      router.replace("/auth");
+    }
+  }, [loading, verificationLoading, session, verified, router]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -19,12 +34,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // Not logged in
   if (!session) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
-  // Verification check loading — show spinner, NEVER show dashboard
   if (verificationLoading || verified === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -33,9 +50,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // Not verified — send to /auth where OTP will show inline
   if (verified === false) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return <>{children}</>;

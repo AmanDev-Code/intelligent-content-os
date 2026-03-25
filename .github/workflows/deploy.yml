@@ -17,8 +17,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /home/workatkatana/postra-stack/postra-frontend
+            cd /home/workatkatana/trndinn-stack/trndinn-frontend
             git pull origin main
-            cd /home/workatkatana/postra-stack
-            docker compose build postra-frontend
-            docker compose up -d postra-frontend
+            cd /home/workatkatana/trndinn-stack
+            docker compose build trndinn-frontend
+            docker compose up -d trndinn-frontend

@@ -23,7 +23,8 @@ export function useVerificationStatus() {
     setLoading(true);
     try {
       const { data } = await supabase
-        .from('user_verification_tokens')
+        // Table exists in DB; regenerate Supabase types to remove `as any`
+        .from('user_verification_tokens' as any)
         .select('id')
         .eq('user_id', user.id)
         .eq('type', 'email_verification')

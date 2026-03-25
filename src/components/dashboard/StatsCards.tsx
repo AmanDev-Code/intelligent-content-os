@@ -29,14 +29,18 @@ export function StatsCards() {
   useEffect(() => { if (user) fetchStats(); }, [user, linkedinConnected]);
 
   const fetchStats = async () => {
+    const uid = user?.id;
+    if (!uid) return;
+
     try {
       setLoading(true);
       
       // Fetch scheduled posts (from scheduled_posts table, not generated_content)
       const { data: scheduledPosts } = await supabase
-        .from('scheduled_posts')
+        // Table exists in DB; regenerate Supabase types to remove `as any`
+        .from('scheduled_posts' as any)
         .select('id')
-        .eq('user_id', user?.id)
+        .eq('user_id', uid)
         .in('status', ['scheduled', 'processing']);
 
       // Fetch published posts this month
@@ -47,7 +51,7 @@ export function StatsCards() {
       const { data: monthlyPosts } = await supabase
         .from('generated_content')
         .select('id')
-        .eq('user_id', user?.id)
+        .eq('user_id', uid)
         .eq('publish_status', 'published')
         .gte('published_at', startOfMonth.toISOString())
         .is('deleted_at', null);

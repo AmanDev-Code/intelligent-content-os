@@ -205,13 +205,13 @@ export function EmailTemplatesCard({ onEmailSent }: EmailTemplatesCardProps) {
               <div>
                 <Label className="text-sm font-medium">From Email</Label>
                 <p className="text-sm text-muted-foreground mt-1">
-                  noreply@postra.katana-ai.com
+                  noreply@trndinn.com
                 </p>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">From Name</Label>
-                <p className="text-sm text-muted-foreground mt-1">Postra Team</p>
+                <p className="text-sm text-muted-foreground mt-1">Trndinn Team</p>
               </div>
 
               <div>

@@ -1,0 +1,380 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 21 95% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 21 95% 56%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 47.4% 11.2%;
+    --sidebar-primary: 21 95% 56%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 21 95% 56%;
+
+    --chart-1: 21 95% 56%;
+    --chart-2: 142.1 76.2% 36.3%;
+    --chart-3: 47.9 95.8% 53.1%;
+    --chart-4: 0 84.2% 60.2%;
+    --chart-5: 270 95.2% 75.3%;
+  }
+
+  .dark {
+    --background: 223 62% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 223 55% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 223 55% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 21 95% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 224 36% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 224 36% 18%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 224 36% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 224 28% 24%;
+    --input: 224 28% 24%;
+    --ring: 21 95% 56%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 223 62% 7%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 21 95% 56%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 224 36% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 224 28% 24%;
+    --sidebar-ring: 21 95% 56%;
+
+    --chart-1: 21 95% 56%;
+    --chart-2: 142.1 76.2% 36.3%;
+    --chart-3: 47.9 95.8% 53.1%;
+    --chart-4: 0 84.2% 60.2%;
+    --chart-5: 270 95.2% 75.3%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+  }
+
+  .glass-strong {
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #ff8a1f, #ff3d39);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #ffb14a, #ff5d4f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 40px hsl(21 95% 56% / 0.2), 0 0 80px hsl(10 92% 60% / 0.1);
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-thinking-pulse {
+    animation: thinkingPulse 1.5s ease-in-out infinite;
+  }
+
+  .animate-glow-expand {
+    animation: glowExpand 0.6s ease-out forwards;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-thinking-pulse,
+  .animate-glow-expand,
+  .animate-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .auth-orb-rect {
+    animation: none !important;
+    left: 12% !important;
+    top: 12% !important;
+  }
+}
+
+/* Focus-visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes thinkingPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes glowExpand {
+  from {
+    box-shadow: 0 0 0 hsl(21 95% 56% / 0);
+  }
+  to {
+    box-shadow: 0 0 30px hsl(21 95% 56% / 0.35), 0 0 60px hsl(10 92% 60% / 0.15);
+  }
+}
+
+/* Auth left panel: one glow orb, rectangular path (clockwise along section edges) */
+@keyframes authOrbRect {
+  0% {
+    left: 12%;
+    top: 12%;
+  }
+  25% {
+    left: 88%;
+    top: 12%;
+  }
+  50% {
+    left: 88%;
+    top: 88%;
+  }
+  75% {
+    left: 12%;
+    top: 88%;
+  }
+  100% {
+    left: 12%;
+    top: 12%;
+  }
+}
+
+.auth-orb-rect {
+  animation: authOrbRect 64s linear infinite;
+  will-change: left, top;
+}
+
+/* Modern new-age animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.4);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--primary) / 0.1),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Clean, minimal styles - no unnecessary animations */
+.gradient-primary {
+  background: hsl(var(--primary));
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Diagonal stripes for past days */
+  .bg-stripes {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      hsl(var(--muted-foreground) / 0.1) 4px,
+      hsl(var(--muted-foreground) / 0.1) 8px
+    );
+  }
+
+  /* Sidebar improvements */
+  .sidebar-collapsed {
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Smooth transitions for sidebar items */
+  .sidebar-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-item:hover {
+    transform: translateX(2px);
+  }
+
+  /* Tooltip animations */
+  .tooltip-enter {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  .tooltip-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: all 0.2s ease-out;
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Toast notification animations */
+  @keyframes toast-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .toast-progress {
+    animation: toast-progress 8s linear forwards;
+  }
+
+  /* Hide scrollbar but keep scroll - notification dropdown */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Toast positioning for mobile */
+  @media (max-width: 640px) {
+    [data-sonner-toaster] {
+      left: 8px !important;
+      right: 8px !important;
+      width: auto !important;
+    }
+    
+    [data-sonner-toast] {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+    }
+  }

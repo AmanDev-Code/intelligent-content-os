@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000',
+  BASE_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000',
   ENDPOINTS: {
     GENERATION: '/generation',
     ANALYTICS: '/analytics',
@@ -11,9 +11,9 @@ export const API_CONFIG = {
 
 // Supabase Configuration
 export const SUPABASE_CONFIG = {
-  PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-  URL: import.meta.env.VITE_SUPABASE_URL,
-  PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  PROJECT_ID: process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID,
+  URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 } as const;
 
 // Social Platform Configuration

@@ -258,7 +258,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     initLoad();
 
     const connect = () => {
-      const baseUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.katana-ai.com';
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.katana-ai.com';
       const url = `${baseUrl}/notifications/stream`;
       const controller = new AbortController();
 
@@ -266,6 +266,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Accept': 'text/event-stream',
+          'ngrok-skip-browser-warning': 'true',
         },
         signal: controller.signal,
       }).then(async (response) => {

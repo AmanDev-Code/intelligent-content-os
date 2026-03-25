@@ -4,8 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
  * Admin user ID – must match backend AdminGuard (backend/src/guards/admin.guard.ts).
  * Admin-only features (e.g. Email Dashboard, Admin Notifications) are rendered only for this user.
  */
-export const ADMIN_USER_ID = 'c9327732-05cd-41dc-9d4f-e0c17b7fbea3';
-export const ADMIN_EMAIL = 'amanahuja@gmail.com';
+export const ADMIN_USER_ID =
+  process.env.NEXT_PUBLIC_ADMIN_USER_ID || 'c9327732-05cd-41dc-9d4f-e0c17b7fbea3';
+export const ADMIN_EMAIL =
+  process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'amanahuja@gmail.com';
 
 export const useAdmin = () => {
   const { user } = useAuth();
