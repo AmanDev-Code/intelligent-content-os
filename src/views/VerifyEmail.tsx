@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { API_CONFIG } from "@/lib/constants";
 
 export default function VerifyEmail() {
   const searchParams = useSearchParams();
@@ -19,8 +20,9 @@ export default function VerifyEmail() {
 
     const verify = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3000";
-        const res = await fetch(`${baseUrl}/auth/verify-email?token=${encodeURIComponent(token)}`);
+        const res = await fetch(
+          `${API_CONFIG.BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`,
+        );
         const data = await res.json();
 
         if (data.success) {

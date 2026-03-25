@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_CONFIG } from '@/lib/constants';
 import { toast } from 'sonner';
 import { Bell, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 
@@ -258,7 +259,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     initLoad();
 
     const connect = () => {
-      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.katana-ai.com';
+      const baseUrl = API_CONFIG.BASE_URL;
       const url = `${baseUrl}/notifications/stream`;
       const controller = new AbortController();
 
