@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { slugToTitle } from "@/lib/slug";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentStatus } from "@/types/content";
+import Image from "next/image";
 
 interface PostData {
   id: string;
@@ -248,11 +249,16 @@ export default function PostDetail() {
           {/* Visual */}
           {post.visual_url && (
             <div className="rounded-lg overflow-hidden border border-border">
-              <img
-                src={post.visual_url}
-                alt={post.title}
-                className="w-full h-auto object-cover"
-              />
+              <div className="relative w-full h-[420px] bg-muted">
+                <Image
+                  src={post.visual_url}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 95vw, 900px"
+                  unoptimized
+                />
+              </div>
             </div>
           )}
 

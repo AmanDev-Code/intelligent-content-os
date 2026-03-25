@@ -26,6 +26,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/apiClient';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface PostModalProps {
   isOpen: boolean;
@@ -195,7 +196,16 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
         {/* Show original media */}
         {post.visual_url && (
           <div className="rounded-lg overflow-hidden">
-            <img src={post.visual_url} alt="Post media" className="w-full h-auto" />
+            <div className="relative w-full aspect-[16/9] bg-muted">
+              <Image
+                src={post.visual_url}
+                alt="Post media"
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 700px"
+                unoptimized
+              />
+            </div>
           </div>
         )}
         
@@ -204,7 +214,16 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
           <div className="grid grid-cols-2 gap-2">
             {uploadedImages.map((url, index) => (
               <div key={index} className="relative rounded-lg overflow-hidden">
-                <img src={url} alt={`Uploaded ${index + 1}`} className="w-full h-32 object-cover" />
+                <div className="relative w-full h-32">
+                  <Image
+                    src={url}
+                    alt={`Uploaded ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 300px"
+                    unoptimized
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -338,7 +357,16 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
           <div className="grid grid-cols-3 gap-2">
             {uploadedImages.map((url, index) => (
               <div key={index} className="relative group">
-                <img src={url} alt={`Upload ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                <div className="relative w-full h-20">
+                  <Image
+                    src={url}
+                    alt={`Upload ${index + 1}`}
+                    fill
+                    className="object-cover rounded"
+                    sizes="(max-width: 768px) 33vw, 180px"
+                    unoptimized
+                  />
+                </div>
                 <Button
                   variant="destructive"
                   size="sm"

@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuota } from '@/contexts/QuotaContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import {
   Calendar,
   Send,
@@ -184,11 +185,16 @@ export function ScheduleModal({
               {uploadedImages.length > 0 && (
                 <div className="px-4 pb-3">
                   {uploadedImages.length === 1 ? (
-                    <img
-                      src={uploadedImages[0]}
-                      alt="Post media"
-                      className="w-full rounded-lg border border-border object-cover max-h-96"
-                    />
+                    <div className="relative w-full max-h-96 h-96 rounded-lg overflow-hidden border border-border">
+                      <Image
+                        src={uploadedImages[0]}
+                        alt="Post media"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 700px"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
                     <div className={cn(
                       "grid gap-2",
@@ -196,10 +202,13 @@ export function ScheduleModal({
                     )}>
                       {uploadedImages.slice(0, 4).map((url, index) => (
                         <div key={index} className="relative aspect-square">
-                          <img
+                          <Image
                             src={url}
                             alt={`Post media ${index + 1}`}
-                            className="w-full h-full rounded-lg border border-border object-cover"
+                            fill
+                            className="rounded-lg border border-border object-cover"
+                            sizes="(max-width: 768px) 50vw, 250px"
+                            unoptimized
                           />
                           {index === 3 && uploadedImages.length > 4 && (
                             <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
@@ -214,20 +223,26 @@ export function ScheduleModal({
               )}
 
               {/* AI Generated Visual */}
-              {content.visual_url && 
-               content.visual_url.startsWith('http') && 
+              {content.visual_url &&
+               content.visual_url.startsWith('http') &&
                !uploadedImages.length && (
-                <div className="px-4 pb-3">
+                <div className="px-4 pb-3" data-generated-visual>
                   <div className="rounded-lg overflow-hidden border border-gray-200">
-                    <img 
-                      src={content.visual_url} 
-                      alt="Generated visual content"
-                      className="w-full h-auto"
-                      style={{ maxHeight: '400px', objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.currentTarget.parentElement?.parentElement?.remove();
-                      }}
-                    />
+                    <div className="relative w-full h-[400px]">
+                      <Image
+                        src={content.visual_url}
+                        alt="Generated visual content"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 700px"
+                        unoptimized
+                        onError={(e) => {
+                          (e.currentTarget as unknown as HTMLElement)
+                            ?.closest('[data-generated-visual]')
+                            ?.remove();
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -563,10 +578,13 @@ export function ScheduleModal({
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {uploadedImages.map((url, index) => (
                             <div key={index} className="relative group rounded-lg overflow-hidden border border-border/60 aspect-square">
-                              <img
+                              <Image
                                 src={url}
                                 alt={`Uploaded ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 640px) 50vw, 33vw"
+                                unoptimized
                               />
                               <button
                                 onClick={() => {

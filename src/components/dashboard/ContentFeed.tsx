@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Sparkles } from "lucide-react";
+import Image from "next/image";
 import type { ContentStatus } from "@/types/content";
 
 interface ContentRow {
@@ -109,11 +110,16 @@ export function ContentFeed() {
             >
               <CardContent className="p-4 flex items-center gap-4">
                 {item.visual_url ? (
-                  <img
-                    src={item.visual_url}
-                    alt=""
-                    className="h-12 w-12 rounded-md object-cover shrink-0"
-                  />
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md">
+                    <Image
+                      src={item.visual_url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                      unoptimized
+                    />
+                  </div>
                 ) : (
                   <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center shrink-0">
                     <FileText className="h-5 w-5 text-muted-foreground" />

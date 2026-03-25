@@ -11,6 +11,7 @@ import { FileText, Sparkles, Zap, Calendar, Hash, Image, LayoutGrid } from "luci
 import { format } from "date-fns";
 import { createPostSlug } from "@/lib/slug";
 import type { ContentStatus } from "@/types/content";
+import NextImage from "next/image";
 
 interface ContentRow {
   id: string;
@@ -136,11 +137,16 @@ export default function Content() {
                 <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   {item.visual_url ? (
-                    <img
-                      src={item.visual_url}
-                      alt=""
-                      className="h-16 w-16 rounded-lg object-cover shrink-0"
-                    />
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                      <NextImage
+                        src={item.visual_url}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
                     <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
                       <FileText className="h-6 w-6 text-muted-foreground" />

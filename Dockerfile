@@ -1,17 +1,24 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
 FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm install --omit=dev
 
-RUN npm install
-
-COPY . .
-
-RUN npm run build
-
-RUN npm install -g serve
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./next.config.ts
 
 EXPOSE 8080
 
-CMD ["serve", "-s", "dist", "-l", "8080"]
+CMD ["npm", "run", "start"]

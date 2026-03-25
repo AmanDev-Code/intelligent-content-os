@@ -47,6 +47,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import AdminNotifications from "@/components/AdminNotifications";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import Image from "next/image";
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
@@ -344,7 +345,16 @@ export default function Settings() {
                 <div className="flex items-center gap-4">
                   <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
                     {profileForm.avatar_url ? (
-                      <img src={profileForm.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                      <div className="relative h-full w-full">
+                        <Image
+                          src={profileForm.avatar_url}
+                          alt="Avatar"
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                          unoptimized
+                        />
+                      </div>
                     ) : (
                       <User className="h-10 w-10 text-muted-foreground" />
                     )}

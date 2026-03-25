@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NextImage from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -279,11 +280,16 @@ export default function Media() {
                   <CardContent className="p-4">
                     <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
                       {file.file_type === 'image' ? (
-                        <img
-                          src={file.public_url}
-                          alt={file.file_name}
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-full h-full">
+                          <NextImage
+                            src={file.public_url}
+                            alt={file.file_name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                            unoptimized
+                          />
+                        </div>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <FileText className="w-12 h-12 text-muted-foreground" />
@@ -329,11 +335,16 @@ export default function Media() {
                             {selectedFile && (
                               <div className="space-y-4">
                                 {selectedFile.file_type === 'image' ? (
-                                  <img
-                                    src={selectedFile.public_url}
-                                    alt={selectedFile.file_name}
-                                    className="w-full max-h-96 object-contain rounded-lg"
-                                  />
+                                  <div className="relative w-full max-h-96 h-96">
+                                    <NextImage
+                                      src={selectedFile.public_url}
+                                      alt={selectedFile.file_name}
+                                      fill
+                                      className="object-contain rounded-lg"
+                                      sizes="(max-width: 1024px) 90vw, 900px"
+                                      unoptimized
+                                    />
+                                  </div>
                                 ) : (
                                   <div className="text-center p-8">
                                     <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -396,11 +407,16 @@ export default function Media() {
                     >
                       <div className="flex items-center gap-3">
                         {file.file_type === 'image' ? (
-                          <img
-                            src={file.public_url}
-                            alt={file.file_name}
-                            className="w-10 h-10 object-cover rounded"
-                          />
+                          <div className="relative w-10 h-10 overflow-hidden rounded">
+                            <NextImage
+                              src={file.public_url}
+                              alt={file.file_name}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                              unoptimized
+                            />
+                          </div>
                         ) : (
                           <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
                             <FileText className="w-5 h-5 text-muted-foreground" />
