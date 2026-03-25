@@ -98,9 +98,13 @@ export default function Agent() {
   const [tourDemoStep, setTourDemoStep] = useState<
     "idle" | "generated" | "scheduled"
   >("idle");
+  const [showTourDemo, setShowTourDemo] = useState(false);
 
   useEffect(() => {
-    const handler = () => setTourDemoStep("idle");
+    const handler = () => {
+      setShowTourDemo(true);
+      setTourDemoStep("idle");
+    };
     window.addEventListener(
       "trndinn:tour-enter-agent-demo",
       handler as EventListener,
@@ -691,7 +695,8 @@ export default function Agent() {
               {generationMode === 'trending' ? (
                 <div className="space-y-4">
                   {/* Onboarding Tour Demo (dummy) */}
-                  <div data-tour="tour-demo-generation">
+                  {showTourDemo && (
+                    <div data-tour="tour-demo-generation">
                     <Card className="border-primary/30 bg-primary/5">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-sm sm:text-base flex items-center gap-2">
@@ -782,7 +787,8 @@ export default function Agent() {
                         )}
                       </CardContent>
                     </Card>
-                  </div>
+                    </div>
+                  )}
 
                   {/* Progress Display - Always visible when generating */}
                   {isGenerating && (
