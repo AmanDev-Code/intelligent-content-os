@@ -19,8 +19,8 @@ const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
     const pathname = usePathname();
     const dest = (to as string) || href || "/";
     const isActive =
-      dest === "/"
-        ? pathname === "/"
+      dest === "/dashboard"
+        ? pathname === "/dashboard"
         : pathname === dest || pathname.startsWith(`${dest}/`);
 
     return (

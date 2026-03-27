@@ -34,7 +34,7 @@ interface AppSidebarProps {
 }
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/agent", icon: Zap, label: "AI Agent" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
   { to: "/scheduled-posts", icon: Calendar, label: "Scheduled Posts" },
@@ -60,12 +60,12 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
         collapsed ? "justify-center px-2" : "justify-between px-6"
       )}>
         {!collapsed && (
-          <Link href="/" className="flex flex-1 items-center justify-center min-w-0" aria-label="Trndinn home">
+          <Link href="/dashboard" className="flex flex-1 items-center justify-center min-w-0" aria-label="Trndinn home">
             <TrndinnLogo variant="full" priority className="shrink-0" />
           </Link>
         )}
         {collapsed && (
-          <Link href="/" className="flex justify-center" aria-label="Trndinn home">
+          <Link href="/dashboard" className="flex justify-center" aria-label="Trndinn home">
             <TrndinnLogo variant="icon" priority className="h-11 w-11" />
           </Link>
         )}
@@ -118,9 +118,9 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
       <nav className={cn("flex-1 space-y-1 overflow-y-auto", collapsed ? "px-2" : "px-6")}>
         {navItems.map((item) => {
           const isActive =
-            item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+            item.to === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.to);
           const tourAttr =
-            item.to === "/"
+            item.to === "/dashboard"
               ? "nav-dashboard"
               : item.to === "/scheduled-posts"
                 ? "nav-scheduled-posts"

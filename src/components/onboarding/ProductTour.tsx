@@ -17,14 +17,14 @@ const TOUR_STEPS: TourStep[] = [
     key: "dashboard",
     title: "Dashboard",
     description: "This is your home. You can track activity, quota, and recent generations here.",
-    route: "/",
+    route: "/dashboard",
     selector: '[data-tour="nav-dashboard"]',
   },
   {
     key: "createPost",
     title: "Create Post",
     description: "Use this to open AI Agent and generate content fast.",
-    route: "/",
+    route: "/dashboard",
     selector: '[data-tour="create-post"]',
   },
   {
@@ -63,7 +63,7 @@ const TOUR_STEPS: TourStep[] = [
     key: "notificationsBell",
     title: "Notifications",
     description: "Track system events and important updates here.",
-    route: "/",
+    route: "/dashboard",
     selector: '[data-tour="header-notifications-bell"]',
     onEnter: () => {
       window.dispatchEvent(new CustomEvent("trndinn:tour-open-notifications"));

@@ -1,50 +1,58 @@
 import type { Metadata } from "next";
+import { Poppins } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
+import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
+import { defaultDescription, getSiteUrl, siteName } from "@/lib/site";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:8080");
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "Trndinn — AI content for LinkedIn",
-    template: "%s | Trndinn",
+    default: `${siteName} — AI social content OS`,
+    template: `%s | ${siteName}`,
   },
-  description:
-    "Trndinn is your AI-powered content OS: create, schedule, and grow on LinkedIn from one workspace.",
-  applicationName: "Trndinn",
+  description: defaultDescription,
+  applicationName: siteName,
   keywords: [
-    "Trndinn",
-    "LinkedIn",
+    siteName,
     "AI content",
     "social media scheduling",
-    "content creation",
+    "LinkedIn",
+    "X Twitter",
+    "Instagram scheduling",
+    "YouTube Shorts",
+    "AI reels",
+    "social media analytics",
+    "content creation platform",
   ],
-  authors: [{ name: "Trndinn" }],
+  authors: [{ name: siteName }],
   openGraph: {
-    title: "Trndinn — AI content for LinkedIn",
-    description:
-      "Create, schedule, and publish AI-assisted content. Built for creators and teams.",
+    title: `${siteName} — AI social content OS`,
+    description: defaultDescription,
     type: "website",
     locale: "en_US",
-    siteName: "Trndinn",
+    siteName,
     url: "/",
     images: [
       {
         url: "/og/default.png",
         width: 1200,
         height: 799,
-        alt: "Trndinn — AI-powered content creation",
+        alt: `${siteName} — AI-powered social workspace`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trndinn — AI content for LinkedIn",
-    description:
-      "Create, schedule, and publish AI-assisted content from one workspace.",
+    title: `${siteName} — AI social content OS`,
+    description: defaultDescription,
     images: ["/og/default.png"],
   },
   robots: {
@@ -60,7 +68,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className={`${poppins.variable} min-h-screen bg-background font-sans antialiased`}>
+        <SiteJsonLd />
         <Providers>{children}</Providers>
       </body>
     </html>

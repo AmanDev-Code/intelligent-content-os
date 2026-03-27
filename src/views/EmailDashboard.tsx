@@ -66,7 +66,7 @@ export default function EmailDashboard() {
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
-      router.replace('/');
+      router.replace("/dashboard");
     }
   }, [authLoading, isAdmin, router]);
   

@@ -62,7 +62,7 @@ export default function Auth() {
   // Verified user with session → go to dashboard
   useEffect(() => {
     if (session && !verificationLoading && verified === true && !showOtp) {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   }, [session, verified, verificationLoading, showOtp, router]);
 
@@ -188,7 +188,7 @@ export default function Auth() {
         toast({ title: "Email verified", description: "Welcome to Trndinn!" });
         recheck();
         setShowOtp(false);
-        router.replace("/");
+        router.replace("/dashboard");
       } else {
         toast({ title: "Invalid code", description: res.message || "The code is invalid or expired.", variant: "destructive" });
         setOtp(["", "", "", "", "", ""]);

@@ -25,7 +25,7 @@ export default function CheckEmail() {
       return;
     }
     if (!loading && verified) {
-      router.replace('/');
+      router.replace("/dashboard");
     }
   }, [session, verified, loading, router]);
 
@@ -80,7 +80,7 @@ export default function CheckEmail() {
       const res = await apiClient.post('/auth/verify-otp', { otp: code });
       if (res.success) {
         toast({ title: 'Email verified', description: 'Welcome to Trndinn!' });
-        router.replace('/');
+        router.replace("/dashboard");
       } else {
         toast({ title: 'Invalid code', description: res.message || 'The code is invalid or expired.', variant: 'destructive' });
         setOtp(['', '', '', '', '', '']);
