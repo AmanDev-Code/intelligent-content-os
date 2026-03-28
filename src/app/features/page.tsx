@@ -6,7 +6,7 @@ const url = getSiteUrl();
 
 export const metadata: Metadata = {
   title: "Features",
-  description: `${siteName} features: AI content creation, multi-channel roadmap (X, Instagram, Facebook, YouTube, Twitch, Reddit), AI reels, analytics, and planned LinkedIn outreach.`,
+  description: `${siteName}: AI Content Engine, one-clip-to-all-reels repurposing, kinetic roadmap across channels, predictive analytics, and plans to scale your signal—one platform from creation to distribution.`,
   keywords: [
     "AI social media",
     "content scheduling",

@@ -8,4 +8,4 @@ export function getSiteUrl(): string {
 }
 
 export const defaultDescription =
-  "Trndinn is the AI social OS: create, schedule, and measure content across channels—starting with LinkedIn, expanding to X, Instagram, Facebook, YouTube, Twitch, Reddit, with AI reels and deep analytics.";
+  "Trndinn is the AI social content platform: create, schedule, and measure content across channels—starting with LinkedIn, expanding to X, Instagram, Facebook, YouTube, Twitch, Reddit, with AI reels and deep analytics.";

@@ -31,7 +31,7 @@ export function MarketingNav() {
   const primaryLabel = session ? "Dashboard" : "Get started";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-background/65 backdrop-blur-2xl dark:border-white/5">
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/65 dark:border-white/10">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="shrink-0" aria-label="Trndinn home">
           <TrndinnLogo variant="full" priority className="max-w-[190px] sm:max-w-[220px]" />
@@ -64,6 +64,7 @@ export function MarketingNav() {
             className="h-9 w-9 rounded-full"
             aria-label="Toggle theme"
             onClick={() => setTheme(isDark ? "light" : "dark")}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
             disabled={!mounted}
           >
             {!mounted ? <Sun className="h-4 w-4 opacity-50" /> : isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

@@ -55,16 +55,16 @@ export default function ContactPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Rivera" className="border-white/15 bg-background/60" />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Aman Ahuja" className="border-white/15 bg-background/60" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Work email</Label>
-                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="alex@company.com" className="border-white/15 bg-background/60" />
+                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="aman@trndinn.com" className="border-white/15 bg-background/60" />
               </div>
             </div>
             <div className="mt-5 space-y-2">
               <Label htmlFor="company">Organization</Label>
-              <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Company or team name" className="border-white/15 bg-background/60" />
+              <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Trndinn" className="border-white/15 bg-background/60" />
             </div>
             <div className="mt-5 space-y-2">
               <Label htmlFor="message">Project goals</Label>

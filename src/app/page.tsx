@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: defaultDescription,
   alternates: { canonical: `${url}/` },
   openGraph: {
-    title: `${siteName} — AI social content OS`,
+    title: `${siteName} — AI social content platform`,
     description: defaultDescription,
     url: "/",
     type: "website",

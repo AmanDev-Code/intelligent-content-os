@@ -11,7 +11,7 @@ export function SiteJsonLd() {
         name: siteName,
         url,
         description:
-          "AI-powered social content operating system for scheduling, publishing, video reels, and analytics.",
+          "AI-powered social content platform for scheduling, publishing, video reels, and analytics.",
       },
       {
         "@type": "WebSite",

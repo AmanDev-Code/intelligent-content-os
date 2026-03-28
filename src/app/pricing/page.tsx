@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "social media scheduling price",
     "AI content credits",
     "LinkedIn scheduling tool",
-    "content OS pricing",
+    "content platform pricing",
   ],
   alternates: { canonical: `${url}/pricing` },
   openGraph: {

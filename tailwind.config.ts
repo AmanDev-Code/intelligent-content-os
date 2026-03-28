@@ -90,12 +90,33 @@ export default {
           "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "0.8" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "wave-seamless": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "wave-seamless-rev": {
+          "0%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "mesh-drift": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(2%, -1%) scale(1.03)" },
+          "66%": { transform: "translate(-1%, 2%) scale(0.98)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s linear infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        marquee: "marquee 42s linear infinite",
+        "wave-seamless": "wave-seamless 18s linear infinite",
+        "wave-seamless-rev": "wave-seamless-rev 24s linear infinite",
+        "mesh-drift": "mesh-drift 22s ease-in-out infinite",
       },
     },
   },

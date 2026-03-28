@@ -162,8 +162,7 @@
 
   .auth-orb-rect {
     animation: none !important;
-    left: 12% !important;
-    top: 12% !important;
+    transform: translate(-50%, -50%) translate(12vw, 12vh) !important;
   }
 }
 
@@ -204,33 +203,34 @@
   }
 }
 
-/* Auth left panel: one glow orb, rectangular path (clockwise along section edges) */
+/* Auth left panel: one glow orb, rectangular path (clockwise along section edges).
+   Uses transform instead of left/top for GPU-accelerated rendering (fixes Safari). */
 @keyframes authOrbRect {
   0% {
-    left: 12%;
-    top: 12%;
+    transform: translate(-50%, -50%) translate(12vw, 12vh);
   }
   25% {
-    left: 88%;
-    top: 12%;
+    transform: translate(-50%, -50%) translate(38vw, 12vh);
   }
   50% {
-    left: 88%;
-    top: 88%;
+    transform: translate(-50%, -50%) translate(38vw, 78vh);
   }
   75% {
-    left: 12%;
-    top: 88%;
+    transform: translate(-50%, -50%) translate(12vw, 78vh);
   }
   100% {
-    left: 12%;
-    top: 12%;
+    transform: translate(-50%, -50%) translate(12vw, 12vh);
   }
 }
 
 .auth-orb-rect {
+  left: 0;
+  top: 0;
   animation: authOrbRect 64s linear infinite;
-  will-change: left, top;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
 }
 
 /* Modern new-age animations */

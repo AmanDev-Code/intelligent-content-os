@@ -15,7 +15,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: `${siteName} — AI social content OS`,
+    default: `${siteName} — AI social content platform`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: siteName }],
   openGraph: {
-    title: `${siteName} — AI social content OS`,
+    title: `${siteName} — AI social content platform`,
     description: defaultDescription,
     type: "website",
     locale: "en_US",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteName} — AI social content OS`,
+    title: `${siteName} — AI social content platform`,
     description: defaultDescription,
     images: ["/og/default.png"],
   },

@@ -489,7 +489,7 @@ export default function Auth() {
       <div className="relative hidden overflow-hidden bg-[#05070f] p-12 lg:flex lg:w-1/2 lg:items-center lg:justify-center">
         {/* Moving glow: real rect path (top-left → top-right → bottom-right → bottom-left) */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          <div className="auth-orb-rect absolute h-[min(44rem,86vw)] w-[min(44rem,86vw)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,157,0,1)_0%,rgba(255,165,0,0.98)_18%,rgba(255,120,0,0.92)_38%,rgba(255,69,0,0.82)_58%,rgba(230,57,0,0.45)_76%,transparent_90%)] blur-[82px]" />
+          <div className="auth-orb-rect absolute h-[min(44rem,86vw)] w-[min(44rem,86vw)] rounded-full bg-[radial-gradient(circle,rgba(255,157,0,1)_0%,rgba(255,165,0,0.98)_18%,rgba(255,120,0,0.92)_38%,rgba(255,69,0,0.82)_58%,rgba(230,57,0,0.45)_76%,transparent_90%)] blur-[82px]" />
         </div>
 
         <div className="relative z-10 w-full max-w-3xl">
