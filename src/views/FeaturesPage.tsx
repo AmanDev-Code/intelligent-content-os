@@ -17,72 +17,22 @@ import {
   Sparkles,
   Workflow,
 } from "lucide-react";
-import {
-  FaFacebook,
-  FaInstagram,
-  FaLinkedinIn,
-  FaRedditAlien,
-  FaTwitch,
-  FaXTwitter,
-  FaYoutube,
-} from "react-icons/fa6";
-import type { IconType } from "react-icons";
 import { ChannelMarquee } from "@/components/marketing/ChannelMarquee";
 import { FlowingWaveBackdrop } from "@/components/marketing/FlowingWaveBackdrop";
 import { MarketingPlanGrid } from "@/components/marketing/MarketingPlanGrid";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { EvolutionTimeline } from "@/components/marketing/EvolutionTimeline";
 import { Button } from "@/components/ui/button";
 import { CREDIT_USAGE_NOTE, BACKEND_MONTHLY_CREDITS } from "@/config/plan-comparison";
 import { useAuth } from "@/contexts/AuthContext";
 import { MARKETING_MARQUEE_CHANNELS } from "@/lib/marketing-channels";
+import { marketingRoadmap } from "@/lib/marketing-roadmap";
 import { cn } from "@/lib/utils";
 
 const REELS_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBnN7J4TyewgIl75t7m5voBF5-Fw7gV_OyTpzowtcfeKGEw4JhuTnzmEEwGHHTs2StGfrthWZt3L8yX6ZKDDUqG6CZWUAModT_jRM5ljZWnZ0SI4yx9FiQcX8sxvwH3YiVZsiqsgNL6MXR4k51GvvzWVe7QChdArcx_MzJWd7-CWGHy_l5lGoLXrNLc3DaGrMFwMr_GwbDT3U0VI3Zfc6KkanpDusHRWW0k53hRRTWdJ7fg9RaVDbnl6BCLhaft3y70--vyTqgBH94";
 
 const chartHeights = [30, 45, 60, 55, 85, 100, 70] as const;
-
-const roadmapSteps: {
-  active: boolean;
-  badge: string;
-  badgeTone: "teal" | "primary" | "muted";
-  headline: string;
-  body: string;
-  icons: { Icon: IconType; label: string; iconClass: string }[];
-}[] = [
-  {
-    active: true,
-    badge: "Live now",
-    badgeTone: "teal",
-    headline: "LinkedIn",
-    body: "Full LinkedIn workspace live—scheduling, drafts, and analytics in one flow.",
-    icons: [{ Icon: FaLinkedinIn, label: "LinkedIn", iconClass: "text-[#0A66C2]" }],
-  },
-  {
-    active: false,
-    badge: "Coming Q3",
-    badgeTone: "primary",
-    headline: "X, IG, FB, YT",
-    body: "Multi-channel synchronization.",
-    icons: [
-      { Icon: FaXTwitter, label: "X", iconClass: "text-zinc-900 dark:text-white" },
-      { Icon: FaInstagram, label: "Instagram", iconClass: "text-[#E4405F]" },
-      { Icon: FaFacebook, label: "Facebook", iconClass: "text-[#1877F2]" },
-      { Icon: FaYoutube, label: "YouTube", iconClass: "text-[#FF0000]" },
-    ],
-  },
-  {
-    active: false,
-    badge: "Coming Q4",
-    badgeTone: "muted",
-    headline: "Twitch, Reddit",
-    body: "Community engine deployment.",
-    icons: [
-      { Icon: FaTwitch, label: "Twitch", iconClass: "text-[#9146FF]" },
-      { Icon: FaRedditAlien, label: "Reddit", iconClass: "text-[#FF4500]" },
-    ],
-  },
-];
 
 function KineticGradient({ className, children }: { className?: string; children: ReactNode }) {
   return (
@@ -107,89 +57,6 @@ function GlassPanel({ className, ...props }: ComponentProps<"div">) {
       )}
       {...props}
     />
-  );
-}
-
-function roadmapBadgeClass(tone: "teal" | "primary" | "muted") {
-  if (tone === "teal") return "text-teal-600 dark:text-teal-400";
-  if (tone === "primary") return "text-primary";
-  return "text-muted-foreground";
-}
-
-function RoadmapTimelineMarker({ variant }: { variant: "solid" | "ring" | "ring-muted" }) {
-  const shell =
-    "relative z-20 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[3px] border-background bg-background dark:border-[#0a0c14] dark:bg-[#0c101c]";
-  if (variant === "solid") {
-    return (
-      <div className={shell}>
-        <span className="h-3 w-3 rounded-full bg-primary shadow-[0_0_18px_rgba(255,138,31,0.75)]" />
-      </div>
-    );
-  }
-  if (variant === "ring") {
-    return (
-      <div className={shell}>
-        <span className="h-3.5 w-3.5 rounded-full border-[3px] border-primary bg-transparent shadow-[0_0_12px_rgba(255,138,31,0.35)]" />
-      </div>
-    );
-  }
-  return (
-    <div className={shell}>
-      <span className="h-3.5 w-3.5 rounded-full border-[3px] border-muted-foreground/45 bg-transparent dark:border-zinc-500" />
-    </div>
-  );
-}
-
-function roadmapMarkerVariant(index: number, active: boolean): "solid" | "ring" | "ring-muted" {
-  if (active && index === 0) return "solid";
-  if (index === 1) return "ring";
-  return "ring-muted";
-}
-
-type RoadmapStep = (typeof roadmapSteps)[number];
-
-/** `cardSide` = which side of the timeline the card sits on; copy aligns toward the spine. */
-function RoadmapStepCard({ step, cardSide }: { step: RoadmapStep; cardSide: "left" | "right" }) {
-  const towardSpine = cardSide === "left" ? "md:text-right" : "md:text-left";
-  const iconsTowardSpine = cardSide === "left" ? "md:justify-end" : "md:justify-start";
-  return (
-    <div
-      className={cn(
-        "w-full max-w-md rounded-2xl border p-5 sm:p-6",
-        "bg-card/95 backdrop-blur-sm dark:bg-[#121826]/95",
-        "border-border/80 dark:border-white/10",
-        step.active &&
-          "border-primary/45 dark:border-primary/35 dark:shadow-[0_0_24px_rgba(255,138,31,0.06)]",
-      )}
-    >
-      <span
-        className={cn(
-          "mb-2 block font-heading text-[10px] font-semibold uppercase tracking-widest sm:text-xs",
-          roadmapBadgeClass(step.badgeTone),
-          towardSpine,
-        )}
-      >
-        {step.badge}
-      </span>
-      <h4 className={cn("font-heading text-xl font-bold text-foreground sm:text-2xl", towardSpine)}>
-        {step.headline}
-      </h4>
-      <div className={cn("mt-3 flex flex-wrap gap-2", iconsTowardSpine)}>
-        {step.icons.map(({ Icon, label, iconClass }) => (
-          <span
-            key={label}
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-xl border transition-transform hover:scale-105",
-              "border-border/70 bg-background dark:border-white/10 dark:bg-white/[0.06]",
-            )}
-            title={label}
-          >
-            <Icon className={cn("h-[22px] w-[22px]", iconClass)} aria-hidden />
-          </span>
-        ))}
-      </div>
-      <p className={cn("mt-3 text-sm text-muted-foreground", towardSpine)}>{step.body}</p>
-    </div>
   );
 }
 
@@ -228,6 +95,7 @@ export default function FeaturesPage() {
   return (
     <MarketingShell>
       <main className="pb-24">
+        {/* Hero */}
         <section id="features" className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(255,138,31,0.18),transparent_50%)]" />
@@ -269,17 +137,16 @@ export default function FeaturesPage() {
             </div>
           </div>
 
-          <div className="border-y border-border/60 bg-gradient-to-b from-muted/25 via-muted/10 to-transparent dark:border-white/5">
-            <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
-              <p className="pb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
-                Channel surface — LinkedIn live, more networks shipping on the same queue
-              </p>
-              <ChannelMarquee channels={MARKETING_MARQUEE_CHANNELS} />
-            </div>
+          {/* Marquee — flows naturally, no border */}
+          <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
+            <p className="pb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
+              Channel surface — LinkedIn live, more networks shipping on the same queue
+            </p>
+            <ChannelMarquee channels={MARKETING_MARQUEE_CHANNELS} />
           </div>
         </section>
 
-        {/* Bento: AI Content Engine (flowing waves) + Neural Shortcuts — Stitch-aligned */}
+        {/* Bento: AI Content Engine + Neural Shortcuts */}
         <section id="ai-tools" className="scroll-mt-24 px-4 py-16 sm:px-6 sm:py-20 md:py-24">
           <div className="mx-auto max-w-7xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-6 motion-safe:duration-700">
             <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
@@ -334,7 +201,7 @@ export default function FeaturesPage() {
                 {
                   icon: Sparkles,
                   title: "AI Captioning",
-                  text: "Context-aware drafts tuned for LinkedIn today, expandable to each network’s tone as channels roll on.",
+                  text: "Context-aware drafts tuned for LinkedIn today, expandable to each network's tone as channels roll on.",
                 },
                 {
                   icon: Mic,
@@ -362,7 +229,8 @@ export default function FeaturesPage() {
           </div>
         </section>
 
-        <section id="platform" className="scroll-mt-24 border-y border-border/60 bg-muted/10 px-4 py-16 sm:px-6 sm:py-20 dark:border-white/5">
+        {/* Platform stack */}
+        <section id="platform" className="scroll-mt-24 px-4 py-16 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-7xl">
             <p className="text-center font-heading text-xs font-semibold uppercase tracking-[0.28em] text-primary">End-to-end stack</p>
             <h2 className="mt-3 text-center font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -376,7 +244,6 @@ export default function FeaturesPage() {
             </p>
             <p className="mx-auto mt-3 max-w-3xl text-center text-xs text-muted-foreground">{CREDIT_USAGE_NOTE}</p>
 
-            {/* Mobile: horizontal scroll strip */}
             <div className="mt-8 flex gap-3 overflow-x-auto pb-4 sm:hidden">
               {stackItems.map(({ icon: Icon, title, body }) => (
                 <div
@@ -390,7 +257,6 @@ export default function FeaturesPage() {
               ))}
             </div>
 
-            {/* Tablet + Desktop grid */}
             <div className="mt-10 hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-3">
               {stackItems.map(({ icon: Icon, title, body }) => (
                 <div
@@ -406,85 +272,47 @@ export default function FeaturesPage() {
           </div>
         </section>
 
-        <section
-          id="roadmap"
-          className="scroll-mt-24 border-y border-border/60 bg-gradient-to-b from-muted/40 via-background to-muted/30 px-4 py-16 sm:px-6 sm:py-20 md:py-28 dark:border-white/5 dark:from-[#04060c] dark:via-[#05070A] dark:to-[#070d16]"
-        >
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-12 text-center md:mb-16">
-              <h2 className="mb-3 font-heading text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
-                Evolution
-              </h2>
-              <h3 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-                Kinetic Roadmap
-              </h3>
-            </div>
-
-            {/* Desktop — staggered vertical timeline, spine + horizontal connectors touching cards */}
-            <div className="relative hidden md:block">
-              <div
-                className="pointer-events-none absolute bottom-0 left-1/2 top-0 z-0 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-primary/40 to-transparent dark:via-primary/35"
-                aria-hidden
-              />
-              <div className="relative z-10 flex flex-col gap-16 lg:gap-20">
-                {roadmapSteps.map((step, i) => {
-                  const isLeft = i % 2 === 0;
-                  return (
-                    <div key={step.badge} className="relative flex items-center">
-                      {isLeft ? (
-                        <>
-                          <div className="flex w-[calc(50%-20px)] items-center justify-end">
-                            <RoadmapStepCard step={step} cardSide="left" />
-                          </div>
-                          <div className="flex w-10 items-center justify-center">
-                            <div className="h-[2px] flex-1 bg-primary/50" aria-hidden />
-                            <RoadmapTimelineMarker variant={roadmapMarkerVariant(i, step.active)} />
-                            <div className="h-[2px] flex-1 bg-transparent" aria-hidden />
-                          </div>
-                          <div className="w-[calc(50%-20px)]" />
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-[calc(50%-20px)]" />
-                          <div className="flex w-10 items-center justify-center">
-                            <div className="h-[2px] flex-1 bg-transparent" aria-hidden />
-                            <RoadmapTimelineMarker variant={roadmapMarkerVariant(i, step.active)} />
-                            <div className="h-[2px] flex-1 bg-primary/50" aria-hidden />
-                          </div>
-                          <div className="flex w-[calc(50%-20px)] items-center justify-start">
-                            <RoadmapStepCard step={step} cardSide="right" />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Mobile — vertical spine + horizontal connector + cards */}
-            <div className="relative md:hidden">
-              <div
-                className="pointer-events-none absolute bottom-0 left-[19px] top-0 w-[2px] bg-gradient-to-b from-transparent via-primary/40 to-transparent"
-                aria-hidden
-              />
-              <div className="flex flex-col gap-10">
-                {roadmapSteps.map((step, i) => (
-                  <div key={step.badge} className="relative flex items-center">
-                    <div className="relative z-10 flex w-10 shrink-0 items-center justify-center">
-                      <RoadmapTimelineMarker variant={roadmapMarkerVariant(i, step.active)} />
-                    </div>
-                    <div className="h-[2px] w-4 shrink-0 bg-primary/50 sm:w-5" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <RoadmapStepCard step={step} cardSide="right" />
-                    </div>
+        {/* Roadmap — same Evolution timeline as Landing */}
+        <section id="roadmap" className="scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12 md:py-16">
+          <div className="mx-auto max-w-5xl">
+            <EvolutionTimeline
+              heading={
+                <>
+                  <h2 className="mb-3 font-heading text-xs font-semibold uppercase tracking-[0.3em] text-primary sm:text-sm">
+                    Evolution
+                  </h2>
+                  <h3 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+                    Kinetic Roadmap
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+                    A clear path from LinkedIn-first execution to full multi-channel growth.
+                  </p>
+                </>
+              }
+              milestones={marketingRoadmap.map((item) => ({
+                quarter: item.quarter,
+                status: item.status,
+                isLive: item.status === "Live now",
+                title: item.title,
+                body: item.body,
+                icons: (
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.icons.map(({ Icon, color }, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/30 dark:border-white/8 dark:bg-white/[0.04]"
+                      >
+                        <Icon className={cn("h-4 w-4", color)} aria-hidden />
+                      </span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                ),
+              }))}
+            />
           </div>
         </section>
 
+        {/* Reels */}
         <section id="reels" className="scroll-mt-24 overflow-hidden px-4 py-16 sm:px-6 sm:py-20 md:py-28">
           <div className="mx-auto flex max-w-7xl flex-col items-center gap-12 lg:flex-row lg:items-center lg:gap-16">
             <div className="relative w-full lg:w-1/2 lg:shrink-0">
@@ -543,10 +371,8 @@ export default function FeaturesPage() {
           </div>
         </section>
 
-        <section
-          id="analytics"
-          className="scroll-mt-24 border-y border-border/60 bg-muted/25 px-4 py-16 sm:px-6 sm:py-20 md:py-28 dark:border-white/5 dark:bg-[#0a0f18]"
-        >
+        {/* Analytics */}
+        <section id="analytics" className="scroll-mt-24 px-4 py-16 sm:px-6 sm:py-20 md:py-28">
           <div className="mx-auto max-w-7xl">
             <div className="mb-10 flex flex-col items-start justify-between gap-6 md:mb-14 md:flex-row md:items-end">
               <div>
@@ -619,10 +445,8 @@ export default function FeaturesPage() {
           </div>
         </section>
 
-        <section
-          id="investment"
-          className="scroll-mt-24 border-t border-border/60 bg-muted/10 px-0 py-16 sm:py-20 md:py-24 dark:border-white/5"
-        >
+        {/* Pricing */}
+        <section id="investment" className="scroll-mt-24 px-0 py-16 sm:py-20 md:py-24">
           <MarketingPlanGrid
             intro={{
               eyebrow: "Investment",

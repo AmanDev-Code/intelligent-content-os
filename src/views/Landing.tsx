@@ -14,37 +14,12 @@ import {
 } from "lucide-react";
 import { ChannelMarquee } from "@/components/marketing/ChannelMarquee";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { EvolutionTimeline } from "@/components/marketing/EvolutionTimeline";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { MARKETING_MARQUEE_CHANNELS } from "@/lib/marketing-channels";
+import { marketingRoadmap } from "@/lib/marketing-roadmap";
 import { cn } from "@/lib/utils";
-
-const roadmap = [
-  {
-    quarter: "Q2",
-    status: "Live now",
-    title: "LinkedIn + core platform",
-    body: "AI creation, calendar scheduling, media library, analytics, and billing are in production.",
-  },
-  {
-    quarter: "Q3",
-    status: "In progress",
-    title: "Multi-channel publishing",
-    body: "X, Instagram, Facebook, and YouTube scheduling with unified queue and reporting.",
-  },
-  {
-    quarter: "Q3",
-    status: "In progress",
-    title: "LinkedIn outreach engine",
-    body: "Intent-based connection paths to build a network and lead pipeline that fits your ICP.",
-  },
-  {
-    quarter: "Q4",
-    status: "Planned",
-    title: "Twitch + Reddit expansion",
-    body: "Community-led workflows and format-aware automation for conversation channels.",
-  },
-];
 
 const bentoHighlights = [
   {
@@ -78,6 +53,7 @@ export default function Landing() {
   return (
     <MarketingShell>
       <main>
+        {/* Hero */}
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(255,138,31,0.22),transparent_50%)]" />
@@ -148,40 +124,20 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="border-y border-border/60 bg-gradient-to-b from-muted/25 via-muted/10 to-transparent dark:border-white/5">
-            <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
-              <p className="pb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
-                Channels on the roadmap — LinkedIn live today
-              </p>
-              <ChannelMarquee channels={MARKETING_MARQUEE_CHANNELS} />
-            </div>
+          {/* Marquee — flows seamlessly, no border */}
+          <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
+            <p className="pb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
+              Channels on the roadmap — LinkedIn live today
+            </p>
+            <ChannelMarquee channels={MARKETING_MARQUEE_CHANNELS} />
           </div>
         </section>
 
-        <section className="border-b border-border/60 bg-muted/20 py-8 dark:border-white/5 dark:bg-background/40 sm:py-10">
+        {/* Ship faster — chips */}
+        <div className="py-8 sm:py-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <h3 className="text-center text-sm font-semibold uppercase tracking-[0.16em] text-foreground/90 sm:text-left">
-              Ship faster
-            </h3>
-            {/* Mobile: tight 2 + 1 cluster — avoids full-width grid stretching */}
-            <div className="mt-4 flex flex-col items-center gap-2.5 sm:hidden">
-              <div className="flex flex-wrap justify-center gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/90 px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-none dark:border-white/10 dark:bg-card/60">
-                  <Linkedin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                  LinkedIn live
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/90 px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-none dark:border-white/10 dark:bg-card/60">
-                  <Clapperboard className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                  AI reels · roadmap
-                </span>
-              </div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/90 px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-none dark:border-white/10 dark:bg-card/60">
-                <Target className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                Outreach · Q3
-              </span>
-            </div>
-            {/* Desktop: single relaxed row */}
-            <div className="mt-4 hidden flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-muted-foreground sm:flex sm:justify-start">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground sm:gap-8">
+              <span className="w-full text-center text-sm font-semibold uppercase tracking-[0.16em] text-foreground/90 sm:w-auto">Ship faster</span>
               <span className="inline-flex items-center gap-2">
                 <Linkedin className="h-4 w-4 shrink-0 text-primary" aria-hidden />
                 LinkedIn publishing live
@@ -196,8 +152,9 @@ export default function Landing() {
               </span>
             </div>
           </div>
-        </section>
+        </div>
 
+        {/* Bento cards */}
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
             <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-7 lg:p-10">
@@ -269,128 +226,39 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="border-y border-border/60 bg-muted/15 py-16 dark:border-white/5">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6">
-            <h2 className="text-center font-heading text-3xl font-black text-foreground sm:text-4xl">Evolution timeline</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-              A clear path from LinkedIn-first execution to full multi-channel growth.
-            </p>
-            <div className="relative mt-12">
-              <div
-                className="pointer-events-none absolute bottom-0 left-[19px] top-0 w-[2px] bg-gradient-to-b from-primary/40 via-primary/30 to-transparent sm:left-1/2 sm:-translate-x-1/2"
-                aria-hidden
-              />
-              <div className="flex flex-col gap-10">
-                {roadmap.map((item, i) => {
-                  const isLeft = i % 2 === 0;
-                  const isLive = item.status === "Live now";
-                  return (
-                    <div key={`${item.quarter}-${item.title}`}>
-                      {/* Mobile: single column, left spine */}
-                      <div className="relative flex items-center sm:hidden">
-                        <div className="relative z-10 flex w-10 shrink-0 items-center justify-center">
-                          <div
-                            className={cn(
-                              "flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-background bg-background dark:border-[#0c101c] dark:bg-[#0c101c]",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "block h-2.5 w-2.5 rounded-full",
-                                isLive ? "bg-primary shadow-[0_0_12px_rgba(255,138,31,0.5)]" : "bg-muted-foreground/40",
-                              )}
-                            />
-                          </div>
-                        </div>
-                        <div className="h-[2px] w-4 shrink-0 bg-primary/40" aria-hidden />
-                        <div
-                          className={cn(
-                            "min-w-0 flex-1 rounded-2xl border p-5",
-                            "bg-card dark:bg-card/60",
-                            isLive ? "border-primary/40" : "border-border/80 dark:border-white/10",
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.quarter}</span>
-                            <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground dark:bg-white/5">
-                              {item.status}
-                            </span>
-                          </div>
-                          <h3 className="mt-3 font-heading text-lg font-semibold text-foreground">{item.title}</h3>
-                          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-                        </div>
-                      </div>
-
-                      {/* Desktop: staggered */}
-                      <div className="relative hidden items-center sm:flex">
-                        {isLeft ? (
-                          <>
-                            <div className="flex w-[calc(50%-18px)] items-center justify-end">
-                              <div
-                                className={cn(
-                                  "w-full max-w-sm rounded-2xl border p-5",
-                                  "bg-card dark:bg-card/60",
-                                  isLive ? "border-primary/40" : "border-border/80 dark:border-white/10",
-                                )}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.quarter}</span>
-                                  <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground dark:bg-white/5">
-                                    {item.status}
-                                  </span>
-                                </div>
-                                <h3 className="mt-3 text-right font-heading text-lg font-semibold text-foreground">{item.title}</h3>
-                                <p className="mt-2 text-right text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-                              </div>
-                            </div>
-                            <div className="flex w-9 items-center justify-center">
-                              <div className="h-[2px] flex-1 bg-primary/40" aria-hidden />
-                              <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] border-background bg-background dark:border-[#0c101c] dark:bg-[#0c101c]">
-                                <span className={cn("block h-2.5 w-2.5 rounded-full", isLive ? "bg-primary shadow-[0_0_12px_rgba(255,138,31,0.5)]" : "bg-muted-foreground/40")} />
-                              </div>
-                              <div className="h-[2px] flex-1 bg-transparent" aria-hidden />
-                            </div>
-                            <div className="w-[calc(50%-18px)]" />
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-[calc(50%-18px)]" />
-                            <div className="flex w-9 items-center justify-center">
-                              <div className="h-[2px] flex-1 bg-transparent" aria-hidden />
-                              <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[3px] border-background bg-background dark:border-[#0c101c] dark:bg-[#0c101c]">
-                                <span className={cn("block h-2.5 w-2.5 rounded-full", isLive ? "bg-primary shadow-[0_0_12px_rgba(255,138,31,0.5)]" : "bg-muted-foreground/40")} />
-                              </div>
-                              <div className="h-[2px] flex-1 bg-primary/40" aria-hidden />
-                            </div>
-                            <div className="flex w-[calc(50%-18px)] items-center justify-start">
-                              <div
-                                className={cn(
-                                  "w-full max-w-sm rounded-2xl border p-5",
-                                  "bg-card dark:bg-card/60",
-                                  isLive ? "border-primary/40" : "border-border/80 dark:border-white/10",
-                                )}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-bold uppercase tracking-wider text-primary">{item.quarter}</span>
-                                  <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground dark:bg-white/5">
-                                    {item.status}
-                                  </span>
-                                </div>
-                                <h3 className="mt-3 font-heading text-lg font-semibold text-foreground">{item.title}</h3>
-                                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+        {/* Vertical left–right snake roadmap */}
+        <section className="py-8 sm:py-12">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6">
+            <EvolutionTimeline
+              heading={
+                <>
+                  <h2 className="font-heading text-3xl font-black text-foreground sm:text-4xl">Evolution timeline</h2>
+                  <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+                    A clear path from LinkedIn-first execution to full multi-channel growth.
+                  </p>
+                </>
+              }
+              milestones={marketingRoadmap.map((item) => ({
+                quarter: item.quarter,
+                status: item.status,
+                isLive: item.status === "Live now",
+                title: item.title,
+                body: item.body,
+                icons: (
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.icons.map(({ Icon, color }, idx) => (
+                      <span key={idx} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/30 dark:border-white/8 dark:bg-white/[0.04]">
+                        <Icon className={cn("h-4 w-4", color)} aria-hidden />
+                      </span>
+                    ))}
+                  </div>
+                ),
+              }))}
+            />
           </div>
         </section>
 
+        {/* CTA */}
         <section className="px-4 py-16 sm:px-6 sm:py-20">
           <div className="mx-auto max-w-5xl rounded-[2rem] border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-red-500/5 px-8 py-12 text-center backdrop-blur-2xl dark:from-primary/20 dark:via-card/50 dark:to-red-500/10 dark:shadow-2xl dark:shadow-primary/10 sm:px-12 sm:py-14">
             <Video className="mx-auto h-8 w-8 text-primary" />
