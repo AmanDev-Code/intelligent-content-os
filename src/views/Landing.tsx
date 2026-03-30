@@ -63,50 +63,48 @@ export default function Landing() {
           </div>
 
           <div className="mx-auto max-w-6xl px-4 pb-8 pt-14 sm:px-6 sm:pb-10 sm:pt-16 md:pt-20">
-            <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-card/70 p-7 shadow-xl shadow-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-card/40 sm:p-10 lg:p-12">
-              <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-gradient-to-br from-primary/30 to-red-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute -left-16 bottom-0 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
+            <div className="relative">
+              <div className="pointer-events-none absolute -right-20 -top-16 h-64 w-64 rounded-full bg-gradient-to-br from-primary/25 to-red-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -left-24 bottom-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl" />
 
-              <div className="relative">
-                <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md dark:border-white/15 dark:bg-background/40">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  The Kinetic Curator · Social workspace
+              <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md dark:border-white/15 dark:bg-background/40">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                The Kinetic Curator · Social workspace
+              </span>
+
+              <h1 className="mt-6 max-w-5xl font-heading text-[2.35rem] font-black leading-[1.04] tracking-tight sm:text-5xl md:text-6xl lg:text-[4rem]">
+                Operate social growth
+                <br className="hidden sm:block" /> with one{" "}
+                <span className="bg-gradient-to-r from-[#ffc14a] via-[#ff8a1f] to-[#ff5d4f] bg-clip-text text-transparent">
+                  premium control layer
                 </span>
+                .
+              </h1>
 
-                <h1 className="mt-6 max-w-5xl font-heading text-[2.35rem] font-black leading-[1.04] tracking-tight sm:text-5xl md:text-6xl lg:text-[4rem]">
-                  Operate social growth
-                  <br className="hidden sm:block" /> with one{" "}
-                  <span className="bg-gradient-to-r from-[#ffc14a] via-[#ff8a1f] to-[#ff5d4f] bg-clip-text text-transparent">
-                    premium control layer
-                  </span>
-                  .
-                </h1>
+              <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
+                Trndinn unifies AI creation, scheduling, outreach and analytics into one polished workspace your team can
+                actually run every day.
+              </p>
 
-                <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-                  Trndinn unifies AI creation, scheduling, outreach and analytics into one polished workspace your team can
-                  actually run every day.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Button
-                    size="lg"
-                    className="h-12 rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-xl shadow-primary/30"
-                    asChild
-                  >
-                    <Link href={primaryHref}>
-                      {primaryLabel}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-12 rounded-full border-border bg-secondary/60 hover:bg-secondary dark:border-white/20 dark:bg-background/50 dark:backdrop-blur-md"
-                    asChild
-                  >
-                    <Link href="/features">Explore the platform</Link>
-                  </Button>
-                </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  className="h-12 rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-xl shadow-primary/30"
+                  asChild
+                >
+                  <Link href={primaryHref}>
+                    {primaryLabel}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="h-12 rounded-full border-border bg-secondary/60 hover:bg-secondary dark:border-white/20 dark:bg-background/50 dark:backdrop-blur-md"
+                  asChild
+                >
+                  <Link href="/features">Explore the platform</Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -122,12 +120,13 @@ export default function Landing() {
 
         {/* Hero metrics moved out of hero */}
         <section className="py-8 sm:py-10">
-          <div className="mx-auto grid max-w-6xl gap-3 px-4 sm:grid-cols-3 sm:gap-4 sm:px-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:pb-0">
             {bentoHighlights.map(({ icon: Icon, label, stat, sub, accent }) => (
               <div
                 key={label}
                 className={cn(
-                  "relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/70 dark:to-card/35 dark:backdrop-blur-xl",
+                  "relative w-[82vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border/80 bg-card p-5 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/70 dark:to-card/35 dark:backdrop-blur-xl sm:w-auto sm:shrink sm:snap-none",
                 )}
               >
                 <div className={cn("pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-gradient-to-br blur-2xl", accent)} />
@@ -143,6 +142,7 @@ export default function Landing() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </section>
 
