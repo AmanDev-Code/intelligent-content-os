@@ -33,6 +33,8 @@ import {
   ImageIcon,
   Smile,
   Hash,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface ScheduleModalProps {
@@ -60,12 +62,14 @@ export function ScheduleModal({
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
   const [newHashtagInput, setNewHashtagInput] = useState('');
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     if (content && open) {
       setEditedContent(content.content || '');
       setEditedHashtags(content.hashtags || []);
       setUploadedImages([]);
+      setCarouselIndex(0);
       
       // Set default schedule time to 1 hour from now
       const now = new Date();
@@ -84,6 +88,15 @@ export function ScheduleModal({
   };
 
   if (!content) return null;
+
+  const hasUploadedMedia = uploadedImages.length > 0;
+  const hasCarousel = Array.isArray(content.carousel_urls) && content.carousel_urls.length > 0;
+  const hasSingleImage = Boolean(content.visual_url && content.visual_url.startsWith('http'));
+  const effectiveHashtags = editedHashtags.length > 0 ? editedHashtags : (content.hashtags || []);
+  const clampedCarouselIndex = Math.min(
+    Math.max(carouselIndex, 0),
+    Math.max((content.carousel_urls?.length || 1) - 1, 0),
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -170,9 +183,9 @@ export function ScheduleModal({
                   ))}
                 </div>
 
-                {content.hashtags && content.hashtags.length > 0 && (
+                {effectiveHashtags.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-x-1" style={{ maxWidth: '100%' }}>
-                    {content.hashtags.map((tag: string, index: number) => (
+                    {effectiveHashtags.map((tag: string, index: number) => (
                       <span key={index} className="text-[13px] sm:text-[14px] text-primary font-semibold hover:underline cursor-pointer">
                         {tag.startsWith("#") ? tag : `#${tag}`}
                       </span>
@@ -182,7 +195,7 @@ export function ScheduleModal({
               </div>
 
               {/* Uploaded Images Preview */}
-              {uploadedImages.length > 0 && (
+              {hasUploadedMedia && (
                 <div className="px-4 pb-3">
                   {uploadedImages.length === 1 ? (
                     <div className="relative w-full max-h-96 h-96 rounded-lg overflow-hidden border border-border">
@@ -222,10 +235,70 @@ export function ScheduleModal({
                 </div>
               )}
 
-              {/* AI Generated Visual */}
-              {content.visual_url &&
-               content.visual_url.startsWith('http') &&
-               !uploadedImages.length && (
+              {/* Carousel Preview (LinkedIn style) */}
+              {!hasUploadedMedia && hasCarousel && (
+                <div className="px-4 pb-3">
+                  <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-muted/20">
+                    <div className="relative w-full h-[420px]">
+                      <Image
+                        src={content.carousel_urls[clampedCarouselIndex]}
+                        alt={`Carousel slide ${clampedCarouselIndex + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 700px"
+                        unoptimized
+                      />
+                    </div>
+
+                    {content.carousel_urls.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setCarouselIndex((v) => Math.max(v - 1, 0))}
+                          disabled={clampedCarouselIndex === 0}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCarouselIndex((v) =>
+                              Math.min(v + 1, content.carousel_urls.length - 1),
+                            )
+                          }
+                          disabled={clampedCarouselIndex === content.carousel_urls.length - 1}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white disabled:opacity-40"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {content.carousel_urls.length > 1 && (
+                    <div className="mt-2 flex items-center justify-center gap-1.5">
+                      {content.carousel_urls.map((_: string, idx: number) => (
+                        <button
+                          key={`dot-${idx}`}
+                          type="button"
+                          onClick={() => setCarouselIndex(idx)}
+                          className={cn(
+                            'h-1.5 rounded-full transition-all',
+                            idx === clampedCarouselIndex
+                              ? 'w-5 bg-primary'
+                              : 'w-1.5 bg-muted-foreground/40',
+                          )}
+                          aria-label={`Go to slide ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* AI Generated Single Visual */}
+              {!hasUploadedMedia && !hasCarousel && hasSingleImage && (
                 <div className="px-4 pb-3" data-generated-visual>
                   <div className="rounded-lg overflow-hidden border border-gray-200">
                     <div className="relative w-full h-[400px]">

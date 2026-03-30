@@ -213,6 +213,8 @@ export const api = {
   media: {
     generateImage: (data: any) => apiClient.post('/media/generate-image', data),
     generateCarousel: (data: any) => apiClient.post('/media/generate-carousel', data),
+    generateCarouselAsync: (data: any) => apiClient.post('/media/generate-carousel-async', data),
+    getCarouselJobStatus: (jobId: string) => apiClient.get(`/media/carousel-job/${jobId}`),
     getFiles: (params?: any) => apiClient.get(`/media/files${params ? `?${new URLSearchParams(params)}` : ''}`),
     deleteFile: (fileId: string) => apiClient.delete(`/media/files/${fileId}`),
     getUsage: () => apiClient.get('/media/usage'),

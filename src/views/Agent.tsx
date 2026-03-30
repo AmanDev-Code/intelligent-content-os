@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +99,7 @@ export default function Agent() {
     "idle" | "generated" | "scheduled"
   >("idle");
   const [showTourDemo, setShowTourDemo] = useState(false);
+  const activeCarouselPollsRef = useRef<Map<string, Promise<any>>>(new Map());
 
   useEffect(() => {
     const handler = () => {
@@ -264,18 +265,177 @@ export default function Agent() {
           throw new Error("Missing jobId for completion fetch");
         }
         const content = await api.generation.jobContent(jobId);
+        console.log('n8n data', content);
         console.log('Content received:', content.length, 'items');
-        
+
+        const inferType = (item: any): 'post' | 'image' | 'carousel' => {
+          const perfSlides =
+            item?.performance_prediction?.slides ||
+            item?.performancePrediction?.slides;
+          if (
+            item?.carousel_urls?.length ||
+            item?.visual_type === 'carousel' ||
+            (Array.isArray(perfSlides) && perfSlides.length >= 2)
+          ) {
+            return 'carousel';
+          }
+          // Carousel run: n8n may still store visual_type=image before slides exist; never force single-image gen.
+          if (selectedType === 'carousel') {
+            return 'carousel';
+          }
+          if (item?.visual_url?.startsWith('http') || item?.visual_type === 'image') return 'image';
+          return selectedType as 'post' | 'image' | 'carousel';
+        };
+
+        const buildCarouselSlides = (item: any) => {
+          const perf =
+            item?.performance_prediction ||
+            item?.performancePrediction;
+          const fromPerf = Array.isArray(perf?.slides) ? perf.slides : null;
+          const topSlides = Array.isArray(item?.slides) ? item.slides : null;
+          const slideSource = topSlides?.length ? topSlides : fromPerf;
+          if (slideSource && slideSource.length > 0) {
+            return slideSource.map((slide: any) => ({
+              headline:
+                slide.headline || item.title || 'Slide',
+              body:
+                slide.body ||
+                String(item?.content || '').substring(0, 180) ||
+                '',
+              imagePrompt:
+                slide.imagePrompt ||
+                slide.image_prompt ||
+                `Professional LinkedIn carousel slide for ${item.title || 'business topic'}`,
+            }));
+          }
+          const sentences = String(item?.content || '')
+            .split(/(?<=[.!?])\s+/)
+            .filter(Boolean)
+            .slice(0, 4);
+          const base = sentences.length > 0 ? sentences : [String(item?.content || '').slice(0, 220)];
+          const title = item?.title || 'Key Insight';
+          const headlineSuffixes = ['Overview', 'Deep Dive', 'Key Takeaway', 'The Bigger Picture', 'In Practice', 'Next Steps'];
+          return base.map((body: string, idx: number) => ({
+            headline: idx === 0
+              ? title
+              : `${title.split(/[:\-–—]/)[0].trim().slice(0, 40)} — ${headlineSuffixes[idx % headlineSuffixes.length]}`,
+            body: body.slice(0, 220),
+            imagePrompt: `Professional LinkedIn carousel slide about ${title}: ${body.slice(0, 120)}`,
+          }));
+        };
+
+        const pollCarouselJob = async (mediaJobId: string, item: any): Promise<any> => {
+          const existing = activeCarouselPollsRef.current.get(mediaJobId);
+          if (existing) return existing;
+
+          const pollPromise = (async () => {
+            const intervals = [1200, 1800, 2500, 3500, 5000, 5000, 6000, 6000];
+            const MAX_POLLS = 25;
+            for (let i = 0; i < MAX_POLLS; i++) {
+              const wait = intervals[Math.min(i, intervals.length - 1)];
+              await new Promise((r) => setTimeout(r, wait));
+              try {
+                const status = await api.media.getCarouselJobStatus(mediaJobId);
+                const pct = typeof status.progress === 'number' ? status.progress : 0;
+                setTarget(Math.min(92, 60 + Math.round(pct * 0.32)));
+
+                if (status.status === 'completed') {
+                  const imageUrls: string[] = Array.isArray(status?.result?.imageUrls)
+                    ? status.result.imageUrls
+                    : [];
+                  if (imageUrls.length > 0) {
+                    return {
+                      ...item,
+                      visual_type: 'carousel',
+                      carousel_urls: imageUrls,
+                    };
+                  }
+                  return api.generation.contentById(item.id);
+                }
+                if (status.status === 'failed') {
+                  throw new Error(status.error || 'Carousel generation failed');
+                }
+              } catch (pollErr: any) {
+                if (pollErr?.message?.includes('not found')) continue;
+                throw pollErr;
+              }
+            }
+            throw new Error('Carousel generation timed out');
+          })();
+
+          activeCarouselPollsRef.current.set(mediaJobId, pollPromise);
+          try {
+            return await pollPromise;
+          } finally {
+            activeCarouselPollsRef.current.delete(mediaJobId);
+          }
+        };
+
+        const ensureMediaForContent = async (item: any) => {
+          const itemType = inferType(item);
+          if (itemType === 'post') return item;
+
+          if (itemType === 'image' && !item?.visual_url?.startsWith('http')) {
+            await api.media.generateImage({
+              contentId: item.id,
+              prompt: item?.imagePrompt || `Professional LinkedIn visual for: ${item?.title || 'this post'}`,
+            });
+          }
+
+          if (itemType === 'carousel' && !(item?.carousel_urls?.length > 0)) {
+            const slides = buildCarouselSlides(item);
+            const perf =
+              item?.performance_prediction || item?.performancePrediction;
+            const visualStyle =
+              typeof perf?.visualStyle === 'string' ? perf.visualStyle : undefined;
+            const asyncRes = await api.media.generateCarouselAsync({
+              contentId: item.id,
+              slides,
+              includePdf: false,
+              ...(visualStyle ? { style: visualStyle } : {}),
+            });
+            if (asyncRes?.jobId) {
+              return pollCarouselJob(String(asyncRes.jobId), item);
+            }
+          }
+
+          return api.generation.contentById(item.id);
+        };
+
+        let finalizedContent = content;
+        if (content.length > 0 && selectedType !== 'post') {
+          setTarget(92);
+          setStage(
+            selectedType === 'image'
+              ? 'Generating image...'
+              : 'Generating carousel...'
+          );
+          try {
+            finalizedContent = await Promise.all(
+              content.map((item: any) => ensureMediaForContent(item)),
+            );
+          } catch (mediaError: any) {
+            console.error('Media generation step failed:', mediaError);
+            finalizedContent = content;
+            setStage('Content ready (media pending)');
+            toast.error(
+              mediaError?.message?.includes('503')
+                ? 'Media service unavailable right now. Text is ready; media can be generated on publish.'
+                : 'Media generation failed for now. Text is ready; you can still continue.',
+            );
+          }
+        }
+
         // Update all states
-        setGeneratedContent(content);
+        setGeneratedContent(finalizedContent);
         setTarget(100);
         setIsComplete(true);
         setIsGenerating(false);
         setIsLoadingContent(false);
         setStage("Completed");
         
-        if (content.length > 0) {
-          toast.success(`Generated ${content.length} content piece(s)!`);
+        if (finalizedContent.length > 0) {
+          toast.success(`Generated ${finalizedContent.length} content piece(s)!`);
         } else {
           toast.error("Content not found. Please try refresh.");
         }
@@ -285,6 +445,13 @@ export default function Agent() {
         await refreshQuota(); // Refresh credits everywhere (sidebar, header, dashboard, billing)
       } catch (error) {
         console.error('Error in handleComplete:', error);
+        if (generatedContent.length > 0) {
+          setIsComplete(true);
+          setIsGenerating(false);
+          setIsLoadingContent(false);
+          setStage("Completed");
+          return;
+        }
         setTarget(100);
         setIsComplete(true);
         setIsGenerating(false);
@@ -293,7 +460,7 @@ export default function Agent() {
         toast.error("Failed to load content");
       }
     },
-    [setTarget, jobId, fetchRecentGenerations, refreshQuota]
+    [setTarget, jobId, fetchRecentGenerations, refreshQuota, selectedType]
   );
 
   const handleFailed = useCallback(
@@ -396,10 +563,15 @@ export default function Agent() {
   };
 
   const handleGenerate = async () => {
-    // For trending mode, first check if we need to generate topics
+    // Trending mode: first request usually lists topics via the default n8n workflow.
+    // Carousel uses a separate full-pipeline workflow (news → slides); skip the topic-only
+    // step so we do not always hit N8N_WEBHOOK_URL with contentType "topics".
     if (generationMode === 'trending' && generatedContent.length === 0) {
-      await generateViralTopics();
-      return;
+      if (selectedType !== 'carousel') {
+        await generateViralTopics();
+        return;
+      }
+      // Carousel + trending: one shot → N8N_CAROUSEL_WEBHOOK_URL (contentType carousel)
     }
 
     if (isGenerating) {
@@ -411,8 +583,12 @@ export default function Agent() {
       toast.error("Please enter a topic to generate content");
       return;
     }
-    
-    if (generationMode === 'trending' && selectedTrending === null) {
+
+    if (
+      generationMode === 'trending' &&
+      selectedTrending === null &&
+      selectedType !== 'carousel'
+    ) {
       toast.error("Please select a viral topic first");
       return;
     }
@@ -466,29 +642,42 @@ export default function Agent() {
   const handlePublishNow = async (content: any) => {
     try {
       setIsPublishing(true);
-      
+
+      const actionType: 'post' | 'image' | 'carousel' =
+        content?.carousel_urls?.length || content?.visual_type === 'carousel'
+          ? 'carousel'
+          : content?.visual_url?.startsWith('http') || content?.visual_type === 'image'
+            ? 'image'
+            : (selectedType as 'post' | 'image' | 'carousel');
+
       // First generate media if needed
-      if (selectedType === 'image') {
+      if (actionType === 'image' && !content?.visual_url?.startsWith('http')) {
         const mediaResponse = await apiClient.post('/media/generate-image', {
-          prompt: content.visual?.imagePrompt || `Professional image for: ${content.title}`,
+          prompt: content.imagePrompt || content.visual?.imagePrompt || `Professional image for: ${content.title}`,
           contentId: content.id,
         });
         
         if (!mediaResponse.success) {
           throw new Error('Failed to generate image');
         }
-      } else if (selectedType === 'carousel') {
-        const slides = content.visual?.carouselSlides || [
-          {
-            headline: content.title,
-            body: content.content.substring(0, 100),
-            imagePrompt: `Professional image for: ${content.title}`,
-          }
-        ];
+      } else if (
+        actionType === 'carousel' &&
+        (!(content?.carousel_urls?.length > 0) || !content?.pdf_url)
+      ) {
+        const slides = Array.isArray(content?.slides) && content.slides.length > 0
+          ? content.slides
+          : [
+              {
+                headline: content.title,
+                body: content.content.substring(0, 160),
+                imagePrompt: `Professional image for: ${content.title}`,
+              },
+            ];
         
         const mediaResponse = await apiClient.post('/media/generate-carousel', {
           slides,
           contentId: content.id,
+          includePdf: true,
         });
         
         if (!mediaResponse.success) {
@@ -532,28 +721,46 @@ export default function Agent() {
     try {
       setIsScheduling(true);
       
+      const actionType: 'post' | 'image' | 'carousel' =
+        selectedContentForAction?.carousel_urls?.length || selectedContentForAction?.visual_type === 'carousel'
+          ? 'carousel'
+          : selectedContentForAction?.visual_url?.startsWith('http') || selectedContentForAction?.visual_type === 'image'
+            ? 'image'
+            : (selectedType as 'post' | 'image' | 'carousel');
+
       // First generate media if needed
-      if (selectedType === 'image') {
+      if (actionType === 'image' && !selectedContentForAction?.visual_url?.startsWith('http')) {
         const mediaResponse = await apiClient.post('/media/generate-image', {
-          prompt: selectedContentForAction.visual?.imagePrompt || `Professional image for: ${selectedContentForAction.title}`,
+          prompt: selectedContentForAction.imagePrompt || selectedContentForAction.visual?.imagePrompt || `Professional image for: ${selectedContentForAction.title}`,
           contentId: selectedContentForAction.id,
         });
         
         if (!mediaResponse.success) {
           throw new Error('Failed to generate image');
         }
-      } else if (selectedType === 'carousel') {
-        const slides = selectedContentForAction.visual?.carouselSlides || [
-          {
-            headline: selectedContentForAction.title,
-            body: selectedContentForAction.content.substring(0, 100),
-            imagePrompt: `Professional image for: ${selectedContentForAction.title}`,
-          }
-        ];
+      } else if (
+        actionType === 'carousel' &&
+        (
+          !(selectedContentForAction?.carousel_urls?.length > 0) ||
+          !selectedContentForAction?.pdf_url
+        )
+      ) {
+        const slides =
+          Array.isArray(selectedContentForAction?.slides) &&
+          selectedContentForAction.slides.length > 0
+            ? selectedContentForAction.slides
+            : [
+                {
+                  headline: selectedContentForAction.title,
+                  body: selectedContentForAction.content.substring(0, 160),
+                  imagePrompt: `Professional image for: ${selectedContentForAction.title}`,
+                },
+              ];
         
         const mediaResponse = await apiClient.post('/media/generate-carousel', {
           slides,
           contentId: selectedContentForAction.id,
+          includePdf: true,
         });
         
         if (!mediaResponse.success) {
@@ -803,7 +1010,15 @@ export default function Agent() {
                             )}
                           </div>
                           <h3 className="text-lg font-medium mb-2">
-                            {isComplete ? "Topics Generated!" : "Generating Viral Topics"}
+                            {isComplete
+                              ? "Generation Complete!"
+                              : generationMode === 'trending' && generatedContent.length === 0
+                                ? "Generating Viral Topics"
+                                : selectedType === 'post'
+                                  ? "Generating Text Post"
+                                  : selectedType === 'image'
+                                    ? "Generating Image Post"
+                                    : "Generating Carousel Post"}
                           </h3>
                           <p className="text-sm text-muted-foreground mb-4">
                             {stage || "AI is analyzing trending content and generating viral topics for you..."}
@@ -966,7 +1181,11 @@ export default function Agent() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={generateViralTopics}
+                          onClick={() =>
+                            selectedType === 'carousel'
+                              ? handleGenerate()
+                              : generateViralTopics()
+                          }
                           disabled={isGenerating}
                           className="w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
                         >
@@ -1102,12 +1321,18 @@ export default function Agent() {
                         </p>
                       </div>
                       <Button 
-                        onClick={generateViralTopics}
+                        onClick={() =>
+                          selectedType === 'carousel'
+                            ? handleGenerate()
+                            : generateViralTopics()
+                        }
                         disabled={isGenerating}
                         className="bg-primary text-primary-foreground"
                       >
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Generate Viral Topics
+                        {selectedType === 'carousel'
+                          ? 'Generate carousel'
+                          : 'Generate Viral Topics'}
                       </Button>
                     </div>
                   )}
