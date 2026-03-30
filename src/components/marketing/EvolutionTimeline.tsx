@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useLayoutEffect, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /** ~344×882 and similar tall narrow phones — extra spacing + stretched SVG alignment */
@@ -37,6 +37,49 @@ function useTabletTimelineLayout() {
   }, []);
 
   return match;
+}
+
+function clamp01(v: number) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function stagedProgress(progress: number, index: number, count: number, start = 0.15, span = 0.72, width = 0.18) {
+  const step = count > 1 ? span / (count - 1) : 0;
+  const anchor = start + index * step;
+  return clamp01((progress - anchor) / width);
+}
+
+function useTimelineProgress(ref: React.RefObject<HTMLDivElement | null>) {
+  const [progress, setProgress] = useState(0);
+
+  useLayoutEffect(() => {
+    let raf = 0;
+    const update = () => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      // Start later: only when timeline is closer to viewport center.
+      const start = vh * 0.62;
+      const end = -rect.height * 0.22;
+      const p = clamp01((start - rect.top) / (start - end));
+      setProgress(p);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [ref]);
+
+  return progress;
 }
 
 export type EvolutionMilestone = {
@@ -134,10 +177,12 @@ function EvolutionTimelineMobile({
   milestones,
   heading,
   n,
+  progress,
 }: {
   milestones: EvolutionMilestone[];
   heading?: ReactNode;
   n: number;
+  progress: number;
 }) {
   const narrowPhone = useNarrowPhoneTimelineLayout();
 
@@ -190,8 +235,28 @@ function EvolutionTimelineMobile({
           preserveAspectRatio="none"
           aria-hidden
         >
-          <path d={mobPath} fill="none" stroke="hsl(var(--primary)/.15)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-          <path d={mobPath} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d={mobPath}
+            className="et-mob-path-glow"
+            pathLength={1}
+            fill="none"
+            stroke="hsl(var(--primary)/.15)"
+            strokeWidth="7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ strokeDasharray: 1, strokeDashoffset: 1 - progress, opacity: 0.25 + progress * 0.75 }}
+          />
+          <path
+            d={mobPath}
+            className="et-mob-path"
+            pathLength={1}
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ strokeDasharray: 1, strokeDashoffset: 1 - progress }}
+          />
         </svg>
 
         <div className="absolute inset-0 z-[4] pointer-events-none">
@@ -203,10 +268,22 @@ function EvolutionTimelineMobile({
               <span
                 key={`mob-node-${i}`}
                 className={cn(
-                  "absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground",
+                  "et-mob-node absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground",
                   m.isLive && "et-node-live",
                 )}
-                style={{ left, top }}
+                style={
+                  {
+                    left,
+                    top,
+                    ...(function () {
+                      const p = stagedProgress(progress, i, milestones.length, 0.12, 0.6, 0.12);
+                      return {
+                        opacity: p < 0.05 ? 0 : 1,
+                        transform: `translate(-50%, -50%) scale(${0.86 + p * 0.14})`,
+                      };
+                    })(),
+                  } as CSSProperties
+                }
               >
                 Q{i + 1}
               </span>
@@ -230,16 +307,29 @@ function EvolutionTimelineMobile({
             return (
               <div
                 key={`mob-copy-${i}`}
-                className="absolute"
-                style={{
-                  top: topPct,
-                  transform: `translateY(calc(-50% + ${contentNudgeY}px))`,
-                  ...(isLeftNode
-                    ? { left: `calc(${mobLeftPct}% + ${mobNodeGap}px)`, right: "8px" }
-                    : { right: `calc(${100 - mobRightPct}% + ${mobNodeGap}px)`, left: "8px" }),
-                }}
+                className="et-mob-copy absolute"
+                style={
+                  {
+                    top: topPct,
+                    transform: `translateY(calc(-50% + ${contentNudgeY}px))`,
+                    ...(isLeftNode
+                      ? { left: `calc(${mobLeftPct}% + ${mobNodeGap}px)`, right: "8px" }
+                      : { right: `calc(${100 - mobRightPct}% + ${mobNodeGap}px)`, left: "8px" }),
+                  } as CSSProperties
+                }
               >
-                <div className={cn("px-1", isLeftNode ? "text-left" : "text-right")}>
+                <div
+                  className={cn("px-1", isLeftNode ? "text-left" : "text-right")}
+                  style={{
+                    ...(function () {
+                      const p = stagedProgress(progress, i, milestones.length, 0.18, 0.62, 0.14);
+                      return {
+                        opacity: p,
+                        transform: `translateY(${(1 - p) * 10}px)`,
+                      };
+                    })(),
+                  }}
+                >
                   <div
                     className={cn(
                       "text-[clamp(0.52rem,1.55vw,0.62rem)] font-extrabold uppercase tracking-[0.12em]",
@@ -326,6 +416,8 @@ function milestoneCopy(m: EvolutionMilestone, opts: { align?: "left" | "right"; 
 export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProps) {
   const n = milestones.length;
   const tablet768x1024 = useTabletTimelineLayout();
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+  const progress = useTimelineProgress(timelineRef);
 
   // ── Desktop geometry: extra row height on tablet so copy clears the horizontal connectors (padding alone was invisible while centered)
   const tabletRowExtraPx = tablet768x1024 ? ([56, 80, 80, 56] as const) : null;
@@ -358,7 +450,11 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
   const nodeEdgeGap = nodeRadiusPx + pathGapPx;
 
   return (
-    <div data-evolution-timeline="" className="et">
+    <div
+      ref={timelineRef}
+      data-evolution-timeline=""
+      className="et"
+    >
       <style>{`
         [data-evolution-timeline] .et-stage-desktop {
           position: relative;
@@ -465,7 +561,7 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
         ) : null}
 
         {/* ── MOBILE: winding-road snake timeline ── */}
-        <EvolutionTimelineMobile milestones={milestones} heading={heading} n={n} />
+        <EvolutionTimelineMobile milestones={milestones} heading={heading} n={n} progress={progress} />
 
         {/* ── DESKTOP: snake timeline (unchanged) ── */}
         <div
@@ -476,8 +572,18 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
         >
           <div className="et-path-layer" aria-hidden>
             <svg className="et-path-svg" viewBox={`0 0 ${VIEW_W} ${stageHeight}`} preserveAspectRatio="xMidYMid meet">
-              <path d={pathD} className="et-path-glow" />
-              <path d={pathD} className="et-path" />
+              <path
+                d={pathD}
+                className="et-path-glow"
+                pathLength={1}
+                style={{ strokeDasharray: 1, strokeDashoffset: 1 - progress, opacity: 0.25 + progress * 0.75 }}
+              />
+              <path
+                d={pathD}
+                className="et-path"
+                pathLength={1}
+                style={{ strokeDasharray: 1, strokeDashoffset: 1 - progress }}
+              />
             </svg>
           </div>
           <div className="et-desktop-nodes" aria-hidden>
@@ -492,7 +598,19 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
                     "absolute -translate-x-1/2 -translate-y-1/2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground",
                     m.isLive && "et-node-live",
                   )}
-                  style={{ left, top }}
+                  style={
+                    {
+                      left,
+                      top,
+                      ...(function () {
+                        const p = stagedProgress(progress, i, milestones.length, 0.12, 0.6, 0.12);
+                        return {
+                          opacity: p < 0.05 ? 0 : 1,
+                          transform: `translate(-50%, -50%) scale(${0.86 + p * 0.14})`,
+                        };
+                      })(),
+                    } as CSSProperties
+                  }
                 >
                   Q{i + 1}
                 </span>
@@ -520,7 +638,18 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
                         transform: "translateY(-50%)",
                       }}
                     >
-                      <div className="flex max-w-full flex-col justify-center py-1">
+                      <div
+                        className="et-desktop-copy flex max-w-full flex-col justify-center py-1"
+                        style={{
+                          ...(function () {
+                            const p = stagedProgress(progress, i, milestones.length, 0.18, 0.62, 0.14);
+                            return {
+                              opacity: p,
+                              transform: `translateY(${(1 - p) * 10}px)`,
+                            };
+                          })(),
+                        }}
+                      >
                         {milestoneCopy(m, { align: "left", iconsJustify: "start" })}
                       </div>
                     </div>
@@ -533,7 +662,18 @@ export function EvolutionTimeline({ milestones, heading }: EvolutionTimelineProp
                         transform: "translateY(-50%)",
                       }}
                     >
-                      <div className="flex max-w-full flex-col justify-center py-1">
+                      <div
+                        className="et-desktop-copy flex max-w-full flex-col justify-center py-1"
+                        style={{
+                          ...(function () {
+                            const p = stagedProgress(progress, i, milestones.length, 0.18, 0.62, 0.14);
+                            return {
+                              opacity: p,
+                              transform: `translateY(${(1 - p) * 10}px)`,
+                            };
+                          })(),
+                        }}
+                      >
                         {milestoneCopy(m, { align: "right", iconsJustify: "end" })}
                       </div>
                     </div>
