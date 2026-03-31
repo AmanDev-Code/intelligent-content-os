@@ -395,7 +395,7 @@ export default function Agent() {
             const asyncRes = await api.media.generateCarouselAsync({
               contentId: item.id,
               slides,
-              includePdf: false,
+              includePdf: true,
               ...(visualStyle ? { style: visualStyle } : {}),
             });
             if (asyncRes?.jobId) {
