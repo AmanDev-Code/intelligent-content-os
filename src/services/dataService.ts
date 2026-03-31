@@ -78,39 +78,40 @@ export class DataService {
     if (!url.includes('/minio/')) return url;
 
     try {
-      const parsed = new URL(url);
+      const fallbackOrigin =
+        typeof window !== 'undefined' ? window.location.origin : 'https://trndinn.com';
+      const parsed = new URL(url, fallbackOrigin);
       const backendBase = API_CONFIG.BASE_URL;
       if (!backendBase) return url;
 
       const backend = new URL(backendBase);
-      const appHost = typeof window !== 'undefined' ? window.location.hostname : null;
-      const shouldRewriteHost =
-        parsed.hostname === 'trndinn.com' ||
-        parsed.hostname === 'www.trndinn.com' ||
-        (!!appHost && parsed.hostname === appHost);
-
-      if (!shouldRewriteHost) return url;
+      // MinIO paths are served by backend proxy in production; always route there.
       return `${backend.origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
     } catch {
       return url;
     }
   }
 
-  private normalizeGeneratedContent(item: GeneratedContent): GeneratedContent {
+  public normalizeGeneratedContent(item: any): GeneratedContent {
+    const visualUrl = item.visual_url ?? item.visualUrl ?? null;
+    const pdfUrl = item.pdf_url ?? item.pdfUrl ?? null;
+    const carouselUrls = item.carousel_urls ?? item.carouselUrls ?? null;
+    const mediaUrls = item.media_urls ?? item.mediaUrls ?? null;
+
     return {
       ...item,
-      visual_url: this.normalizeMediaUrl(item.visual_url),
-      pdf_url: this.normalizeMediaUrl(item.pdf_url ?? null) ?? undefined,
-      carousel_urls: Array.isArray(item.carousel_urls)
-        ? item.carousel_urls
+      visual_url: this.normalizeMediaUrl(visualUrl),
+      pdf_url: this.normalizeMediaUrl(pdfUrl) ?? undefined,
+      carousel_urls: Array.isArray(carouselUrls)
+        ? carouselUrls
             .map((entry) => this.normalizeMediaUrl(entry))
             .filter((entry): entry is string => Boolean(entry))
-        : item.carousel_urls,
-      media_urls: Array.isArray(item.media_urls)
-        ? item.media_urls
+        : carouselUrls,
+      media_urls: Array.isArray(mediaUrls)
+        ? mediaUrls
             .map((entry) => this.normalizeMediaUrl(entry))
             .filter((entry): entry is string => Boolean(entry))
-        : item.media_urls,
+        : mediaUrls,
     };
   }
 

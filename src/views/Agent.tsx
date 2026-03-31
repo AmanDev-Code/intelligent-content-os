@@ -197,7 +197,7 @@ export default function Agent() {
       console.log('Fetched content by ID:', content);
       
       if (content) {
-        setGeneratedContent([content]); // Set as array since our state expects an array
+        setGeneratedContent([dataService.normalizeGeneratedContent(content)]); // Set as array since our state expects an array
         return true;
       }
       return false;
@@ -264,7 +264,10 @@ export default function Agent() {
         if (!jobId) {
           throw new Error("Missing jobId for completion fetch");
         }
-        const content = await api.generation.jobContent(jobId);
+        const rawContent = await api.generation.jobContent(jobId);
+        const content = Array.isArray(rawContent)
+          ? rawContent.map((item: any) => dataService.normalizeGeneratedContent(item))
+          : [];
         console.log('n8n data', content);
         console.log('Content received:', content.length, 'items');
 
@@ -350,7 +353,8 @@ export default function Agent() {
                       carousel_urls: imageUrls,
                     };
                   }
-                  return api.generation.contentById(item.id);
+                  const freshContent = await api.generation.contentById(item.id);
+                  return dataService.normalizeGeneratedContent(freshContent);
                 }
                 if (status.status === 'failed') {
                   throw new Error(status.error || 'Carousel generation failed');
@@ -399,7 +403,8 @@ export default function Agent() {
             }
           }
 
-          return api.generation.contentById(item.id);
+          const refreshed = await api.generation.contentById(item.id);
+          return dataService.normalizeGeneratedContent(refreshed);
         };
 
         let finalizedContent = content;
@@ -427,7 +432,9 @@ export default function Agent() {
         }
 
         // Update all states
-        setGeneratedContent(finalizedContent);
+        setGeneratedContent(
+          finalizedContent.map((item: any) => dataService.normalizeGeneratedContent(item)),
+        );
         setTarget(100);
         setIsComplete(true);
         setIsGenerating(false);
