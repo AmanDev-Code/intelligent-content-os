@@ -73,6 +73,51 @@ export class DataService {
     return DataService.instance;
   }
 
+  private normalizeMediaUrl(url?: string | null): string | null {
+    if (!url || typeof url !== 'string') return null;
+    if (!url.includes('/minio/')) return url;
+
+    try {
+      const parsed = new URL(url);
+      const backendBase = API_CONFIG.BASE_URL;
+      if (!backendBase) return url;
+
+      const backend = new URL(backendBase);
+      const appHost = typeof window !== 'undefined' ? window.location.hostname : null;
+      const shouldRewriteHost =
+        parsed.hostname === 'trndinn.com' ||
+        parsed.hostname === 'www.trndinn.com' ||
+        (!!appHost && parsed.hostname === appHost);
+
+      if (!shouldRewriteHost) return url;
+      return `${backend.origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return url;
+    }
+  }
+
+  private normalizeGeneratedContent(item: GeneratedContent): GeneratedContent {
+    return {
+      ...item,
+      visual_url: this.normalizeMediaUrl(item.visual_url),
+      pdf_url: this.normalizeMediaUrl(item.pdf_url ?? null) ?? undefined,
+      carousel_urls: Array.isArray(item.carousel_urls)
+        ? item.carousel_urls
+            .map((entry) => this.normalizeMediaUrl(entry))
+            .filter((entry): entry is string => Boolean(entry))
+        : item.carousel_urls,
+      media_urls: Array.isArray(item.media_urls)
+        ? item.media_urls
+            .map((entry) => this.normalizeMediaUrl(entry))
+            .filter((entry): entry is string => Boolean(entry))
+        : item.media_urls,
+    };
+  }
+
+  private normalizeGeneratedContentList(items: GeneratedContent[]): GeneratedContent[] {
+    return items.map((item) => this.normalizeGeneratedContent(item));
+  }
+
   /**
    * Get generated content by job ID with cache-first strategy
    */
@@ -101,7 +146,7 @@ export class DataService {
       return [];
     }
 
-    const result = data || [];
+    const result = this.normalizeGeneratedContentList((data || []) as GeneratedContent[]);
     
     // Cache the result
     if (result.length > 0) {
@@ -139,7 +184,7 @@ export class DataService {
       return [];
     }
 
-    const result = data || [];
+    const result = this.normalizeGeneratedContentList((data || []) as GeneratedContent[]);
     
     // Cache the result
     if (result.length > 0) {
@@ -158,7 +203,11 @@ export class DataService {
     limit: number = 20
   ): Promise<PaginatedResponse<GeneratedContent>> {
     try {
-      return await api.generation.content(page, limit);
+      const response = await api.generation.content(page, limit);
+      return {
+        ...response,
+        data: this.normalizeGeneratedContentList((response.data || []) as GeneratedContent[]),
+      };
     } catch (error) {
       console.error('Error fetching paginated content:', error);
       return {
@@ -184,7 +233,11 @@ export class DataService {
     limit: number = 20
   ): Promise<PaginatedResponse<GeneratedContent>> {
     try {
-      return await api.generation.scheduled(page, limit);
+      const response = await api.generation.scheduled(page, limit);
+      return {
+        ...response,
+        data: this.normalizeGeneratedContentList((response.data || []) as GeneratedContent[]),
+      };
     } catch (error) {
       console.error('Error fetching scheduled content:', error);
       return {
