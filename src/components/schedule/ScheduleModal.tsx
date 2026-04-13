@@ -10,9 +10,15 @@ import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuota } from '@/contexts/QuotaContext';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import {
+  formatInTimezone,
+  getPreferredTimezoneSync,
+  resolveTimezone,
+} from '@/services/timezoneService';
 import {
   Calendar,
   Send,
@@ -53,6 +59,7 @@ export function ScheduleModal({
   calculateCreditCost = () => 2.5
 }: ScheduleModalProps) {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { refreshQuota } = useQuota();
   
   const [isSchedulingExpanded, setIsSchedulingExpanded] = useState(false);
@@ -63,6 +70,11 @@ export function ScheduleModal({
   const [isPublishing, setIsPublishing] = useState(false);
   const [newHashtagInput, setNewHashtagInput] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
+
+  useEffect(() => {
+    void resolveTimezone().then(setUserTimezone).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (content && open) {
@@ -71,11 +83,10 @@ export function ScheduleModal({
       setUploadedImages([]);
       setCarouselIndex(0);
       
-      // Set default schedule time to 1 hour from now
+      // Default to current local time; "In 1 hour" preset remains available explicitly.
       const now = new Date();
-      now.setHours(now.getHours() + 1);
-      const formatted = now.toISOString().slice(0, 16) + ':00';
-      setScheduleDateTime(formatted);
+      now.setSeconds(0, 0);
+      setScheduleDateTime(now.toISOString());
     }
   }, [content, open]);
 
@@ -97,6 +108,8 @@ export function ScheduleModal({
     Math.max(carouselIndex, 0),
     Math.max((content.carousel_urls?.length || 1) - 1, 0),
   );
+  const displayName = profile?.full_name || user?.email?.split("@")[0] || "Your Name";
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -112,16 +125,16 @@ export function ScheduleModal({
               {/* Header */}
               <div className="flex items-start gap-2 p-4 pb-0" style={{ maxWidth: '100%' }}>
                 <Avatar className="h-11 w-11 shrink-0 sm:h-12 sm:w-12">
-                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarImage src={profile?.avatar_url || ""} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-base font-bold sm:text-lg">
-                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                    {userInitial || "U"}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 overflow-hidden pt-0.5">
                   <div className="flex items-center gap-1">
                     <span className="font-bold text-[13px] sm:text-sm text-foreground truncate block">
-                      {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Your Name"}
+                      {displayName}
                     </span>
                     <span className="text-[11px] sm:text-xs text-muted-foreground shrink-0">· 3rd+</span>
                   </div>
@@ -341,7 +354,7 @@ export function ScheduleModal({
               <div className="mx-4 border-t border-border" />
 
               {/* Action buttons */}
-              <div className="flex items-center justify-around py-1 px-0">
+              <div className="flex items-center justify-around py-2 px-4">
                 {[
                   { icon: ThumbsUp, label: "Like" },
                   { icon: MessageCircle, label: "Comment" },
@@ -433,10 +446,10 @@ export function ScheduleModal({
           {isSchedulingExpanded && (
             <div className="w-full sm:w-1/2 flex flex-col bg-gradient-to-br from-background to-muted/20 border-t sm:border-t-0 border-l-0 sm:border-l border-border max-h-[45vh] sm:max-h-[90vh]">
               {/* Scheduling Header */}
-              <div className="p-4 sm:p-6 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
+              <div className="p-4 sm:p-5 border-b border-border/60 bg-card/50 backdrop-blur-sm shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Schedule Configuration</h3>
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground leading-tight">Schedule Configuration</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-1">Set up your post for perfect timing</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -517,8 +530,7 @@ export function ScheduleModal({
                             const [hours, minutes] = preset.time.split(':');
                             now.setHours(parseInt(hours), parseInt(minutes));
                           }
-                          const formatted = now.toISOString().slice(0, 16) + ':00';
-                          setScheduleDateTime(formatted);
+                          setScheduleDateTime(now.toISOString());
                         }}
                         className="text-xs hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950"
                       >
@@ -734,26 +746,21 @@ export function ScheduleModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="p-4 sm:p-6 border-t border-border/60 bg-card/30 backdrop-blur-sm">
+              <div className="px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 border-t border-border/60 bg-card/30 backdrop-blur-sm">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={async () => {
                       try {
+                        const scheduledIso = new Date(scheduleDateTime).toISOString();
                         const response = await apiClient.post('/posts/schedule', {
                           contentId: content.id,
-                          scheduledFor: new Date(scheduleDateTime).toISOString(),
+                          scheduledFor: scheduledIso,
+                          timezone: userTimezone,
                           content: editedContent,
                           mediaUrls: uploadedImages
                         });
-                        const scheduledTime = new Date(scheduleDateTime).toLocaleString('en-IN', {
-                          timeZone: 'Asia/Kolkata',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        });
-                        toast.success(`Post scheduled for ${scheduledTime} IST`);
+                        const scheduledTime = formatInTimezone(scheduledIso, userTimezone);
+                        toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
                         handleClose();
                         refreshQuota();
                         onSuccess?.();
@@ -768,7 +775,7 @@ export function ScheduleModal({
                       }
                     }}
                     disabled={!scheduleDateTime}
-                    className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
+                    className="flex-1 min-w-0 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                   >
                     <Calendar className="h-5 w-5 mr-2" />
                     <span className="flex items-center">
@@ -798,7 +805,7 @@ export function ScheduleModal({
                         }
                       }
                     }}
-                    className="h-12 px-6 border-2 hover:bg-muted/50 font-medium transition-all"
+                    className="flex-1 min-w-0 h-12 px-4 border-2 hover:bg-muted/50 font-medium transition-all"
                   >
                     <Send className="h-5 w-5 mr-2" />
                     <span className="flex items-center">

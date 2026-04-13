@@ -56,6 +56,11 @@ import { dataService, getQuotaColor } from "@/services/dataService";
 import { api } from "@/lib/apiClient";
 import { apiClient } from "@/lib/apiClient";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import {
+  formatInTimezone,
+  getPreferredTimezoneSync,
+  resolveTimezone,
+} from "@/services/timezoneService";
 
 const contentTypes = [
   { id: 'post', label: 'Text Post', icon: FileText, description: 'LinkedIn text post' },
@@ -100,6 +105,12 @@ export default function Agent() {
   >("idle");
   const [showTourDemo, setShowTourDemo] = useState(false);
   const activeCarouselPollsRef = useRef<Map<string, Promise<any>>>(new Map());
+  const hasLoadedRecentRef = useRef<string | null>(null);
+  const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
+
+  useEffect(() => {
+    void resolveTimezone().then(setUserTimezone).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const handler = () => {
@@ -498,10 +509,13 @@ export default function Agent() {
 
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
+      // Guard against React StrictMode double-invocation in dev.
+      if (hasLoadedRecentRef.current === user.id) return;
+      hasLoadedRecentRef.current = user.id;
       fetchRecentGenerations();
     }
-  }, [user, fetchRecentGenerations]);
+  }, [user?.id, fetchRecentGenerations]);
 
 
   const generateViralTopics = async () => {
@@ -779,19 +793,13 @@ export default function Agent() {
       const scheduleResponse = await apiClient.post('/posts/schedule', {
         contentId: selectedContentForAction.id,
         scheduledFor: scheduleDateTime,
+        timezone: userTimezone,
         platform: 'linkedin',
       });
 
       if (scheduleResponse.success) {
-        const scheduledTime = new Date(scheduleDateTime).toLocaleString('en-IN', {
-          timeZone: 'Asia/Kolkata',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        });
-        toast.success(`Post scheduled for ${scheduledTime} IST`);
+        const scheduledTime = formatInTimezone(scheduleDateTime, userTimezone);
+        toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
         setShowScheduleDialog(false);
         setScheduleDateTime('');
         setSelectedContentForAction(null);

@@ -28,7 +28,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const isMobile = useIsMobile();
   const { quota: userQuota } = useQuota();
 
-  const planLabel = (userQuota?.planType || profile?.plan || "free") as string;
+  const planLabel = (userQuota?.planType || "free") as string;
 
   const initials = (profile?.full_name || user?.email || "U")
     .split(" ")

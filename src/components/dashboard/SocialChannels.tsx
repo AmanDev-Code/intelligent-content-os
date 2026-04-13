@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Plus, Linkedin, Instagram, Facebook } from "lucide-react";
 import { XIcon } from "@/components/icons/XIcon";
-import { SOCIAL_PLATFORMS, API_CONFIG } from "@/lib/constants";
+import { SOCIAL_PLATFORMS } from "@/lib/constants";
+import { api } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLinkedIn } from "@/contexts/LinkedInContext";
 
@@ -59,16 +60,19 @@ export function SocialChannels() {
     return platform?.color || '#6B7280';
   };
 
-  const handleConnect = (channelId: string) => {
+  const handleConnect = async (channelId: string) => {
     if (!user) {
       alert("Please sign in to connect your account.");
       return;
     }
 
     if (channelId === "linkedin") {
-      // Start LinkedIn OAuth by redirecting to backend with state=user.id
-      const state = encodeURIComponent(user.id);
-      window.location.href = `${API_CONFIG.BASE_URL}/linkedin/auth?state=${state}`;
+      try {
+        const { url } = await api.linkedin.startOAuth();
+        window.location.href = url;
+      } catch {
+        alert("Could not start LinkedIn connection. Please try again.");
+      }
       return;
     }
 

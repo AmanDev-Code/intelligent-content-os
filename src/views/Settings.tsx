@@ -32,7 +32,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, api } from '@/lib/apiClient';
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -44,7 +44,6 @@ import { useNotifications } from "@/contexts/NotificationContext";
 import { useAdmin, ADMIN_USER_ID } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { API_CONFIG } from "@/lib/constants";
 import AdminNotifications from "@/components/AdminNotifications";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Image from "next/image";
@@ -272,15 +271,19 @@ export default function Settings() {
     }
   };
 
-  const handleConnect = (id: string) => {
+  const handleConnect = async (id: string) => {
     if (!user) {
       toast.error("Please sign in to connect your account.");
       return;
     }
 
     if (id === "linkedin") {
-      const state = encodeURIComponent(user.id);
-      window.location.href = `${API_CONFIG.BASE_URL}/linkedin/auth?state=${state}`;
+      try {
+        const { url } = await api.linkedin.startOAuth();
+        window.location.href = url;
+      } catch {
+        toast.error("Could not start LinkedIn connection. Please try again.");
+      }
       return;
     }
 

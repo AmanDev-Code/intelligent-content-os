@@ -49,7 +49,31 @@ const NotificationIcon = ({ type }: { type: string }) => {
   }
 };
 
-const CategoryBadge = ({ category }: { category: string }) => {
+const CategoryBadge = ({
+  category,
+  type,
+}: {
+  category: string;
+  type: string;
+}) => {
+  const getLabel = (cat: string, notificationType: string) => {
+    if (cat === 'publishing') {
+      if (notificationType === 'success') return 'published';
+      if (notificationType === 'error') return 'publish failed';
+      return 'publishing';
+    }
+    if (cat === 'generation') {
+      if (notificationType === 'success') return 'generated';
+      if (notificationType === 'error') return 'generation failed';
+      return 'generating';
+    }
+    if (cat === 'scheduling') {
+      if (notificationType === 'success') return 'scheduled';
+      if (notificationType === 'error') return 'schedule failed';
+    }
+    return cat;
+  };
+
   const getBadgeStyles = (cat: string) => {
     switch (cat) {
       case 'publishing': 
@@ -76,7 +100,7 @@ const CategoryBadge = ({ category }: { category: string }) => {
         getBadgeStyles(category)
       )}
     >
-      {category}
+      {getLabel(category, type)}
     </Badge>
   );
 };
@@ -283,7 +307,10 @@ export const NotificationBell: React.FC = () => {
                             </p>
                             
                             <div className="flex items-center justify-between gap-2">
-                              <CategoryBadge category={notification.category} />
+                              <CategoryBadge
+                                category={notification.category}
+                                type={notification.type}
+                              />
                               <span className="text-xs text-muted-foreground font-medium">
                                 {formatTimeAgo(notification.created_at)}
                               </span>

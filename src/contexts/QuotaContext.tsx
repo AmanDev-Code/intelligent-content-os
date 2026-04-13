@@ -55,6 +55,16 @@ export function QuotaProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.id, refreshQuota]);
 
+  useEffect(() => {
+    const handler = () => {
+      void refreshQuota();
+    };
+    window.addEventListener("trndinn:subscription-updated", handler);
+    return () => {
+      window.removeEventListener("trndinn:subscription-updated", handler);
+    };
+  }, [refreshQuota]);
+
   const value: QuotaContextValue = {
     quota,
     loading,

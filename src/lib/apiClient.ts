@@ -1,6 +1,7 @@
 // Global API Client with automatic authentication
 import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
+import { getPreferredTimezoneSync } from "@/services/timezoneService";
 
 class ApiClient {
   private baseURL: string;
@@ -19,6 +20,7 @@ class ApiClient {
 
       const headers: HeadersInit = {
         'ngrok-skip-browser-warning': 'true',
+        'X-User-Timezone': getPreferredTimezoneSync(),
       };
 
       // Only add Content-Type if requested (when we have a body)
@@ -205,6 +207,8 @@ export const api = {
     analytics: (limit?: number) => apiClient.get(`/linkedin/analytics${limit ? `?limit=${limit}` : ''}`),
     dashboard: () => apiClient.get('/linkedin/dashboard'),
     organization: () => apiClient.get('/linkedin/organization'),
+    /** Server-issued OAuth URL (opaque state in Redis; do not use GET /linkedin/auth). */
+    startOAuth: () => apiClient.post('/linkedin/oauth/start', {}),
     publish: (contentId: string) => apiClient.post('/linkedin/publish', { contentId }),
     disconnect: () => apiClient.post('/linkedin/disconnect'),
   },

@@ -50,7 +50,31 @@ const NotificationIcon = ({ type }: { type: string }) => {
   }
 };
 
-const CategoryBadge = ({ category }: { category: string }) => {
+const CategoryBadge = ({
+  category,
+  type,
+}: {
+  category: string;
+  type: string;
+}) => {
+  const getLabel = (cat: string, notificationType: string) => {
+    if (cat === 'publishing') {
+      if (notificationType === 'success') return 'published';
+      if (notificationType === 'error') return 'publish failed';
+      return 'publishing';
+    }
+    if (cat === 'generation') {
+      if (notificationType === 'success') return 'generated';
+      if (notificationType === 'error') return 'generation failed';
+      return 'generating';
+    }
+    if (cat === 'scheduling') {
+      if (notificationType === 'success') return 'scheduled';
+      if (notificationType === 'error') return 'schedule failed';
+    }
+    return cat;
+  };
+
   const getVariant = (cat: string) => {
     switch (cat) {
       case 'publishing': return 'default';
@@ -65,7 +89,7 @@ const CategoryBadge = ({ category }: { category: string }) => {
 
   return (
     <Badge variant={getVariant(category)} className="text-xs">
-      {category}
+      {getLabel(category, type)}
     </Badge>
   );
 };
@@ -253,7 +277,10 @@ const Notifications = () => {
                           {notification.title}
                         </h3>
                         <div className="flex items-center gap-2">
-                          <CategoryBadge category={notification.category} />
+                          <CategoryBadge
+                            category={notification.category}
+                            type={notification.type}
+                          />
                           {!notification.read && (
                             <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
                           )}

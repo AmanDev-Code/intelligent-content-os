@@ -39,7 +39,7 @@ const formatPlansForBilling = (plans: PlanConfig[]) => {
 
 export default function Billing() {
   const { user } = useAuth();
-  const { quota: userQuota } = useQuota();
+  const { quota: userQuota, refreshQuota } = useQuota();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [plans, setPlans] = useState(formatPlansForBilling(getVisiblePlans()));
   const [usageData, setUsageData] = useState({
@@ -52,8 +52,10 @@ export default function Billing() {
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showBillingTimelineModal, setShowBillingTimelineModal] = useState(false);
+  const [isSyncingCheckout, setIsSyncingCheckout] = useState(false);
   const hasLoadedPlansRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const hasHandledCheckoutRef = useRef(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -65,14 +67,12 @@ export default function Billing() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("paddle") === "success") {
+    if (params.get("paddle") === "success" && !hasHandledCheckoutRef.current) {
+      hasHandledCheckoutRef.current = true;
       setCheckoutSuccess(true);
       setShowSuccessModal(true);
       toast.success("Payment completed. Syncing subscription...");
-      fetchBillingOnly();
-      // Do a tiny controlled retry window for webhook propagation.
-      window.setTimeout(() => fetchBillingOnly(), 4000);
-      window.setTimeout(() => fetchBillingOnly(), 9000);
+      void syncAfterCheckout();
       // Clean URL query after showing feedback
       params.delete("paddle");
       const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
@@ -86,15 +86,16 @@ export default function Billing() {
     }
   }, [showSuccessModal]);
 
-  // Sync AI Credits usage from QuotaContext so Billing updates when generation completes
+  // Sync AI credit usage from quota for ongoing usage updates, but do not
+  // override the post-checkout subscription sync window.
   useEffect(() => {
-    if (userQuota) {
+    if (userQuota && !isSyncingCheckout) {
       setUsageData(prev => ({
         ...prev,
         aiCredits: { used: userQuota.usedCredits, limit: userQuota.totalCredits },
       }));
     }
-  }, [userQuota?.usedCredits, userQuota?.totalCredits]);
+  }, [userQuota?.usedCredits, userQuota?.totalCredits, isSyncingCheckout]);
 
   const fetchPlansOnce = async () => {
     if (hasLoadedPlansRef.current) return;
@@ -137,11 +138,32 @@ export default function Billing() {
         },
         channels: { used: 0, limit: 5 },
       });
+      return subscriptionData;
     } catch (error) {
       console.error('Error fetching billing info:', error);
       setCurrentSubscription(null);
       setPlans(prev => prev.map(plan => ({ ...plan, current: false })));
+      return null;
     }
+  };
+
+  const syncAfterCheckout = async () => {
+    setIsSyncingCheckout(true);
+    // Keep this intentionally short; webhook propagation may take a moment,
+    // but we must avoid hammering billing/quota endpoints.
+    const maxAttempts = 5;
+    for (let i = 0; i < maxAttempts; i++) {
+      const billing = await fetchBillingOnly();
+      const planType = billing?.subscription?.planType;
+      const hasUpgradedPlan = typeof planType === "string" && planType !== "free";
+      if (hasUpgradedPlan) break;
+      if (i < maxAttempts - 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 3000));
+      }
+    }
+    await refreshQuota();
+    window.dispatchEvent(new CustomEvent("trndinn:subscription-updated"));
+    setIsSyncingCheckout(false);
   };
 
   const fetchBillingData = async () => {
@@ -360,7 +382,8 @@ export default function Billing() {
                   try {
                     await api.subscription.cancel();
                     toast.success("Subscription cancelled");
-                    fetchBillingOnly();
+                    await Promise.all([fetchBillingOnly(), refreshQuota()]);
+                    window.dispatchEvent(new CustomEvent("trndinn:subscription-updated"));
                   } catch {
                     toast.error("Failed to cancel subscription");
                   }

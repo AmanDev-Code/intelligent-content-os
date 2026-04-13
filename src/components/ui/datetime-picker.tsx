@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './button';
 import { Label } from './label';
 import { cn } from '../../lib/utils';
+import { getPreferredTimezoneSync, formatInTimezone } from '@/services/timezoneService';
 
 interface DateTimePickerProps {
   value: string;
@@ -14,44 +15,43 @@ interface DateTimePickerProps {
 
 export function DateTimePicker({ value, onChange, minDate, className, label }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const timezone = getPreferredTimezoneSync();
   
-  // Helper to convert IST string to Date
-  const parseISTDate = (dateStr: string): Date => {
+  const parseDate = (dateStr: string): Date => {
     if (!dateStr) return new Date();
-    // Parse the ISO string and treat it as IST
-    const date = new Date(dateStr);
-    return date;
+    return new Date(dateStr);
   };
   
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
-    return value ? parseISTDate(value) : new Date();
+    return value ? parseDate(value) : new Date();
   });
   const [selectedHour, setSelectedHour] = useState<number>(() => {
     if (value) {
-      const date = parseISTDate(value);
+      const date = parseDate(value);
       return date.getHours();
     }
     return 12;
   });
   const [selectedMinute, setSelectedMinute] = useState<number>(() => {
     if (value) {
-      const date = parseISTDate(value);
+      const date = parseDate(value);
       return date.getMinutes();
     }
     return 0;
   });
 
+  useEffect(() => {
+    if (!value) return;
+    const date = parseDate(value);
+    setSelectedDate(date);
+    setSelectedHour(date.getHours());
+    setSelectedMinute(date.getMinutes());
+  }, [value]);
+
   const formatDisplayValue = () => {
     if (!value) return 'Select date and time';
-    const date = new Date(value);
-    return date.toLocaleString('en-IN', {
-      month: 'short',
-      day: 'numeric',
+    return formatInTimezone(value, timezone, {
       year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'Asia/Kolkata',
     });
   };
 

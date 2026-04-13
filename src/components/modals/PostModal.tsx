@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { getPreferredTimezoneSync } from '@/services/timezoneService';
 
 interface PostModalProps {
   isOpen: boolean;
@@ -104,6 +105,7 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
       const response = await apiClient.post('/posts/schedule', {
         contentId: post.id,
         scheduledFor: scheduledDateTime.toISOString(),
+        timezone: getPreferredTimezoneSync(),
         content: editedContent,
         mediaUrls: uploadedImages
       });
