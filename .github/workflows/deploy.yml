@@ -26,7 +26,14 @@ jobs:
           script: |
             set -e
             cd /home/workatkatana/trndinn-stack/trndinn-frontend
-            git pull origin main
+            if [ -f .env ]; then
+              cp .env /tmp/trndinn-frontend.env.backup
+            fi
+            git fetch origin main
+            git reset --hard origin/main
+            if [ -f /tmp/trndinn-frontend.env.backup ]; then
+              cp /tmp/trndinn-frontend.env.backup .env
+            fi
             cd /home/workatkatana/trndinn-stack
             docker compose build trndinn-frontend
             docker compose up -d --no-deps trndinn-frontend
