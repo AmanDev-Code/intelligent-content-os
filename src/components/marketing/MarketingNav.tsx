@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/blogs", label: "Blog" },
+  { href: "/careers", label: "Careers" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
@@ -39,7 +41,10 @@ export function MarketingNav() {
 
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ href, label }) => {
-            const active = pathname === href;
+            const active =
+              href === "/blogs"
+                ? pathname === "/blogs" || pathname.startsWith("/blogs/")
+                : pathname === href;
             return (
               <Link
                 key={href}
@@ -88,19 +93,25 @@ export function MarketingNav() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[min(100%,320px)] border-border/50 bg-background/95 backdrop-blur-xl">
               <div className="mt-8 flex flex-col gap-1">
-                {links.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "rounded-xl px-3 py-3 text-base font-medium",
-                      pathname === href ? "bg-primary/15 text-primary" : "text-foreground",
-                    )}
-                  >
-                    {label}
-                  </Link>
-                ))}
+                {links.map(({ href, label }) => {
+                  const mActive =
+                    href === "/blogs"
+                      ? pathname === "/blogs" || pathname.startsWith("/blogs/")
+                      : pathname === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "rounded-xl px-3 py-3 text-base font-medium",
+                        mActive ? "bg-primary/15 text-primary" : "text-foreground",
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
                 <Link href="/auth" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base font-medium">
                   Sign in
                 </Link>

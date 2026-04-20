@@ -7,7 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Send, Megaphone, Users, CheckCircle, AlertTriangle, Info } from "lucide-react";
+import {
+  Send,
+  Megaphone,
+  Users,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Hash,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { apiClient } from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -21,9 +32,21 @@ interface BroadcastForm {
   expiresAt: string;
 }
 
+interface AdminTag {
+  id: string;
+  tag: string;
+  is_active: boolean;
+  priority: number;
+  last_fetched_at: string | null;
+}
+
 const AdminNotifications: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [tagsLoading, setTagsLoading] = useState(false);
   const [users, setUsers] = useState<Array<{id: string, email: string, full_name?: string}>>([]);
+  const [adminTags, setAdminTags] = useState<AdminTag[]>([]);
+  const [newTag, setNewTag] = useState("");
+  const [newTagPriority, setNewTagPriority] = useState("0");
   const [form, setForm] = useState<BroadcastForm>({
     title: '',
     message: '',
@@ -41,6 +64,110 @@ const AdminNotifications: React.FC = () => {
     category: 'system',
   });
 
+  const loadAdminTags = async () => {
+    try {
+      setTagsLoading(true);
+      const response = await apiClient.get('/admin/tags');
+      setAdminTags(Array.isArray(response?.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to load tags:', error);
+      toast.error('Failed to load admin tags');
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
+  const addAdminTag = async () => {
+    const tokens = newTag
+      .split(',')
+      .map((token) => token.trim().toLowerCase().replace(/^#+/, ''))
+      .filter(Boolean);
+    const uniqueTags = Array.from(new Set(tokens));
+
+    if (uniqueTags.length === 0) {
+      toast.error('Tag is required');
+      return;
+    }
+
+    try {
+      const priority = Number(newTagPriority || '0');
+      const results = await Promise.allSettled(
+        uniqueTags.map((tag) =>
+          apiClient.post('/admin/tags', {
+            tag,
+            priority,
+          }),
+        ),
+      );
+
+      const successCount = results.filter((result) => result.status === 'fulfilled').length;
+      const failedResults = results.filter(
+        (result): result is PromiseRejectedResult => result.status === 'rejected',
+      );
+
+      setNewTag('');
+      setNewTagPriority('0');
+
+      if (failedResults.length === 0) {
+        toast.success(
+          successCount === 1
+            ? 'Tag added'
+            : `${successCount} tags added`,
+        );
+      } else if (successCount > 0) {
+        toast.warning(
+          `${successCount} tags added, ${failedResults.length} failed. Check format/duplicates.`,
+        );
+      } else {
+        const firstReason = String(failedResults[0]?.reason?.message || '');
+        toast.error(firstReason || 'Failed to add tags');
+      }
+
+      await loadAdminTags();
+    } catch (error: any) {
+      console.error('Failed to add tag:', error);
+      toast.error(error?.message || 'Failed to add tag');
+    }
+  };
+
+  const toggleTag = async (tag: AdminTag) => {
+    try {
+      await apiClient.patch(`/admin/tags/${tag.id}`, {
+        isActive: !tag.is_active,
+      });
+      await loadAdminTags();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to update tag');
+    }
+  };
+
+  const deleteTag = async (tagId: string) => {
+    try {
+      await apiClient.delete(`/admin/tags/${tagId}`);
+      toast.success('Tag deleted');
+      await loadAdminTags();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete tag');
+    }
+  };
+
+  const refreshTag = async (tagId: string) => {
+    try {
+      await apiClient.post(`/admin/tags/${tagId}/refresh`, {});
+      toast.success('Tag refresh queued');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to queue tag refresh');
+    }
+  };
+
+  const refreshAllTags = async () => {
+    try {
+      await apiClient.post('/admin/tags/refresh-all', {});
+      toast.success('Global tag sync queued');
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to queue global refresh');
+    }
+  };
 
   const handleBroadcastSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +294,7 @@ const AdminNotifications: React.FC = () => {
     };
     
     fetchUsers();
+    void loadAdminTags();
   }, []);
 
 
@@ -185,6 +313,81 @@ const AdminNotifications: React.FC = () => {
         <h2 className="text-2xl font-bold mb-2">Admin Notifications</h2>
         <p className="text-muted-foreground">Send broadcast notifications and manage user communications</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Hash className="h-5 w-5" />
+            Trending Tags Control Panel
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="Add tags (e.g. saas, ai, growth)"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+            />
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="Priority"
+              value={newTagPriority}
+              onChange={(e) => setNewTagPriority(e.target.value)}
+              className="sm:w-28"
+            />
+            <Button type="button" onClick={addAdminTag}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+            <Button type="button" variant="outline" onClick={refreshAllTags}>
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Refresh All
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {tagsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading tags...</p>
+            ) : adminTags.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No admin tags configured yet.</p>
+            ) : (
+              adminTags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 border rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge variant={tag.is_active ? 'default' : 'outline'}>
+                      {tag.is_active ? 'active' : 'paused'}
+                    </Badge>
+                    <span className="font-medium">#{tag.tag}</span>
+                    <span className="text-xs text-muted-foreground">
+                      priority {tag.priority}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      last fetch: {tag.last_fetched_at ? new Date(tag.last_fetched_at).toLocaleString() : 'never'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => toggleTag(tag)}>
+                      {tag.is_active ? 'Pause' : 'Enable'}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => refreshTag(tag.id)}>
+                      Refresh
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteTag(tag.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Broadcast Notification Form */}

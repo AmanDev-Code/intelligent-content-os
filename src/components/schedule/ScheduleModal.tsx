@@ -43,12 +43,162 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+const extractLinkedinText = (value: unknown): string => {
+  if (typeof value === 'string' && value.trim().length > 0) return value.trim();
+  if (value && typeof value === 'object') {
+    const localized = (value as { localized?: Record<string, unknown> }).localized;
+    if (localized) {
+      const first = Object.values(localized).find(
+        (v) => typeof v === 'string' && v.trim().length > 0,
+      ) as string | undefined;
+      if (first) return first.trim();
+    }
+  }
+  return 'LinkedIn identity';
+};
+
+const LINK_REGEX = /(https?:\/\/[^\s)]+)/g;
+const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+
+const isHashtagOnlyLine = (trimmed: string): boolean =>
+  trimmed.length > 0 &&
+  trimmed.split(/\s+/).every((token) => /^#[\w]+$/i.test(token));
+
+/** Collapse huge vertical gaps, fix URLs split across lines, drop trailing # blocks (shown again as chips). */
+const prepareLinkedinPreviewBody = (raw: string): string => {
+  let t = String(raw || '').replace(/\r\n/g, '\n');
+  t = t.replace(/\n{3,}/g, '\n\n');
+  t = t.replace(/https?:\/\/[^\s]+/gi, (url) => url.replace(/\s+/g, ''));
+  const lines = t.split('\n');
+  let end = lines.length;
+  while (end > 0) {
+    const row = lines[end - 1].trim();
+    if (!row) {
+      end -= 1;
+      continue;
+    }
+    if (isHashtagOnlyLine(row)) {
+      end -= 1;
+      continue;
+    }
+    break;
+  }
+  return lines.slice(0, end).join('\n').trimEnd();
+};
+
+const renderInlineRichText = (line: string): React.ReactNode[] => {
+  const withMarkdownLinks = line.replace(
+    MARKDOWN_LINK_REGEX,
+    (_, label: string, url: string) => `${label} (${url})`,
+  );
+  const parts = withMarkdownLinks.split(LINK_REGEX);
+  const nodes: React.ReactNode[] = [];
+
+  const pushFormattedText = (text: string, keyPrefix: string) => {
+    const segments = text.split(/(\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|==[^=]+==)/g);
+    segments.forEach((segment, idx) => {
+      if (!segment) return;
+      const key = `${keyPrefix}-${idx}`;
+      if (segment.startsWith('**') && segment.endsWith('**')) {
+        nodes.push(<strong key={key}>{segment.slice(2, -2)}</strong>);
+        return;
+      }
+      if (segment.startsWith('__') && segment.endsWith('__')) {
+        nodes.push(<u key={key}>{segment.slice(2, -2)}</u>);
+        return;
+      }
+      if (segment.startsWith('*') && segment.endsWith('*')) {
+        nodes.push(<em key={key}>{segment.slice(1, -1)}</em>);
+        return;
+      }
+      if (segment.startsWith('==') && segment.endsWith('==')) {
+        nodes.push(
+          <mark key={key} className="rounded bg-yellow-100 px-1 text-yellow-900 dark:bg-yellow-900/40 dark:text-yellow-100">
+            {segment.slice(2, -2)}
+          </mark>,
+        );
+        return;
+      }
+      nodes.push(<span key={key}>{segment}</span>);
+    });
+  };
+
+  parts.forEach((part, idx) => {
+    if (!part) return;
+    if (/^https?:\/\//.test(part)) {
+      const url = part.replace(/[).,\]]+$/g, '');
+      nodes.push(
+        <a
+          key={`link-${idx}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block max-w-full text-primary underline-offset-2 hover:underline break-all [overflow-wrap:anywhere]"
+        >
+          {url}
+        </a>,
+      );
+      return;
+    }
+    pushFormattedText(part, `text-${idx}`);
+  });
+
+  return nodes;
+};
+
+const renderRichLines = (text: string): React.ReactNode[] =>
+  text.split('\n').map((line, index) => {
+    const trimmed = line.trim();
+    const isBullet = /^[-*•]\s+/.test(trimmed);
+    const isNumbered = /^\d+[.)]\s+/.test(trimmed);
+    const content = isBullet
+      ? trimmed.replace(/^[-*•]\s+/, '')
+      : isNumbered
+        ? trimmed.replace(/^\d+[.)]\s+/, '')
+        : line;
+    const isBlank = trimmed.length === 0;
+
+    return (
+      <p
+        key={`line-${index}`}
+        className={cn(
+          'text-[13px] sm:text-[14px] text-foreground',
+          isBlank ? 'mb-0 min-h-[0.5rem]' : 'mb-1.5',
+          (isBullet || isNumbered) && 'pl-1',
+        )}
+        style={{
+          lineHeight: 1.5,
+          maxWidth: '100%',
+        }}
+      >
+        {isBullet ? '• ' : ''}
+        {isNumbered ? `${trimmed.match(/^\d+/)?.[0]}. ` : ''}
+        {!isBlank ? renderInlineRichText(content) : '\u00A0'}
+      </p>
+    );
+  });
+
 interface ScheduleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   content: any;
   onSuccess?: () => void;
   calculateCreditCost?: (content: any, isScheduled: boolean) => number;
+  postingTarget?: {
+    actorType?: 'member' | 'organization';
+    organizationUrn?: string;
+    label?: string;
+    avatarUrl?: string;
+  } | null;
+  postingIdentities?: Array<{
+    id: string;
+    actorType: 'member' | 'organization';
+    label: string;
+    organizationUrn?: string;
+    avatarUrl?: string;
+  }>;
+  selectedPostingIdentityId?: string;
+  onSelectPostingIdentity?: (identityId: string) => void;
 }
 
 export function ScheduleModal({ 
@@ -56,7 +206,11 @@ export function ScheduleModal({
   onOpenChange, 
   content, 
   onSuccess,
-  calculateCreditCost = () => 2.5
+  calculateCreditCost = () => 2.5,
+  postingTarget = null,
+  postingIdentities = [],
+  selectedPostingIdentityId = '',
+  onSelectPostingIdentity,
 }: ScheduleModalProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -68,6 +222,20 @@ export function ScheduleModal({
   const [editedHashtags, setEditedHashtags] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [hasConfirmedIdentityOnce, setHasConfirmedIdentityOnce] = useState(false);
+  const [pendingIdentityAction, setPendingIdentityAction] = useState<"publish" | "schedule" | null>(null);
+  const [localPostingIdentities, setLocalPostingIdentities] = useState<
+    Array<{
+      id: string;
+      actorType: 'member' | 'organization';
+      label: string;
+      organizationUrn?: string;
+      avatarUrl?: string;
+    }>
+  >([]);
+  const [localSelectedIdentityId, setLocalSelectedIdentityId] = useState('');
   const [newHashtagInput, setNewHashtagInput] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
@@ -90,11 +258,45 @@ export function ScheduleModal({
     }
   }, [content, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (postingIdentities.length > 0) return;
+    let cancelled = false;
+    const loadIdentities = async () => {
+      try {
+        const res = await apiClient.get('/linkedin/posting-identities');
+        const identities = Array.isArray(res?.identities) ? res.identities : [];
+        const mapped = identities.map((identity: any) => ({
+          id: identity.id,
+          actorType: identity.actorType === 'organization' ? 'organization' : 'member',
+          label: extractLinkedinText(identity.label || identity.organizationName),
+          organizationUrn: identity.organizationUrn,
+          avatarUrl: identity.avatarUrl,
+        }));
+        if (cancelled) return;
+        setLocalPostingIdentities(mapped);
+        if (mapped.length > 0 && !localSelectedIdentityId) {
+          setLocalSelectedIdentityId(res?.defaultIdentityId || mapped[0].id);
+        }
+      } catch {
+        if (!cancelled) {
+          setLocalPostingIdentities([]);
+        }
+      }
+    };
+    void loadIdentities();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, postingIdentities.length, localSelectedIdentityId]);
+
   const handleClose = () => {
     setIsSchedulingExpanded(false);
     setEditedHashtags([]);
     setNewHashtagInput('');
     setUploadedImages([]);
+    setHasConfirmedIdentityOnce(false);
+    setPendingIdentityAction(null);
     onOpenChange(false);
   };
 
@@ -110,9 +312,106 @@ export function ScheduleModal({
   );
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Your Name";
   const userInitial = displayName.charAt(0).toUpperCase();
+  const effectivePostingIdentities =
+    postingIdentities.length > 0 ? postingIdentities : localPostingIdentities;
+  const effectiveSelectedIdentityId =
+    postingIdentities.length > 0 ? selectedPostingIdentityId : localSelectedIdentityId;
+  const selectedIdentity =
+    effectivePostingIdentities.find((i) => i.id === effectiveSelectedIdentityId) || null;
+  const isBusy = isPublishing || isSubmittingAction;
+
+  const handleSelectIdentity = (identityId: string) => {
+    if (postingIdentities.length > 0 && onSelectPostingIdentity) {
+      onSelectPostingIdentity(identityId);
+      return;
+    }
+    setLocalSelectedIdentityId(identityId);
+  };
+
+  const ensureIdentityConfirmed = (action: 'publish' | 'schedule'): boolean => {
+    if (hasConfirmedIdentityOnce || effectivePostingIdentities.length === 0) return true;
+    setPendingIdentityAction(action);
+    setShowIdentityModal(true);
+    return false;
+  };
+
+  const publishNow = async (skipIdentityGate = false) => {
+    if (!skipIdentityGate && !ensureIdentityConfirmed('publish')) return;
+    try {
+      setIsPublishing(true);
+      await apiClient.post('/posts/publish', {
+        contentId: content.id,
+        content: editedContent || content.content,
+        hashtags: effectiveHashtags,
+        mediaUrls: uploadedImages,
+        actorType: selectedIdentity?.actorType || postingTarget?.actorType,
+        organizationUrn:
+          selectedIdentity?.organizationUrn || postingTarget?.organizationUrn,
+      });
+      toast.success('Post published successfully!');
+      handleClose();
+      refreshQuota();
+      onSuccess?.();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to publish post';
+      if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
+        toast.error(errorMessage, { duration: 5000 });
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const scheduleNow = async (skipIdentityGate = false) => {
+    if (!skipIdentityGate && !ensureIdentityConfirmed('schedule')) return;
+    try {
+      setIsSubmittingAction(true);
+      const scheduledIso = new Date(scheduleDateTime).toISOString();
+      await apiClient.post('/posts/schedule', {
+        contentId: content.id,
+        scheduledFor: scheduledIso,
+        timezone: userTimezone,
+        content: editedContent,
+        hashtags: effectiveHashtags,
+        mediaUrls: uploadedImages,
+        actorType: selectedIdentity?.actorType || postingTarget?.actorType,
+        organizationUrn:
+          selectedIdentity?.organizationUrn || postingTarget?.organizationUrn,
+      });
+      const scheduledTime = formatInTimezone(scheduledIso, userTimezone);
+      toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
+      handleClose();
+      refreshQuota();
+      onSuccess?.();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to schedule post';
+      if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
+        toast.error(errorMessage, { duration: 5000 });
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
+      {isBusy && (
+        <div className="fixed inset-0 z-[120] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="rounded-xl border bg-card px-6 py-5 shadow-lg min-w-[280px] text-center">
+            <Calendar className="h-6 w-6 mx-auto mb-3 animate-pulse text-primary" />
+            <p className="font-medium">
+              {isPublishing ? "Publishing post..." : "Scheduling post..."}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Please wait while we complete this action.
+            </p>
+          </div>
+        </div>
+      )}
       <DialogContent className={`w-[calc(100vw-1rem)] sm:w-full ${isSchedulingExpanded ? 'max-w-4xl' : 'max-w-[560px]'} max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden transition-all duration-300`}>
         <DialogHeader className="sr-only">
           <DialogTitle>Content Preview</DialogTitle>
@@ -160,40 +459,14 @@ export function ScheduleModal({
               </div>
 
               {/* Body */}
-              <div className="px-4 pt-3 pb-2 overflow-hidden" style={{ maxWidth: '100%' }}>
-                <div className="overflow-hidden" style={{ maxWidth: '100%', textAlign: 'justify' }}>
-                  {(editedContent || content.content).split("\n").map((line, index) => (
-                    <p
-                      key={index}
-                      className="text-[13px] sm:text-[14px] text-foreground mb-1.5"
-                      style={{
-                        lineHeight: 1.5,
-                        wordBreak: 'normal',
-                        overflowWrap: 'normal',
-                        hyphens: 'none',
-                        maxWidth: '100%',
-                      }}
-                    >
-                      {line
-                        ? line.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-                            /^https?:\/\//.test(part) ? (
-                              <a
-                                key={i}
-                                href={part}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                                style={{ wordBreak: 'break-all' }}
-                              >
-                                {part.length > 50 ? part.substring(0, 50) + "..." : part}
-                              </a>
-                            ) : (
-                              <span key={i}>{part}</span>
-                            )
-                          )
-                        : "\u00A0"}
-                    </p>
-                  ))}
+              <div className="px-4 pt-3 pb-2 overflow-hidden min-w-0" style={{ maxWidth: '100%' }}>
+                <div
+                  className="overflow-hidden text-left break-words [overflow-wrap:anywhere] min-w-0"
+                  style={{ maxWidth: '100%' }}
+                >
+                  {renderRichLines(
+                    prepareLinkedinPreviewBody(editedContent || content.content || ''),
+                  )}
                 </div>
 
                 {effectiveHashtags.length > 0 && (
@@ -388,30 +661,34 @@ export function ScheduleModal({
                   </div>
                 </div>
 
+                {postingTarget && (
+                  <div className="w-full rounded-md border bg-muted/20 px-2 py-1.5 text-[11px] text-muted-foreground mb-2">
+                    Posting as:{" "}
+                    <span className="font-medium text-foreground">
+                      {selectedIdentity?.actorType === "organization" || postingTarget.actorType === "organization"
+                        ? `Company Page (${selectedIdentity?.label || postingTarget.label || "Selected page"})`
+                        : "Personal profile"}
+                    </span>
+                    {effectivePostingIdentities.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="ml-2 h-6 px-2 text-[11px] border-orange-500/50 text-orange-500 hover:text-orange-400"
+                        onClick={() => setShowIdentityModal(true)}
+                      >
+                        Change
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   {/* Post Now Button */}
                   <Button
                     className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white"
-                    onClick={async () => {
-                      try {
-                        setIsPublishing(true);
-                        const response = await apiClient.post('/posts/publish', {
-                          contentId: content.id,
-                          content: editedContent || content.content,
-                          mediaUrls: uploadedImages,
-                        });
-                        toast.success('Post published successfully!');
-                        handleClose();
-                        setIsPublishing(false);
-                        refreshQuota();
-                        onSuccess?.();
-                      } catch (error: any) {
-                        setIsPublishing(false);
-                        toast.error(error.response?.data?.message || 'Failed to publish post');
-                      }
-                    }}
-                    disabled={isPublishing}
+                    onClick={() => void publishNow()}
+                    disabled={isBusy}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     <span className="flex items-center">
@@ -749,32 +1026,8 @@ export function ScheduleModal({
               <div className="px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 border-t border-border/60 bg-card/30 backdrop-blur-sm">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    onClick={async () => {
-                      try {
-                        const scheduledIso = new Date(scheduleDateTime).toISOString();
-                        const response = await apiClient.post('/posts/schedule', {
-                          contentId: content.id,
-                          scheduledFor: scheduledIso,
-                          timezone: userTimezone,
-                          content: editedContent,
-                          mediaUrls: uploadedImages
-                        });
-                        const scheduledTime = formatInTimezone(scheduledIso, userTimezone);
-                        toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
-                        handleClose();
-                        refreshQuota();
-                        onSuccess?.();
-                      } catch (error: any) {
-                        const errorMessage = error.response?.data?.message || error.message || 'Failed to schedule post';
-                        
-                        if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
-                          toast.error(errorMessage, { duration: 5000 });
-                        } else {
-                          toast.error(errorMessage);
-                        }
-                      }
-                    }}
-                    disabled={!scheduleDateTime}
+                    onClick={() => void scheduleNow()}
+                    disabled={!scheduleDateTime || isBusy}
                     className="flex-1 min-w-0 h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover:shadow-xl transition-all"
                   >
                     <Calendar className="h-5 w-5 mr-2" />
@@ -784,27 +1037,8 @@ export function ScheduleModal({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={async () => {
-                      try {
-                        const response = await apiClient.post('/posts/publish', {
-                          contentId: content.id,
-                          content: editedContent,
-                          mediaUrls: uploadedImages
-                        });
-                        toast.success('Post published successfully!');
-                        handleClose();
-                        refreshQuota();
-                        onSuccess?.();
-                      } catch (error: any) {
-                        const errorMessage = error.response?.data?.message || error.message || 'Failed to publish post';
-                        
-                        if (errorMessage.includes('Insufficient credits') || errorMessage.includes('upgrade your plan')) {
-                          toast.error(errorMessage, { duration: 5000 });
-                        } else {
-                          toast.error(errorMessage);
-                        }
-                      }
-                    }}
+                    onClick={() => void publishNow()}
+                    disabled={isBusy}
                     className="flex-1 min-w-0 h-12 px-4 border-2 hover:bg-muted/50 font-medium transition-all"
                   >
                     <Send className="h-5 w-5 mr-2" />
@@ -818,6 +1052,66 @@ export function ScheduleModal({
           )}
         </div>
       </DialogContent>
+      <Dialog open={showIdentityModal} onOpenChange={setShowIdentityModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose LinkedIn account</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+            {effectivePostingIdentities.map((identity) => {
+              const active = identity.id === effectiveSelectedIdentityId;
+              const initial = (identity.label || '?').charAt(0).toUpperCase();
+              return (
+                <button
+                  key={identity.id}
+                  type="button"
+                  onClick={() => handleSelectIdentity(identity.id)}
+                  className={cn(
+                    "w-full rounded-md border px-3 py-2.5 text-left transition-colors",
+                    active ? "border-primary bg-primary/5" : "hover:bg-muted/30",
+                  )}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={identity.avatarUrl || ''} />
+                      <AvatarFallback className="text-[10px]">{initial}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{identity.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {identity.actorType === 'organization' ? 'Company Page' : 'Personal profile'}
+                      </p>
+                    </div>
+                    {active && <span className="h-2.5 w-2.5 rounded-full bg-primary shrink-0" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowIdentityModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={async () => {
+                setHasConfirmedIdentityOnce(true);
+                const nextAction = pendingIdentityAction;
+                setPendingIdentityAction(null);
+                setShowIdentityModal(false);
+                if (nextAction === "publish") {
+                  await publishNow(true);
+                }
+                if (nextAction === "schedule") {
+                  await scheduleNow(true);
+                }
+              }}
+            >
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -32,31 +32,48 @@ export default function Dashboard() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0, 0);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
       // Use the new calendar API
       const response = await apiClient.get('/posts/calendar', {
         params: {
-          startDate: startOfMonth.toISOString(),
-          endDate: endOfMonth.toISOString()
+          start: startOfMonth.toISOString(),
+          end: endOfMonth.toISOString()
         }
       });
 
-      if (response.data && response.data.posts) {
-        const transformedPosts = response.data.posts.map((post: any) => ({
-          id: post.id,
-          title: post.title || 'Untitled Post',
-          content: post.content || '',
-          scheduledFor: post.created_at || post.scheduled_for,
-          status: post.publish_status === 'published' ? 'published' : post.is_scheduled ? 'scheduled' : 'draft',
-          platforms: ['LinkedIn'],
-          type: post.visual_type || 'text'
-        }));
+      const events = Array.isArray(response?.events)
+        ? response.events
+        : Array.isArray(response?.data?.posts)
+          ? response.data.posts
+          : [];
 
-        setPosts(transformedPosts);
-        setFilteredPosts(transformedPosts);
-      }
+      const transformedPosts = events.map((event: any) => ({
+        id: event.id,
+        title:
+          event.title ||
+          event?.content?.title ||
+          "Untitled Post",
+        content:
+          event?.content?.content ||
+          "",
+        scheduledFor:
+          event.start ||
+          event.scheduled_for ||
+          event.created_at,
+        status:
+          event.status ||
+          (event.type === "published" ? "published" : "scheduled"),
+        platforms: ["LinkedIn"],
+        type:
+          event?.content?.visual_type ||
+          event.visual_type ||
+          "text",
+      }));
+
+      setPosts(transformedPosts);
+      setFilteredPosts(transformedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);
       // Fallback to direct Supabase query if API fails
@@ -71,18 +88,19 @@ export default function Dashboard() {
           .from('generated_content')
           .select('*')
           .eq('user_id', uid)
-          .gte('created_at', startOfMonth.toISOString())
-          .lte('created_at', endOfMonth.toISOString())
+          .eq('is_scheduled', true)
+          .gte('scheduled_for', startOfMonth.toISOString())
+          .lte('scheduled_for', endOfMonth.toISOString())
           .is('deleted_at', null)
-          .order('created_at', { ascending: false });
+          .order('scheduled_for', { ascending: false });
 
         if (!supabaseError && data) {
           const transformedPosts = data.map((post: any) => ({
             id: post.id,
             title: post.title || 'Untitled Post',
             content: post.content || '',
-            scheduledFor: post.created_at,
-            status: post.publish_status === 'published' ? 'published' : post.is_scheduled ? 'scheduled' : 'draft',
+            scheduledFor: post.scheduled_for || post.created_at,
+            status: post.publish_status === 'published' ? 'published' : 'scheduled',
             platforms: ['LinkedIn'],
             type: post.visual_type || 'text'
           }));

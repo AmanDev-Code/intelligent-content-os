@@ -11,9 +11,23 @@ interface DateTimePickerProps {
   minDate?: string;
   className?: string;
   label?: string;
+  /** Show Clear + Today links (e.g. optional deadlines). */
+  clearable?: boolean;
+  showQuickActions?: boolean;
+  /** Tighter trigger + label (e.g. dense admin forms). */
+  compact?: boolean;
 }
 
-export function DateTimePicker({ value, onChange, minDate, className, label }: DateTimePickerProps) {
+export function DateTimePicker({
+  value,
+  onChange,
+  minDate,
+  className,
+  label,
+  clearable = false,
+  showQuickActions = false,
+  compact = false,
+}: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const timezone = getPreferredTimezoneSync();
   
@@ -41,7 +55,13 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
   });
 
   useEffect(() => {
-    if (!value) return;
+    if (!value) {
+      const now = new Date();
+      setSelectedDate(now);
+      setSelectedHour(now.getHours());
+      setSelectedMinute(now.getMinutes());
+      return;
+    }
     const date = parseDate(value);
     setSelectedDate(date);
     setSelectedHour(date.getHours());
@@ -145,20 +165,32 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
   const minutes = Array.from({ length: 60 }, (_, i) => i);
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {label && <Label className="text-sm font-medium text-foreground">{label}</Label>}
-      
+    <div className={cn(compact ? 'space-y-1' : 'space-y-2', className)}>
+      {label && (
+        <Label
+          className={cn(
+            'font-medium text-foreground',
+            compact ? 'text-xs' : 'text-sm',
+          )}
+        >
+          {label}
+        </Label>
+      )}
+
       <div className="relative">
         <Button
           type="button"
           variant="outline"
           className={cn(
-            'w-full justify-start text-left font-normal h-11',
-            !value && 'text-muted-foreground'
+            'w-full justify-start text-left font-normal',
+            compact ? 'h-9 min-h-9 py-0 text-sm' : 'h-11',
+            !value && 'text-muted-foreground',
           )}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <CalendarIcon
+            className={cn('mr-2 shrink-0', compact ? 'h-3.5 w-3.5' : 'h-4 w-4')}
+          />
           <span className="truncate">{formatDisplayValue()}</span>
         </Button>
 
@@ -168,10 +200,15 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
               className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
             />
-            <div className="absolute z-50 mt-2 w-full max-w-sm rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+            <div
+              className={cn(
+                'absolute z-50 mt-1.5 w-full rounded-lg border border-border bg-card shadow-lg overflow-hidden',
+                compact ? 'max-w-[min(100%,18rem)]' : 'max-w-sm',
+              )}
+            >
               {/* Calendar */}
-              <div className="p-4 border-b border-border">
-                <div className="flex items-center justify-between mb-4">
+              <div className={cn('border-b border-border', compact ? 'p-2.5' : 'p-4')}>
+                <div className={cn('flex items-center justify-between', compact ? 'mb-2' : 'mb-4')}>
                   <Button
                     type="button"
                     variant="ghost"
@@ -209,8 +246,13 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
               </div>
 
               {/* Time Picker */}
-              <div className="p-4">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-3">
+              <div className={cn(compact ? 'p-2.5' : 'p-4')}>
+                <Label
+                  className={cn(
+                    'text-xs font-medium text-muted-foreground flex items-center gap-1',
+                    compact ? 'mb-2' : 'mb-3',
+                  )}
+                >
                   <Clock className="h-3 w-3" />
                   Time
                 </Label>
@@ -246,9 +288,52 @@ export function DateTimePicker({ value, onChange, minDate, className, label }: D
                 </div>
               </div>
 
-              <div className="p-4 pt-0">
+              {(clearable || showQuickActions) && (
+                <div
+                  className={cn(
+                    'flex items-center justify-between gap-2 border-t border-border',
+                    compact ? 'px-2.5 py-1.5' : 'px-4 py-2',
+                  )}
+                >
+                  {clearable ? (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary hover:underline"
+                      onClick={() => {
+                        onChange('');
+                        setIsOpen(false);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                  {showQuickActions ? (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary hover:underline"
+                      onClick={() => {
+                        const now = new Date();
+                        now.setSeconds(0, 0);
+                        onChange(now.toISOString());
+                        setSelectedDate(now);
+                        setSelectedHour(now.getHours());
+                        setSelectedMinute(now.getMinutes());
+                      }}
+                    >
+                      Today
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+              )}
+
+              <div className={cn(compact ? 'p-2.5 pt-0' : 'p-4 pt-0')}>
                 <Button
                   type="button"
+                  size={compact ? 'sm' : 'default'}
                   className="w-full"
                   onClick={() => setIsOpen(false)}
                 >

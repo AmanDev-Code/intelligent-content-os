@@ -78,6 +78,9 @@ class ApiClient {
       console.log(`✅ API Success:`, data);
       return data;
     } catch (error) {
+      if ((error as Error)?.name === 'AbortError') {
+        throw error;
+      }
       console.error(`🚨 API Request Failed:`, error);
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error(`Network error: Unable to connect to server. Please check your internet connection and try again.`);
@@ -87,7 +90,10 @@ class ApiClient {
   }
 
   // HTTP Methods
-  async get(endpoint: string, options?: { params?: Record<string, any> }): Promise<any> {
+  async get(
+    endpoint: string,
+    options?: { params?: Record<string, any>; signal?: AbortSignal },
+  ): Promise<any> {
     let url = endpoint;
     if (options?.params) {
       const searchParams = new URLSearchParams();
@@ -101,7 +107,7 @@ class ApiClient {
         url += (endpoint.includes('?') ? '&' : '?') + queryString;
       }
     }
-    return this.request(url, { method: 'GET' });
+    return this.request(url, { method: 'GET', signal: options?.signal });
   }
 
   async post(
@@ -204,9 +210,37 @@ export const api = {
   linkedin: {
     status: () => apiClient.get('/linkedin/status'),
     metrics: () => apiClient.get('/linkedin/metrics'),
-    analytics: (limit?: number) => apiClient.get(`/linkedin/analytics${limit ? `?limit=${limit}` : ''}`),
+    analytics: (limit?: number, params?: { actorType?: 'member' | 'organization'; organizationUrn?: string }) => {
+      const search = new URLSearchParams();
+      if (limit) search.set('limit', String(limit));
+      if (params?.actorType) search.set('actorType', params.actorType);
+      if (params?.organizationUrn) search.set('organizationUrn', params.organizationUrn);
+      const qs = search.toString();
+      return apiClient.get(`/linkedin/analytics${qs ? `?${qs}` : ''}`);
+    },
+    insights: (periodDays?: number, params?: { actorType?: 'member' | 'organization'; organizationUrn?: string }) => {
+      const search = new URLSearchParams();
+      if (periodDays) search.set('periodDays', String(periodDays));
+      if (params?.actorType) search.set('actorType', params.actorType);
+      if (params?.organizationUrn) search.set('organizationUrn', params.organizationUrn);
+      const qs = search.toString();
+      return apiClient.get(`/linkedin/insights${qs ? `?${qs}` : ''}`);
+    },
+    accountType: (params?: { actorType?: 'member' | 'organization'; organizationUrn?: string }) => {
+      const search = new URLSearchParams();
+      if (params?.actorType) search.set('actorType', params.actorType);
+      if (params?.organizationUrn) search.set('organizationUrn', params.organizationUrn);
+      const qs = search.toString();
+      return apiClient.get(`/linkedin/account-type${qs ? `?${qs}` : ''}`);
+    },
+    postingIdentities: () => apiClient.get('/linkedin/posting-identities'),
     dashboard: () => apiClient.get('/linkedin/dashboard'),
-    organization: () => apiClient.get('/linkedin/organization'),
+    organization: (params?: { organizationUrn?: string }) => {
+      const search = new URLSearchParams();
+      if (params?.organizationUrn) search.set('organizationUrn', params.organizationUrn);
+      const qs = search.toString();
+      return apiClient.get(`/linkedin/organization${qs ? `?${qs}` : ''}`);
+    },
     /** Server-issued OAuth URL (opaque state in Redis; do not use GET /linkedin/auth). */
     startOAuth: () => apiClient.post('/linkedin/oauth/start', {}),
     publish: (contentId: string) => apiClient.post('/linkedin/publish', { contentId }),
@@ -261,5 +295,85 @@ export const api = {
       questionVersion?: number;
       tourVersion?: number;
     }) => apiClient.put('/admin/onboarding/config', payload),
+    listTags: () => apiClient.get('/admin/tags'),
+    addTag: (payload: { tag: string; priority?: number }) =>
+      apiClient.post('/admin/tags', payload),
+    updateTag: (
+      id: string,
+      payload: { isActive?: boolean; priority?: number },
+    ) => apiClient.patch(`/admin/tags/${id}`, payload),
+    deleteTag: (id: string) => apiClient.delete(`/admin/tags/${id}`),
+    refreshTag: (id: string) => apiClient.post(`/admin/tags/${id}/refresh`, {}),
+    refreshAllTags: () => apiClient.post('/admin/tags/refresh-all', {}),
+    pruneTrendingOldest: (count = 200) =>
+      apiClient.post('/admin/trending/prune-oldest', { count }),
+    careersListJobs: () => apiClient.get('/admin/careers/jobs'),
+    careersCreateJob: (payload: Record<string, unknown>) =>
+      apiClient.post('/admin/careers/jobs', payload),
+    careersGetJob: (id: string) => apiClient.get(`/admin/careers/jobs/${id}`),
+    careersUpdateJob: (id: string, payload: Record<string, unknown>) =>
+      apiClient.patch(`/admin/careers/jobs/${id}`, payload),
+    careersDeleteJob: (id: string) => apiClient.delete(`/admin/careers/jobs/${id}`),
+    careersListApplications: (jobId: string) =>
+      apiClient.get(`/admin/careers/jobs/${jobId}/applications`),
+    careersAiField: (payload: {
+      field: string;
+      context: Record<string, unknown>;
+      existingDraft?: string;
+    }) => apiClient.post('/admin/careers/ai/field', payload),
+    careersAiAllSections: (payload: {
+      context: Record<string, unknown>;
+      existing?: Record<string, string>;
+    }) => apiClient.post('/admin/careers/ai/all-sections', payload),
+    blogListPosts: (params?: { status?: string; q?: string }) =>
+      apiClient.get('/admin/blog/posts', { params }),
+    blogGetPost: (id: string) => apiClient.get(`/admin/blog/posts/${id}`),
+    blogCreatePost: (payload: Record<string, unknown>) => apiClient.post('/admin/blog/posts', payload),
+    blogUpdatePost: (id: string, payload: Record<string, unknown>) =>
+      apiClient.patch(`/admin/blog/posts/${id}`, payload),
+    blogDeletePost: (id: string) => apiClient.delete(`/admin/blog/posts/${id}`),
+    blogListEditors: () => apiClient.get('/admin/blog/editors'),
+    blogGrantEditor: (user_id: string) => apiClient.post('/admin/blog/editors', { user_id }),
+    blogRevokeEditor: (userId: string) => apiClient.delete(`/admin/blog/editors/${userId}`),
+    seoPagesList: () => apiClient.get('/admin/seo/pages'),
+    seoPagesOne: (route: string) => apiClient.get('/admin/seo/pages/one', { params: { route } }),
+    seoPagesUpsert: (payload: Record<string, unknown>) => apiClient.put('/admin/seo/pages', payload),
+    seoPagesDelete: (route: string) =>
+      apiClient.delete(`/admin/seo/pages?route=${encodeURIComponent(route)}`),
+  },
+
+  /** Public marketing blog (not social `api.posts`). */
+  blog: {
+    listPublished: (params?: { post_kind?: string; tag?: string; limit?: number; offset?: number }) =>
+      apiClient.get('/blog/posts', { params }),
+    postByPath: (path: string) => apiClient.get('/blog/post', { params: { path } }),
+    pageSeo: (route: string) => apiClient.get('/blog/page-seo', { params: { route } }),
+    myAccess: () => apiClient.get('/blog/my-access'),
+  },
+
+  careers: {
+    categories: () => apiClient.get('/careers/categories'),
+    jobs: (params?: { category?: string }) =>
+      apiClient.get('/careers/jobs', { params }),
+    job: (slug: string) => apiClient.get(`/careers/jobs/${slug}`),
+    apply: (slug: string, payload: Record<string, unknown>) =>
+      apiClient.post(`/careers/jobs/${slug}/apply`, payload),
+  },
+
+  content: {
+    trending: (params?: {
+      tag?: string;
+      limit?: number;
+      offset?: number;
+      signal?: AbortSignal;
+    }) => {
+      const { signal, tag, limit, offset } = params || {};
+      return apiClient.get('/content/trending', {
+        params: { tag, limit, offset },
+        signal,
+      });
+    },
+    trendingDebug: (params?: { tag?: string; limit?: number }) =>
+      apiClient.get('/content/trending/debug', { params }),
   },
 };

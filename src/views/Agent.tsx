@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -33,16 +33,16 @@ import {
   ThumbsUp,
   Share,
   Info,
-  Eye,
   ArrowRight,
   Copy,
   BarChart3,
+  Building2,
+  Check,
   Bold,
   Italic,
   Underline,
   Smile,
   Upload,
-  Trash2,
   Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -55,7 +55,6 @@ import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { dataService, getQuotaColor } from "@/services/dataService";
 import { api } from "@/lib/apiClient";
 import { apiClient } from "@/lib/apiClient";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   formatInTimezone,
   getPreferredTimezoneSync,
@@ -69,6 +68,50 @@ const contentTypes = [
 ];
 
 export default function Agent() {
+  interface TrendingHashtag {
+    hashtag: string;
+    score: number;
+    usage_count: number;
+    source_breakdown?: Record<string, number>;
+  }
+type PostingActorType = 'member' | 'organization';
+interface PostingIdentity {
+  id: string;
+  actorType: PostingActorType;
+  label: unknown;
+  organizationUrn?: string;
+  organizationName?: unknown;
+  avatarUrl?: string;
+}
+
+const extractLinkedinLocalizedText = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (!value || typeof value !== "object") return null;
+
+  const localized = (value as { localized?: Record<string, unknown> }).localized;
+  if (localized && typeof localized === "object") {
+    const localizedValue = Object.values(localized).find(
+      (v) => typeof v === "string" && v.trim().length > 0,
+    ) as string | undefined;
+    if (localizedValue) return localizedValue.trim();
+  }
+
+  const directValue = Object.values(value as Record<string, unknown>).find(
+    (v) => typeof v === "string" && v.trim().length > 0,
+  ) as string | undefined;
+  return directValue?.trim() || null;
+};
+
+const getIdentityDisplayName = (identity: PostingIdentity): string => {
+  const fromLabel = extractLinkedinLocalizedText(identity.label);
+  if (fromLabel) return fromLabel;
+  const fromOrg = extractLinkedinLocalizedText(identity.organizationName);
+  if (fromOrg) return fromOrg;
+  return identity.actorType === "organization" ? "Company Page" : "Personal profile";
+};
+
   const { user } = useAuth();
   const [selectedType, setSelectedType] = useState('post');
   const [customTopic, setCustomTopic] = useState('');
@@ -87,11 +130,22 @@ export default function Agent() {
   const [showContentModal, setShowContentModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<any>(null);
   const [showHashtagsModal, setShowHashtagsModal] = useState(false);
-  const [popularHashtags, setPopularHashtags] = useState<Array<{tag: string, count: number, trend: 'up' | 'down' | 'stable'}>>([]);
+  const [popularHashtags, setPopularHashtags] = useState<
+    Array<{
+      tag: string;
+      count: number;
+      trend: 'up' | 'down' | 'stable';
+      score: number;
+      rank: number;
+      source_breakdown?: Record<string, number>;
+    }>
+  >([]);
   const [loadingHashtags, setLoadingHashtags] = useState(false);
+  const [loadingMoreHashtags, setLoadingMoreHashtags] = useState(false);
+  const [trendingTotal, setTrendingTotal] = useState<number | null>(null);
+  const [trendingHasMore, setTrendingHasMore] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [scheduleDateTime, setScheduleDateTime] = useState('');
   const [selectedContentForAction, setSelectedContentForAction] = useState<any>(null);
   const [isSchedulingExpanded, setIsSchedulingExpanded] = useState(false);
@@ -106,11 +160,111 @@ export default function Agent() {
   const [showTourDemo, setShowTourDemo] = useState(false);
   const activeCarouselPollsRef = useRef<Map<string, Promise<any>>>(new Map());
   const hasLoadedRecentRef = useRef<string | null>(null);
+  /** One controller per modal open; used to cancel in-flight trending fetches when the dialog closes. */
+  const trendingModalSessionRef = useRef<AbortController | null>(null);
   const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
+  const [postingIdentities, setPostingIdentities] = useState<PostingIdentity[]>([]);
+  const [selectedPostingIdentityId, setSelectedPostingIdentityId] = useState<string>("");
+  const [loadingPostingIdentities, setLoadingPostingIdentities] = useState(false);
+  const [showPostingAccountModal, setShowPostingAccountModal] = useState(false);
+  const [pendingPostAction, setPendingPostAction] = useState<"publish" | "schedule" | null>(null);
+  const [pendingActionContent, setPendingActionContent] = useState<any>(null);
+  const [hasConfirmedPostingIdentity, setHasConfirmedPostingIdentity] = useState(false);
 
   useEffect(() => {
     void resolveTimezone().then(setUserTimezone).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    const loadPostingIdentities = async () => {
+      try {
+        setLoadingPostingIdentities(true);
+        const response = await api.linkedin.postingIdentities();
+        const identities = Array.isArray(response?.identities)
+          ? response.identities
+          : [];
+        const defaultIdentityId = response?.defaultIdentityId;
+        if (cancelled) return;
+        setPostingIdentities(identities);
+        if (identities.length > 0) {
+          setSelectedPostingIdentityId((prev) => {
+            if (prev && identities.some((i: PostingIdentity) => i.id === prev)) {
+              return prev;
+            }
+            return (
+              defaultIdentityId ||
+              identities[0]?.id ||
+              ""
+            );
+          });
+        } else {
+          setSelectedPostingIdentityId("");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setPostingIdentities([]);
+          setSelectedPostingIdentityId("");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingPostingIdentities(false);
+        }
+      }
+    };
+    void loadPostingIdentities();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const selectedPostingIdentity =
+    postingIdentities.find((identity) => identity.id === selectedPostingIdentityId) ||
+    postingIdentities[0] ||
+    null;
+
+  const mapTrendingItems = useCallback((items: unknown[], startRank: number) => {
+    const list = Array.isArray(items) ? items : [];
+    return list
+      .map((raw, index) => {
+        const item = raw as TrendingHashtag & { tag?: string };
+        const rank = startRank + index + 1;
+        const trend: "up" | "down" | "stable" =
+          rank <= 5 ? "up" : rank <= 12 ? "stable" : "down";
+        const tagText = String(item.hashtag || item.tag || "").trim();
+        return {
+          tag: tagText,
+          count: Number(item.usage_count || 0),
+          score: Number(item.score || 0),
+          trend,
+          rank,
+          source_breakdown: item.source_breakdown,
+        };
+      })
+      .filter((row) => row.tag.length > 0);
+  }, []);
+
+  const fetchTrendingTotalCount = useCallback(async () => {
+    try {
+      const response = await api.content.trending({ limit: 1, offset: 0 });
+      const envelope = response?.data as { total?: number } | undefined;
+      if (envelope && typeof envelope.total === "number") {
+        setTrendingTotal(envelope.total);
+        return;
+      }
+      // Ignore legacy array shape here; total should come from paginated envelope only.
+      if (Array.isArray(response?.data)) {
+        setTrendingTotal(null);
+      }
+    } catch {
+      setTrendingTotal(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchTrendingTotalCount();
+  }, [fetchTrendingTotalCount]);
 
   useEffect(() => {
     const handler = () => {
@@ -218,45 +372,67 @@ export default function Agent() {
     }
   }, []);
 
-  const fetchPopularHashtags = useCallback(async () => {
-    if (!user?.id) return;
-    
-    setLoadingHashtags(true);
-    try {
-      // Fetch user's generated content to analyze hashtags
-      const response = await dataService.getPaginatedContent(user.id, 1, 50);
-      const allHashtags: string[] = [];
-      
-      response.data.forEach(content => {
-        if (content.hashtags) {
-          allHashtags.push(...content.hashtags);
+  const fetchTrendingPage = useCallback(
+    async (offset: number, append: boolean, signal?: AbortSignal) => {
+      if (append) setLoadingMoreHashtags(true);
+      else setLoadingHashtags(true);
+      try {
+        const response = await api.content.trending({ limit: 20, offset, signal });
+        const d = response?.data as
+          | {
+              items?: TrendingHashtag[];
+              total?: number;
+              hasMore?: boolean;
+            }
+          | TrendingHashtag[]
+          | undefined;
+        let items: TrendingHashtag[] = [];
+        let total = 0;
+        let hasMore = false;
+        if (Array.isArray(d)) {
+          items = d;
+          total = d.length;
+        } else if (d && Array.isArray(d.items)) {
+          items = d.items;
+          total = typeof d.total === "number" ? d.total : items.length;
+          hasMore = Boolean(d.hasMore);
         }
-      });
-      
-      // Count hashtag frequency
-      const hashtagCount = allHashtags.reduce((acc, tag) => {
-        acc[tag] = (acc[tag] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      // Sort by frequency and create trending data
-      const sortedHashtags = Object.entries(hashtagCount)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 15)
-        .map(([tag, count]) => ({
-          tag,
-          count,
-          trend: Math.random() > 0.5 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down' as 'up' | 'down' | 'stable'
-        }));
-      
-      setPopularHashtags(sortedHashtags);
-    } catch (error) {
-      console.error('Error fetching popular hashtags:', error);
-      setPopularHashtags([]);
-    } finally {
-      setLoadingHashtags(false);
+        const ranked = mapTrendingItems(items, append ? offset : 0);
+        setPopularHashtags((prev) => (append ? [...prev, ...ranked] : ranked));
+        setTrendingTotal(total);
+        setTrendingHasMore(hasMore);
+      } catch (error) {
+        if (signal?.aborted || (error as Error)?.name === "AbortError") {
+          return;
+        }
+        console.error("Error fetching popular hashtags:", error);
+        toast.error("Could not load hashtags. Check connection and try again.");
+        setTrendingHasMore(false);
+      } finally {
+        setLoadingHashtags(false);
+        setLoadingMoreHashtags(false);
+      }
+    },
+    [mapTrendingItems],
+  );
+
+  /** Load first page when the modal opens (single effect; avoids duplicate onOpenChange + StrictMode races). */
+  useEffect(() => {
+    if (!showHashtagsModal) {
+      trendingModalSessionRef.current?.abort();
+      trendingModalSessionRef.current = null;
+      return;
     }
-  }, [user?.id]);
+    const ac = new AbortController();
+    trendingModalSessionRef.current = ac;
+    void fetchTrendingPage(0, false, ac.signal);
+    return () => {
+      ac.abort();
+      if (trendingModalSessionRef.current === ac) {
+        trendingModalSessionRef.current = null;
+      }
+    };
+  }, [showHashtagsModal, fetchTrendingPage]);
 
   const handleComplete = useCallback(
     async (contentId: string | null) => {
@@ -710,6 +886,8 @@ export default function Agent() {
       const publishResponse = await apiClient.post('/posts/publish', {
         contentId: content.id,
         platform: 'linkedin',
+        actorType: selectedPostingIdentity?.actorType,
+        organizationUrn: selectedPostingIdentity?.organizationUrn,
       });
 
       if (publishResponse.success) {
@@ -795,12 +973,13 @@ export default function Agent() {
         scheduledFor: scheduleDateTime,
         timezone: userTimezone,
         platform: 'linkedin',
+        actorType: selectedPostingIdentity?.actorType,
+        organizationUrn: selectedPostingIdentity?.organizationUrn,
       });
 
       if (scheduleResponse.success) {
         const scheduledTime = formatInTimezone(scheduleDateTime, userTimezone);
         toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
-        setShowScheduleDialog(false);
         setScheduleDateTime('');
         setSelectedContentForAction(null);
         fetchRecentGenerations(); // Refresh the list
@@ -822,17 +1001,65 @@ export default function Agent() {
     }
   };
 
-  const openScheduleDialog = (content: any) => {
-    setSelectedContentForAction(content);
-    setShowScheduleDialog(true);
-    // Set default to 1 hour from now
-    const defaultTime = new Date();
-    defaultTime.setHours(defaultTime.getHours() + 1);
-    setScheduleDateTime(defaultTime.toISOString().slice(0, 16));
+  const startPostingAction = (action: "publish" | "schedule", content: any) => {
+    if (hasConfirmedPostingIdentity) {
+      if (action === "publish") {
+        void handlePublishNow(content);
+      } else {
+        setSelectedContent(content);
+        setShowContentModal(true);
+        setIsSchedulingExpanded(true);
+        setEditedContent(content.content || '');
+        setEditedHashtags(content.hashtags || []);
+        setUploadedImages(content.media_urls || []);
+      }
+      return;
+    }
+    setPendingPostAction(action);
+    setPendingActionContent(content);
+    setShowPostingAccountModal(true);
+  };
+
+  const confirmPostingAction = async () => {
+    if (!pendingPostAction || !pendingActionContent) {
+      setShowPostingAccountModal(false);
+      return;
+    }
+    const action = pendingPostAction;
+    const content = pendingActionContent;
+    setShowPostingAccountModal(false);
+    setPendingPostAction(null);
+    setPendingActionContent(null);
+    setHasConfirmedPostingIdentity(true);
+
+    if (action === "publish") {
+      await handlePublishNow(content);
+      return;
+    }
+
+    setSelectedContent(content);
+    setShowContentModal(true);
+    setIsSchedulingExpanded(true);
+    setEditedContent(content.content || '');
+    setEditedHashtags(content.hashtags || []);
+    setUploadedImages(content.media_urls || []);
   };
 
   return (
     <div className="flex-1 space-y-4 sm:space-y-6">
+      {(isPublishing || isScheduling) && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="rounded-xl border bg-card px-6 py-5 shadow-lg min-w-[280px] text-center">
+            <RefreshCw className="h-6 w-6 mx-auto mb-3 animate-spin text-primary" />
+            <p className="font-medium">
+              {isPublishing ? "Publishing post..." : "Scheduling post..."}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Please wait while we complete this action.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -1188,6 +1415,36 @@ export default function Agent() {
                   {/* Generated Content Display */}
                   {isComplete && generatedContent.length > 0 && (
                     <div className="space-y-3 sm:space-y-4">
+                      <div className="rounded-lg border p-2.5 sm:p-3 bg-muted/20">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                          <div className="text-xs sm:text-sm font-medium">Posting identity</div>
+                          <select
+                            className="h-8 sm:h-9 rounded-md border bg-background px-2.5 text-xs sm:text-sm min-w-0 sm:min-w-[260px]"
+                            value={selectedPostingIdentityId}
+                            onChange={(e) => setSelectedPostingIdentityId(e.target.value)}
+                            disabled={loadingPostingIdentities || postingIdentities.length === 0}
+                          >
+                            {postingIdentities.length === 0 ? (
+                              <option value="">
+                                {loadingPostingIdentities ? "Loading identities..." : "Personal profile"}
+                              </option>
+                            ) : (
+                              postingIdentities.map((identity) => (
+                                <option key={identity.id} value={identity.id}>
+                                  {identity.actorType === "organization"
+                                    ? `Company Page: ${identity.label}`
+                                    : `Personal: ${identity.label}`}
+                                </option>
+                              ))
+                            )}
+                          </select>
+                          {selectedPostingIdentity?.actorType === "organization" && (
+                            <Badge variant="outline" className="w-fit text-[10px] sm:text-xs">
+                              Posting as company page
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                         <p className="text-xs sm:text-sm text-muted-foreground">
                           <span className="hidden sm:inline">Generated content from this job - click to view</span>
@@ -1273,7 +1530,7 @@ export default function Agent() {
                               <Button
                                 size="sm"
                                 className="flex-1 bg-pink-500 hover:bg-pink-600 text-white text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-9"
-                                onClick={() => handlePublishNow(content)}
+                                onClick={() => startPostingAction("publish", content)}
                                 disabled={isPublishing}
                               >
                                 {isPublishing ? (
@@ -1298,14 +1555,7 @@ export default function Agent() {
                                 size="sm"
                                 variant="outline"
                                 className="flex-1 text-xs sm:text-sm px-2 sm:px-4 h-8 sm:h-9"
-                                onClick={() => {
-                                  setSelectedContent(content);
-                                  setShowContentModal(true);
-                                  setIsSchedulingExpanded(true);
-                                  setEditedContent(content.content || '');
-                                  setEditedHashtags(content.hashtags || []);
-                                  setUploadedImages(content.media_urls || []);
-                                }}
+                                onClick={() => startPostingAction("schedule", content)}
                                 disabled={isScheduling}
                               >
                                 <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 sm:mr-1.5" />
@@ -1590,17 +1840,14 @@ export default function Agent() {
               <Button 
                 variant="outline" 
                 className="w-full justify-between h-8 sm:h-9 text-xs sm:text-sm hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors"
-                onClick={() => {
-                  setShowHashtagsModal(true);
-                  fetchPopularHashtags();
-                }}
+                onClick={() => setShowHashtagsModal(true)}
               >
                 <div className="flex items-center">
                   <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   <span className="truncate">Popular Hashtags</span>
                 </div>
                 <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">
-                  {Array.from(new Set(recentGenerations.flatMap(g => g.hashtags || []))).length || 0}
+                  {trendingTotal == null ? "…" : trendingTotal}
                 </Badge>
               </Button>
               <Button 
@@ -1640,61 +1887,193 @@ export default function Agent() {
 
       {/* Popular Hashtags Modal */}
       <Dialog open={showHashtagsModal} onOpenChange={setShowHashtagsModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Hash className="h-5 w-5 text-primary" />
               Popular Hashtags
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Based on your generated content and trending topics
+              Live signals from Instagram, X, and LinkedIn (badges show where each tag appeared)
             </p>
+            {!loadingHashtags && trendingTotal != null && trendingTotal > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Showing {popularHashtags.length} of {trendingTotal} ranked hashtags
+                {trendingHasMore ? " · more available below" : ""}
+              </p>
+            )}
           </DialogHeader>
 
-          <div className="overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
             {loadingHashtags ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-sm text-muted-foreground">Analyzing your hashtags...</p>
+                <p className="text-sm text-muted-foreground">Loading popular hashtags...</p>
               </div>
             ) : popularHashtags.length > 0 ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {popularHashtags.map((hashtag, index) => (
                     <div 
-                      key={hashtag.tag}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      key={`${hashtag.tag}-${index}`}
+                      className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => {
                         navigator.clipboard.writeText(hashtag.tag);
                         toast.success(`Copied ${hashtag.tag} to clipboard!`);
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-sm text-primary">{index + 1}</span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <div className="flex items-center gap-1 shrink-0">
+                          <span className="font-mono text-sm text-primary">{hashtag.rank || index + 1}</span>
                           {hashtag.trend === 'up' && <TrendingUp className="h-3 w-3 text-green-500" />}
                           {hashtag.trend === 'down' && <TrendingUp className="h-3 w-3 text-red-500 rotate-180" />}
                           {hashtag.trend === 'stable' && <div className="w-3 h-0.5 bg-gray-400 rounded"></div>}
+                          </div>
+                          <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-medium text-sm truncate">{hashtag.tag}</p>
+                            {(() => {
+                              const sb = hashtag.source_breakdown || {};
+                              const ig = Number(sb.instagram || 0);
+                              const tw = Number(sb.twitter || 0);
+                              const li = Number(sb.linkedin || 0);
+                              const igReel = Number(sb.ig_reel || 0);
+                              const igPost = Number(sb.ig_post || 0);
+                              const tweetFmt = Number(sb.tweet || 0);
+                              const liPostFmt = Number(sb.li_post || 0);
+                              const chipCls =
+                                "inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-md leading-none";
+                              const dotCls = "h-1.5 w-1.5 rounded-full shrink-0";
+                              if (!ig && !tw && !li) {
+                                return (
+                                  <span
+                                    title="No external scrape data for this row (in-house or stale). Purge in-house in Settings → Scraper Debug, then Refresh All Tags."
+                                    className={`${chipCls} bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25`}
+                                  >
+                                    <span className={`${dotCls} bg-amber-500`} /> —
+                                  </span>
+                                );
+                              }
+                              const igHint =
+                                igReel || igPost
+                                  ? `Instagram: ${ig} caption hits — reels ${igReel}, photo posts ${igPost}`
+                                  : `Instagram: ${ig} caption hits`;
+                              const xHint =
+                                tweetFmt > 0
+                                  ? `X: ${tw} tweets (${tweetFmt} with typed format)`
+                                  : `X: ${tw} tweets`;
+                              const liHint =
+                                liPostFmt > 0
+                                  ? `LinkedIn: ${li} posts (${liPostFmt} with typed format)`
+                                  : `LinkedIn: ${li} posts`;
+                              return (
+                                <div className="flex items-center gap-1 shrink-0 flex-wrap">
+                                  {ig > 0 && (
+                                    <span
+                                      title={igHint}
+                                      className={`${chipCls} bg-pink-500/10 text-pink-500 border border-pink-500/25`}
+                                    >
+                                      <span className={`${dotCls} bg-pink-500`} />
+                                      IG·{ig}
+                                      {(igReel > 0 || igPost > 0) && (
+                                        <span className="opacity-60 font-normal text-[8px]">
+                                          {igReel > 0 ? " reel" : ""}
+                                          {igPost > 0 ? " post" : ""}
+                                        </span>
+                                      )}
+                                    </span>
+                                  )}
+                                  {tw > 0 && (
+                                    <span
+                                      title={xHint}
+                                      className={`${chipCls} bg-slate-500/10 text-slate-300 border border-slate-500/25`}
+                                    >
+                                      <span className={`${dotCls} bg-slate-400`} />
+                                      X·{tw}
+                                      <span className="opacity-60 font-normal text-[8px]"> tweet</span>
+                                    </span>
+                                  )}
+                                  {li > 0 && (
+                                    <span
+                                      title={liHint}
+                                      className={`${chipCls} bg-sky-500/10 text-sky-400 border border-sky-500/25`}
+                                    >
+                                      <span className={`${dotCls} bg-sky-500`} />
+                                      LI·{li}
+                                      <span className="opacity-60 font-normal text-[8px]"> post</span>
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                          <p className="text-xs text-muted-foreground break-words">
+                            {(() => {
+                              const sb = hashtag.source_breakdown || {};
+                              const ext =
+                                Number(sb.instagram || 0) +
+                                Number(sb.twitter || 0) +
+                                Number(sb.linkedin || 0);
+                              if (ext > 0) {
+                                return (
+                                  <>
+                                    Mentions in scraped posts: {hashtag.count} · Score:{" "}
+                                    {hashtag.score.toFixed(2)}
+                                  </>
+                                );
+                              }
+                              return (
+                                <>
+                                  In-app usage: {hashtag.count} · Score: {hashtag.score.toFixed(2)}
+                                </>
+                              );
+                            })()}
+                          </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-sm">{hashtag.tag}</p>
-                          <p className="text-xs text-muted-foreground">Used {hashtag.count} times</p>
-                        </div>
+                        <Badge variant="outline" className="text-xs shrink-0">
+                          Copy
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        Click to copy
-                      </Badge>
                     </div>
                   ))}
                 </div>
                 
+                {trendingHasMore && (
+                  <div className="flex justify-center pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingMoreHashtags || loadingHashtags}
+                      onClick={() =>
+                        void fetchTrendingPage(
+                          popularHashtags.length,
+                          true,
+                          trendingModalSessionRef.current?.signal,
+                        )
+                      }
+                    >
+                      {loadingMoreHashtags ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          Loading…
+                        </>
+                      ) : (
+                        "Load more"
+                      )}
+                    </Button>
+                  </div>
+                )}
+
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between text-sm mb-3">
                     <span className="text-muted-foreground">
                       💡 Tip: Click any hashtag to copy it to your clipboard
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -1718,23 +2097,142 @@ export default function Agent() {
                   </div>
                 </div>
               </div>
+            ) : trendingTotal != null && trendingTotal > 0 ? (
+              <div className="text-center py-10 space-y-4 px-2">
+                <Hash className="h-10 w-10 text-muted-foreground mx-auto opacity-60" />
+                <h3 className="font-medium">Could not load this page</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  The index has{" "}
+                  <span className="font-semibold text-foreground">{trendingTotal}</span> ranked
+                  hashtags, but nothing rendered here. Retry to load again.
+                  If this continues, please contact support.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      void fetchTrendingPage(
+                        0,
+                        false,
+                        trendingModalSessionRef.current?.signal,
+                      )
+                    }
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Retry
+                  </Button>
+                </div>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <Hash className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-medium mb-2">No hashtags yet</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Generate some content first to see popular hashtags
+                  No trending hashtags are available yet. Try again shortly after new external posts are
+                  fetched.
                 </p>
                 <Button 
                   onClick={() => {
                     setShowHashtagsModal(false);
-                    // Focus on generation
                   }}
                 >
-                  Generate Content
+                  Close
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPostingAccountModal} onOpenChange={setShowPostingAccountModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose LinkedIn account</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Select where you want to publish this post.
+            </p>
+            <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+              {loadingPostingIdentities && (
+                <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                  Loading accounts...
+                </div>
+              )}
+              {!loadingPostingIdentities && postingIdentities.length === 0 && (
+                <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                  No LinkedIn identities found. We will publish using your personal profile.
+                </div>
+              )}
+              {postingIdentities.map((identity) => {
+                const selected = identity.id === selectedPostingIdentityId;
+                const title = getIdentityDisplayName(identity);
+                const subtitle =
+                  identity.actorType === "organization"
+                    ? "Company Page"
+                    : "Personal profile";
+                const fallback =
+                  title.charAt(0).toUpperCase() ||
+                  (identity.actorType === "organization" ? "C" : "P");
+                return (
+                  <button
+                    key={identity.id}
+                    type="button"
+                    onClick={() => setSelectedPostingIdentityId(identity.id)}
+                    className={cn(
+                      "w-full rounded-lg border p-3 text-left transition-colors",
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/40",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage
+                          src={
+                            identity.avatarUrl ||
+                            (identity.actorType === "member"
+                              ? (user?.user_metadata?.avatar_url as string) || ""
+                              : "")
+                          }
+                        />
+                        <AvatarFallback className="text-xs">
+                          {identity.actorType === "organization" ? (
+                            <Building2 className="h-4 w-4" />
+                          ) : (
+                            fallback
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{title}</p>
+                        <p className="text-xs text-muted-foreground">{subtitle}</p>
+                      </div>
+                      {selected && (
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPostingAccountModal(false);
+                  setPendingPostAction(null);
+                  setPendingActionContent(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={() => void confirmPostingAction()}>
+                Continue
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1746,6 +2244,25 @@ export default function Agent() {
         content={selectedContent}
         onSuccess={fetchRecentGenerations}
         calculateCreditCost={calculateCreditCost}
+        postingTarget={
+          selectedPostingIdentity
+            ? {
+                actorType: selectedPostingIdentity.actorType,
+                organizationUrn: selectedPostingIdentity.organizationUrn,
+                label: getIdentityDisplayName(selectedPostingIdentity),
+                avatarUrl: selectedPostingIdentity.avatarUrl,
+              }
+            : null
+        }
+        postingIdentities={postingIdentities.map((identity) => ({
+          id: identity.id,
+          actorType: identity.actorType,
+          label: getIdentityDisplayName(identity),
+          organizationUrn: identity.organizationUrn,
+          avatarUrl: identity.avatarUrl,
+        }))}
+        selectedPostingIdentityId={selectedPostingIdentityId}
+        onSelectPostingIdentity={setSelectedPostingIdentityId}
       />
     </div>
   );

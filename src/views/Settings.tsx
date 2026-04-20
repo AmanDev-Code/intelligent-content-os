@@ -29,7 +29,7 @@ import {
   Wrench,
   Info,
   Mail,
-  ExternalLink
+  ExternalLink,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiClient, api } from '@/lib/apiClient';
@@ -45,6 +45,7 @@ import { useAdmin, ADMIN_USER_ID } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNotifications from "@/components/AdminNotifications";
+import AdminScraperDebug from "@/components/AdminScraperDebug";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Image from "next/image";
 export default function Settings() {
@@ -906,6 +907,28 @@ export default function Settings() {
                 }
               >
                 <AdminNotifications />
+              </ErrorBoundary>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Scraper Debug - Admin only */}
+        {isAdmin && (
+          <Card className="xl:col-span-3">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-5 w-5 shrink-0 text-primary" />
+                <h2 className="text-base font-semibold">Scraper Debug</h2>
+                <Badge variant="destructive" className="text-xs">Admin Only</Badge>
+              </div>
+              <ErrorBoundary
+                fallback={
+                  <div className="p-4 text-center text-muted-foreground">
+                    Scraper debug panel temporarily unavailable.
+                  </div>
+                }
+              >
+                <AdminScraperDebug />
               </ErrorBoundary>
             </CardContent>
           </Card>

@@ -29,6 +29,11 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/blogs" className="text-foreground/90 hover:text-primary">
+                    Blog
+                  </Link>
+                </li>
+                <li>
                   <Link href="/auth" className="text-foreground/90 hover:text-primary">
                     Sign in
                   </Link>
@@ -38,6 +43,11 @@ export function MarketingFooter() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Company</p>
               <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/careers" className="text-foreground/90 hover:text-primary">
+                    Careers
+                  </Link>
+                </li>
                 <li>
                   <Link href="/contact" className="text-foreground/90 hover:text-primary">
                     Contact

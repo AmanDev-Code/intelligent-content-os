@@ -15,7 +15,9 @@ import {
   Sparkles,
   Menu,
   X,
-  Calendar
+  Calendar,
+  Briefcase,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
 import { getQuotaColor } from "@/services/dataService";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useBlogAccess } from "@/hooks/useBlogAccess";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -47,9 +51,14 @@ const bottomNavItems = [
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
+const adminNavItem = { to: "/careers-admin", label: "Careers admin" } as const;
+const blogAdminNavItem = { to: "/blog-admin", label: "Blog & CMS" } as const;
+
 function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boolean; onToggle: () => void; onItemClick?: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
+  const blogAccess = useBlogAccess();
   const { quota: userQuota, loading: loadingQuota } = useQuota();
 
   return (
@@ -158,6 +167,54 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
             </NavLink>
           );
         })}
+        {isAdmin ? (
+          <NavLink
+            href={adminNavItem.to}
+            onClick={onItemClick}
+            className={cn(
+              "flex items-center transition-all duration-200 group relative",
+              collapsed ? "justify-center w-full h-12 rounded-xl" : "gap-3 rounded-lg px-3 py-2.5",
+              "text-sm font-medium",
+              pathname.startsWith(adminNavItem.to)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-current={pathname.startsWith(adminNavItem.to) ? "page" : undefined}
+            title={collapsed ? adminNavItem.label : undefined}
+          >
+            <Briefcase className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
+            {!collapsed && <span>{adminNavItem.label}</span>}
+            {collapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {adminNavItem.label}
+              </div>
+            )}
+          </NavLink>
+        ) : null}
+        {!blogAccess.loading && blogAccess.canManageBlog ? (
+          <NavLink
+            href={blogAdminNavItem.to}
+            onClick={onItemClick}
+            className={cn(
+              "flex items-center transition-all duration-200 group relative",
+              collapsed ? "justify-center w-full h-12 rounded-xl" : "gap-3 rounded-lg px-3 py-2.5",
+              "text-sm font-medium",
+              pathname.startsWith(blogAdminNavItem.to)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            aria-current={pathname.startsWith(blogAdminNavItem.to) ? "page" : undefined}
+            title={collapsed ? blogAdminNavItem.label : undefined}
+          >
+            <BookOpen className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
+            {!collapsed && <span>{blogAdminNavItem.label}</span>}
+            {collapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {blogAdminNavItem.label}
+              </div>
+            )}
+          </NavLink>
+        ) : null}
       </nav>
 
       {/* Credits Progress Bar */}

@@ -79,6 +79,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const audioContextRef = useRef<AudioContext | null>(null);
   const sseRef = useRef<{ close: () => void } | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const sseAuthFailedRef = useRef(false);
   const initialLoadDone = useRef(false);
   const seenNotificationIds = useRef<Set<string>>(new Set());
 
@@ -238,6 +239,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     initialLoadDone.current = false;
     seenNotificationIds.current.clear();
+    sseAuthFailedRef.current = false;
 
     // Load existing notifications and count without triggering alerts
     const initLoad = async () => {
@@ -309,6 +311,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }).catch((err) => {
         if (err.name === 'AbortError') return;
+        if (String(err?.message || '').includes('SSE failed: 401')) {
+          // Token is invalid/expired; do not hammer backend with reconnect loops.
+          sseAuthFailedRef.current = true;
+          console.warn('SSE stopped: unauthorized (401). Waiting for fresh session token.');
+          return;
+        }
+        if (sseAuthFailedRef.current) return;
         console.warn('SSE connection lost, reconnecting in 5s...', err.message);
         reconnectTimer.current = setTimeout(connect, 5000);
       });

@@ -28,6 +28,7 @@ export function useGenerationJob({
 }: UseGenerationJobOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const pollRef = useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
   const isTerminalRef = useRef(false);
   const lastSnapshotRef = useRef('');
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
@@ -37,6 +38,10 @@ export function useGenerationJob({
     if (pollRef.current) {
       window.clearInterval(pollRef.current);
       pollRef.current = null;
+    }
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -88,6 +93,14 @@ export function useGenerationJob({
     // Initial fetch + polling fallback
     void fetchLatest();
     pollRef.current = window.setInterval(fetchLatest, POLL_INTERVAL_MS);
+    timeoutRef.current = window.setTimeout(() => {
+      if (isTerminalRef.current) return;
+      isTerminalRef.current = true;
+      cleanup();
+      callbacksRef.current.onFailed?.(
+        'Generation timeout: no completion signal received. Please retry.',
+      );
+    }, MAX_POLL_TIME_MS);
 
     // Realtime subscription
     const channel = supabase
