@@ -35,5 +35,7 @@ jobs:
               cp /tmp/trndinn-frontend.env.backup .env
             fi
             cd /home/workatkatana/trndinn-stack
+            docker builder prune -af || true
+            docker image prune -af || true
             docker compose build trndinn-frontend
             docker compose up -d --no-deps trndinn-frontend
