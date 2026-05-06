@@ -1,5 +1,5 @@
-import BlogAdminPage from "@/views/BlogAdminPage";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <BlogAdminPage />;
+export default function LegacyBlogAdminRedirect() {
+  redirect("/admin/blog");
 }

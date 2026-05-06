@@ -65,6 +65,30 @@ export function QuotaProvider({ children }: { children: ReactNode }) {
     };
   }, [refreshQuota]);
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const { balance } = (event as CustomEvent).detail || {};
+      if (typeof balance === "number") {
+        setQuota((prev) =>
+          prev
+            ? {
+                ...prev,
+                remainingCredits: balance,
+                usedCredits: prev.totalCredits - balance,
+                percentageUsed: Math.round(
+                  ((prev.totalCredits - balance) / prev.totalCredits) * 100,
+                ),
+              }
+            : prev,
+        );
+      }
+    };
+    window.addEventListener("trndinn:credits-updated", handler);
+    return () => {
+      window.removeEventListener("trndinn:credits-updated", handler);
+    };
+  }, []);
+
   const value: QuotaContextValue = {
     quota,
     loading,

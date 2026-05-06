@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, api } from '@/lib/apiClient';
+import { dispatchFeedbackEligibilityRefresh } from '@/lib/feedbackEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuota } from '@/contexts/QuotaContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -41,7 +42,14 @@ import {
   Hash,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
+
+// Per-component pricing — kept in sync with backend
+// `CUSTOM_TOPIC_PRICING` (`backend/src/modules/credits/pricing.ts`).
+const REGEN_IMAGE_CREDIT_COST = 3;
+const REGEN_SLIDE_CREDIT_COST = 2.5;
 
 const extractLinkedinText = (value: unknown): string => {
   if (typeof value === 'string' && value.trim().length > 0) return value.trim();
@@ -214,13 +222,16 @@ export function ScheduleModal({
 }: ScheduleModalProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
-  const { refreshQuota } = useQuota();
+  const { refreshQuota, quota } = useQuota();
+  const remainingCredits =
+    typeof quota?.remainingCredits === 'number' ? quota.remainingCredits : null;
   
   const [isSchedulingExpanded, setIsSchedulingExpanded] = useState(false);
   const [scheduleDateTime, setScheduleDateTime] = useState('');
   const [editedContent, setEditedContent] = useState('');
   const [editedHashtags, setEditedHashtags] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [selectedPickerImage, setSelectedPickerImage] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
@@ -239,17 +250,174 @@ export function ScheduleModal({
   const [newHashtagInput, setNewHashtagInput] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null);
+  const [uploadedPdfName, setUploadedPdfName] = useState<string | null>(null);
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  // Track in-flight regen so the user can't double-fire while the worker is
+  // running. The button is also disabled, but we keep an in-state guard for
+  // belt-and-suspenders idempotency (matches the backend `refundOnce` slice).
+  const [regeneratingImageIndex, setRegeneratingImageIndex] = useState<number | null>(null);
+  const [regeneratingCarousel, setRegeneratingCarousel] = useState(false);
+  // Local mirror of the backend `image_urls` / `visual_url` / `carousel_urls`
+  // / `pdf_url` fields. Initialized from the `content` prop, updated in place
+  // when the SSE `image_regenerated` / `carousel_regenerated` events fire.
+  const [currentImageUrls, setCurrentImageUrls] = useState<string[]>([]);
+  const [currentVisualUrl, setCurrentVisualUrl] = useState<string | null>(null);
+  const [currentCarouselUrls, setCurrentCarouselUrls] = useState<string[]>([]);
+  const [currentCarouselPdfUrl, setCurrentCarouselPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void resolveTimezone().then(setUserTimezone).catch(() => undefined);
   }, []);
+
+  const handleRegenerate = async (type: 'carousel' | 'images') => {
+    if (!content?.id) return;
+    
+    const slideCount = content.carousel_urls?.length || 0;
+    const imageCount = content.image_urls?.length || 1;
+    const creditsCost = type === 'carousel' ? slideCount * 2.5 : imageCount * 3;
+    
+    const confirmed = window.confirm(
+      `Regenerate ${type === 'carousel' ? 'carousel slides' : 'images'}?\n\nThis will cost ${creditsCost} credits and replace the current ${type === 'carousel' ? 'slides' : 'images'}.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setIsRegenerating(true);
+      const response = await apiClient.post(`/generation/content/${content.id}/regenerate`, {
+        regenerationType: type,
+      });
+      
+      toast.success(response.message || `${type === 'carousel' ? 'Carousel' : 'Image'} regeneration started!`);
+      refreshQuota();
+      
+      toast.info('Regeneration in progress. The preview will update when complete.', { duration: 5000 });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to start regeneration';
+      toast.error(errorMessage);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  /**
+   * Granular per-image regeneration. Re-uses the AI prompt persisted on the
+   * content row (`performance_prediction.customTopicMeta.imagePrompts[i]`)
+   * unless the caller passed a `userOverridePrompt`. Disabled when the user
+   * has uploaded a PDF (PDF replaces media), uploaded their own images
+   * (those aren't AI-prompt-backed), or has insufficient credits.
+   */
+  const handleRegenerateSingleImage = async (imageIndex: number) => {
+    if (!content?.id) return;
+    if (regeneratingImageIndex !== null || regeneratingCarousel) return;
+    if (uploadedPdfUrl) {
+      toast.info('Remove the uploaded PDF to regenerate images.');
+      return;
+    }
+    if (typeof remainingCredits === 'number' && remainingCredits < REGEN_IMAGE_CREDIT_COST) {
+      toast.error(
+        `Need ${REGEN_IMAGE_CREDIT_COST} credits to regenerate this image (you have ${remainingCredits}).`,
+      );
+      return;
+    }
+    const confirmed = window.confirm(
+      `Regenerate this image?\n\nCost: ${REGEN_IMAGE_CREDIT_COST} credits.\nThe AI prompt from the original generation will be reused.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setRegeneratingImageIndex(imageIndex);
+      const res = await api.generation.regenerateImage(content.id, imageIndex);
+      toast.success(
+        res?.message ||
+          `Regeneration started — ${REGEN_IMAGE_CREDIT_COST} credits reserved.`,
+      );
+      refreshQuota();
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to start image regeneration';
+      toast.error(errorMessage);
+      // Roll back the in-flight guard so the user can retry — the SSE event
+      // will not fire because the backend already returned the error.
+      setRegeneratingImageIndex(null);
+    }
+  };
+
+  /**
+   * Full-carousel regeneration. Hits the new `/generation/regenerate/carousel`
+   * endpoint which costs 2.5 × slideCount credits. Disabled while a PDF is
+   * uploaded (PDF replaces the carousel) or any other regen is in flight.
+   */
+  const handleRegenerateCarousel = async () => {
+    if (!content?.id) return;
+    if (regeneratingCarousel || regeneratingImageIndex !== null) return;
+    if (uploadedPdfUrl) {
+      toast.info('Remove the uploaded PDF to regenerate the carousel.');
+      return;
+    }
+    const slideCount = currentCarouselUrls.length || content.carousel_urls?.length || 0;
+    if (slideCount === 0) {
+      toast.error('No carousel found on this content to regenerate.');
+      return;
+    }
+    const cost = REGEN_SLIDE_CREDIT_COST * slideCount;
+    if (typeof remainingCredits === 'number' && remainingCredits < cost) {
+      toast.error(
+        `Need ${cost} credits to regenerate this carousel (you have ${remainingCredits}).`,
+      );
+      return;
+    }
+    const confirmed = window.confirm(
+      `Regenerate carousel?\n\nCost: ${REGEN_SLIDE_CREDIT_COST} × ${slideCount} = ${cost} credits.\nThe AI deck will be re-rendered without re-running the LLM.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setRegeneratingCarousel(true);
+      const res = await api.generation.regenerateCarousel(content.id, { slideCount });
+      toast.success(
+        res?.message || `Carousel regeneration started — ${cost} credits reserved.`,
+      );
+      refreshQuota();
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to start carousel regeneration';
+      toast.error(errorMessage);
+      setRegeneratingCarousel(false);
+    }
+  };
 
   useEffect(() => {
     if (content && open) {
       setEditedContent(content.content || '');
       setEditedHashtags(content.hashtags || []);
       setUploadedImages([]);
+      setUploadedPdfUrl(null);
+      setUploadedPdfName(null);
       setCarouselIndex(0);
+      setSelectedPickerImage(null);
+      // Mirror the persisted media into local state so SSE-driven regen
+      // updates can mutate it in place without poking parent props.
+      setCurrentImageUrls(
+        Array.isArray(content.image_urls) ? [...content.image_urls] : [],
+      );
+      setCurrentVisualUrl(
+        typeof content.visual_url === 'string' ? content.visual_url : null,
+      );
+      setCurrentCarouselUrls(
+        Array.isArray(content.carousel_urls) ? [...content.carousel_urls] : [],
+      );
+      setCurrentCarouselPdfUrl(
+        typeof content.pdf_url === 'string' ? content.pdf_url : null,
+      );
+      setRegeneratingImageIndex(null);
+      setRegeneratingCarousel(false);
       
       // Default to current local time; "In 1 hour" preset remains available explicitly.
       const now = new Date();
@@ -257,6 +425,65 @@ export function ScheduleModal({
       setScheduleDateTime(now.toISOString());
     }
   }, [content, open]);
+
+  // Listen for the SSE-fanout custom events emitted by NotificationContext.
+  // We can't subscribe to the SSE stream directly here (single shared
+  // connection lives in NotificationContext), so the context dispatches
+  // browser CustomEvents that the modal swaps into local state.
+  useEffect(() => {
+    if (!open || !content?.id) return;
+
+    const onImageRegenerated = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      if (!detail || detail.contentId !== content.id) return;
+      const idx = Number(detail.imageIndex);
+      const newUrl = String(detail.newImageUrl || '');
+      if (!newUrl || !Number.isInteger(idx) || idx < 0) return;
+
+      setCurrentImageUrls((prev) => {
+        const next = [...prev];
+        while (next.length <= idx) next.push('');
+        const previousUrl = next[idx];
+        next[idx] = newUrl;
+        // Mirror into visual_url when this slot was the primary visual.
+        setCurrentVisualUrl((vu) => (vu === previousUrl || (idx === 0 && !vu) ? newUrl : vu));
+        // Reset the picker selection if it pointed at the now-stale URL.
+        setSelectedPickerImage((sel) => (sel === previousUrl ? newUrl : sel));
+        return next;
+      });
+      if (regeneratingImageIndex === idx) {
+        setRegeneratingImageIndex(null);
+      }
+      toast.success('Image regenerated successfully.');
+    };
+
+    const onCarouselRegenerated = (event: Event) => {
+      const detail = (event as CustomEvent).detail || {};
+      if (!detail || detail.contentId !== content.id) return;
+      const newImageUrls: string[] = Array.isArray(detail.newImageUrls)
+        ? detail.newImageUrls
+        : [];
+      const newPdfUrl: string | undefined = detail.newPdfUrl;
+      if (newImageUrls.length === 0) return;
+
+      setCurrentCarouselUrls(newImageUrls);
+      setCurrentCarouselPdfUrl(newPdfUrl || null);
+      setCarouselIndex(0);
+      setRegeneratingCarousel(false);
+      toast.success(
+        newPdfUrl
+          ? 'Carousel and PDF regenerated.'
+          : 'Carousel regenerated.',
+      );
+    };
+
+    window.addEventListener('trndinn:image-regenerated', onImageRegenerated as EventListener);
+    window.addEventListener('trndinn:carousel-regenerated', onCarouselRegenerated as EventListener);
+    return () => {
+      window.removeEventListener('trndinn:image-regenerated', onImageRegenerated as EventListener);
+      window.removeEventListener('trndinn:carousel-regenerated', onCarouselRegenerated as EventListener);
+    };
+  }, [open, content?.id, regeneratingImageIndex]);
 
   useEffect(() => {
     if (!open) return;
@@ -295,6 +522,8 @@ export function ScheduleModal({
     setEditedHashtags([]);
     setNewHashtagInput('');
     setUploadedImages([]);
+    setUploadedPdfUrl(null);
+    setUploadedPdfName(null);
     setHasConfirmedIdentityOnce(false);
     setPendingIdentityAction(null);
     onOpenChange(false);
@@ -303,13 +532,53 @@ export function ScheduleModal({
   if (!content) return null;
 
   const hasUploadedMedia = uploadedImages.length > 0;
-  const hasCarousel = Array.isArray(content.carousel_urls) && content.carousel_urls.length > 0;
-  const hasSingleImage = Boolean(content.visual_url && content.visual_url.startsWith('http'));
+  // Local-state mirrors fall back to the prop on first paint so we don't
+  // flicker before `useEffect(content, open)` runs.
+  const effectiveCarouselUrls: string[] = currentCarouselUrls.length > 0
+    ? currentCarouselUrls
+    : Array.isArray(content.carousel_urls) ? content.carousel_urls : [];
+  const hasCarousel = effectiveCarouselUrls.length > 0;
+  const effectivePdfUrl: string | null =
+    currentCarouselPdfUrl ?? (typeof content.pdf_url === 'string' ? content.pdf_url : null);
+  const effectiveImageUrls: string[] = currentImageUrls.length > 0
+    ? currentImageUrls
+    : Array.isArray(content.image_urls) ? content.image_urls : [];
+  const imagePickerUrls: string[] = effectiveImageUrls.filter(
+    (u: string) => typeof u === 'string' && u.startsWith('http'),
+  );
+  const effectiveVisualUrl = currentVisualUrl ?? content.visual_url;
+  const resolvedVisualUrl = selectedPickerImage || effectiveVisualUrl;
+  const hasSingleImage = Boolean(resolvedVisualUrl && resolvedVisualUrl.startsWith('http'));
   const effectiveHashtags = editedHashtags.length > 0 ? editedHashtags : (content.hashtags || []);
   const clampedCarouselIndex = Math.min(
     Math.max(carouselIndex, 0),
-    Math.max((content.carousel_urls?.length || 1) - 1, 0),
+    Math.max(effectiveCarouselUrls.length - 1, 0),
   );
+
+  // Regen capability flags. AI-generated content is the only thing eligible —
+  // user-uploaded images and PDF-replaced posts are intentionally locked out.
+  const carouselSlideMeta = content.performance_prediction?.customTopicMeta?.slides;
+  const imagePromptsMeta: string[] | undefined = content.performance_prediction?.customTopicMeta?.imagePrompts;
+  const carouselSlideCount =
+    Array.isArray(carouselSlideMeta) ? carouselSlideMeta.length : effectiveCarouselUrls.length;
+  const carouselRegenCost = REGEN_SLIDE_CREDIT_COST * carouselSlideCount;
+  const isAnyRegenInFlight = regeneratingImageIndex !== null || regeneratingCarousel;
+  const carouselRegenAvailable =
+    hasCarousel &&
+    Array.isArray(carouselSlideMeta) &&
+    carouselSlideMeta.length > 0 &&
+    !uploadedPdfUrl;
+  const imageRegenAvailable = (idx: number): boolean => {
+    if (!Array.isArray(imagePromptsMeta) || imagePromptsMeta.length === 0) return false;
+    // Only allow regen at indices that actually map to a stored AI prompt.
+    if (idx < 0 || idx >= imagePromptsMeta.length) return false;
+    if (uploadedPdfUrl) return false;
+    return true;
+  };
+  const insufficientForImage =
+    typeof remainingCredits === 'number' && remainingCredits < REGEN_IMAGE_CREDIT_COST;
+  const insufficientForCarousel =
+    typeof remainingCredits === 'number' && remainingCredits < carouselRegenCost;
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Your Name";
   const userInitial = displayName.charAt(0).toUpperCase();
   const effectivePostingIdentities =
@@ -344,6 +613,7 @@ export function ScheduleModal({
         content: editedContent || content.content,
         hashtags: effectiveHashtags,
         mediaUrls: uploadedImages,
+        ...(uploadedPdfUrl ? { pdfUrl: uploadedPdfUrl } : {}),
         actorType: selectedIdentity?.actorType || postingTarget?.actorType,
         organizationUrn:
           selectedIdentity?.organizationUrn || postingTarget?.organizationUrn,
@@ -351,6 +621,7 @@ export function ScheduleModal({
       toast.success('Post published successfully!');
       handleClose();
       refreshQuota();
+      dispatchFeedbackEligibilityRefresh();
       onSuccess?.();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to publish post';
@@ -376,6 +647,7 @@ export function ScheduleModal({
         content: editedContent,
         hashtags: effectiveHashtags,
         mediaUrls: uploadedImages,
+        ...(uploadedPdfUrl ? { pdfUrl: uploadedPdfUrl } : {}),
         actorType: selectedIdentity?.actorType || postingTarget?.actorType,
         organizationUrn:
           selectedIdentity?.organizationUrn || postingTarget?.organizationUrn,
@@ -384,6 +656,7 @@ export function ScheduleModal({
       toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
       handleClose();
       refreshQuota();
+      dispatchFeedbackEligibilityRefresh();
       onSuccess?.();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to schedule post';
@@ -480,8 +753,40 @@ export function ScheduleModal({
                 )}
               </div>
 
+              {/* PDF Preview (Replaces Carousel) */}
+              {uploadedPdfUrl && (
+                <div className="px-4 pb-3">
+                  <div className="rounded-lg overflow-hidden border border-red-200 bg-muted/10">
+                    <iframe
+                      src={uploadedPdfUrl}
+                      className="w-full h-[420px] border-0"
+                      title="PDF Preview"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-red-500" />
+                      <span className="text-sm font-medium text-foreground">{uploadedPdfName || 'Document.pdf'}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setUploadedPdfUrl(null);
+                        setUploadedPdfName(null);
+                        toast.success('PDF removed');
+                      }}
+                      className="h-8 text-xs gap-1.5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Remove PDF
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Uploaded Images Preview */}
-              {hasUploadedMedia && (
+              {!uploadedPdfUrl && hasUploadedMedia && (
                 <div className="px-4 pb-3">
                   {uploadedImages.length === 1 ? (
                     <div className="relative w-full max-h-96 h-96 rounded-lg overflow-hidden border border-border">
@@ -522,21 +827,28 @@ export function ScheduleModal({
               )}
 
               {/* Carousel Preview (LinkedIn style) */}
-              {!hasUploadedMedia && hasCarousel && (
+              {!uploadedPdfUrl && !hasUploadedMedia && hasCarousel && (
                 <div className="px-4 pb-3">
                   <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-muted/20">
                     <div className="relative w-full h-[420px]">
                       <Image
-                        src={content.carousel_urls[clampedCarouselIndex]}
+                        src={effectiveCarouselUrls[clampedCarouselIndex]}
                         alt={`Carousel slide ${clampedCarouselIndex + 1}`}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 700px"
                         unoptimized
                       />
+                      {regeneratingCarousel && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-white text-xs gap-2 backdrop-blur-sm">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                          <span className="font-medium">Regenerating carousel…</span>
+                          <span className="opacity-80">{carouselSlideCount} slides</span>
+                        </div>
+                      )}
                     </div>
 
-                    {content.carousel_urls.length > 1 && (
+                    {effectiveCarouselUrls.length > 1 && (
                       <>
                         <button
                           type="button"
@@ -550,10 +862,10 @@ export function ScheduleModal({
                           type="button"
                           onClick={() =>
                             setCarouselIndex((v) =>
-                              Math.min(v + 1, content.carousel_urls.length - 1),
+                              Math.min(v + 1, effectiveCarouselUrls.length - 1),
                             )
                           }
-                          disabled={clampedCarouselIndex === content.carousel_urls.length - 1}
+                          disabled={clampedCarouselIndex === effectiveCarouselUrls.length - 1}
                           className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white disabled:opacity-40"
                         >
                           <ChevronRight className="h-4 w-4" />
@@ -562,9 +874,9 @@ export function ScheduleModal({
                     )}
                   </div>
 
-                  {content.carousel_urls.length > 1 && (
+                  {effectiveCarouselUrls.length > 1 && (
                     <div className="mt-2 flex items-center justify-center gap-1.5">
-                      {content.carousel_urls.map((_: string, idx: number) => (
+                      {effectiveCarouselUrls.map((_: string, idx: number) => (
                         <button
                           key={`dot-${idx}`}
                           type="button"
@@ -580,16 +892,67 @@ export function ScheduleModal({
                       ))}
                     </div>
                   )}
+
+                  {typeof effectivePdfUrl === 'string' && effectivePdfUrl.length > 0 && (
+                    <div className="mt-2 flex items-center justify-center">
+                      <a
+                        href={effectivePdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        View as PDF
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Regenerate Carousel Button — only for AI carousels with persisted deck JSON. */}
+                  {carouselRegenAvailable && (
+                    <div className="mt-3 flex flex-col items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void handleRegenerateCarousel()}
+                        disabled={
+                          isAnyRegenInFlight ||
+                          isBusy ||
+                          insufficientForCarousel
+                        }
+                        title={
+                          insufficientForCarousel
+                            ? `Insufficient credits: need ${carouselRegenCost}, have ${remainingCredits ?? 0}`
+                            : isAnyRegenInFlight
+                              ? 'Another regeneration is in progress'
+                              : `Regenerate ${carouselSlideCount} slides for ${carouselRegenCost} credits`
+                        }
+                        className="text-xs gap-1.5"
+                      >
+                        <RefreshCw className={cn('h-3.5 w-3.5', regeneratingCarousel && 'animate-spin')} />
+                        <span>
+                          {regeneratingCarousel
+                            ? 'Regenerating carousel…'
+                            : `Regenerate carousel (${carouselRegenCost}`}
+                        </span>
+                        {!regeneratingCarousel && <Coins className="h-3 w-3" />}
+                        {!regeneratingCarousel && <span>)</span>}
+                      </Button>
+                      {insufficientForCarousel && (
+                        <span className="text-[10px] text-destructive">
+                          Need {carouselRegenCost} credits — you have {remainingCredits ?? 0}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* AI Generated Single Visual */}
-              {!hasUploadedMedia && !hasCarousel && hasSingleImage && (
+              {!uploadedPdfUrl && !hasUploadedMedia && !hasCarousel && hasSingleImage && (
                 <div className="px-4 pb-3" data-generated-visual>
-                  <div className="rounded-lg overflow-hidden border border-gray-200">
+                  <div className="group relative rounded-lg overflow-hidden border border-gray-200">
                     <div className="relative w-full h-[400px]">
                       <Image
-                        src={content.visual_url}
+                        src={resolvedVisualUrl}
                         alt="Generated visual content"
                         fill
                         className="object-cover"
@@ -601,8 +964,132 @@ export function ScheduleModal({
                             ?.remove();
                         }}
                       />
+                      {(() => {
+                        // Map the visible hero back to its index in imagePickerUrls
+                        // so we know which AI prompt to regenerate. Falls back to 0
+                        // when the visual_url isn't part of the picker list.
+                        const heroIndex = Math.max(
+                          imagePickerUrls.findIndex((u) => u === resolvedVisualUrl),
+                          0,
+                        );
+                        const isHeroRegenerating = regeneratingImageIndex === heroIndex;
+                        const canRegenHero = imageRegenAvailable(heroIndex);
+                        if (!canRegenHero) return null;
+                        return (
+                          <>
+                            {isHeroRegenerating && (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-white text-xs gap-2 backdrop-blur-sm">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                                <span className="font-medium">Regenerating image…</span>
+                              </div>
+                            )}
+                            <div
+                              className={cn(
+                                'absolute right-2 top-2 transition-opacity',
+                                isHeroRegenerating
+                                  ? 'opacity-0 pointer-events-none'
+                                  : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+                              )}
+                            >
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => void handleRegenerateSingleImage(heroIndex)}
+                                disabled={isAnyRegenInFlight || isBusy || insufficientForImage}
+                                title={
+                                  insufficientForImage
+                                    ? `Insufficient credits: need ${REGEN_IMAGE_CREDIT_COST}, have ${remainingCredits ?? 0}`
+                                    : isAnyRegenInFlight
+                                      ? 'Another regeneration is in progress'
+                                      : `Regenerate this image for ${REGEN_IMAGE_CREDIT_COST} credits`
+                                }
+                                className="h-7 px-2 text-[11px] gap-1 bg-card/95 hover:bg-card shadow-md"
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                                Regenerate
+                                <span className="opacity-70 ml-0.5">{REGEN_IMAGE_CREDIT_COST}</span>
+                                <Coins className="h-2.5 w-2.5 opacity-70" />
+                              </Button>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
+                  {imagePickerUrls.length > 1 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-1.5">Pick the best image:</p>
+                      <div className="flex gap-2 overflow-x-auto pb-1">
+                        {imagePickerUrls.map((url: string, idx: number) => {
+                          const thumbIsRegenerating = regeneratingImageIndex === idx;
+                          const thumbCanRegen = imageRegenAvailable(idx);
+                          return (
+                            <div key={idx} className="relative shrink-0 group/thumb">
+                              <button
+                                onClick={() => setSelectedPickerImage(url)}
+                                disabled={thumbIsRegenerating}
+                                className={cn(
+                                  'relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all',
+                                  (selectedPickerImage || effectiveVisualUrl) === url
+                                    ? 'border-primary ring-2 ring-primary/30'
+                                    : 'border-border hover:border-primary/50',
+                                  thumbIsRegenerating && 'opacity-60 cursor-not-allowed',
+                                )}
+                                aria-label={`Select image ${idx + 1}`}
+                              >
+                                <Image
+                                  src={url}
+                                  alt={`Option ${idx + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="80px"
+                                  unoptimized
+                                />
+                                {thumbIsRegenerating && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                  </div>
+                                )}
+                              </button>
+                              {thumbCanRegen && !thumbIsRegenerating && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleRegenerateSingleImage(idx);
+                                  }}
+                                  disabled={isAnyRegenInFlight || isBusy || insufficientForImage}
+                                  title={
+                                    insufficientForImage
+                                      ? `Insufficient credits: need ${REGEN_IMAGE_CREDIT_COST}, have ${remainingCredits ?? 0}`
+                                      : isAnyRegenInFlight
+                                        ? 'Another regeneration is in progress'
+                                        : `Regenerate option ${idx + 1} for ${REGEN_IMAGE_CREDIT_COST} credits`
+                                  }
+                                  className={cn(
+                                    'absolute -top-1.5 -right-1.5 rounded-full p-1 bg-card border shadow-sm transition-opacity',
+                                    'opacity-0 group-hover/thumb:opacity-100 focus:opacity-100',
+                                    'disabled:opacity-30 disabled:cursor-not-allowed',
+                                  )}
+                                  aria-label={`Regenerate option ${idx + 1}`}
+                                >
+                                  <RefreshCw className="h-3 w-3 text-foreground" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Insufficient-credits hint for the hero regenerate button. */}
+                  {imageRegenAvailable(0) && insufficientForImage && (
+                    <p className="mt-2 text-[10px] text-center text-destructive">
+                      Hover an image to regenerate. Need {REGEN_IMAGE_CREDIT_COST} credits — you have {remainingCredits ?? 0}.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -962,6 +1449,149 @@ export function ScheduleModal({
                         </div>
                       </div>
                     )}
+
+                    {/* PDF Upload Section - Adaptive: upload UI when none, status card when uploaded */}
+                    <div className="pt-3 border-t border-border/40">
+                      <Label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
+                        <FileText className="h-4 w-4 text-red-500" />
+                        {uploadedPdfUrl ? 'PDF Document' : 'Replace with PDF Document'}
+                        <Badge variant="outline" className="text-[10px] h-5 gap-1 ml-auto">
+                          <Coins className="h-3 w-3" />
+                          12 credits
+                        </Badge>
+                      </Label>
+
+                      {!uploadedPdfUrl ? (
+                        <>
+                          <div className="border-2 border-dashed border-border/60 rounded-lg p-4 hover:border-red-400 transition-colors cursor-pointer bg-muted/20">
+                            <input
+                              type="file"
+                              id="pdf-upload-schedule"
+                              accept="application/pdf"
+                              className="hidden"
+                              disabled={isUploadingPdf}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+
+                                if (file.size > 25 * 1024 * 1024) {
+                                  toast.error('PDF file must be less than 25MB');
+                                  return;
+                                }
+
+                                setIsUploadingPdf(true);
+                                const toastId = toast.loading('Uploading PDF...');
+
+                                try {
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+                                  formData.append('type', 'pdf');
+
+                                  const response = await apiClient.post('/media/upload-pdf', formData);
+
+                                  if (response?.url) {
+                                    setUploadedPdfUrl(response.url);
+                                    setUploadedPdfName(file.name);
+                                    toast.success('PDF uploaded successfully! This will replace the carousel/images.', { id: toastId, duration: 4000 });
+                                  } else {
+                                    throw new Error('No URL returned');
+                                  }
+                                } catch (error: any) {
+                                  toast.error(error.response?.data?.message || error.message || 'Failed to upload PDF', { id: toastId });
+                                } finally {
+                                  setIsUploadingPdf(false);
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                            <label htmlFor="pdf-upload-schedule" className="flex flex-col items-center justify-center cursor-pointer">
+                              {isUploadingPdf ? (
+                                <RefreshCw className="h-6 w-6 text-muted-foreground mb-2 animate-spin" />
+                              ) : (
+                                <FileText className="h-6 w-6 text-red-400 mb-2" />
+                              )}
+                              <p className="text-sm font-medium text-foreground">
+                                {isUploadingPdf ? 'Uploading...' : 'Click to upload PDF'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">PDF up to 25MB • Replaces carousel</p>
+                            </label>
+                          </div>
+
+                          {(effectiveCarouselUrls.length > 0 || effectiveVisualUrl) && (
+                            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                              <span>⚠️</span>
+                              PDF will replace the carousel/image as primary content
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-3 p-3 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/30">
+                          <FileText className="h-8 w-8 text-red-500 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{uploadedPdfName || 'Document.pdf'}</p>
+                            <p className="text-xs text-muted-foreground">PDF replaces carousel • 12 credits on publish</p>
+                          </div>
+                          <input
+                            type="file"
+                            id="pdf-upload-schedule-replace"
+                            accept="application/pdf"
+                            className="hidden"
+                            disabled={isUploadingPdf}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              if (file.size > 25 * 1024 * 1024) {
+                                toast.error('PDF file must be less than 25MB');
+                                return;
+                              }
+
+                              setIsUploadingPdf(true);
+                              const toastId = toast.loading('Uploading PDF...');
+
+                              try {
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                formData.append('type', 'pdf');
+
+                                const response = await apiClient.post('/media/upload-pdf', formData);
+
+                                if (response?.url) {
+                                  setUploadedPdfUrl(response.url);
+                                  setUploadedPdfName(file.name);
+                                  toast.success('PDF replaced successfully!', { id: toastId, duration: 3000 });
+                                } else {
+                                  throw new Error('No URL returned');
+                                }
+                              } catch (error: any) {
+                                toast.error(error.response?.data?.message || error.message || 'Failed to upload PDF', { id: toastId });
+                              } finally {
+                                setIsUploadingPdf(false);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor="pdf-upload-schedule-replace"
+                            className="cursor-pointer text-xs font-medium text-primary hover:underline shrink-0"
+                          >
+                            {isUploadingPdf ? 'Uploading...' : 'Replace'}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedPdfUrl(null);
+                              setUploadedPdfName(null);
+                              toast.success('PDF removed');
+                            }}
+                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded-full transition-colors shrink-0"
+                            aria-label="Remove PDF"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

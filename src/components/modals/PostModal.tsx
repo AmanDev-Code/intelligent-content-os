@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/apiClient';
+import { dispatchFeedbackEligibilityRefresh } from '@/lib/feedbackEvents';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { getPreferredTimezoneSync } from '@/services/timezoneService';
@@ -41,6 +42,7 @@ interface PostModalProps {
     visual_url?: string;
     media_urls?: string[];
     created_at?: string;
+    source?: 'viral' | 'custom';
   };
   mode?: 'preview' | 'schedule' | 'edit';
 }
@@ -89,6 +91,7 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
       });
       
       toast.success('Post published successfully!');
+      dispatchFeedbackEligibilityRefresh();
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to publish post');
@@ -111,6 +114,7 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
       });
       
       toast.success('Post scheduled successfully!');
+      dispatchFeedbackEligibilityRefresh();
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to schedule post');
@@ -422,7 +426,12 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
           } p-6 border-r`}>
             <DialogHeader className="mb-4">
               <DialogTitle className="flex items-center justify-between">
-                <span>LinkedIn Preview</span>
+                <span className="flex items-center gap-2">
+                  LinkedIn Preview
+                  {post.source === 'custom' && (
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-violet-300 text-violet-700 dark:border-violet-600 dark:text-violet-300 font-normal">Custom</Badge>
+                  )}
+                </span>
                 <div className="flex items-center space-x-2">
                   {!isExpanded && (
                     <div className="relative group">

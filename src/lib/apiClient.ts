@@ -187,13 +187,63 @@ export const api = {
   // Generation endpoints
   generation: {
     start: (preferences?: any) => apiClient.post('/generation/start', { preferences }),
+    customTopic: (data: {
+      topic: string;
+      platform: 'linkedin' | 'instagram' | 'x';
+      /** Backend accepts legacy `post` as alias for `text`; prefer `text`. */
+      contentType: 'text' | 'image' | 'carousel' | 'post';
+      tonality: string;
+      wordLimit: { kind: 'short' | 'medium' | 'long' } | { kind: 'custom'; words: number };
+      imageCount?: number;
+      slideCount?: number;
+      carouselVisualStyle?:
+        | 'auto'
+        | 'handwritten_notebook'
+        | 'handwritten_notebook_dense'
+        | 'whiteboard_notes'
+        | 'diagram_clean'
+        | 'stock_visual';
+      carouselNoteDensity?: 'compact' | 'standard' | 'dense';
+      carouselSubjectMode?: 'auto' | 'programming' | 'general';
+      /** Opt in to internal SaaS dataset capture metadata (no vendor retraining). */
+      trainingDataCaptureOptIn?: boolean;
+    }) => apiClient.post('/generation/custom-topic', data),
     job: (jobId: string) => apiClient.get(`/generation/job/${jobId}`),
     checkCompletion: (jobId: string) => apiClient.post(`/generation/job/${jobId}/check-completion`),
-    content: (page = 1, limit = 50) => apiClient.get(`/generation/content?page=${page}&limit=${limit}`),
+    content: (page = 1, limit = 50, source?: string) => apiClient.get(`/generation/content?page=${page}&limit=${limit}${source ? `&source=${source}` : ''}`),
     contentById: (contentId: string) => apiClient.get(`/generation/content/${contentId}`),
     jobContent: (jobId: string) => apiClient.get(`/generation/job/${jobId}/content`),
     retry: (jobId: string) => apiClient.post(`/generation/job/${jobId}/retry`),
     scheduled: (page = 1, limit = 50) => apiClient.get(`/generation/scheduled?page=${page}&limit=${limit}`),
+    /**
+     * Regenerate a single AI-generated image inside an existing post.
+     * Returns `{ jobId, estimatedCost, message }`. Charges 3 credits up front;
+     * the worker refunds them via the granular slice ledger if generation fails.
+     */
+    regenerateImage: (
+      contentId: string,
+      imageIndex: number,
+      opts?: { originalPrompt?: string; userOverridePrompt?: string },
+    ): Promise<{ jobId: string; estimatedCost: number; message: string }> =>
+      apiClient.post('/generation/regenerate/image', {
+        contentId,
+        imageIndex,
+        originalPrompt: opts?.originalPrompt,
+        userOverridePrompt: opts?.userOverridePrompt,
+      }),
+    /**
+     * Regenerate every slide of an existing carousel using the persisted deck
+     * JSON (no LLM re-call). Returns `{ jobId, estimatedCost, message }`.
+     * Charges 2.5 × slideCount credits as granular slices.
+     */
+    regenerateCarousel: (
+      contentId: string,
+      opts?: { slideCount?: number },
+    ): Promise<{ jobId: string; estimatedCost: number; message: string }> =>
+      apiClient.post('/generation/regenerate/carousel', {
+        contentId,
+        slideCount: opts?.slideCount,
+      }),
   },
 
   // Cache endpoints
@@ -269,6 +319,12 @@ export const api = {
     getAnalytics: (params?: any) => apiClient.get(`/posts/analytics${params ? `?${new URLSearchParams(params)}` : ''}`),
   },
 
+  // Moderation endpoints
+  moderation: {
+    wordList: () => apiClient.get('/moderation/word-list'),
+    check: (text: string) => apiClient.post('/moderation/check', { text }),
+  },
+
   // Health check
   health: () => apiClient.get('/health'),
 
@@ -342,6 +398,18 @@ export const api = {
       apiClient.delete(`/admin/seo/pages?route=${encodeURIComponent(route)}`),
   },
 
+  maintenance: {
+    status: () => apiClient.get("/maintenance/status"),
+    getConfig: () => apiClient.get("/admin/maintenance"),
+    setConfig: (payload: {
+      enabled?: boolean;
+      scheduledStart?: string | null;
+      scheduledEnd?: string | null;
+      message?: string | null;
+    }) => apiClient.post("/admin/maintenance", payload),
+    clearSchedule: () => apiClient.delete("/admin/maintenance/schedule"),
+  },
+
   /** Public marketing blog (not social `api.posts`). */
   blog: {
     listPublished: (params?: { post_kind?: string; tag?: string; limit?: number; offset?: number }) =>
@@ -375,5 +443,13 @@ export const api = {
     },
     trendingDebug: (params?: { tag?: string; limit?: number }) =>
       apiClient.get('/content/trending/debug', { params }),
+  },
+
+  /** First-post / reminder feedback (product). */
+  feedback: {
+    eligibility: () => apiClient.get("/feedback/eligibility"),
+    submit: (body: { rating: number; message?: string }) =>
+      apiClient.post("/feedback/submit", body),
+    skip: () => apiClient.post("/feedback/skip", {}),
   },
 };

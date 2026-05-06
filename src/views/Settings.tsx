@@ -30,6 +30,7 @@ import {
   Info,
   Mail,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { apiClient, api } from '@/lib/apiClient';
@@ -43,6 +44,7 @@ import { useLinkedIn } from "@/contexts/LinkedInContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useAdmin, ADMIN_USER_ID } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
+import { useLinkedInConnectionStatus } from "@/hooks/useLinkedInConnectionStatus";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNotifications from "@/components/AdminNotifications";
 import AdminScraperDebug from "@/components/AdminScraperDebug";
@@ -53,6 +55,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
   const { isConnected: linkedinConnected, refreshConnection, refreshMetrics, disconnect: disconnectLinkedIn } = useLinkedIn();
+  const { isConnecting: linkedinConnecting, startConnecting: startLinkedInConnecting, clearConnecting: clearLinkedInConnecting } = useLinkedInConnectionStatus();
   const { isAdmin } = useAdmin();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -197,7 +200,9 @@ export default function Settings() {
     // If we were redirected back with ?linkedin=connected, refresh LinkedIn context
     const linkedinParam = searchParams.get("linkedin");
     if (linkedinParam === "connected") {
-      toast.success("LinkedIn account connected successfully.");
+      // Clear the connecting progress flag before showing the toast
+      clearLinkedInConnecting();
+      toast.success("LinkedIn connected successfully!");
       // Trigger a refresh of LinkedIn connection status across the app
       refreshConnection();
       refreshMetrics();
@@ -205,7 +210,7 @@ export default function Settings() {
       localStorage.setItem('linkedin-connected', 'true');
       localStorage.removeItem('linkedin-connected'); // Trigger the event
     }
-  }, [searchParams, refreshConnection, refreshMetrics]);
+  }, [searchParams, refreshConnection, refreshMetrics, clearLinkedInConnecting]);
 
   // Update integrations state when LinkedIn context changes
   useEffect(() => {
@@ -280,9 +285,11 @@ export default function Settings() {
 
     if (id === "linkedin") {
       try {
+        startLinkedInConnecting();
         const { url } = await api.linkedin.startOAuth();
         window.location.href = url;
       } catch {
+        clearLinkedInConnecting();
         toast.error("Could not start LinkedIn connection. Please try again.");
       }
       return;
@@ -565,8 +572,15 @@ export default function Settings() {
             <div className="space-y-2">
               {integrations.map((integration) => {
                 const Icon = integration.icon;
+                const isComingSoon = ["twitter", "instagram", "facebook"].includes(integration.id);
+                const isLiConnecting = integration.id === "linkedin" && linkedinConnecting && !integration.connected;
                 return (
-                  <div key={integration.id} className="flex items-center justify-between p-2.5 border rounded-lg gap-3">
+                  <div
+                    key={integration.id}
+                    className={`flex items-center justify-between p-2.5 border rounded-lg gap-3 transition-colors ${
+                      isLiConnecting ? "border-primary/40 bg-primary/5" : ""
+                    } ${isComingSoon ? "opacity-60" : ""}`}
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" style={{ backgroundColor: integration.color }}>
                         <Icon className="h-4 w-4" />
@@ -574,11 +588,26 @@ export default function Settings() {
                       <div className="min-w-0">
                         <h4 className="font-medium text-sm">{integration.name}</h4>
                         <p className="text-xs text-muted-foreground">
-                          {integration.connected ? 'Connected' : 'Not connected'}
+                          {isLiConnecting
+                            ? "Connecting to LinkedIn..."
+                            : isComingSoon
+                            ? "Coming soon — Q3 2026"
+                            : integration.connected
+                            ? "Connected"
+                            : "Not connected"}
                         </p>
                       </div>
                     </div>
-                    {integration.connected ? (
+                    {isLiConnecting ? (
+                      <Badge className="gap-1.5 text-xs shrink-0 bg-primary/10 text-primary border border-primary/30">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Connecting
+                      </Badge>
+                    ) : isComingSoon ? (
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        Q3 2026
+                      </Badge>
+                    ) : integration.connected ? (
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge variant="secondary" className="gap-1 text-xs">
                           <Zap className="h-3 w-3 text-green-500" /> Connected
@@ -959,6 +988,7 @@ export default function Settings() {
             </CardContent>
           </Card>
         )}
+
       </div>
     </div>
   );

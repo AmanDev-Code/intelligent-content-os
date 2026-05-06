@@ -77,11 +77,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const { session } = useAuth();
   const audioContextRef = useRef<AudioContext | null>(null);
-  const sseRef = useRef<{ close: () => void } | null>(null);
+  const sseAbortRef = useRef<AbortController | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
   const sseAuthFailedRef = useRef(false);
   const initialLoadDone = useRef(false);
   const seenNotificationIds = useRef<Set<string>>(new Set());
+  const sseReconnectAttemptsRef = useRef(0);
+  const sseMountedRef = useRef(false);
+  // Verbose SSE logging is opt-in via NEXT_PUBLIC_DEBUG_SSE=1 to keep the
+  // production console quiet during long generations (carousel runs emit 10–20 events).
+  const DEBUG_SSE = process.env.NEXT_PUBLIC_DEBUG_SSE === '1';
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -233,15 +238,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     showNotificationToast(notification);
   }, [playSound, showNotificationToast]);
 
+  // Stable ref to the realtime handler so the SSE effect below depends ONLY on
+  // the auth token. Without this, mutating notification settings (e.g. toggling
+  // sound) recreates `playSound` → `handleRealtimeNotification` → forces a full
+  // SSE reconnect, leaving the previous backend connection lingering until its
+  // socket close is detected. That manifested as duplicate "Sending notification
+  // to N client(s)" log lines and double-fired toasts.
+  const realtimeHandlerRef = useRef(handleRealtimeNotification);
+  useEffect(() => {
+    realtimeHandlerRef.current = handleRealtimeNotification;
+  }, [handleRealtimeNotification]);
+
   // SSE connection
   useEffect(() => {
     if (!session?.access_token) return;
 
+    sseMountedRef.current = true;
     initialLoadDone.current = false;
     seenNotificationIds.current.clear();
     sseAuthFailedRef.current = false;
+    sseReconnectAttemptsRef.current = 0;
 
-    // Load existing notifications and count without triggering alerts
     const initLoad = async () => {
       try {
         const [countRes, listRes] = await Promise.all([
@@ -254,17 +271,49 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setNotifications(existing);
           existing.forEach((n: Notification) => seenNotificationIds.current.add(n.id));
         }
-      } catch { /* ignore */ }
+      } catch {
+        // Initial load failure is non-fatal; SSE will still attach.
+      }
       initialLoadDone.current = true;
     };
 
     initLoad();
 
+    // Jittered exponential backoff: 2s, 4s, 8s, 16s, capped at 30s, with ±25% jitter
+    // to prevent thundering-herd reconnects (especially common behind ngrok where
+    // ERR_HTTP2_PROTOCOL_ERROR storms can drop many tabs simultaneously).
+    const computeBackoffMs = (attempt: number): number => {
+      const base = Math.min(30000, 2000 * Math.pow(2, Math.max(0, attempt)));
+      const jitter = base * 0.25 * (Math.random() * 2 - 1);
+      return Math.max(1000, Math.round(base + jitter));
+    };
+
+    const scheduleReconnect = (delay: number) => {
+      if (!sseMountedRef.current) return;
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = setTimeout(() => {
+        if (!sseMountedRef.current) return;
+        connect();
+      }, delay);
+    };
+
     const connect = () => {
+      if (!sseMountedRef.current) return;
       const baseUrl = API_CONFIG.BASE_URL;
       const url = `${baseUrl}/notifications/stream`;
-      const controller = new AbortController();
 
+      // Abort any prior in-flight request before opening a new one. Critical for
+      // React StrictMode (dev) where the effect mounts → cleanup → re-mounts in
+      // quick succession; without this guard a stale fetch's reader could keep a
+      // backend SSE client alive after the cleanup ran, causing duplicate
+      // notifications.
+      if (sseAbortRef.current) {
+        try { sseAbortRef.current.abort(); } catch { /* noop */ }
+      }
+      const controller = new AbortController();
+      sseAbortRef.current = controller;
+
+      if (DEBUG_SSE) console.log('[SSE] Connecting to:', url);
       fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -276,6 +325,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (!response.ok || !response.body) {
           throw new Error(`SSE failed: ${response.status}`);
         }
+        // Successful open — reset backoff so the next disconnect retries quickly.
+        sseReconnectAttemptsRef.current = 0;
+        if (DEBUG_SSE) console.log('[SSE] Connection established');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -294,14 +346,42 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             if (line.startsWith('event: ')) {
               eventType = line.slice(7).trim();
             } else if (line.startsWith('data: ')) {
-              if (!initialLoadDone.current) continue;
+              if (!initialLoadDone.current) {
+                continue;
+              }
               try {
                 const data = JSON.parse(line.slice(6));
+                if (DEBUG_SSE) {
+                  console.log(`[SSE] event=${eventType}`, data?.subtaskKey || data?.id || '');
+                }
                 if (eventType === 'notification' && data?.id) {
-                  handleRealtimeNotification(data);
+                  realtimeHandlerRef.current(data);
+                } else if (eventType === 'credits.balance_changed') {
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:credits-updated', { detail: data }),
+                  );
+                } else if (eventType === 'generation.progress') {
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:generation-progress', { detail: data }),
+                  );
+                } else if (eventType === 'generation.completed') {
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:generation-completed', { detail: data }),
+                  );
+                } else if (eventType === 'generation.image_regenerated') {
+                  // Fan out to ScheduleModal (and any other open preview)
+                  // so it can swap the regenerated image in place without
+                  // needing to refetch the whole content row.
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:image-regenerated', { detail: data }),
+                  );
+                } else if (eventType === 'generation.carousel_regenerated') {
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:carousel-regenerated', { detail: data }),
+                  );
                 }
               } catch {
-                // heartbeat or non-JSON
+                // heartbeat (`: heartbeat`) or non-JSON line — no-op.
               }
               eventType = 'message';
             } else if (line === '') {
@@ -309,29 +389,43 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             }
           }
         }
+        // Stream ended cleanly — server closed the connection. Reconnect with backoff.
+        if (!controller.signal.aborted && !sseAuthFailedRef.current && sseMountedRef.current) {
+          const delay = computeBackoffMs(sseReconnectAttemptsRef.current++);
+          if (DEBUG_SSE) console.log(`[SSE] stream ended; reconnecting in ${delay}ms`);
+          scheduleReconnect(delay);
+        }
       }).catch((err) => {
-        if (err.name === 'AbortError') return;
+        if (err?.name === 'AbortError') return;
+        if (!sseMountedRef.current) return;
         if (String(err?.message || '').includes('SSE failed: 401')) {
-          // Token is invalid/expired; do not hammer backend with reconnect loops.
           sseAuthFailedRef.current = true;
           console.warn('SSE stopped: unauthorized (401). Waiting for fresh session token.');
           return;
         }
         if (sseAuthFailedRef.current) return;
-        console.warn('SSE connection lost, reconnecting in 5s...', err.message);
-        reconnectTimer.current = setTimeout(connect, 5000);
+        const delay = computeBackoffMs(sseReconnectAttemptsRef.current++);
+        if (DEBUG_SSE) {
+          console.warn(`[SSE] connection lost (${err?.message || 'error'}); retry in ${delay}ms`);
+        }
+        scheduleReconnect(delay);
       });
-
-      sseRef.current = { close: () => controller.abort() };
     };
 
     connect();
 
     return () => {
-      sseRef.current?.close();
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      sseMountedRef.current = false;
+      if (sseAbortRef.current) {
+        try { sseAbortRef.current.abort(); } catch { /* noop */ }
+        sseAbortRef.current = null;
+      }
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = undefined;
+      }
     };
-  }, [session?.access_token, handleRealtimeNotification]);
+  }, [session?.access_token, DEBUG_SSE]);
 
   const value: NotificationContextType = {
     notifications,

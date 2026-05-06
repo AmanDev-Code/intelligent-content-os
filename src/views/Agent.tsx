@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
@@ -55,6 +56,8 @@ import { useSmoothProgress } from "@/hooks/useSmoothProgress";
 import { dataService, getQuotaColor } from "@/services/dataService";
 import { api } from "@/lib/apiClient";
 import { apiClient } from "@/lib/apiClient";
+import { dispatchFeedbackEligibilityRefresh } from "@/lib/feedbackEvents";
+import { useProfanityCheck } from '@/hooks/useProfanityCheck';
 import {
   formatInTimezone,
   getPreferredTimezoneSync,
@@ -121,6 +124,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [recentGenerations, setRecentGenerations] = useState<any[]>([]);
   const [totalGenerationsCount, setTotalGenerationsCount] = useState<number>(0);
+  const [recentSourceFilter, setRecentSourceFilter] = useState<'all' | 'viral' | 'custom'>('all');
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [stage, setStage] = useState<string | null>(null);
@@ -162,6 +166,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const hasLoadedRecentRef = useRef<string | null>(null);
   /** One controller per modal open; used to cancel in-flight trending fetches when the dialog closes. */
   const trendingModalSessionRef = useRef<AbortController | null>(null);
+  /** Buffer SSE events that arrive before currentJobId is set (timing race between API response and worker). */
+  const sseEventBufferRef = useRef<Map<string, Array<{ type: 'progress' | 'completed'; detail: any }>>>(new Map());
   const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
   const [postingIdentities, setPostingIdentities] = useState<PostingIdentity[]>([]);
   const [selectedPostingIdentityId, setSelectedPostingIdentityId] = useState<string>("");
@@ -171,9 +177,473 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const [pendingActionContent, setPendingActionContent] = useState<any>(null);
   const [hasConfirmedPostingIdentity, setHasConfirmedPostingIdentity] = useState(false);
 
+  // Custom topic generation state
+  const [tonality, setTonality] = useState('professional');
+  const [wordLimitKind, setWordLimitKind] = useState<'short' | 'medium' | 'long' | 'custom'>('medium');
+  const [customWordCount, setCustomWordCount] = useState(150);
+  const [customWordCountInput, setCustomWordCountInput] = useState('150');
+  const [imageCount, setImageCount] = useState(1);
+  const [slideCount, setSlideCount] = useState(5);
+
+  /** Custom-topic carousel visual base style (`auto` = server infers from topic). */
+  const [carouselVisualStyle, setCarouselVisualStyle] = useState<
+    | 'auto'
+    | 'handwritten_notebook'
+    | 'handwritten_notebook_dense'
+    | 'whiteboard_notes'
+    | 'diagram_clean'
+    | 'stock_visual'
+  >('auto');
+  /** Resolved from SSE after text generation (server-side inference or explicit choice). */
+  const [carouselStyleStatusLabel, setCarouselStyleStatusLabel] = useState<string | null>(null);
+
+  const [carouselNoteDensityUi, setCarouselNoteDensityUi] = useState<
+    'auto' | 'compact' | 'standard' | 'dense'
+  >('auto');
+  const [carouselSubjectModeUi, setCarouselSubjectModeUi] = useState<
+    'auto' | 'programming' | 'general'
+  >('auto');
+  /**
+   * Educational deck preset: `auto` infers from topic; the two named presets
+   * render deterministically (cover + TOC + body) and skip LLM-image generation.
+   * Pricing remains `2 + 2.5 × slideCount` (cover + TOC count toward the budget).
+   */
+  const [carouselDocumentModeUi, setCarouselDocumentModeUi] = useState<
+    'auto' | 'none' | 'handwritten_notes' | 'structured_document'
+  >('auto');
+  const [trainingDatasetOptIn, setTrainingDatasetOptIn] = useState(false);
+  const { isBlocked: isProfanityBlocked, checkText: checkProfanity } = useProfanityCheck();
+
+  /** Advanced carousel plate / density / subject controls only for educational tone. */
+  const showCarouselStudyControls = selectedType === 'carousel' && tonality === 'educational';
+
+  /** Agent UI uses `post` for text; `/generation/custom-topic` expects `text` (matches backend + n8n). */
+  const mapAgentContentTypeToApi = (t: string): "text" | "image" | "carousel" =>
+    t === "post" ? "text" : (t as "image" | "carousel");
+
+  /** Align with `PostGenerationInput` / n8n tonality keys. */
+  const mapTonalityUiToApi = (id: string): string => {
+    if (id === "casual") return "casual_friendly";
+    if (id === "bold") return "bold_punchy";
+    return id;
+  };
+
+  const customTopicCreditCost = useMemo(() => {
+    if (selectedType === 'image') return 2 + 3 * imageCount;
+    if (selectedType === 'carousel') return 2 + 2.5 * slideCount;
+    return 2;
+  }, [selectedType, imageCount, slideCount]);
+
+  // N1: Custom-topic progress steps driven by SSE
+  type ProgressStepStatus = 'pending' | 'running' | 'done' | 'failed';
+  interface ProgressStep { key: string; label: string; status: ProgressStepStatus }
+
+  /**
+   * Build the dynamic progress step list for the modal.
+   *
+   * Step keys MUST match the backend's `subtaskKey` values emitted by
+   * `notification.service.ts → emitGenerationProgress` and the worker pipeline
+   * (`validating`, `reserving_credits`, `generating_text`, `enhancing_text`,
+   * `planning_slides` a.k.a. `composing_pages`, `slide_1` … `slide_N`,
+   * `saving`, `done`).
+   *
+   * `enhancing_text` covers quality-gate / sparse expansion / model rewrite —
+   * it can take 30–80s for dense educational decks, so giving it its own row
+   * keeps the modal moving instead of stalling on `Generating text`.
+   *
+   * Labels are human-friendly. When the backend renames `composing_pages` to
+   * `planning_slides` we still render the same row (see PLANNING_SLIDES_KEYS).
+   */
+  const buildProgressSteps = useCallback((): ProgressStep[] => {
+    const steps: ProgressStep[] = [
+      { key: 'validating', label: 'Validating topic', status: 'pending' },
+      { key: 'reserving_credits', label: 'Reserving credits', status: 'pending' },
+      { key: 'generating_text', label: 'Generating text', status: 'pending' },
+      { key: 'enhancing_text', label: 'Enhancing & expanding', status: 'pending' },
+    ];
+    if (selectedType === 'image') {
+      for (let i = 1; i <= imageCount; i++) steps.push({ key: `image_${i}`, label: `Generating image ${i}`, status: 'pending' });
+    }
+    if (selectedType === 'carousel') {
+      // Always show a "Planning slides" phase between text generation and per-page
+      // rendering — the FE advances it locally even when the backend doesn't emit a
+      // dedicated `composing_pages` event (older workers). Surface label is the same
+      // for legacy LLM-image and document-deck pipelines so users see consistent UX.
+      steps.push({ key: 'composing_pages', label: 'Planning slides', status: 'pending' });
+      for (let i = 1; i <= slideCount; i++) {
+        steps.push({
+          key: `slide_${i}`,
+          label: `Generating page ${i}/${slideCount}`,
+          status: 'pending',
+        });
+      }
+    }
+    steps.push({ key: 'saving', label: 'Saving to storage', status: 'pending' });
+    steps.push({ key: 'done', label: 'Done', status: 'pending' });
+    return steps;
+  }, [selectedType, imageCount, slideCount]);
+
+  // Backend may emit either the legacy `composing_pages` key or the newer
+  // `planning_slides` key for the same phase — accept both at the FE.
+  const PLANNING_SLIDES_KEYS = useMemo(
+    () => new Set<string>(['composing_pages', 'planning_slides']),
+    [],
+  );
+
+  const [customProgressSteps, setCustomProgressSteps] = useState<ProgressStep[]>([]);
+  const [customProgressStartedAt, setCustomProgressStartedAt] = useState<number | null>(null);
+  const [customProgressElapsed, setCustomProgressElapsed] = useState(0);
+  const [autoOpenContentId, setAutoOpenContentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!customProgressStartedAt) { setCustomProgressElapsed(0); return; }
+    const interval = setInterval(() => setCustomProgressElapsed(Math.floor((Date.now() - customProgressStartedAt) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [customProgressStartedAt]);
+
+  // Helper to process a single progress event (used for both live and buffered events)
+  const processProgressEvent = useCallback((detail: any) => {
+    const { subtaskKey, status, meta } = detail;
+
+    const vis = meta?.carouselVisualStyle as string | undefined;
+    const src = meta?.carouselStyleSource as string | undefined;
+    if (
+      vis &&
+      ((subtaskKey === 'generating_text') ||
+        (subtaskKey === 'enhancing_text') ||
+        (typeof subtaskKey === 'string' && subtaskKey.startsWith('slide_')))
+    ) {
+      const styleLabels: Record<string, string> = {
+        handwritten_notebook: 'Handwritten notebook (ruled paper + composited text)',
+        handwritten_notebook_dense: 'Dense study notebook pages',
+        whiteboard_notes: 'Whiteboard backdrop + composited text',
+        diagram_clean: 'Clean abstract diagram backdrop',
+        stock_visual: 'General illustrative backdrop',
+      };
+      const how = src === 'explicit' ? 'User-selected' : 'Auto-detected';
+      setCarouselStyleStatusLabel(`${how}: ${styleLabels[vis] ?? vis}`);
+    }
+
+    const mapStatus = (backendStatus: string): ProgressStepStatus => {
+      if (backendStatus === 'succeeded') return 'done';
+      if (backendStatus === 'failed') return 'failed';
+      if (backendStatus === 'running') return 'running';
+      return 'pending';
+    };
+
+    const newStatus = mapStatus(status);
+
+    // Map backend-emitted `planning_slides` onto the internal `composing_pages` row
+    // so we don't render duplicate phases when the worker switches naming.
+    const matchKey = (
+      stepKey: string,
+      eventKey: string,
+    ): boolean => {
+      if (stepKey === eventKey) return true;
+      if (
+        PLANNING_SLIDES_KEYS.has(stepKey) &&
+        typeof eventKey === 'string' &&
+        PLANNING_SLIDES_KEYS.has(eventKey)
+      ) {
+        return true;
+      }
+      return false;
+    };
+
+    setCustomProgressSteps(prev => {
+      // Late SSE events can arrive after a stall-timeout cleared the array.
+      // Don't drop them silently — they often carry the actual succeeded signal that
+      // unblocks the modal flow on the slow path.
+      if (prev.length === 0) {
+        return prev;
+      }
+
+      const statusOrder: Record<ProgressStepStatus, number> = { pending: 0, running: 1, done: 2, failed: 2 };
+      // If a slide_N event arrives but the matching step is missing (e.g. a previous
+      // generation cleared the list, or the slide count was higher than expected),
+      // synthesize a step entry so the event isn't dropped. Place it after any
+      // existing slide_M (M<N) or before saving/done.
+      const knownKeys = new Set(prev.map((s) => s.key));
+      let prependedSlide: ProgressStep | null = null;
+      if (typeof subtaskKey === 'string' && subtaskKey.startsWith('slide_') && !knownKeys.has(subtaskKey)) {
+        const slideN = parseInt(subtaskKey.replace('slide_', ''), 10);
+        if (Number.isFinite(slideN) && slideN > 0) {
+          const totalSlides = Math.max(
+            slideN,
+            prev.filter((s) => s.key.startsWith('slide_')).length || slideN,
+          );
+          prependedSlide = {
+            key: subtaskKey,
+            label: `Generating page ${slideN}/${totalSlides}`,
+            status: 'pending',
+          };
+        }
+      }
+      const working: ProgressStep[] = prependedSlide
+        ? (() => {
+            const insertBefore = prev.findIndex((s) => s.key === 'saving' || s.key === 'done');
+            if (insertBefore < 0) return [...prev, prependedSlide];
+            return [
+              ...prev.slice(0, insertBefore),
+              prependedSlide,
+              ...prev.slice(insertBefore),
+            ];
+          })()
+        : prev;
+      let updated = working.map(s => {
+        if (matchKey(s.key, subtaskKey) && statusOrder[newStatus] >= statusOrder[s.status]) {
+          return { key: s.key, label: s.label, status: newStatus };
+        }
+        return { key: s.key, label: s.label, status: s.status };
+      });
+
+      // When slide_N starts running, mark all earlier prep phases (validating,
+      // reserving_credits, generating_text, enhancing_text,
+      // composing_pages/planning_slides) and earlier slides as done. This gives
+      // users a smooth advance through the modal even when the worker emits
+      // per-slide events back-to-back without an explicit `succeeded` for the
+      // prior phase.
+      if (typeof subtaskKey === 'string' && subtaskKey.startsWith('slide_') && newStatus === 'running') {
+        const currentSlideNum = parseInt(subtaskKey.replace('slide_', ''), 10);
+        updated = updated.map(s => {
+          if (s.key.startsWith('slide_')) {
+            const stepSlideNum = parseInt(s.key.replace('slide_', ''), 10);
+            if (stepSlideNum < currentSlideNum && s.status !== 'done' && s.status !== 'failed') {
+              return { ...s, status: 'done' as ProgressStepStatus };
+            }
+          }
+          if (
+            (s.key === 'validating' ||
+              s.key === 'reserving_credits' ||
+              s.key === 'generating_text' ||
+              s.key === 'enhancing_text' ||
+              PLANNING_SLIDES_KEYS.has(s.key)) &&
+            s.status !== 'done' &&
+            s.status !== 'failed'
+          ) {
+            return { ...s, status: 'done' as ProgressStepStatus };
+          }
+          return s;
+        });
+      }
+
+      // Auto-advance the enhancing_text row whenever generating_text resolves
+      // succeeded — the backend now drives this explicitly via lifecycle, but we
+      // still defensively advance it here in case the explicit emit is dropped.
+      if (subtaskKey === 'generating_text' && status === 'succeeded') {
+        updated = updated.map(s =>
+          s.key === 'enhancing_text' && s.status === 'pending'
+            ? { ...s, status: 'running' as ProgressStepStatus }
+            : s
+        );
+      }
+
+      // When enhancing_text resolves succeeded, surface planning_slides as
+      // running so the carousel deck modal advances to the per-page rendering
+      // queue without waiting for an explicit `planning_slides` event.
+      if (subtaskKey === 'enhancing_text' && status === 'succeeded') {
+        updated = updated.map(s => {
+          if (s.key === 'generating_text' && s.status !== 'done' && s.status !== 'failed') {
+            return { ...s, status: 'done' as ProgressStepStatus };
+          }
+          if (
+            PLANNING_SLIDES_KEYS.has(s.key) &&
+            (s.status === 'pending' || s.status === 'running')
+          ) {
+            return { ...s, status: 'running' as ProgressStepStatus };
+          }
+          return s;
+        });
+      }
+
+      // Auto-advance the planning row whenever generating_text resolves succeeded
+      // (start running) or whenever any slide_N arrives (mark done).
+      const hasPlanning = updated.some(s => PLANNING_SLIDES_KEYS.has(s.key));
+      if (hasPlanning) {
+        if (subtaskKey === 'generating_text' && status === 'succeeded') {
+          updated = updated.map(s =>
+            PLANNING_SLIDES_KEYS.has(s.key) && s.status === 'pending'
+              ? { ...s, status: 'running' as ProgressStepStatus }
+              : s
+          );
+        }
+        if (typeof subtaskKey === 'string' && subtaskKey.startsWith('slide_') && status === 'running') {
+          updated = updated.map(s => {
+            if (
+              s.key === 'enhancing_text' &&
+              s.status !== 'done' &&
+              s.status !== 'failed'
+            ) {
+              return { ...s, status: 'done' as ProgressStepStatus };
+            }
+            if (PLANNING_SLIDES_KEYS.has(s.key) && s.status !== 'failed') {
+              return { ...s, status: 'done' as ProgressStepStatus };
+            }
+            return s;
+          });
+        }
+      }
+
+      return updated;
+    });
+  }, [PLANNING_SLIDES_KEYS]);
+
+  // Helper to process a completed event
+  const processCompletedEvent = useCallback((detail: any) => {
+    setCustomProgressSteps(prev => prev.map(s => ({ ...s, status: s.status === 'pending' ? 'done' : s.status })));
+    setCustomProgressStartedAt(null);
+    setIsGenerating(false);
+    setIsComplete(true);
+    setIsFailed(false);
+    if (detail?.contentId) {
+      setAutoOpenContentId(detail.contentId);
+    }
+  }, []);
+
+  // Process buffered events when currentJobId becomes available
+  useEffect(() => {
+    if (!currentJobId) return;
+
+    const bufferedEvents = sseEventBufferRef.current.get(currentJobId);
+    if (bufferedEvents && bufferedEvents.length > 0) {
+      for (const event of bufferedEvents) {
+        if (event.type === 'progress') {
+          processProgressEvent(event.detail);
+        } else if (event.type === 'completed') {
+          processCompletedEvent(event.detail);
+        }
+      }
+      sseEventBufferRef.current.delete(currentJobId);
+    }
+  }, [currentJobId, processProgressEvent, processCompletedEvent]);
+
+  useEffect(() => {
+    const handleSSEProgress = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const eventJobId = detail?.generationId;
+
+      if (currentJobId && eventJobId === currentJobId) {
+        processProgressEvent(detail);
+        return;
+      }
+
+      // Buffer events that arrive before currentJobId is set (worker can emit
+      // before the start-generation HTTP response returns).
+      if (!currentJobId && isGenerating && eventJobId) {
+        const buffer = sseEventBufferRef.current.get(eventJobId) || [];
+        buffer.push({ type: 'progress', detail });
+        sseEventBufferRef.current.set(eventJobId, buffer);
+      }
+    };
+
+    const handleSSECompleted = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const eventJobId = detail?.generationId;
+
+      if (currentJobId && eventJobId === currentJobId) {
+        processCompletedEvent(detail);
+        return;
+      }
+
+      if (!currentJobId && isGenerating && eventJobId) {
+        const buffer = sseEventBufferRef.current.get(eventJobId) || [];
+        buffer.push({ type: 'completed', detail });
+        sseEventBufferRef.current.set(eventJobId, buffer);
+      }
+    };
+    
+    window.addEventListener('trndinn:generation-progress', handleSSEProgress);
+    window.addEventListener('trndinn:generation-completed', handleSSECompleted);
+    return () => {
+      window.removeEventListener('trndinn:generation-progress', handleSSEProgress);
+      window.removeEventListener('trndinn:generation-completed', handleSSECompleted);
+    };
+  }, [currentJobId, isGenerating, processProgressEvent, processCompletedEvent]);
+
+  // N1: 5s polling fallback when SSE stalls
+  useEffect(() => {
+    if (!currentJobId || !isGenerating || generationMode !== 'custom') return;
+    const pollInterval = setInterval(async () => {
+      try {
+        const jobStatus = await api.generation.job(currentJobId);
+        if (jobStatus?.status === 'ready' && jobStatus?.contentId) {
+          setCustomProgressSteps(prev => prev.map(s => ({ ...s, status: s.status === 'pending' ? 'done' : s.status })));
+          setCustomProgressStartedAt(null);
+          setAutoOpenContentId(jobStatus.contentId);
+          setIsGenerating(false);
+          setIsComplete(true);
+          setIsFailed(false);
+          clearInterval(pollInterval);
+        } else if (jobStatus?.status === 'failed') {
+          setIsGenerating(false);
+          setIsFailed(true);
+          setIsComplete(true);
+          setCustomProgressStartedAt(null);
+          // Mark in-flight steps as failed but keep the list so late events can settle.
+          setCustomProgressSteps(prev =>
+            prev.map(s =>
+              s.status === 'pending' || s.status === 'running'
+                ? { ...s, status: 'failed' as ProgressStepStatus }
+                : s,
+            ),
+          );
+          clearInterval(pollInterval);
+        }
+      } catch { /* ignore polling errors */ }
+    }, 5000);
+    return () => clearInterval(pollInterval);
+  }, [currentJobId, isGenerating, generationMode]);
+
+  // N2: Auto-open PostModal when generation completes
+  useEffect(() => {
+    if (!autoOpenContentId) return;
+    (async () => {
+      try {
+        const content = await api.generation.contentById(autoOpenContentId);
+        if (content) {
+          setSelectedContent(dataService.normalizeGeneratedContent(content));
+          setShowContentModal(true);
+          await fetchRecentGenerations();
+        }
+      } catch { /* best effort */ }
+      setAutoOpenContentId(null);
+    })();
+  }, [autoOpenContentId]);
+
   useEffect(() => {
     void resolveTimezone().then(setUserTimezone).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (isProfanityBlocked) {
+      toast.error("Your topic contains inappropriate language. Please modify it before generating.", { duration: 4000 });
+    }
+  }, [isProfanityBlocked]);
+
+  useEffect(() => {
+    if (tonality !== 'educational') {
+      setCarouselVisualStyle('auto');
+      setCarouselNoteDensityUi('auto');
+      setCarouselSubjectModeUi('auto');
+      setCarouselDocumentModeUi('auto');
+      setTrainingDatasetOptIn(false);
+    }
+  }, [tonality]);
+
+  /**
+   * When user picks one of the two structured presets, density/programming knobs are
+   * implicit (presets imply density + programming friendliness). Reset them so they
+   * don't silently override the document-deck flow on the server.
+   */
+  const isDocumentDeckPresetActive =
+    carouselDocumentModeUi === 'handwritten_notes' ||
+    carouselDocumentModeUi === 'structured_document';
+  useEffect(() => {
+    if (isDocumentDeckPresetActive) {
+      if (carouselNoteDensityUi !== 'auto') setCarouselNoteDensityUi('auto');
+      if (carouselSubjectModeUi !== 'auto') setCarouselSubjectModeUi('auto');
+    }
+  }, [isDocumentDeckPresetActive, carouselNoteDensityUi, carouselSubjectModeUi]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -324,17 +794,13 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     }
   }, [user?.id]);
 
-  const fetchRecentGenerations = useCallback(async () => {
+  const fetchRecentGenerations = useCallback(async (sourceOverride?: 'all' | 'viral' | 'custom') => {
     if (!user?.id) return;
+    const src = sourceOverride ?? recentSourceFilter;
     
     try {
-      console.log('Fetching recent generations for user:', user.id);
-      
-      // Get first page (3 most recent items) - show all completed content
-      const paginatedData = await dataService.getPaginatedContent(user.id, 1, 3);
+      const paginatedData = await dataService.getPaginatedContent(user.id, 1, 3, src !== 'all' ? src : undefined);
       const posts = paginatedData.data || [];
-      
-      console.log('Recent generations data:', posts.length, 'items');
       
       setRecentGenerations(posts);
       setTotalGenerationsCount(paginatedData.pagination.total || 0);
@@ -343,7 +809,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       setRecentGenerations([]);
       setTotalGenerationsCount(0);
     }
-  }, [user?.id]);
+  }, [user?.id, recentSourceFilter]);
 
   const invalidateUserCache = useCallback(async () => {
     if (!user?.id) return;
@@ -659,12 +1125,23 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
   const handleFailed = useCallback(
     (error: string | null) => {
-      console.log('❌ Job failed:', error);
+      console.warn('Job failed:', error);
       setIsGenerating(false);
       setIsComplete(true); // Mark as complete so we can show retry
       setIsFailed(true); // Mark as failed
       setTarget(0);
       setStage("Failed");
+      setCustomProgressStartedAt(null);
+      // Preserve current step list so late SSE events can still settle the UI
+      // (e.g. timeout fires but slides finished a few seconds later). The list
+      // is reset cleanly when the user starts a new generation.
+      setCustomProgressSteps(prev =>
+        prev.map(s =>
+          s.status === 'pending' || s.status === 'running'
+            ? { ...s, status: 'failed' as ProgressStepStatus }
+            : s,
+        ),
+      );
       setGeneratedContent([]); // Clear any previous content
       toast.error(`Generation failed: ${error || 'Unknown error'}. You can retry.`);
     },
@@ -829,6 +1306,94 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     }
   };
 
+  const handleCustomTopicGenerate = async () => {
+    if (isGenerating) {
+      toast.error("A job is already running. Please wait for it to complete.");
+      return;
+    }
+
+    if (!customTopic.trim() || customTopic.trim().length < 3) {
+      toast.error("Please enter a topic (at least 3 characters)");
+      return;
+    }
+
+    if (userQuota && userQuota.remainingCredits < customTopicCreditCost) {
+      toast.error(`Insufficient credits. This generation requires ${customTopicCreditCost} credits.`, { duration: 5000 });
+      return;
+    }
+
+    setIsGenerating(true);
+    setTarget(0);
+    setStage("Starting custom topic generation...");
+    setIsComplete(false);
+    setIsFailed(false);
+    setGeneratedContent([]);
+    setCurrentJobId(null);
+    sseEventBufferRef.current.clear(); // Clear any stale buffered events
+    setCustomProgressSteps(buildProgressSteps());
+    setCustomProgressStartedAt(Date.now());
+    setCarouselStyleStatusLabel(null);
+
+    try {
+      const data = await api.generation.customTopic({
+        topic: customTopic,
+        platform: 'linkedin',
+        contentType: mapAgentContentTypeToApi(selectedType),
+        tonality: mapTonalityUiToApi(tonality),
+        wordLimit: wordLimitKind === 'custom'
+          ? { kind: 'custom', words: customWordCount }
+          : { kind: wordLimitKind },
+        ...(selectedType === 'image' ? { imageCount } : {}),
+        ...(selectedType === 'carousel'
+          ? {
+              slideCount,
+              carouselVisualStyle,
+              ...(carouselNoteDensityUi !== 'auto'
+                ? { carouselNoteDensity: carouselNoteDensityUi }
+                : {}),
+              ...(carouselSubjectModeUi !== 'auto'
+                ? { carouselSubjectMode: carouselSubjectModeUi }
+                : {}),
+              ...(tonality === 'educational' && carouselDocumentModeUi !== 'auto'
+                ? { carouselDocumentMode: carouselDocumentModeUi }
+                : {}),
+              ...(trainingDatasetOptIn ? { trainingDataCaptureOptIn: true } : {}),
+            }
+          : {}),
+      });
+
+      await refreshQuota();
+
+      if (data.jobId) {
+        setJobId(data.jobId);
+        setCurrentJobId(data.jobId);
+        setTarget(15);
+        toast.success("Custom topic generation started!");
+      }
+
+      setCustomTopic('');
+    } catch (error: any) {
+      console.error('Custom topic generation error:', error);
+
+      if (error?.message?.includes('429') || error?.message?.includes('max_in_flight') || error?.message?.includes('Too Many')) {
+        toast.error("You have too many active generations. Please wait for one to complete.", { duration: 5000 });
+      } else if (error?.message?.includes('402') || error?.message?.includes('Insufficient credits')) {
+        toast.error("Insufficient credits. Please upgrade your plan.", { duration: 5000 });
+      } else if (error?.message?.includes('profanity')) {
+        toast.error("Content contains inappropriate language. Please modify your topic.");
+      } else if (error?.message?.includes('off_topic') || error?.message?.includes('off-topic')) {
+        toast.error("Please describe a topic, event, or experience for your post.");
+      } else {
+        toast.error(error?.message || "Failed to generate. Please try again.");
+      }
+
+      setIsGenerating(false);
+      setTarget(0);
+      setStage(null);
+      await refreshQuota();
+    }
+  };
+
   const previewContent = (selectedContent?.content ?? "")
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1: $2")
     .replace(/\((https?:\/\/[^\s)]+)\)/g, "$1")
@@ -894,6 +1459,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         toast.success('Post published successfully to LinkedIn!');
         fetchRecentGenerations(); // Refresh the list
         refreshQuota(); // IMMEDIATE QUOTA REFRESH
+        dispatchFeedbackEligibilityRefresh();
       } else {
         throw new Error(publishResponse.message || 'Failed to publish post');
       }
@@ -984,6 +1550,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         setSelectedContentForAction(null);
         fetchRecentGenerations(); // Refresh the list
         refreshQuota(); // IMMEDIATE QUOTA REFRESH
+        dispatchFeedbackEligibilityRefresh();
       } else {
         throw new Error(scheduleResponse.message || 'Failed to schedule post');
       }
@@ -1239,54 +1806,48 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     </div>
                   )}
 
-                  {/* Progress Display - Always visible when generating */}
+                  {/* Progress Display - Trending mode (generic) */}
                   {isGenerating && (
-                    <div className="space-y-4">
-                      <div className="text-center py-6">
-                        <div className="mb-4">
-                          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            {isComplete ? (
-                              <CheckCircle2 className="h-8 w-8 text-primary" />
-                            ) : (
-                              <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+                    <div className="text-center py-6">
+                      <div className="mb-4">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                          {isComplete ? (
+                            <CheckCircle2 className="h-8 w-8 text-primary" />
+                          ) : (
+                            <RefreshCw className="h-8 w-8 text-primary animate-spin" />
+                          )}
+                        </div>
+                        <h3 className="text-lg font-medium mb-2">
+                          {isComplete
+                            ? "Generation Complete!"
+                            : generatedContent.length === 0
+                              ? "Generating Viral Topics"
+                              : selectedType === 'post'
+                                ? "Generating Text Post"
+                                : selectedType === 'image'
+                                  ? "Generating Image Post"
+                                  : "Generating Carousel Post"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {stage || "AI is analyzing trending content and generating viral topics for you..."}
+                        </p>
+                        <div className="w-full max-w-md mx-auto">
+                          <div className="flex items-center justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="font-medium">{Math.round(displayProgress)}%</span>
+                          </div>
+                          <Progress value={displayProgress} className="h-2" />
+                        </div>
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center justify-center gap-2 text-sm">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            <span className="capitalize">{isComplete ? "Completed" : "Processing"}</span>
+                            {stage && (
+                              <>
+                                <span>•</span>
+                                <span className="text-muted-foreground">{stage}</span>
+                              </>
                             )}
-                          </div>
-                          <h3 className="text-lg font-medium mb-2">
-                            {isComplete
-                              ? "Generation Complete!"
-                              : generationMode === 'trending' && generatedContent.length === 0
-                                ? "Generating Viral Topics"
-                                : selectedType === 'post'
-                                  ? "Generating Text Post"
-                                  : selectedType === 'image'
-                                    ? "Generating Image Post"
-                                    : "Generating Carousel Post"}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            {stage || "AI is analyzing trending content and generating viral topics for you..."}
-                          </p>
-                          
-                          {/* Progress Bar */}
-                          <div className="w-full max-w-md mx-auto">
-                            <div className="flex items-center justify-between text-sm mb-2">
-                              <span className="text-muted-foreground">Progress</span>
-                              <span className="font-medium">{Math.round(displayProgress)}%</span>
-                            </div>
-                            <Progress value={displayProgress} className="h-2" />
-                          </div>
-                          
-                          {/* Job Status */}
-                          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center justify-center gap-2 text-sm">
-                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                              <span className="capitalize">{isComplete ? "Completed" : "Processing"}</span>
-                              {stage && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-muted-foreground">{stage}</span>
-                                </>
-                              )}
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -1603,50 +2164,285 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                   )}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Label htmlFor="custom-topic">Enter Your Topic</Label>
+                <div className="space-y-2.5">
+                  <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Label htmlFor="custom-topic" className="text-xs font-medium">
+                        Topic
+                      </Label>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 shrink-0">
                               <Info className="h-3 w-3 text-muted-foreground" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="right" className="max-w-80">
-                            <div className="space-y-3">
-                              <div className="font-medium flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
-                                Pro Tips
-                              </div>
-                              <div className="space-y-2 text-sm">
-                                <div>
-                                  <p className="font-medium">Trending topics perform better</p>
-                                  <p className="text-muted-foreground">Content based on trending topics gets 3x more engagement</p>
-                                </div>
-                                <div>
-                                  <p className="font-medium">Add personal insights</p>
-                                  <p className="text-muted-foreground">Edit generated content to include your unique perspective</p>
-                                </div>
-                              </div>
-                            </div>
+                          <TooltipContent side="right" className="max-w-80 text-xs">
+                            Short notes, events, study topics, rough English — all work. We expand into a polished post.
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </div>
                     <Textarea
                       id="custom-topic"
-                      placeholder="e.g., 'The future of AI in healthcare', 'Remote work productivity tips', 'Startup funding strategies'..."
+                      placeholder="College fest recap, exhibition, DSA notes, life update, product launch…"
                       value={customTopic}
-                      onChange={(e) => setCustomTopic(e.target.value)}
-                      className="mt-2"
-                      rows={3}
+                      onChange={(e) => {
+                        setCustomTopic(e.target.value);
+                        checkProfanity(e.target.value);
+                      }}
+                      className="min-h-[4.5rem] text-sm resize-y"
+                      rows={2}
                     />
+                    {isProfanityBlocked && (
+                      <p className="text-[11px] text-destructive mt-1">
+                        Content contains inappropriate language
+                      </p>
+                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    AI will research your topic across the web and create original, strategic content with insights and analysis.
-                  </p>
+
+                  <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+                      Style & length
+                    </p>
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Tonality</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                        {([
+                          { id: 'professional', label: 'Professional' },
+                          { id: 'casual', label: 'Casual' },
+                          { id: 'trendy', label: 'Trendy' },
+                          { id: 'storytelling', label: 'Story' },
+                          { id: 'bold', label: 'Bold' },
+                          { id: 'educational', label: 'Educational' },
+                          { id: 'inspirational', label: 'Inspire' },
+                        ] as const).map((t) => (
+                          <div
+                            key={t.id}
+                            className={cn(
+                              'px-2 py-1 border rounded-md cursor-pointer transition-all text-center text-[11px] sm:text-xs',
+                              tonality === t.id
+                                ? 'border-primary bg-primary/5 font-medium'
+                                : 'border-border/80 hover:border-primary/40',
+                            )}
+                            onClick={() => setTonality(t.id)}
+                          >
+                            {t.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Caption length</Label>
+                      <div className="grid grid-cols-4 gap-1">
+                        {([
+                          { id: 'short', label: 'Short' },
+                          { id: 'medium', label: 'Med' },
+                          { id: 'long', label: 'Long' },
+                          { id: 'custom', label: 'Custom' },
+                        ] as const).map((w) => (
+                          <div
+                            key={w.id}
+                            className={cn(
+                              'px-1.5 py-1 border rounded-md cursor-pointer text-center text-[11px] sm:text-xs',
+                              wordLimitKind === w.id
+                                ? 'border-primary bg-primary/5 font-medium'
+                                : 'border-border/80 hover:border-primary/40',
+                            )}
+                            onClick={() => setWordLimitKind(w.id)}
+                          >
+                            {w.label}
+                          </div>
+                        ))}
+                      </div>
+                      {wordLimitKind === 'custom' && (
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={10}
+                            max={5000}
+                            value={customWordCountInput}
+                            onChange={(e) => setCustomWordCountInput(e.target.value)}
+                            onBlur={() => {
+                              const parsed = parseInt(customWordCountInput, 10);
+                              const validated = isNaN(parsed) || parsed < 10 ? 100 : Math.min(5000, parsed);
+                              setCustomWordCount(validated);
+                              setCustomWordCountInput(String(validated));
+                            }}
+                            className="w-20 h-7 text-xs"
+                          />
+                          <span className="text-[11px] text-muted-foreground">words</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+                      Counts
+                    </p>
+                    {selectedType === 'image' && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Label className="text-xs shrink-0">Images</Label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((n) => (
+                            <Button
+                              key={n}
+                              type="button"
+                              variant={imageCount === n ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-7 w-9 px-0 text-xs"
+                              onClick={() => setImageCount(n)}
+                            >
+                              {n}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedType === 'carousel' && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Label htmlFor="slide-count" className="text-xs shrink-0">
+                          Slides
+                        </Label>
+                        <Input
+                          id="slide-count"
+                          type="number"
+                          min={2}
+                          max={20}
+                          value={slideCount}
+                          onChange={(e) =>
+                            setSlideCount(Math.max(2, Math.min(20, Number(e.target.value) || 2)))
+                          }
+                          className="w-16 h-7 text-xs"
+                        />
+                        <span className="text-[11px] text-muted-foreground">2–20</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {showCarouselStudyControls && (
+                    <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5 space-y-2">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
+                        Visual (educational)
+                      </p>
+
+                      <div>
+                        <Label htmlFor="carousel-document-mode" className="text-xs text-muted-foreground mb-1 block">
+                          Document mode
+                        </Label>
+                        <Select
+                          value={carouselDocumentModeUi}
+                          onValueChange={(v) =>
+                            setCarouselDocumentModeUi(v as typeof carouselDocumentModeUi)
+                          }
+                        >
+                          <SelectTrigger id="carousel-document-mode" className="h-8 text-xs">
+                            <SelectValue placeholder="Document mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto (from topic)</SelectItem>
+                            <SelectItem value="handwritten_notes">Handwritten notes (notebook)</SelectItem>
+                            <SelectItem value="structured_document">Structured document (PDF style)</SelectItem>
+                            <SelectItem value="none">Off — use visual style below</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {isDocumentDeckPresetActive && (
+                          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                            Cover + Table of Contents + body pages render deterministically (no LLM image).
+                            Pricing is unchanged: cover and TOC are counted toward your slide budget.
+                          </p>
+                        )}
+                      </div>
+
+                      {!isDocumentDeckPresetActive && (
+                        <div>
+                          <Label htmlFor="carousel-visual-style" className="text-xs text-muted-foreground mb-1 block">
+                            Visual style
+                          </Label>
+                          <Select
+                            value={carouselVisualStyle}
+                            onValueChange={(v) =>
+                              setCarouselVisualStyle(v as typeof carouselVisualStyle)
+                            }
+                          >
+                            <SelectTrigger id="carousel-visual-style" className="h-8 text-xs">
+                              <SelectValue placeholder="Style" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Auto (from topic)</SelectItem>
+                              <SelectItem value="handwritten_notebook">Handwritten notebook</SelectItem>
+                              <SelectItem value="handwritten_notebook_dense">Dense notebook pages</SelectItem>
+                              <SelectItem value="whiteboard_notes">Whiteboard notes</SelectItem>
+                              <SelectItem value="diagram_clean">Clean diagrams</SelectItem>
+                              <SelectItem value="stock_visual">Illustrative / stock-safe</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {!isDocumentDeckPresetActive && (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">Density</Label>
+                            <Select
+                              value={carouselNoteDensityUi}
+                              onValueChange={(v) =>
+                                setCarouselNoteDensityUi(v as typeof carouselNoteDensityUi)
+                              }
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Density" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">Auto</SelectItem>
+                                <SelectItem value="compact">Compact</SelectItem>
+                                <SelectItem value="standard">Standard</SelectItem>
+                                <SelectItem value="dense">Dense study-page</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground mb-1 block">Programming preset</Label>
+                            <Select
+                              value={carouselSubjectModeUi}
+                              onValueChange={(v) =>
+                                setCarouselSubjectModeUi(v as typeof carouselSubjectModeUi)
+                              }
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">Auto-detect</SelectItem>
+                                <SelectItem value="programming">DSA / programming</SelectItem>
+                                <SelectItem value="general">General topics</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      <label className="flex cursor-pointer items-start gap-2 text-[11px] text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-border accent-primary"
+                          checked={trainingDatasetOptIn}
+                          onChange={(e) => setTrainingDatasetOptIn(e.target.checked)}
+                        />
+                        <span>
+                          Opt in to quality dataset capture (sanitized metadata only)
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between px-1 py-1.5 rounded-md bg-muted/30 text-xs">
+                    <span className="text-muted-foreground">Est. credits</span>
+                    <span className="font-semibold tabular-nums flex items-center gap-1">
+                      {customTopicCreditCost} <Coins className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -1657,9 +2453,16 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           <Card>
             <CardContent className="pt-6">
               <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="w-full gradient-primary text-lg py-6"
+                onClick={generationMode === 'custom' ? handleCustomTopicGenerate : handleGenerate}
+                disabled={
+                  isGenerating ||
+                  (generationMode === 'custom' && (
+                    isProfanityBlocked ||
+                    customTopic.trim().length < 3 ||
+                    (userQuota ? userQuota.remainingCredits < customTopicCreditCost : false)
+                  ))
+                }
+                className="w-full gradient-primary text-base py-4 sm:py-5"
                 size="lg"
               >
                 {isGenerating ? (
@@ -1670,15 +2473,18 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                 ) : (
                   <>
                     <Zap className="h-5 w-5 mr-2" />
-                    {generationMode === 'trending' 
-                      ? (generatedContent.length > 0 && selectedTrending ? 'Generate Content' : 'Find Viral Topic')
-                      : 'Generate Content'
+                    {generationMode === 'custom'
+                      ? `Generate (${customTopicCreditCost} credits)`
+                      : (generatedContent.length > 0 && selectedTrending ? 'Generate Content' : 'Find Viral Topic')
                     }
                   </>
                 )}
               </Button>
               <p className="text-center text-[10px] sm:text-xs md:text-sm text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                This will use 1.5 <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 inline" /> • Generation takes 30-60 seconds
+                {generationMode === 'custom'
+                  ? <>This will use {customTopicCreditCost} <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 inline" /> • Generation takes 30-60 seconds</>
+                  : <>This will use 1.5 <Coins className="h-3 w-3 sm:h-3.5 sm:w-3.5 inline" /> • Generation takes 30-60 seconds</>
+                }
               </p>
             </CardContent>
           </Card>
@@ -1702,6 +2508,22 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
               </div>
             </CardHeader>
             <CardContent className="p-2 sm:p-3">
+              <div className="flex gap-1 mb-2">
+                {(['all', 'viral', 'custom'] as const).map((src) => (
+                  <button
+                    key={src}
+                    onClick={() => { setRecentSourceFilter(src); fetchRecentGenerations(src); }}
+                    className={cn(
+                      'text-[10px] sm:text-xs px-2 py-0.5 rounded-full border transition-colors',
+                      recentSourceFilter === src
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-muted/40 text-muted-foreground border-border hover:border-primary/40',
+                    )}
+                  >
+                    {src === 'all' ? 'All' : src.charAt(0).toUpperCase() + src.slice(1)}
+                  </button>
+                ))}
+              </div>
               <div className="space-y-2 sm:space-y-2.5">
                 {recentGenerations.length > 0 ? (
                   recentGenerations.map((generation) => (
@@ -1717,23 +2539,28 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                         <h4 className="font-medium text-xs sm:text-sm line-clamp-1 flex-1 group-hover:text-primary transition-colors">
                           {generation.title || 'Untitled Content'}
                         </h4>
-                        {(() => {
-                          const status = generation.publish_status || generation.status || 'ready';
-                          const statusMap: Record<string, { label: string; classes: string }> = {
-                            ready: { label: 'Ready', classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-                            published: { label: 'Published', classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-                            scheduled: { label: 'Scheduled', classes: 'bg-primary/15 text-primary dark:bg-primary/25 dark:text-primary' },
-                            draft: { label: 'Draft', classes: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' },
-                            failed: { label: 'Failed', classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
-                            publishing: { label: 'Publishing', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-                          };
-                          const s = statusMap[status] || statusMap.ready;
-                          return (
-                            <Badge variant="secondary" className={`text-xs shrink-0 ${s.classes}`}>
-                              {s.label}
-                            </Badge>
-                          );
-                        })()}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {generation.source === 'custom' && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 border-violet-300 text-violet-700 dark:border-violet-600 dark:text-violet-300">Custom</Badge>
+                          )}
+                          {(() => {
+                            const status = generation.publish_status || generation.status || 'ready';
+                            const statusMap: Record<string, { label: string; classes: string }> = {
+                              ready: { label: 'Ready', classes: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
+                              published: { label: 'Published', classes: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+                              scheduled: { label: 'Scheduled', classes: 'bg-primary/15 text-primary dark:bg-primary/25 dark:text-primary' },
+                              draft: { label: 'Draft', classes: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' },
+                              failed: { label: 'Failed', classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
+                              publishing: { label: 'Publishing', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+                            };
+                            const s = statusMap[status] || statusMap.ready;
+                            return (
+                              <Badge variant="secondary" className={`text-xs shrink-0 ${s.classes}`}>
+                                {s.label}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
                       </div>
                       
                       {generation.content && (
@@ -2234,6 +3061,115 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={
+          generationMode === "custom" &&
+          isGenerating &&
+          customProgressSteps.length > 0
+        }
+        onOpenChange={() => undefined}
+      >
+        <DialogContent
+          className="sm:max-w-md gap-3 p-4 z-[60] [&>button]:hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-primary animate-spin" />
+              Generating custom post
+            </DialogTitle>
+            <p className="text-[11px] text-muted-foreground text-left font-normal">
+              {customProgressElapsed}s elapsed
+            </p>
+          </DialogHeader>
+          {selectedType === "carousel" && carouselStyleStatusLabel && (
+            <p className="text-[11px] text-muted-foreground">
+              Visuals:{" "}
+              <span className="text-foreground font-medium">{carouselStyleStatusLabel}</span>
+            </p>
+          )}
+          {/* Show parallel generation indicator */}
+          {(() => {
+            const runningCount = customProgressSteps.filter(s => s.status === "running").length;
+            const doneCount = customProgressSteps.filter(s => s.status === "done").length;
+            const totalSlides = customProgressSteps.filter(s => s.key.startsWith("slide_")).length;
+            return runningCount > 1 ? (
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-primary/10 border border-primary/20 mb-2">
+                <div className="flex -space-x-1">
+                  {Array.from({ length: Math.min(runningCount, 3) }).map((_, i) => (
+                    <RefreshCw key={i} className="h-3 w-3 text-primary animate-spin" style={{ animationDelay: `${i * 0.15}s` }} />
+                  ))}
+                </div>
+                <span className="text-[11px] text-primary font-medium">
+                  {runningCount} slides generating in parallel
+                </span>
+              </div>
+            ) : totalSlides > 0 && doneCount > 0 ? (
+              <p className="text-[11px] text-muted-foreground mb-1">
+                {doneCount}/{totalSlides + 4} steps completed
+              </p>
+            ) : null;
+          })()}
+          <div className="space-y-1 max-h-[40vh] overflow-y-auto pr-1">
+            {customProgressSteps.map((step) => (
+              <div key={step.key} className={cn(
+                "flex items-center gap-2 text-xs py-0.5 px-1 rounded transition-colors",
+                step.status === "done" && "bg-green-500/5",
+                step.status === "running" && "bg-primary/5"
+              )}>
+                {step.status === "done" ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500 fill-green-500/20 shrink-0" />
+                ) : step.status === "running" ? (
+                  <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
+                ) : step.status === "failed" ? (
+                  <X className="h-3.5 w-3.5 text-destructive shrink-0" />
+                ) : (
+                  <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
+                )}
+                <span
+                  className={cn(
+                    step.status === "running"
+                      ? "text-primary font-medium"
+                      : step.status === "done"
+                        ? "text-green-600 dark:text-green-400"
+                        : step.status === "failed"
+                          ? "text-destructive"
+                          : "text-muted-foreground/50",
+                  )}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          <Progress value={displayProgress} className="h-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs h-8"
+            onClick={async () => {
+              if (currentJobId) {
+                try {
+                  await apiClient.delete(`/generation/job/${currentJobId}/cancel`);
+                  setIsGenerating(false);
+                  setIsFailed(true);
+                  setIsComplete(true);
+                  setCustomProgressStartedAt(null);
+                  setCustomProgressSteps([]);
+                  toast.info("Generation cancelled. Credits will be refunded.");
+                  await refreshQuota();
+                } catch {
+                  toast.error("Could not cancel the job.");
+                }
+              }
+            }}
+          >
+            Cancel
+          </Button>
         </DialogContent>
       </Dialog>
 

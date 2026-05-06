@@ -14,21 +14,15 @@ import {
   Users,
   Sparkles,
   Menu,
-  X,
   Calendar,
-  Briefcase,
-  BookOpen,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
-import { getQuotaColor } from "@/services/dataService";
-import { supabase } from "@/integrations/supabase/client";
-import { useAdmin } from "@/hooks/useAdmin";
-import { useBlogAccess } from "@/hooks/useBlogAccess";
+import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -51,15 +45,27 @@ const bottomNavItems = [
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
-const adminNavItem = { to: "/careers-admin", label: "Careers admin" } as const;
-const blogAdminNavItem = { to: "/blog-admin", label: "Blog & CMS" } as const;
+/** Credits remaining vs plan allocation, capped so bonus/admin credits never overflow the bar. */
+function getCreditsRemainingFillPercent(quota: {
+  remainingCredits: number;
+  totalCredits: number;
+}): number {
+  const total = Math.max(quota.totalCredits, 1);
+  const remaining = Math.max(0, quota.remainingCredits);
+  return Math.min(100, (remaining / total) * 100);
+}
+
+function getCreditsUsedPercentDisplay(percentageUsed: number): number {
+  return Math.min(100, Math.max(0, percentageUsed));
+}
 
 function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boolean; onToggle: () => void; onItemClick?: () => void }) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const { isAdmin } = useAdmin();
-  const blogAccess = useBlogAccess();
-  const { quota: userQuota, loading: loadingQuota } = useQuota();
+  const adminArea = useAdminAreaAccess();
+  const { quota: userQuota } = useQuota();
+
+  const remainingFillPct = userQuota ? getCreditsRemainingFillPercent(userQuota) : 0;
+  const pctUsedDisplay = userQuota ? getCreditsUsedPercentDisplay(userQuota.percentageUsed) : 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -167,101 +173,88 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
             </NavLink>
           );
         })}
-        {isAdmin ? (
-          <NavLink
-            href={adminNavItem.to}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center transition-all duration-200 group relative",
-              collapsed ? "justify-center w-full h-12 rounded-xl" : "gap-3 rounded-lg px-3 py-2.5",
-              "text-sm font-medium",
-              pathname.startsWith(adminNavItem.to)
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-            aria-current={pathname.startsWith(adminNavItem.to) ? "page" : undefined}
-            title={collapsed ? adminNavItem.label : undefined}
-          >
-            <Briefcase className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
-            {!collapsed && <span>{adminNavItem.label}</span>}
-            {collapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                {adminNavItem.label}
+
+        {!adminArea.loading && adminArea.canEnter ? (
+          <div className="space-y-1 shrink-0 border-t border-border/50 pt-3 mt-2">
+            {!collapsed && (
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <Shield className="h-3.5 w-3.5" />
+                Admin
               </div>
             )}
-          </NavLink>
-        ) : null}
-        {!blogAccess.loading && blogAccess.canManageBlog ? (
-          <NavLink
-            href={blogAdminNavItem.to}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center transition-all duration-200 group relative",
-              collapsed ? "justify-center w-full h-12 rounded-xl" : "gap-3 rounded-lg px-3 py-2.5",
-              "text-sm font-medium",
-              pathname.startsWith(blogAdminNavItem.to)
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-            aria-current={pathname.startsWith(blogAdminNavItem.to) ? "page" : undefined}
-            title={collapsed ? blogAdminNavItem.label : undefined}
-          >
-            <BookOpen className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
-            {!collapsed && <span>{blogAdminNavItem.label}</span>}
-            {collapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                {blogAdminNavItem.label}
-              </div>
-            )}
-          </NavLink>
+            <NavLink
+              href="/admin"
+              onClick={onItemClick}
+              className={cn(
+                "flex items-center transition-all duration-200 group relative",
+                collapsed
+                  ? "justify-center w-full h-12 rounded-xl"
+                  : "gap-3 rounded-lg px-3 py-2.5",
+                "text-sm font-medium",
+                pathname.startsWith("/admin")
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              title={collapsed ? "Admin panel" : undefined}
+            >
+              <Shield className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
+              {!collapsed && <span>Admin panel</span>}
+              {collapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  Admin panel
+                </div>
+              )}
+            </NavLink>
+          </div>
         ) : null}
       </nav>
 
       {/* Credits Progress Bar */}
       {!collapsed && userQuota && (
-        <div className="px-6 py-4 border-t border-border/50 shrink-0">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">AI Credits</span>
+        <div className="px-6 py-4 border-t border-border/50 shrink-0 min-w-0">
+          <div className="space-y-3 min-w-0">
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Zap className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium truncate">AI Credits</span>
               </div>
               <Badge 
                 variant={
-                  userQuota.percentageUsed < 20 
+                  pctUsedDisplay < 20 
                     ? 'default' 
-                    : userQuota.percentageUsed < 80
+                    : pctUsedDisplay < 80
                     ? 'secondary'
                     : 'destructive'
                 }
-                className="text-xs"
+                className="text-xs shrink-0"
               >
-                {userQuota.percentageUsed.toFixed(0)}%
+                {pctUsedDisplay.toFixed(0)}%
               </Badge>
             </div>
             
-            <div className="space-y-2">
-              <div className="w-full bg-muted/30 rounded-full h-2">
+            <div className="space-y-2 min-w-0">
+              <div className="w-full max-w-full bg-muted/30 rounded-full h-2 overflow-hidden">
                 <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    userQuota.percentageUsed < 20 
+                  className={`h-2 rounded-full transition-all duration-300 max-w-full ${
+                    pctUsedDisplay < 20 
                       ? 'bg-green-500' 
-                      : userQuota.percentageUsed < 80
+                      : pctUsedDisplay < 80
                       ? 'bg-orange-500'
                       : 'bg-red-500'
                   }`}
                   style={{ 
-                    width: `${Math.max(100 - userQuota.percentageUsed, 0)}%` 
+                    width: `${remainingFillPct}%`,
                   }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{userQuota.remainingCredits} left</span>
-                <span>{userQuota.totalCredits} total</span>
+              <div className="flex justify-between gap-2 text-xs text-muted-foreground min-w-0">
+                <span className="truncate">{userQuota.remainingCredits} left</span>
+                <span className="shrink-0">{userQuota.totalCredits} total</span>
               </div>
             </div>
 
-            {userQuota.percentageUsed >= 80 && (
+            {pctUsedDisplay >= 80 && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -276,21 +269,29 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
         </div>
       )}
 
-      {/* Collapsed Credits Indicator */}
+      {/* Collapsed: vertical "tank" — fill anchored to bottom, shrinks upward as credits are used */}
       {collapsed && userQuota && (
-        <div className="px-2 py-2 border-t border-border/50 shrink-0">
-          <div className="flex flex-col items-center space-y-1">
-            <div className={`w-8 h-1.5 rounded-full ${
-              userQuota.percentageUsed < 20 
-                ? 'bg-green-500' 
-                : userQuota.percentageUsed < 80
-                ? 'bg-orange-500'
-                : 'bg-red-500'
-            }`} />
-            <span className="text-xs text-muted-foreground font-medium">
-              {userQuota.remainingCredits}
-            </span>
+        <div className="px-2 py-3 border-t border-border/50 shrink-0 flex flex-col items-center gap-1.5">
+          <div
+            className="relative w-2.5 h-14 shrink-0 rounded-full bg-muted/40 overflow-hidden border border-border/40"
+            title={`AI Credits: ${userQuota.remainingCredits} left (${userQuota.totalCredits} plan)`}
+            aria-label={`AI Credits: ${userQuota.remainingCredits} remaining`}
+          >
+            <div
+              className={cn(
+                "absolute bottom-0 left-0 right-0 rounded-full transition-all duration-300",
+                pctUsedDisplay < 20
+                  ? "bg-green-500"
+                  : pctUsedDisplay < 80
+                    ? "bg-orange-500"
+                    : "bg-red-500",
+              )}
+              style={{ height: `${remainingFillPct}%` }}
+            />
           </div>
+          <span className="text-[10px] leading-tight text-muted-foreground font-medium tabular-nums max-w-full truncate px-0.5">
+            {userQuota.remainingCredits}
+          </span>
         </div>
       )}
 

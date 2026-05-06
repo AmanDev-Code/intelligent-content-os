@@ -70,6 +70,7 @@ export default function Generations() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginatedResponse<GeneratedContent>['pagination']>({
     page: 1,
@@ -107,14 +108,13 @@ export default function Generations() {
     }
   };
 
-  const fetchContent = useCallback(async (page: number = 1, search: string = '', status: string = 'all') => {
+  const fetchContent = useCallback(async (page: number = 1, search: string = '', status: string = 'all', source: string = 'all') => {
     if (!user?.id) return;
     
     setLoading(true);
     try {
-      const response = await dataService.getPaginatedContent(user.id, page, 20);
+      const response = await dataService.getPaginatedContent(user.id, page, 20, source !== 'all' ? source : undefined);
       
-      // Apply client-side filtering for now (can be moved to backend later)
       let filteredData = response.data;
       
       if (search.trim()) {
@@ -126,7 +126,6 @@ export default function Generations() {
       
       if (status !== 'all') {
         filteredData = filteredData.filter(item => {
-          // Use publish_status for filtering, fallback to 'ready' if not set
           const itemStatus = item.publish_status || 'ready';
           return itemStatus === status;
         });
@@ -143,8 +142,8 @@ export default function Generations() {
   }, [user?.id]);
 
   useEffect(() => {
-    fetchContent(currentPage, searchTerm, statusFilter);
-  }, [fetchContent, currentPage, searchTerm, statusFilter]);
+    fetchContent(currentPage, searchTerm, statusFilter, sourceFilter);
+  }, [fetchContent, currentPage, searchTerm, statusFilter, sourceFilter]);
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
@@ -271,6 +270,17 @@ export default function Generations() {
             />
           </div>
           
+          <Select value={sourceFilter} onValueChange={(v) => { setSourceFilter(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="viral">Viral</SelectItem>
+              <SelectItem value="custom">Custom</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Select value={statusFilter} onValueChange={handleStatusFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <Filter className="h-4 w-4 mr-2" />
@@ -352,6 +362,9 @@ export default function Generations() {
                       <div className="shrink-0">
                         {getContentTypeIcon(item.visual_type)}
                       </div>
+                      {(item as any).source === 'custom' && (
+                        <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0 border-violet-300 text-violet-700 dark:border-violet-600 dark:text-violet-300">Custom</Badge>
+                      )}
                       <Badge 
                         variant="secondary"
                         className={`${statusColors[(item.publish_status || 'ready') as keyof typeof statusColors] || statusColors.ready} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5`}

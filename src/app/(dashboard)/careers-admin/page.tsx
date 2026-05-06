@@ -1,3 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-export { default } from "@/views/CareersAdminPage";
+export default function LegacyCareersAdminRedirect() {
+  redirect("/admin/careers");
+}

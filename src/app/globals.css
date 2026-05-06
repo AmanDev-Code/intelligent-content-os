@@ -397,6 +397,16 @@
     );
   }
 
+  /* LinkedIn connecting card — animated border pulse */
+  @keyframes connecting-border-pulse {
+    0%, 100% { border-color: hsl(var(--primary) / 0.3); box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+    50% { border-color: hsl(var(--primary) / 0.7); box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1); }
+  }
+
+  .linkedin-connecting-card {
+    animation: connecting-border-pulse 2s ease-in-out infinite;
+  }
+
   /* Toast positioning for mobile */
   @media (max-width: 640px) {
     [data-sonner-toaster] {

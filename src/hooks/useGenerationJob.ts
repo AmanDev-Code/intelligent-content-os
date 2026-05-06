@@ -17,8 +17,12 @@ type JobRow = {
   error: string | null;
 };
 
-const POLL_INTERVAL_MS = 3000; // Poll every 3 seconds (Realtime should handle updates faster)
-const MAX_POLL_TIME_MS = 120000; // Maximum 2 minutes
+const POLL_INTERVAL_MS = 3000;
+// Hard ceiling so we never hang forever (carousel generations can take 4–6 min).
+const HARD_TIMEOUT_MS = 600000; // 10 minutes
+// Heartbeat: if we receive no progress signal for this long, consider the job stalled.
+// Most steps (slide render + MinIO upload) finish well under this window.
+const STALL_TIMEOUT_MS = 90000; // 90 seconds without any progress signal
 
 export function useGenerationJob({
   jobId,
@@ -28,9 +32,11 @@ export function useGenerationJob({
 }: UseGenerationJobOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const pollRef = useRef<number | null>(null);
-  const timeoutRef = useRef<number | null>(null);
+  const hardTimeoutRef = useRef<number | null>(null);
+  const stallTimeoutRef = useRef<number | null>(null);
   const isTerminalRef = useRef(false);
   const lastSnapshotRef = useRef('');
+  const lastProgressAtRef = useRef<number>(0);
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
   callbacksRef.current = { onComplete, onFailed, onProgress };
 
@@ -39,9 +45,13 @@ export function useGenerationJob({
       window.clearInterval(pollRef.current);
       pollRef.current = null;
     }
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+    if (hardTimeoutRef.current) {
+      window.clearTimeout(hardTimeoutRef.current);
+      hardTimeoutRef.current = null;
+    }
+    if (stallTimeoutRef.current) {
+      window.clearTimeout(stallTimeoutRef.current);
+      stallTimeoutRef.current = null;
     }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -51,58 +61,92 @@ export function useGenerationJob({
 
   useEffect(() => {
     if (!jobId) {
-      console.log('⏸️ useGenerationJob: No jobId, skipping');
       return;
     }
 
-    console.log('🚀 useGenerationJob: Starting to watch jobId:', jobId);
     isTerminalRef.current = false;
     lastSnapshotRef.current = '';
+    lastProgressAtRef.current = Date.now();
+
+    // Heartbeat-based stall detection: reset every time progress is observed.
+    const armStallTimer = () => {
+      if (stallTimeoutRef.current) {
+        window.clearTimeout(stallTimeoutRef.current);
+      }
+      stallTimeoutRef.current = window.setTimeout(() => {
+        if (isTerminalRef.current) return;
+        // Listen one more time for SSE side-channel updates before surrendering.
+        const sinceLast = Date.now() - lastProgressAtRef.current;
+        if (sinceLast < STALL_TIMEOUT_MS) {
+          armStallTimer();
+          return;
+        }
+        isTerminalRef.current = true;
+        cleanup();
+        callbacksRef.current.onFailed?.(
+          'Generation appears stalled (no progress for 90s). Please retry.',
+        );
+      }, STALL_TIMEOUT_MS);
+    };
+
+    const noteProgress = () => {
+      lastProgressAtRef.current = Date.now();
+      armStallTimer();
+    };
 
     const processRow = (row: JobRow) => {
       const snap = `${row.status}|${row.progress}|${row.content_id ?? ''}`;
       if (snap === lastSnapshotRef.current) return;
       lastSnapshotRef.current = snap;
+      noteProgress();
 
       callbacksRef.current.onProgress?.(row.progress, row.current_stage);
 
-      // Simple: check if content_id exists OR status is ready
       if (row.content_id && !isTerminalRef.current) {
         isTerminalRef.current = true;
-        cleanup(); // Stop polling immediately
+        cleanup();
         callbacksRef.current.onComplete?.(row.content_id);
       } else if (row.status === 'failed') {
         isTerminalRef.current = true;
-        cleanup(); // Stop polling immediately
+        cleanup();
         callbacksRef.current.onFailed?.(row.error);
       }
     };
 
     const fetchLatest = async () => {
       if (isTerminalRef.current) return;
-      
+
       const { data } = await supabase
         .from('generation_jobs')
         .select('status, progress, current_stage, content_id, error')
         .eq('id', jobId)
         .maybeSingle();
-      
+
       if (data) processRow(data as JobRow);
     };
 
-    // Initial fetch + polling fallback
     void fetchLatest();
     pollRef.current = window.setInterval(fetchLatest, POLL_INTERVAL_MS);
-    timeoutRef.current = window.setTimeout(() => {
+
+    // SSE pings the same window — treat any progress event for our job as a heartbeat
+    // so the stall detector doesn't trip while slides are actively rendering.
+    const sseHeartbeat = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { generationId?: string } | undefined;
+      if (detail?.generationId === jobId) noteProgress();
+    };
+    window.addEventListener('trndinn:generation-progress', sseHeartbeat);
+    window.addEventListener('trndinn:generation-completed', sseHeartbeat);
+
+    armStallTimer();
+    hardTimeoutRef.current = window.setTimeout(() => {
       if (isTerminalRef.current) return;
       isTerminalRef.current = true;
       cleanup();
       callbacksRef.current.onFailed?.(
-        'Generation timeout: no completion signal received. Please retry.',
+        'Generation timeout: maximum duration exceeded (10 minutes). Please retry.',
       );
-    }, MAX_POLL_TIME_MS);
+    }, HARD_TIMEOUT_MS);
 
-    // Realtime subscription
     const channel = supabase
       .channel(`generation-job-${jobId}`)
       .on(
@@ -123,7 +167,11 @@ export function useGenerationJob({
 
     channelRef.current = channel;
 
-    return cleanup;
+    return () => {
+      window.removeEventListener('trndinn:generation-progress', sseHeartbeat);
+      window.removeEventListener('trndinn:generation-completed', sseHeartbeat);
+      cleanup();
+    };
   }, [jobId, cleanup]);
 
   return { unsubscribe: cleanup };

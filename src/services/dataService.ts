@@ -13,6 +13,7 @@ export interface GeneratedContent {
   visual_type: string | null;
   visual_url: string | null;
   carousel_urls: string[] | null;
+  image_urls?: string[] | null;
   status: string;
   publish_status?: string;
   linkedin_post_id?: string;
@@ -201,10 +202,11 @@ export class DataService {
   async getPaginatedContent(
     userId: string, 
     page: number = 1, 
-    limit: number = 20
+    limit: number = 20,
+    source?: string
   ): Promise<PaginatedResponse<GeneratedContent>> {
     try {
-      const response = await api.generation.content(page, limit);
+      const response = await api.generation.content(page, limit, source);
       return {
         ...response,
         data: this.normalizeGeneratedContentList((response.data || []) as GeneratedContent[]),
