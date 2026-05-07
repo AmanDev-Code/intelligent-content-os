@@ -1864,7 +1864,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                   )}
 
                   {/* Progress Display - Trending mode (generic) */}
-                  {isGenerating && !isLoadingContent && (
+                  {isGenerating && (
                     <div className="text-center py-6">
                       <div className="mb-4">
                         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">

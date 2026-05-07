@@ -106,26 +106,27 @@ export function CalendarDayPostsModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px] max-h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               {formatDate(date)}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="mt-2">
+          <div className="mt-2 flex-1 min-h-0 overflow-hidden">
             {posts.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No posts for this day</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-[400px] pr-4">
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {posts.length} post{posts.length !== 1 ? 's' : ''} on this day
-                  </p>
+              <>
+                <p className="text-sm text-muted-foreground mb-3 shrink-0">
+                  {posts.length} post{posts.length !== 1 ? 's' : ''} on this day
+                </p>
+                <ScrollArea className="h-[calc(85vh-180px)] pr-4">
+                  <div className="space-y-3 pb-2">
                   {posts.map((post) => {
                     const cfg = statusConfig[post.status] || statusConfig.scheduled;
                     const StatusIcon = cfg.icon;
@@ -194,8 +195,9 @@ export function CalendarDayPostsModal({
                       </Card>
                     );
                   })}
-                </div>
-              </ScrollArea>
+                  </div>
+                </ScrollArea>
+              </>
             )}
           </div>
         </DialogContent>
