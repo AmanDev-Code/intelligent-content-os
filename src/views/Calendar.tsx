@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +37,15 @@ import {
   CalendarDays,
   CalendarRange,
   Layers3,
-  Wand2
+  Wand2,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuota } from "@/contexts/QuotaContext";
+import { apiClient } from "@/lib/apiClient";
+import { toast } from "sonner";
+import { CalendarDayPostsModal } from "@/components/calendar/CalendarDayPostsModal";
 
 const viewModes = [
   { id: 'day', label: 'Day', icon: Calendar1 },
@@ -122,9 +128,99 @@ const mockPosts = [
   },
 ];
 
+interface CalendarPost {
+  id: string;
+  title: string;
+  start: string;
+  type: 'scheduled' | 'published';
+  status: string;
+  content?: {
+    id: string;
+    title: string;
+    content: string;
+    visual_type?: string;
+    hashtags?: string[];
+    visual_url?: string;
+    ai_score?: number;
+  };
+}
+
 export default function Calendar() {
+  const { user } = useAuth();
+  const { quota } = useQuota();
   const [currentView, setCurrentView] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarPosts, setCalendarPosts] = useState<CalendarPost[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedDayPosts, setSelectedDayPosts] = useState<CalendarPost[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDayModal, setShowDayModal] = useState(false);
+
+  const fetchCalendarPosts = useCallback(async () => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      
+      const response = await apiClient.get('/posts/calendar', {
+        params: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        },
+      });
+      
+      setCalendarPosts(response.events || response.data?.posts || []);
+    } catch (error) {
+      console.error('Error fetching calendar posts:', error);
+      toast.error('Failed to load calendar posts');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, currentDate]);
+
+  useEffect(() => {
+    fetchCalendarPosts();
+  }, [fetchCalendarPosts]);
+
+  const getPostsForDay = (dayNumber: number): CalendarPost[] => {
+    return calendarPosts.filter((post) => {
+      const postDate = new Date(post.start);
+      return (
+        postDate.getDate() === dayNumber &&
+        postDate.getMonth() === currentDate.getMonth() &&
+        postDate.getFullYear() === currentDate.getFullYear()
+      );
+    });
+  };
+
+  const handleDayClick = (dayNumber: number) => {
+    const postsForDay = getPostsForDay(dayNumber);
+    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNumber);
+    setSelectedDate(clickedDate);
+    setSelectedDayPosts(postsForDay);
+    setShowDayModal(true);
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(newDate.getMonth() - 1);
+      } else {
+        newDate.setMonth(newDate.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const scheduledCount = calendarPosts.filter((p) => p.status === 'scheduled').length;
+  const publishedCount = calendarPosts.filter((p) => p.status === 'published').length;
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
@@ -188,15 +284,12 @@ export default function Calendar() {
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <Badge variant="secondary" className="text-xs">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +15%
-              </Badge>
+              {loading && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Scheduled Posts</p>
-              <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">12</p>
-              <p className="text-xs text-muted-foreground">Next: Today 2:30 PM</p>
+              <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">{scheduledCount}</p>
+              <p className="text-xs text-muted-foreground">This month</p>
             </div>
           </CardContent>
         </Card>
@@ -206,17 +299,13 @@ export default function Calendar() {
           <CardContent className="p-6 relative">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-green-500/10 rounded-lg">
-                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-              <Badge variant="secondary" className="text-xs">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                1 Active
-              </Badge>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Connected Channels</p>
-              <p className="text-3xl font-bold text-green-700 dark:text-green-300">1</p>
-              <p className="text-xs text-muted-foreground">LinkedIn • 2.4K followers</p>
+              <p className="text-sm font-medium text-muted-foreground">Published Posts</p>
+              <p className="text-3xl font-bold text-green-700 dark:text-green-300">{publishedCount}</p>
+              <p className="text-xs text-muted-foreground">This month</p>
             </div>
           </CardContent>
         </Card>
@@ -230,13 +319,13 @@ export default function Calendar() {
               </div>
               <Badge variant="secondary" className="text-xs">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +23%
+                Total
               </Badge>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">This Month</p>
-              <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">48</p>
-              <p className="text-xs text-muted-foreground">Posts published • 8.2% avg engagement</p>
+              <p className="text-3xl font-bold text-purple-700 dark:text-purple-300">{calendarPosts.length}</p>
+              <p className="text-xs text-muted-foreground">Posts total</p>
             </div>
           </CardContent>
         </Card>
@@ -250,13 +339,13 @@ export default function Calendar() {
               </div>
               <Badge variant="secondary" className="text-xs">
                 <Sparkles className="h-3 w-3 mr-1" />
-                47 Left
+                {quota?.remainingCredits ?? 0} Left
               </Badge>
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">AI Credits</p>
-              <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">53</p>
-              <p className="text-xs text-muted-foreground">3 used today • Resets in 18 days</p>
+              <p className="text-3xl font-bold text-orange-700 dark:text-orange-300">{quota?.usedCredits ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Used this period</p>
             </div>
           </CardContent>
         </Card>
@@ -266,18 +355,18 @@ export default function Calendar() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-6">
             <div className="flex items-center gap-1 sm:gap-3">
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateMonth('prev')}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <div className="text-center min-w-[140px] sm:min-w-[200px]">
                 <h2 className="text-lg sm:text-2xl font-bold">{formatDate(currentDate)}</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground">12 posts scheduled this month</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{calendarPosts.length} posts this month</p>
               </div>
-              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+              <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateMonth('next')}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm" onClick={goToToday}>
               <Target className="h-4 w-4" /> Today
             </Button>
           </div>
@@ -396,69 +485,76 @@ export default function Calendar() {
               ))}
             </div>
             <div className="grid grid-cols-7 gap-1 sm:gap-2">
-              {Array.from({ length: 35 }, (_, i) => {
-                const dayNumber = i - 5; // Adjust for month start
-                const isCurrentMonth = dayNumber > 0 && dayNumber <= 31;
-                const isToday = dayNumber === new Date().getDate();
-                const hasPost = dayNumber === 7 || dayNumber === 8 || dayNumber === 15;
+              {(() => {
+                const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+                const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+                const today = new Date();
+                const isCurrentMonthView = today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
                 
-                return (
-                  <div
-                    key={i}
-                    className={cn("min-h-[48px] sm:min-h-[80px] md:min-h-[140px] p-1 sm:p-2 md:p-3 rounded-md sm:rounded-xl transition-all",
-                      isCurrentMonth 
-                        ? "bg-card border border-border/50" 
-                        : "bg-muted/20 border border-transparent",
-                      isToday && "ring-2 ring-primary bg-primary/5",
-                      hasPost && "bg-gradient-to-br from-primary/5 to-primary/10"
-                    )}
-                  >
-                    {isCurrentMonth && (
-                      <>
-                        <div className={cn(
-                          "text-sm font-semibold mb-3 flex items-center justify-between",
-                          isToday && "text-primary"
-                        )}>
-                          <span>{dayNumber}</span>
-                          {hasPost && (
-                            <div className="w-2 h-2 bg-primary rounded-full"></div>
-                          )}
-                        </div>
-                        {/* Sample posts for demo */}
-                        {dayNumber === 7 && (
-                          <div className="space-y-2">
-                            <div className="text-xs p-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <div className="flex items-center gap-1 mb-1">
-                                <Clock className="h-3 w-3 text-blue-600" />
-                                <span className="font-medium text-blue-700 dark:text-blue-300">10:00 AM</span>
-                              </div>
-                              <p className="text-blue-800 dark:text-blue-200 truncate">AI Revolution Post</p>
-                            </div>
-                            <div className="text-xs p-2 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800">
-                              <div className="flex items-center gap-1 mb-1">
-                                <Clock className="h-3 w-3 text-green-600" />
-                                <span className="font-medium text-green-700 dark:text-green-300">2:30 PM</span>
-                              </div>
-                              <p className="text-green-800 dark:text-green-200 truncate">Marketing Tips</p>
-                            </div>
+                return Array.from({ length: 42 }, (_, i) => {
+                  const dayNumber = i - firstDayOfMonth + 1;
+                  const isCurrentMonth = dayNumber > 0 && dayNumber <= daysInMonth;
+                  const isToday = isCurrentMonthView && dayNumber === today.getDate();
+                  const dayPosts = isCurrentMonth ? getPostsForDay(dayNumber) : [];
+                  const hasPost = dayPosts.length > 0;
+                  
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => isCurrentMonth && handleDayClick(dayNumber)}
+                      className={cn(
+                        "min-h-[48px] sm:min-h-[80px] md:min-h-[140px] p-1 sm:p-2 md:p-3 rounded-md sm:rounded-xl transition-all",
+                        isCurrentMonth 
+                          ? "bg-card border border-border/50 cursor-pointer hover:border-primary/50 hover:shadow-sm" 
+                          : "bg-muted/20 border border-transparent",
+                        isToday && "ring-2 ring-primary bg-primary/5",
+                        hasPost && "bg-gradient-to-br from-primary/5 to-primary/10"
+                      )}
+                    >
+                      {isCurrentMonth && (
+                        <>
+                          <div className={cn(
+                            "text-sm font-semibold mb-1 sm:mb-3 flex items-center justify-between",
+                            isToday && "text-primary"
+                          )}>
+                            <span>{dayNumber}</span>
+                            {hasPost && (
+                              <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                {dayPosts.length}
+                              </Badge>
+                            )}
                           </div>
-                        )}
-                        {dayNumber === 8 && (
-                          <div className="space-y-2">
-                            <div className="text-xs p-2 bg-purple-50 dark:bg-purple-950/50 rounded-lg border border-purple-200 dark:border-purple-800">
-                              <div className="flex items-center gap-1 mb-1">
-                                <Clock className="h-3 w-3 text-purple-600" />
-                                <span className="font-medium text-purple-700 dark:text-purple-300">9:15 AM</span>
-                              </div>
-                              <p className="text-purple-800 dark:text-purple-200 truncate">Startup Culture</p>
-                            </div>
+                          {/* Show first 2 posts on desktop */}
+                          <div className="hidden md:block space-y-1">
+                            {dayPosts.slice(0, 2).map((post) => {
+                              const isScheduled = post.status === 'scheduled';
+                              const colorClass = isScheduled 
+                                ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200'
+                                : 'bg-green-50 dark:bg-green-950/50 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200';
+                              const iconColorClass = isScheduled ? 'text-blue-600' : 'text-green-600';
+                              
+                              return (
+                                <div key={post.id} className={`text-xs p-1.5 rounded-lg border ${colorClass}`}>
+                                  <div className="flex items-center gap-1 mb-0.5">
+                                    <Clock className={`h-2.5 w-2.5 ${iconColorClass}`} />
+                                    <span className="font-medium text-[10px]">
+                                      {new Date(post.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                    </span>
+                                  </div>
+                                  <p className="truncate text-[10px]">{post.content?.title || post.title}</p>
+                                </div>
+                              );
+                            })}
+                            {dayPosts.length > 2 && (
+                              <p className="text-[10px] text-muted-foreground text-center">+{dayPosts.length - 2} more</p>
+                            )}
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                        </>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -586,6 +682,15 @@ export default function Calendar() {
           </CardContent>
         </Card>
       )}
+
+      {/* Calendar Day Posts Modal */}
+      <CalendarDayPostsModal
+        open={showDayModal}
+        onOpenChange={setShowDayModal}
+        date={selectedDate}
+        posts={selectedDayPosts}
+        onRefresh={fetchCalendarPosts}
+      />
     </div>
   );
 }

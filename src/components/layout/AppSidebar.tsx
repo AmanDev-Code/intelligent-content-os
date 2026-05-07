@@ -16,6 +16,7 @@ import {
   Menu,
   Calendar,
   Shield,
+  MessageSquarePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuota } from "@/contexts/QuotaContext";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
+import { UserFeedbackModal } from "@/components/feedback/UserFeedbackModal";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -335,6 +337,31 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
               </NavLink>
             );
           })}
+
+          {/* Feedback Button */}
+          <UserFeedbackModal
+            trigger={
+              <button
+                type="button"
+                className={cn(
+                  "flex items-center transition-all duration-200 group relative w-full",
+                  collapsed
+                    ? "justify-center h-12 rounded-xl"
+                    : "gap-3 rounded-lg px-3 py-2",
+                  "text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                title={collapsed ? "Send Feedback" : undefined}
+              >
+                <MessageSquarePlus className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden="true" />
+                {!collapsed && <span>Send Feedback</span>}
+                {collapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    Send Feedback
+                  </div>
+                )}
+              </button>
+            }
+          />
         </nav>
       </div>
     </div>

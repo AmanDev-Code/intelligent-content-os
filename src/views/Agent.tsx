@@ -168,6 +168,13 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const trendingModalSessionRef = useRef<AbortController | null>(null);
   /** Buffer SSE events that arrive before currentJobId is set (timing race between API response and worker). */
   const sseEventBufferRef = useRef<Map<string, Array<{ type: 'progress' | 'completed'; detail: any }>>>(new Map());
+  // Fetch guards to prevent duplicate requests
+  const fetchingPostingIdentitiesRef = useRef(false);
+  const lastPostingIdentitiesFetchRef = useRef<number>(0);
+  const fetchingRecentGenerationsRef = useRef(false);
+  const lastRecentGenerationsFetchRef = useRef<number>(0);
+  const POSTING_IDENTITIES_CACHE_TTL = 10000; // 10 seconds
+  const RECENT_GENERATIONS_CACHE_TTL = 5000; // 5 seconds
   const [userTimezone, setUserTimezone] = useState<string>(getPreferredTimezoneSync());
   const [postingIdentities, setPostingIdentities] = useState<PostingIdentity[]>([]);
   const [selectedPostingIdentityId, setSelectedPostingIdentityId] = useState<string>("");
@@ -603,7 +610,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         if (content) {
           setSelectedContent(dataService.normalizeGeneratedContent(content));
           setShowContentModal(true);
-          await fetchRecentGenerations();
+          await fetchRecentGenerations(undefined, true); // Force refresh after new content
         }
       } catch { /* best effort */ }
       setAutoOpenContentId(null);
@@ -647,7 +654,17 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
   useEffect(() => {
     if (!user?.id) return;
+    
+    // Prevent concurrent fetches
+    if (fetchingPostingIdentitiesRef.current) return;
+    
+    // Skip if fetched recently
+    const now = Date.now();
+    if (now - lastPostingIdentitiesFetchRef.current < POSTING_IDENTITIES_CACHE_TTL) return;
+    
     let cancelled = false;
+    fetchingPostingIdentitiesRef.current = true;
+    
     const loadPostingIdentities = async () => {
       try {
         setLoadingPostingIdentities(true);
@@ -658,6 +675,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         const defaultIdentityId = response?.defaultIdentityId;
         if (cancelled) return;
         setPostingIdentities(identities);
+        lastPostingIdentitiesFetchRef.current = Date.now();
         if (identities.length > 0) {
           setSelectedPostingIdentityId((prev) => {
             if (prev && identities.some((i: PostingIdentity) => i.id === prev)) {
@@ -678,6 +696,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           setSelectedPostingIdentityId("");
         }
       } finally {
+        fetchingPostingIdentitiesRef.current = false;
         if (!cancelled) {
           setLoadingPostingIdentities(false);
         }
@@ -794,9 +813,18 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     }
   }, [user?.id]);
 
-  const fetchRecentGenerations = useCallback(async (sourceOverride?: 'all' | 'viral' | 'custom') => {
+  const fetchRecentGenerations = useCallback(async (sourceOverride?: 'all' | 'viral' | 'custom', force = false) => {
     if (!user?.id) return;
+    
+    // Prevent concurrent fetches
+    if (fetchingRecentGenerationsRef.current) return;
+    
+    // Skip if fetched recently (unless forced)
+    const now = Date.now();
+    if (!force && now - lastRecentGenerationsFetchRef.current < RECENT_GENERATIONS_CACHE_TTL) return;
+    
     const src = sourceOverride ?? recentSourceFilter;
+    fetchingRecentGenerationsRef.current = true;
     
     try {
       const paginatedData = await dataService.getPaginatedContent(user.id, 1, 3, src !== 'all' ? src : undefined);
@@ -804,10 +832,13 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       
       setRecentGenerations(posts);
       setTotalGenerationsCount(paginatedData.pagination.total || 0);
+      lastRecentGenerationsFetchRef.current = Date.now();
     } catch (error) {
       console.error('Error fetching recent generations:', error);
       setRecentGenerations([]);
       setTotalGenerationsCount(0);
+    } finally {
+      fetchingRecentGenerationsRef.current = false;
     }
   }, [user?.id, recentSourceFilter]);
 
@@ -1101,8 +1132,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         }
         
         setTimeout(() => setJobId(null), 5000);
-        fetchRecentGenerations();
-        await refreshQuota(); // Refresh credits everywhere (sidebar, header, dashboard, billing)
+        fetchRecentGenerations(undefined, true); // Force refresh after generation complete
+        await refreshQuota(true); // Force refresh credits everywhere (sidebar, header, dashboard, billing)
       } catch (error) {
         console.error('Error in handleComplete:', error);
         if (generatedContent.length > 0) {
@@ -1148,13 +1179,39 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     [setTarget]
   );
 
+  // Format stage labels for better UX
+  const formatStageLabel = (stage: string | null): string => {
+    if (!stage) return '';
+    const stageLabels: Record<string, string> = {
+      'initializing': 'Initializing...',
+      'validating': 'Validating topic...',
+      'reserving_credits': 'Reserving credits...',
+      'generating_text': 'Generating text...',
+      'enhancing_text': 'Enhancing & expanding...',
+      'composing_pages': 'Planning slides...',
+      'planning_slides': 'Planning slides...',
+      'saving': 'Saving to storage...',
+      'done': 'Done!',
+      'topic_discovery': 'Discovering trending topics...',
+      'n8n_triggered': 'AI workflow started...',
+      'waiting_for_callback': 'Generating content...',
+      'content_generation': 'Creating your content...',
+      'image_generation': 'Generating images...',
+      'carousel_generation': 'Building carousel slides...',
+      'finalizing': 'Finalizing content...',
+    };
+    return stageLabels[stage] || stage.replace(/_/g, ' ');
+  };
+
   const handleProgress = useCallback((progress: number, currentStage: string | null) => {
     setTarget(progress);
-    setStage(currentStage);
+    setStage(formatStageLabel(currentStage));
   }, [setTarget]);
 
   useGenerationJob({
     jobId,
+    contentType: selectedType as 'text' | 'image' | 'carousel',
+    slideCount: selectedType === 'carousel' ? slideCount : undefined,
     onComplete: handleComplete,
     onFailed: handleFailed,
     onProgress: handleProgress,
@@ -1201,7 +1258,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       });
       
       // Refresh quota after successful start
-      await refreshQuota();
+      await refreshQuota(true);
       
       if (data.jobId) {
         setJobId(data.jobId);
@@ -1232,7 +1289,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       setStage(null);
       
       // Refresh quota to get updated balance
-      await refreshQuota();
+      await refreshQuota(true);
     }
   };
 
@@ -1362,7 +1419,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           : {}),
       });
 
-      await refreshQuota();
+      await refreshQuota(true);
 
       if (data.jobId) {
         setJobId(data.jobId);
@@ -1390,7 +1447,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       setIsGenerating(false);
       setTarget(0);
       setStage(null);
-      await refreshQuota();
+      await refreshQuota(true);
     }
   };
 
@@ -1457,8 +1514,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
       if (publishResponse.success) {
         toast.success('Post published successfully to LinkedIn!');
-        fetchRecentGenerations(); // Refresh the list
-        refreshQuota(); // IMMEDIATE QUOTA REFRESH
+        fetchRecentGenerations(undefined, true); // Force refresh after publish
+        refreshQuota(true); // IMMEDIATE QUOTA REFRESH (forced)
         dispatchFeedbackEligibilityRefresh();
       } else {
         throw new Error(publishResponse.message || 'Failed to publish post');
@@ -1548,8 +1605,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         toast.success(`Post scheduled for ${scheduledTime} (${userTimezone})`);
         setScheduleDateTime('');
         setSelectedContentForAction(null);
-        fetchRecentGenerations(); // Refresh the list
-        refreshQuota(); // IMMEDIATE QUOTA REFRESH
+        fetchRecentGenerations(undefined, true); // Force refresh after schedule
+        refreshQuota(true); // IMMEDIATE QUOTA REFRESH (forced)
         dispatchFeedbackEligibilityRefresh();
       } else {
         throw new Error(scheduleResponse.message || 'Failed to schedule post');
@@ -1807,7 +1864,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                   )}
 
                   {/* Progress Display - Trending mode (generic) */}
-                  {isGenerating && (
+                  {isGenerating && !isLoadingContent && (
                     <div className="text-center py-6">
                       <div className="mb-4">
                         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1921,24 +1978,6 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     </div>
                   )}
 
-                  {/* Loading Content State */}
-                  {isLoadingContent && (
-                    <div className="space-y-4">
-                      <div className="p-8 border-2 border-dashed border-primary/30 rounded-lg text-center">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                            <RefreshCw className="h-8 w-8 text-primary animate-spin" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium mb-1 text-lg">Finalizing Content...</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Please wait while we retrieve your generated content
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* No Content Found Message (non-failed) */}
                   {isComplete && generatedContent.length === 0 && !isFailed && !isLoadingContent && (
@@ -2512,7 +2551,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                 {(['all', 'viral', 'custom'] as const).map((src) => (
                   <button
                     key={src}
-                    onClick={() => { setRecentSourceFilter(src); fetchRecentGenerations(src); }}
+                    onClick={() => { setRecentSourceFilter(src); fetchRecentGenerations(src, true); }}
                     className={cn(
                       'text-[10px] sm:text-xs px-2 py-0.5 rounded-full border transition-colors',
                       recentSourceFilter === src
@@ -2551,6 +2590,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                               scheduled: { label: 'Scheduled', classes: 'bg-primary/15 text-primary dark:bg-primary/25 dark:text-primary' },
                               draft: { label: 'Draft', classes: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' },
                               failed: { label: 'Failed', classes: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' },
+                              cancelled: { label: 'Cancelled', classes: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
                               publishing: { label: 'Publishing', classes: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
                             };
                             const s = statusMap[status] || statusMap.ready;
@@ -3161,7 +3201,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                   setCustomProgressStartedAt(null);
                   setCustomProgressSteps([]);
                   toast.info("Generation cancelled. Credits will be refunded.");
-                  await refreshQuota();
+                  await refreshQuota(true);
                 } catch {
                   toast.error("Could not cancel the job.");
                 }

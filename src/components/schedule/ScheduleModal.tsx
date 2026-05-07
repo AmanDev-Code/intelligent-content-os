@@ -207,6 +207,7 @@ interface ScheduleModalProps {
   }>;
   selectedPostingIdentityId?: string;
   onSelectPostingIdentity?: (identityId: string) => void;
+  readOnly?: boolean;
 }
 
 export function ScheduleModal({ 
@@ -219,6 +220,7 @@ export function ScheduleModal({
   postingIdentities = [],
   selectedPostingIdentityId = '',
   onSelectPostingIdentity,
+  readOnly = false,
 }: ScheduleModalProps) {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -1146,9 +1148,14 @@ export function ScheduleModal({
                       <Badge variant="secondary" className="text-[10px] sm:text-xs h-6 shrink-0">Score: {content.ai_score}</Badge>
                     )}
                   </div>
+                  {readOnly && (
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs h-6">
+                      Preview Only
+                    </Badge>
+                  )}
                 </div>
 
-                {postingTarget && (
+                {postingTarget && !readOnly && (
                   <div className="w-full rounded-md border bg-muted/20 px-2 py-1.5 text-[11px] text-muted-foreground mb-2">
                     Posting as:{" "}
                     <span className="font-medium text-foreground">
@@ -1173,9 +1180,14 @@ export function ScheduleModal({
                 <div className="flex gap-2">
                   {/* Post Now Button */}
                   <Button
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white"
+                    className={cn(
+                      "flex-1 text-white",
+                      readOnly 
+                        ? "bg-gray-400 cursor-not-allowed" 
+                        : "bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+                    )}
                     onClick={() => void publishNow()}
-                    disabled={isBusy}
+                    disabled={isBusy || readOnly}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     <span className="flex items-center">
@@ -1189,12 +1201,18 @@ export function ScheduleModal({
                   
                   {/* Schedule Button */}
                   <Button 
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                    className={cn(
+                      "flex-1 text-white",
+                      readOnly 
+                        ? "bg-gray-400 cursor-not-allowed" 
+                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                    )}
                     onClick={() => {
                       setEditedContent(content.content || '');
                       setEditedHashtags(content.hashtags || []);
                       setIsSchedulingExpanded(true);
                     }}
+                    disabled={readOnly}
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     <span className="flex items-center">

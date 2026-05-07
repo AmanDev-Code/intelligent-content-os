@@ -30,10 +30,11 @@ function MaintenanceGate({ children }: { children: ReactNode }) {
       ? pathname.slice(0, -1)
       : pathname;
   const isAdminPath = /^\/admin(?:\/|$)/.test(normalizedPath);
+  const isAuthPath = /^\/auth(?:\/|$)/.test(normalizedPath);
 
   // Only block if maintenance becomes active mid-session (detected by polling).
   // Initial load is handled server-side by middleware — no blocking on isCheckingMaintenance.
-  if (!isAdminPath && isMaintenanceActive) {
+  if (!isAdminPath && !isAuthPath && isMaintenanceActive) {
     return (
       <MaintenancePage message={maintenanceMessage} scheduledEnd={scheduledEnd} />
     );

@@ -4,6 +4,10 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseGenerationJobOptions {
   jobId: string | null;
+  /** Content type affects stall timeout calculation (carousel needs more time) */
+  contentType?: 'text' | 'image' | 'carousel';
+  /** Number of slides for carousel jobs (affects stall timeout) */
+  slideCount?: number;
   onComplete?: (contentId: string | null) => void;
   onFailed?: (error: string | null) => void;
   onProgress?: (progress: number, stage: string | null) => void;
@@ -20,12 +24,35 @@ type JobRow = {
 const POLL_INTERVAL_MS = 3000;
 // Hard ceiling so we never hang forever (carousel generations can take 4–6 min).
 const HARD_TIMEOUT_MS = 600000; // 10 minutes
-// Heartbeat: if we receive no progress signal for this long, consider the job stalled.
-// Most steps (slide render + MinIO upload) finish well under this window.
-const STALL_TIMEOUT_MS = 90000; // 90 seconds without any progress signal
+
+/**
+ * Calculate dynamic stall timeout based on content type and slide count.
+ * - Text: 90s (quick LLM call)
+ * - Image: 120s (image generation + upload)
+ * - Carousel: 90s base + 30s per slide (each slide = image gen + upload, with concurrency 3)
+ *
+ * The stall detector resets on every progress event, so this timeout only needs
+ * to cover the longest gap between progress updates (e.g., text generation phase
+ * before slides start rendering).
+ */
+function getStallTimeoutMs(contentType?: string, slideCount?: number): number {
+  if (contentType === 'carousel') {
+    // Base 90s for text generation + 30s per slide (accounts for concurrency batching)
+    // With concurrency 3 and 10 slides, we have ~4 batches, each taking 15-30s
+    // Add buffer for text generation phase which doesn't emit per-slide progress
+    const slides = slideCount ?? 10;
+    return 90_000 + slides * 30_000; // 90s + 30s per slide
+  }
+  if (contentType === 'image') {
+    return 120_000; // 2 minutes for image generation
+  }
+  return 90_000; // 90 seconds for text-only
+}
 
 export function useGenerationJob({
   jobId,
+  contentType,
+  slideCount,
   onComplete,
   onFailed,
   onProgress,
@@ -39,6 +66,9 @@ export function useGenerationJob({
   const lastProgressAtRef = useRef<number>(0);
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
   callbacksRef.current = { onComplete, onFailed, onProgress };
+
+  // Calculate stall timeout based on content type and slide count
+  const stallTimeoutMs = getStallTimeoutMs(contentType, slideCount);
 
   const cleanup = useCallback(() => {
     if (pollRef.current) {
@@ -77,16 +107,17 @@ export function useGenerationJob({
         if (isTerminalRef.current) return;
         // Listen one more time for SSE side-channel updates before surrendering.
         const sinceLast = Date.now() - lastProgressAtRef.current;
-        if (sinceLast < STALL_TIMEOUT_MS) {
+        if (sinceLast < stallTimeoutMs) {
           armStallTimer();
           return;
         }
         isTerminalRef.current = true;
         cleanup();
+        const timeoutSec = Math.round(stallTimeoutMs / 1000);
         callbacksRef.current.onFailed?.(
-          'Generation appears stalled (no progress for 90s). Please retry.',
+          `Generation appears stalled (no progress for ${timeoutSec}s). Please retry.`,
         );
-      }, STALL_TIMEOUT_MS);
+      }, stallTimeoutMs);
     };
 
     const noteProgress = () => {
@@ -95,7 +126,7 @@ export function useGenerationJob({
     };
 
     const processRow = (row: JobRow) => {
-      const snap = `${row.status}|${row.progress}|${row.content_id ?? ''}`;
+      const snap = `${row.status}|${row.progress}|${row.current_stage ?? ''}|${row.content_id ?? ''}`;
       if (snap === lastSnapshotRef.current) return;
       lastSnapshotRef.current = snap;
       noteProgress();
@@ -172,7 +203,7 @@ export function useGenerationJob({
       window.removeEventListener('trndinn:generation-completed', sseHeartbeat);
       cleanup();
     };
-  }, [jobId, cleanup]);
+  }, [jobId, contentType, slideCount, stallTimeoutMs, cleanup]);
 
   return { unsubscribe: cleanup };
 }

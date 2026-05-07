@@ -58,7 +58,8 @@ export default function Settings() {
   const { isConnecting: linkedinConnecting, startConnecting: startLinkedInConnecting, clearConnecting: clearLinkedInConnecting } = useLinkedInConnectionStatus();
   const { isAdmin } = useAdmin();
   const searchParams = useSearchParams();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [quickActionLoading, setQuickActionLoading] = useState(false);
   
   const [profileForm, setProfileForm] = useState({ username: "", full_name: "", avatar_url: "" });
@@ -507,15 +508,30 @@ export default function Settings() {
               <div>
                 <Label htmlFor="currentPassword" className="text-xs">Current Password</Label>
                 <div className="relative mt-1">
-                  <Input id="currentPassword" type={showPassword ? "text" : "password"} placeholder="Enter current password" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+                  <Input id="currentPassword" type={showCurrentPassword ? "text" : "password"} placeholder="Enter current password" className="pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
               <div>
                 <Label htmlFor="newPassword" className="text-xs">New Password</Label>
-                <Input id="newPassword" type="password" placeholder="Enter new password" className="mt-1" />
+                <div className="relative mt-1">
+                  <Input id="newPassword" type={showNewPassword ? "text" : "password"} placeholder="Enter new password" className="pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <Button variant="outline" size="sm" className="gap-2 mt-3">

@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import { getPreferredTimezoneSync } from "@/services/timezoneService";
 
+// In-flight request deduplication cache
+// Key: method + endpoint, Value: Promise of the response
+const inFlightRequests = new Map<string, Promise<any>>();
+
+// Response cache with TTL for GET requests
+const responseCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 3000; // 3 seconds
+
 class ApiClient {
   private baseURL: string;
 
@@ -43,14 +51,44 @@ class ApiClient {
   }
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+    const method = options.method || 'GET';
+    const cacheKey = `${method}:${endpoint}`;
+    
+    // For GET requests, check response cache first
+    if (method === 'GET') {
+      const cached = responseCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+      
+      // Check if there's already an in-flight request for this endpoint
+      const inFlight = inFlightRequests.get(cacheKey);
+      if (inFlight) {
+        return inFlight;
+      }
+    }
+    
+    // Create the actual request promise
+    const requestPromise = this.executeRequest(endpoint, options, cacheKey, method);
+    
+    // For GET requests, store in in-flight map
+    if (method === 'GET') {
+      inFlightRequests.set(cacheKey, requestPromise);
+      requestPromise.finally(() => {
+        inFlightRequests.delete(cacheKey);
+      });
+    }
+    
+    return requestPromise;
+  }
+
+  private async executeRequest(endpoint: string, options: RequestInit, cacheKey: string, method: string): Promise<any> {
     try {
       // JSON Content-Type only for non-FormData bodies (multipart sets its own boundary)
       const hasBody = options.body !== undefined;
       const isFormData = options.body instanceof FormData;
       const headers = await this.getAuthHeaders(hasBody && !isFormData);
       const url = `${this.baseURL}${endpoint}`;
-
-      console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`, hasBody ? 'with body' : 'no body');
 
       const response = await fetch(url, {
         ...options,
@@ -60,8 +98,6 @@ class ApiClient {
         },
         mode: 'cors',
       });
-
-      console.log(`📡 API Response: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         let errorText;
@@ -75,7 +111,12 @@ class ApiClient {
       }
 
       const data = await response.json();
-      console.log(`✅ API Success:`, data);
+      
+      // Cache GET responses
+      if (method === 'GET') {
+        responseCache.set(cacheKey, { data, timestamp: Date.now() });
+      }
+      
       return data;
     } catch (error) {
       if ((error as Error)?.name === 'AbortError') {
@@ -244,6 +285,10 @@ export const api = {
         contentId,
         slideCount: opts?.slideCount,
       }),
+    /**
+     * Soft-delete generated content. Removes from recent generations and all generations.
+     */
+    deleteContent: (contentId: string) => apiClient.delete(`/generation/content/${contentId}`),
   },
 
   // Cache endpoints
@@ -314,7 +359,8 @@ export const api = {
     schedule: (data: any) => apiClient.post('/posts/schedule', data),
     getScheduled: (params?: any) => apiClient.get(`/posts/scheduled${params ? `?${new URLSearchParams(params)}` : ''}`),
     getPublished: (params?: any) => apiClient.get(`/posts/published${params ? `?${new URLSearchParams(params)}` : ''}`),
-    cancelScheduled: (jobId: string) => apiClient.delete(`/posts/scheduled/${jobId}`),
+    cancelScheduled: (jobId: string) => apiClient.post(`/posts/scheduled/${jobId}/cancel`),
+    deleteScheduled: (jobId: string) => apiClient.delete(`/posts/scheduled/${jobId}`),
     getCalendar: (params?: any) => apiClient.get(`/posts/calendar${params ? `?${new URLSearchParams(params)}` : ''}`),
     getAnalytics: (params?: any) => apiClient.get(`/posts/analytics${params ? `?${new URLSearchParams(params)}` : ''}`),
   },
@@ -451,5 +497,13 @@ export const api = {
     submit: (body: { rating: number; message?: string }) =>
       apiClient.post("/feedback/submit", body),
     skip: () => apiClient.post("/feedback/skip", {}),
+  },
+
+  /** General user feedback (can submit multiple times). */
+  userFeedback: {
+    submit: (body: { type: "bug" | "feature" | "general" | "other"; message: string; rating?: number }) =>
+      apiClient.post("/user-feedback/submit", body),
+    history: (params?: { page?: number; limit?: number }) =>
+      apiClient.get("/user-feedback/history", { params }),
   },
 };

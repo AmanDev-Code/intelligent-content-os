@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard,
@@ -14,6 +14,8 @@ import { StatsCards } from "@/components/dashboard/StatsCards";
 import { SocialChannels } from "@/components/dashboard/SocialChannels";
 import { CalendarView } from "@/components/calendar/CalendarView";
 
+const POSTS_CACHE_TTL = 5000; // 5 seconds
+
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
@@ -24,12 +26,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Fetch guards to prevent duplicate requests
+  const fetchingRef = useRef(false);
+  const lastFetchRef = useRef<number>(0);
+  const lastFetchKeyRef = useRef<string>('');
 
-  useEffect(() => {
-    if (user) fetchPosts();
-  }, [user, currentDate]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async (force = false) => {
+    if (!user) return;
+    
+    // Create a cache key based on user and date
+    const cacheKey = `${user.id}-${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+    
+    // Prevent concurrent fetches
+    if (fetchingRef.current) return;
+    
+    // Skip if fetched recently with same parameters (unless forced)
+    const now = Date.now();
+    if (!force && lastFetchKeyRef.current === cacheKey && now - lastFetchRef.current < POSTS_CACHE_TTL) return;
+    
+    fetchingRef.current = true;
+    
     try {
       setLoading(true);
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0, 0);
@@ -74,6 +91,8 @@ export default function Dashboard() {
 
       setPosts(transformedPosts);
       setFilteredPosts(transformedPosts);
+      lastFetchRef.current = Date.now();
+      lastFetchKeyRef.current = cacheKey;
     } catch (error) {
       console.error('Error fetching posts:', error);
       // Fallback to direct Supabase query if API fails
@@ -107,14 +126,21 @@ export default function Dashboard() {
 
           setPosts(transformedPosts);
           setFilteredPosts(transformedPosts);
+          lastFetchRef.current = Date.now();
+          lastFetchKeyRef.current = cacheKey;
         }
       } catch (fallbackError) {
         console.error('Fallback query also failed:', fallbackError);
       }
     } finally {
+      fetchingRef.current = false;
       setLoading(false);
     }
-  };
+  }, [user?.id, currentDate]);
+
+  useEffect(() => {
+    if (user) fetchPosts();
+  }, [user, currentDate, fetchPosts]);
 
   useEffect(() => {
     let filtered = posts;
@@ -198,6 +224,7 @@ export default function Dashboard() {
           onDateChange={setCurrentDate}
           posts={filteredPosts}
           onCreatePost={handleCreatePost}
+          onRefresh={() => fetchPosts(true)}
         />
       </div>
     </div>

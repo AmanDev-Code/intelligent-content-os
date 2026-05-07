@@ -4,12 +4,13 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for static files, Next.js internals, API routes, and admin routes
+  // Skip middleware for static files, Next.js internals, API routes, admin, and auth routes
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/auth") ||
     pathname === "/maintenance"
   ) {
     return NextResponse.next();

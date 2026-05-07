@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   MessageSquareText,
+  MessageSquarePlus,
   BookOpen,
   Briefcase,
   Settings,
@@ -48,7 +49,8 @@ function SidebarContent({
   }[] = [
     { to: "/admin", icon: LayoutDashboard, label: "Overview", show: sections.overview },
     { to: "/admin/users", icon: Users, label: "Users", show: sections.users },
-    { to: "/admin/feedback", icon: MessageSquareText, label: "Feedback", show: sections.feedback },
+    { to: "/admin/feedback", icon: MessageSquareText, label: "Product Feedback", show: sections.feedback },
+    { to: "/admin/user-feedback", icon: MessageSquarePlus, label: "User Feedback", show: sections.feedback },
     { to: "/admin/blog", icon: BookOpen, label: "Blog & CMS", show: sections.blog },
     { to: "/admin/careers", icon: Briefcase, label: "Careers", show: sections.careers },
     { to: "/admin/settings", icon: Settings, label: "Admin settings", show: sections.settings },

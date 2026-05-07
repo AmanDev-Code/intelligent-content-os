@@ -41,6 +41,9 @@ export function MaintenanceProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${API_CONFIG.BASE_URL}/maintenance/status`, {
         cache: "no-store",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
       });
 
       if (res.ok) {

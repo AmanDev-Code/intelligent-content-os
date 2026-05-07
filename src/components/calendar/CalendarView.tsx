@@ -10,6 +10,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CALENDAR_VIEWS } from "@/lib/constants";
+import { CalendarDayPostsModal } from "@/components/calendar/CalendarDayPostsModal";
+
+interface CalendarPost {
+  id: string;
+  title: string;
+  start: string;
+  type: 'scheduled' | 'published';
+  status: string;
+  content?: {
+    id: string;
+    title: string;
+    content: string;
+    visual_type?: string;
+    hashtags?: string[];
+    visual_url?: string;
+    ai_score?: number;
+  };
+}
 
 interface CalendarViewProps {
   currentView: string;
@@ -18,6 +36,7 @@ interface CalendarViewProps {
   onDateChange: (date: Date) => void;
   posts: any[];
   onCreatePost: (date?: Date) => void;
+  onRefresh?: () => void;
 }
 
 export function CalendarView({ 
@@ -26,8 +45,13 @@ export function CalendarView({
   currentDate, 
   onDateChange, 
   posts, 
-  onCreatePost 
+  onCreatePost,
+  onRefresh
 }: CalendarViewProps) {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDayPosts, setSelectedDayPosts] = useState<CalendarPost[]>([]);
+  const [showDayModal, setShowDayModal] = useState(false);
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
@@ -68,6 +92,36 @@ export function CalendarView({
     return posts.filter(post => new Date(post.scheduledFor).toDateString() === date.toDateString());
   };
 
+  const transformPostsForModal = (dayPosts: any[]): CalendarPost[] => {
+    return dayPosts.map(post => ({
+      id: post.id,
+      title: post.title || 'Untitled Post',
+      start: post.scheduledFor || post.scheduled_for || new Date().toISOString(),
+      type: post.status === 'published' ? 'published' : 'scheduled',
+      status: post.status || 'scheduled',
+      content: {
+        id: post.id,
+        title: post.title || 'Untitled Post',
+        content: post.content || '',
+        visual_type: post.type || post.visual_type,
+        hashtags: post.hashtags || [],
+        visual_url: post.visual_url,
+        ai_score: post.ai_score || post.aiScore,
+      }
+    }));
+  };
+
+  const handleDayClick = (date: Date) => {
+    const dayPosts = getPostsForDate(date);
+    if (dayPosts.length > 0) {
+      setSelectedDate(date);
+      setSelectedDayPosts(transformPostsForModal(dayPosts));
+      setShowDayModal(true);
+    } else {
+      onCreatePost(date);
+    }
+  };
+
   const renderMonthView = () => {
     const days = getDaysInMonth(currentDate);
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -99,7 +153,7 @@ export function CalendarView({
                     isCurrentDay && "ring-2 ring-primary bg-primary/5",
                     isPastDay && "bg-muted/30 opacity-60"
                   )}
-                  onClick={() => date && !isPastDay && onCreatePost(date)}
+                  onClick={() => date && handleDayClick(date)}
                 >
                   {isPastDay && date && (
                     <div className="absolute inset-0 bg-stripes opacity-20 rounded-md sm:rounded-lg" />
@@ -348,6 +402,15 @@ export function CalendarView({
       {currentView === 'day' && renderDayView()}
       {currentView === 'week' && renderWeekView()}
       {currentView === 'list' && renderListView()}
+
+      {/* Day Posts Modal */}
+      <CalendarDayPostsModal
+        open={showDayModal}
+        onOpenChange={setShowDayModal}
+        date={selectedDate}
+        posts={selectedDayPosts}
+        onRefresh={onRefresh}
+      />
     </div>
   );
 }

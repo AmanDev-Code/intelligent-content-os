@@ -2,6 +2,8 @@
 
 import { useAdminSectionGate } from "@/hooks/useAdminAreaAccess";
 import { PlatformStaffGrantsSettings } from "@/components/platform-admin/PlatformStaffGrantsSettings";
+import { SystemSettings } from "@/components/admin/SystemSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminSettingsPage() {
   const { loading, allowed } = useAdminSectionGate("settings");
@@ -17,10 +19,22 @@ export default function AdminSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Admin settings</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Delegate platform staff access (feedback, users, analytics APIs). Super-admin only.
+          Manage system settings, staff access, and cache controls.
         </p>
       </div>
-      <PlatformStaffGrantsSettings />
+
+      <Tabs defaultValue="system" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="staff">Staff Access</TabsTrigger>
+        </TabsList>
+        <TabsContent value="system" className="mt-6">
+          <SystemSettings />
+        </TabsContent>
+        <TabsContent value="staff" className="mt-6">
+          <PlatformStaffGrantsSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

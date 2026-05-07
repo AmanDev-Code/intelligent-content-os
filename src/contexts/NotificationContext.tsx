@@ -84,6 +84,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const seenNotificationIds = useRef<Set<string>>(new Set());
   const sseReconnectAttemptsRef = useRef(0);
   const sseMountedRef = useRef(false);
+  // Fetch guards to prevent duplicate requests
+  const fetchingNotificationsRef = useRef(false);
+  const fetchingUnreadCountRef = useRef(false);
+  const lastNotificationsFetchRef = useRef<number>(0);
+  const lastUnreadCountFetchRef = useRef<number>(0);
+  const NOTIFICATIONS_CACHE_TTL = 3000; // 3 seconds
   // Verbose SSE logging is opt-in via NEXT_PUBLIC_DEBUG_SSE=1 to keep the
   // production console quiet during long generations (carousel runs emit 10–20 events).
   const DEBUG_SSE = process.env.NEXT_PUBLIC_DEBUG_SSE === '1';
@@ -168,29 +174,50 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const fetchNotifications = useCallback(async (page: number = 1, append: boolean = false) => {
+    // Prevent concurrent fetches (allow append for pagination)
+    if (fetchingNotificationsRef.current && !append) return;
+    
+    // Skip if fetched recently (unless appending for pagination)
+    const now = Date.now();
+    if (!append && now - lastNotificationsFetchRef.current < NOTIFICATIONS_CACHE_TTL) return;
+    
     try {
+      fetchingNotificationsRef.current = true;
       setLoading(true);
       const response = await apiClient.get(`/notifications?page=${page}&limit=20`);
       if (response.success) {
         const newNotifications = response.data || [];
         setNotifications(prev => append ? [...prev, ...newNotifications] : newNotifications);
         newNotifications.forEach((n: Notification) => seenNotificationIds.current.add(n.id));
+        lastNotificationsFetchRef.current = Date.now();
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
+      fetchingNotificationsRef.current = false;
       setLoading(false);
     }
   }, []);
 
   const fetchUnreadCount = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (fetchingUnreadCountRef.current) return;
+    
+    // Skip if fetched recently
+    const now = Date.now();
+    if (now - lastUnreadCountFetchRef.current < NOTIFICATIONS_CACHE_TTL) return;
+    
     try {
+      fetchingUnreadCountRef.current = true;
       const response = await apiClient.get('/notifications/unread-count');
       if (response.success) {
         setUnreadCount(response.count || 0);
+        lastUnreadCountFetchRef.current = Date.now();
       }
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
+    } finally {
+      fetchingUnreadCountRef.current = false;
     }
   }, []);
 

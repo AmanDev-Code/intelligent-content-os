@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +14,7 @@ import type { UserQuota } from "@/services/dataService";
 interface QuotaContextValue {
   quota: UserQuota | null;
   loading: boolean;
-  refreshQuota: () => Promise<void>;
+  refreshQuota: (force?: boolean) => Promise<void>;
 }
 
 const QuotaContext = createContext<QuotaContextValue | null>(null);
@@ -28,21 +29,42 @@ const defaultFallbackQuota = (userId: string): UserQuota => ({
   resetDate: new Date().toISOString(),
 });
 
+const QUOTA_CACHE_TTL = 5000; // 5 seconds
+
 export function QuotaProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [quota, setQuota] = useState<UserQuota | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Fetch guards to prevent duplicate requests
+  const fetchingRef = useRef(false);
+  const lastFetchRef = useRef<number>(0);
+  const lastUserIdRef = useRef<string | null>(null);
 
-  const refreshQuota = useCallback(async () => {
+  const refreshQuota = useCallback(async (force = false) => {
     if (!user?.id) return;
+    
+    // Prevent concurrent fetches
+    if (fetchingRef.current) return;
+    
+    // Skip if fetched recently (unless forced or user changed)
+    const now = Date.now();
+    const userChanged = lastUserIdRef.current !== user.id;
+    if (!force && !userChanged && now - lastFetchRef.current < QUOTA_CACHE_TTL) return;
+    
+    fetchingRef.current = true;
+    lastUserIdRef.current = user.id;
     setLoading(true);
+    
     try {
       const data = await api.quota.get();
       setQuota(data);
+      lastFetchRef.current = Date.now();
     } catch (error) {
       console.error("QuotaContext: Error fetching quota", error);
       setQuota(defaultFallbackQuota(user.id));
     } finally {
+      fetchingRef.current = false;
       setLoading(false);
     }
   }, [user?.id]);
@@ -52,12 +74,14 @@ export function QuotaProvider({ children }: { children: ReactNode }) {
       refreshQuota();
     } else {
       setQuota(null);
+      lastUserIdRef.current = null;
+      lastFetchRef.current = 0;
     }
   }, [user?.id, refreshQuota]);
 
   useEffect(() => {
     const handler = () => {
-      void refreshQuota();
+      void refreshQuota(true); // Force refresh on subscription update
     };
     window.addEventListener("trndinn:subscription-updated", handler);
     return () => {
