@@ -556,4 +556,10 @@ export const api = {
     deleteCode: (id: string) => apiClient.delete(`/admin/referral/codes/${id}`),
     createCode: (userId: string) => apiClient.post("/admin/referral/codes", { user_id: userId }),
   },
+
+  /** Platform admin user management. */
+  platformAdmin: {
+    deleteUser: (userId: string): Promise<{ success: boolean; message: string; deletedUserId: string }> =>
+      apiClient.delete(`/platform-admin/users/${userId}`),
+  },
 };

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { apiClient } from "@/lib/apiClient";
+import { useRouter } from "next/navigation";
+import { apiClient, api } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type ProfileRow = {
@@ -128,6 +138,7 @@ export function AdminUserDetail({
   userId: string;
   superAdmin: boolean;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [quota, setQuota] = useState<QuotaPayload | null>(null);
@@ -142,6 +153,10 @@ export function AdminUserDetail({
   const [creditReason, setCreditReason] = useState("");
   const [planType, setPlanType] = useState("standard");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -220,6 +235,25 @@ export function AdminUserDetail({
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (deleteConfirmation !== "DELETE") {
+      toast.error("Please type DELETE to confirm");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const result = await api.platformAdmin.deleteUser(userId);
+      toast.success(result.message || "User deleted successfully");
+      setDeleteDialogOpen(false);
+      router.push("/admin/users?tab=directory");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete user");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading user…</p>;
   }
@@ -245,6 +279,17 @@ export function AdminUserDetail({
           </h1>
           <p className="text-muted-foreground text-sm">{profile.full_name || profile.id}</p>
         </div>
+        {superAdmin && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="self-start sm:self-center"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete User
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -603,6 +648,58 @@ export function AdminUserDetail({
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete User</DialogTitle>
+            <DialogDescription className="space-y-3 pt-2">
+              <p>
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">
+                  {profile.username || profile.full_name || "this user"}
+                </span>
+                ?
+              </p>
+              <p className="text-destructive font-medium">
+                This action cannot be undone. All user data including posts, generations,
+                subscriptions, and referrals will be permanently deleted.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor="delete-confirm">
+              Type <span className="font-mono font-semibold">DELETE</span> to confirm
+            </Label>
+            <Input
+              id="delete-confirm"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              placeholder="DELETE"
+              className="font-mono"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setDeleteConfirmation("");
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteUser()}
+              disabled={deleting || deleteConfirmation !== "DELETE"}
+            >
+              {deleting ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
