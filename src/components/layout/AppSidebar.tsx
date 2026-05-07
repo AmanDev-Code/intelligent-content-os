@@ -11,12 +11,12 @@ import {
   Zap,
   Image,
   CreditCard,
-  Users,
   Sparkles,
   Menu,
   Calendar,
   Shield,
   MessageSquarePlus,
+  Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ const navItems = [
 ];
 
 const bottomNavItems = [
-  { to: "/affiliate", icon: Users, label: "Affiliate" },
+  { to: "/affiliate", icon: Gift, label: "Affiliate & Referrals" },
   { to: "/billing", icon: CreditCard, label: "Billing" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];

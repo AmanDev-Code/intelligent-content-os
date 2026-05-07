@@ -289,6 +289,12 @@ export const api = {
      * Soft-delete generated content. Removes from recent generations and all generations.
      */
     deleteContent: (contentId: string) => apiClient.delete(`/generation/content/${contentId}`),
+    /**
+     * Format and improve content using AI for LinkedIn posting.
+     * Returns `{ formattedContent, creditsCost }`. Costs 0.5 credits.
+     */
+    formatContent: (content: string): Promise<{ formattedContent: string; creditsCost: number }> =>
+      apiClient.post('/generation/format-content', { content }),
   },
 
   // Cache endpoints
@@ -505,5 +511,49 @@ export const api = {
       apiClient.post("/user-feedback/submit", body),
     history: (params?: { page?: number; limit?: number }) =>
       apiClient.get("/user-feedback/history", { params }),
+  },
+
+  /** Referral program endpoints. */
+  referral: {
+    getMyCode: () => apiClient.get("/referral/my-code"),
+    getMyReferrals: (params?: { limit?: number; offset?: number }) =>
+      apiClient.get("/referral/my-referrals", { params }),
+    getStats: () => apiClient.get("/referral/stats"),
+    getSettings: () => apiClient.get("/referral/settings"),
+    getBanners: () => apiClient.get("/referral/banners"),
+    validateCode: (code: string) => apiClient.post(`/referral/validate/${encodeURIComponent(code)}`),
+  },
+
+  /** Public referral endpoints (no auth required). */
+  publicReferral: {
+    validateCode: (code: string) => apiClient.post(`/public/referral/validate/${encodeURIComponent(code)}`),
+    getSettings: () => apiClient.get("/public/referral/settings"),
+  },
+
+  /** Admin referral management. */
+  adminReferral: {
+    getSettings: () => apiClient.get("/admin/referral/settings"),
+    updateSettings: (payload: {
+      credits_per_referral?: number;
+      min_actions_to_complete?: number;
+      is_program_active?: boolean;
+      terms_and_conditions?: string;
+    }) => apiClient.put("/admin/referral/settings", payload),
+    getBanners: () => apiClient.get("/admin/referral/banners"),
+    createBanner: (formData: FormData) => apiClient.post("/admin/referral/banners", formData),
+    updateBanner: (id: string, formData: FormData) => apiClient.put(`/admin/referral/banners/${id}`, formData),
+    deleteBanner: (id: string) => apiClient.delete(`/admin/referral/banners/${id}`),
+    reorderBanners: (orders: { id: string; display_order: number }[]) =>
+      apiClient.post("/admin/referral/banners/reorder", { orders }),
+    getStats: () => apiClient.get("/admin/referral/stats"),
+    getTopReferrers: (limit?: number) =>
+      apiClient.get("/admin/referral/top-referrers", { params: { limit } }),
+    getUserReferralInfo: (userId: string) => apiClient.get(`/admin/referral/user/${userId}`),
+    getCodes: (params?: { page?: number; limit?: number; search?: string; status?: 'active' | 'inactive' | 'all' }) =>
+      apiClient.get("/admin/referral/codes", { params }),
+    updateCode: (id: string, payload: { is_active?: boolean }) =>
+      apiClient.patch(`/admin/referral/codes/${id}`, payload),
+    deleteCode: (id: string) => apiClient.delete(`/admin/referral/codes/${id}`),
+    createCode: (userId: string) => apiClient.post("/admin/referral/codes", { user_id: userId }),
   },
 };

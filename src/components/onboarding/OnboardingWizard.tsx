@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { apiClient } from "@/lib/apiClient";
 
 export type OnboardingAnswers = {
   role: string;
@@ -11,78 +12,24 @@ export type OnboardingAnswers = {
   postingFrequency: string;
   focusArea: string;
   referralSource: string;
+  [key: string]: string;
 };
 
-type WizardQuestion = {
-  key: keyof OnboardingAnswers;
-  title: string;
-  options: { value: string; label: string }[];
+type QuestionOption = {
+  value: string;
+  label: string;
+  icon?: string;
 };
 
-const QUESTIONS: WizardQuestion[] = [
-  {
-    key: "role",
-    title: "Who are you?",
-    options: [
-      { value: "founder", label: "Founder / Entrepreneur" },
-      { value: "marketer", label: "Marketer" },
-      { value: "creator", label: "Creator" },
-      { value: "agency", label: "Agency" },
-      { value: "student", label: "Student / Learner" },
-    ],
-  },
-  {
-    key: "goal",
-    title: "Why are you using Trndinn?",
-    options: [
-      { value: "brand_growth", label: "Grow personal or company brand" },
-      { value: "lead_generation", label: "Generate leads" },
-      { value: "consistency", label: "Post consistently" },
-      { value: "team_output", label: "Scale team content output" },
-    ],
-  },
-  {
-    key: "teamSize",
-    title: "What is your team size?",
-    options: [
-      { value: "solo", label: "Solo" },
-      { value: "2_5", label: "2 - 5 people" },
-      { value: "6_20", label: "6 - 20 people" },
-      { value: "20_plus", label: "20+ people" },
-    ],
-  },
-  {
-    key: "postingFrequency",
-    title: "How often do you want to publish?",
-    options: [
-      { value: "daily", label: "Daily" },
-      { value: "3_per_week", label: "3 times a week" },
-      { value: "weekly", label: "Weekly" },
-      { value: "flexible", label: "Flexible / not sure yet" },
-    ],
-  },
-  {
-    key: "focusArea",
-    title: "Which content type do you want to focus on first?",
-    options: [
-      { value: "text_posts", label: "Text posts" },
-      { value: "image_posts", label: "Image posts" },
-      { value: "carousel", label: "Carousel posts" },
-      { value: "mixed", label: "Mix of all formats" },
-    ],
-  },
-  {
-    key: "referralSource",
-    title: "How did you hear about us?",
-    options: [
-      { value: "search", label: "Search / SEO" },
-      { value: "social", label: "Social media" },
-      { value: "friend", label: "Friend / colleague" },
-      { value: "community", label: "Community / group" },
-      { value: "other", label: "Other" },
-    ],
-  },
-];
+type OnboardingQuestion = {
+  id: string;
+  step_number: number;
+  question_text: string;
+  question_key: string;
+  options: QuestionOption[];
+  is_required: boolean;
+  is_active: boolean;
+};
 
 interface OnboardingWizardProps {
   onComplete: (answers: OnboardingAnswers) => Promise<void> | void;
@@ -91,6 +38,8 @@ interface OnboardingWizardProps {
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<OnboardingQuestion[]>([]);
   const [answers, setAnswers] = useState<OnboardingAnswers>({
     role: "",
     goal: "",
@@ -100,25 +49,94 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
     referralSource: "",
   });
 
-  const currentQuestion = QUESTIONS[step];
-  const total = QUESTIONS.length;
-  const progress = useMemo(() => ((step + 1) / total) * 100, [step, total]);
-  const currentValue = answers[currentQuestion.key];
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const res = await apiClient.get("/onboarding/questions");
+        const data = (res as { data: OnboardingQuestion[] }).data || [];
+        setQuestions(data);
+        
+        const initialAnswers: OnboardingAnswers = {
+          role: "",
+          goal: "",
+          teamSize: "",
+          postingFrequency: "",
+          focusArea: "",
+          referralSource: "",
+        };
+        data.forEach((q) => {
+          initialAnswers[q.question_key] = "";
+        });
+        setAnswers(initialAnswers);
+      } catch {
+        setQuestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadQuestions();
+  }, []);
+
+  const currentQuestion = questions[step];
+  const total = questions.length;
+  const progress = useMemo(() => (total > 0 ? ((step + 1) / total) * 100 : 0), [step, total]);
+  const currentValue = currentQuestion ? answers[currentQuestion.question_key] || "" : "";
   const isLast = step === total - 1;
 
+  const saveCurrentResponse = async () => {
+    if (!currentQuestion || !currentValue) return;
+    
+    try {
+      await apiClient.post("/onboarding/response", {
+        questionId: currentQuestion.id,
+        selectedOption: currentValue,
+      });
+    } catch {
+      // Silently fail - responses will be saved on complete anyway
+    }
+  };
+
   const handleNext = async () => {
-    if (!currentValue) return;
+    if (!currentValue && currentQuestion?.is_required) return;
+    
+    await saveCurrentResponse();
+    
     if (!isLast) {
       setStep((s) => s + 1);
       return;
     }
+    
     try {
       setSaving(true);
+      
+      const responses = questions
+        .filter((q) => answers[q.question_key])
+        .map((q) => ({
+          questionId: q.id,
+          selectedOption: answers[q.question_key],
+        }));
+      
+      if (responses.length > 0) {
+        await apiClient.post("/onboarding/responses", { responses });
+      }
+      
       await onComplete(answers);
     } finally {
       setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[90] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-[90] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
@@ -139,13 +157,16 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <Label className="text-base font-semibold">{currentQuestion.title}</Label>
+            <Label className="text-base font-semibold">{currentQuestion.question_text}</Label>
+            {!currentQuestion.is_required && (
+              <span className="ml-2 text-xs text-muted-foreground">(optional)</span>
+            )}
           </div>
 
           <RadioGroup
             value={currentValue}
             onValueChange={(value) =>
-              setAnswers((prev) => ({ ...prev, [currentQuestion.key]: value }))
+              setAnswers((prev) => ({ ...prev, [currentQuestion.question_key]: value }))
             }
             className="space-y-3"
           >
@@ -154,9 +175,9 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 key={option.value}
                 className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/40 transition-colors"
               >
-                <RadioGroupItem value={option.value} id={`${currentQuestion.key}-${option.value}`} />
+                <RadioGroupItem value={option.value} id={`${currentQuestion.question_key}-${option.value}`} />
                 <Label
-                  htmlFor={`${currentQuestion.key}-${option.value}`}
+                  htmlFor={`${currentQuestion.question_key}-${option.value}`}
                   className="cursor-pointer"
                 >
                   {option.label}
@@ -173,7 +194,10 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
             >
               Back
             </Button>
-            <Button onClick={handleNext} disabled={!currentValue || saving}>
+            <Button 
+              onClick={handleNext} 
+              disabled={(currentQuestion.is_required && !currentValue) || saving}
+            >
               {saving ? "Saving..." : isLast ? "Finish onboarding" : "Next"}
             </Button>
           </div>

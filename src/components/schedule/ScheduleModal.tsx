@@ -12,6 +12,7 @@ import { dispatchFeedbackEligibilityRefresh } from '@/lib/feedbackEvents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuota } from '@/contexts/QuotaContext';
 import { useProfile } from '@/hooks/useProfile';
+import { useSocialChannelCheck } from '@/hooks/useSocialChannelCheck';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -225,6 +226,7 @@ export function ScheduleModal({
   const { user } = useAuth();
   const { profile } = useProfile();
   const { refreshQuota, quota } = useQuota();
+  const { showConnectionRequired } = useSocialChannelCheck();
   const remainingCredits =
     typeof quota?.remainingCredits === 'number' ? quota.remainingCredits : null;
   
@@ -261,6 +263,7 @@ export function ScheduleModal({
   // belt-and-suspenders idempotency (matches the backend `refundOnce` slice).
   const [regeneratingImageIndex, setRegeneratingImageIndex] = useState<number | null>(null);
   const [regeneratingCarousel, setRegeneratingCarousel] = useState(false);
+  const [isFormatting, setIsFormatting] = useState(false);
   // Local mirror of the backend `image_urls` / `visual_url` / `carousel_urls`
   // / `pdf_url` fields. Initialized from the `content` prop, updated in place
   // when the SSE `image_regenerated` / `carousel_regenerated` events fire.
@@ -395,6 +398,38 @@ export function ScheduleModal({
     }
   };
 
+  /**
+   * Format/improve the user's content using AI.
+   * Costs 0.5 credits per format.
+   */
+  const handleAIFormat = async () => {
+    if (isFormatting || editedContent.length < 20) return;
+
+    try {
+      setIsFormatting(true);
+      const response = await api.generation.formatContent(editedContent);
+      
+      if (response.formattedContent) {
+        setEditedContent(response.formattedContent);
+        toast.success('Content formatted successfully!');
+        refreshQuota();
+      }
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to format content';
+      
+      if (errorMessage.includes('Insufficient credits')) {
+        toast.error('Insufficient credits. AI formatting costs 0.5 credits.');
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsFormatting(false);
+    }
+  };
+
   useEffect(() => {
     if (content && open) {
       setEditedContent(content.content || '');
@@ -425,6 +460,11 @@ export function ScheduleModal({
       const now = new Date();
       now.setSeconds(0, 0);
       setScheduleDateTime(now.toISOString());
+      
+      // Auto-expand scheduling panel for "own content" mode
+      if (content.isOwnContent) {
+        setIsSchedulingExpanded(true);
+      }
     }
   }, [content, open]);
 
@@ -607,11 +647,42 @@ export function ScheduleModal({
   };
 
   const publishNow = async (skipIdentityGate = false) => {
+    // Check LinkedIn connection before publishing
+    if (!showConnectionRequired('linkedin', 'post')) {
+      return;
+    }
+
     if (!skipIdentityGate && !ensureIdentityConfirmed('publish')) return;
+    
+    // Validate content for own content mode
+    if (content.isOwnContent && (!editedContent || editedContent.trim().length === 0)) {
+      toast.error('Please enter your content before posting');
+      return;
+    }
+    
     try {
       setIsPublishing(true);
+      
+      let contentId = content.id;
+      
+      // For "own content" mode, first create the content record
+      if (content.isOwnContent) {
+        const createResponse = await apiClient.post('/generation/content/create-own', {
+          content: editedContent.trim(),
+          title: 'Your Content',
+          hashtags: effectiveHashtags,
+          mediaUrls: uploadedImages.length > 0 ? uploadedImages : undefined,
+          pdfUrl: uploadedPdfUrl || undefined,
+        });
+        
+        if (!createResponse.success || !createResponse.content?.id) {
+          throw new Error('Failed to create content record');
+        }
+        contentId = createResponse.content.id;
+      }
+      
       await apiClient.post('/posts/publish', {
-        contentId: content.id,
+        contentId,
         content: editedContent || content.content,
         hashtags: effectiveHashtags,
         mediaUrls: uploadedImages,
@@ -638,12 +709,43 @@ export function ScheduleModal({
   };
 
   const scheduleNow = async (skipIdentityGate = false) => {
+    // Check LinkedIn connection before scheduling
+    if (!showConnectionRequired('linkedin', 'schedule')) {
+      return;
+    }
+
     if (!skipIdentityGate && !ensureIdentityConfirmed('schedule')) return;
+    
+    // Validate content for own content mode
+    if (content.isOwnContent && (!editedContent || editedContent.trim().length === 0)) {
+      toast.error('Please enter your content before scheduling');
+      return;
+    }
+    
     try {
       setIsSubmittingAction(true);
       const scheduledIso = new Date(scheduleDateTime).toISOString();
+      
+      let contentId = content.id;
+      
+      // For "own content" mode, first create the content record
+      if (content.isOwnContent) {
+        const createResponse = await apiClient.post('/generation/content/create-own', {
+          content: editedContent.trim(),
+          title: 'Your Content',
+          hashtags: effectiveHashtags,
+          mediaUrls: uploadedImages.length > 0 ? uploadedImages : undefined,
+          pdfUrl: uploadedPdfUrl || undefined,
+        });
+        
+        if (!createResponse.success || !createResponse.content?.id) {
+          throw new Error('Failed to create content record');
+        }
+        contentId = createResponse.content.id;
+      }
+      
       await apiClient.post('/posts/schedule', {
-        contentId: content.id,
+        contentId,
         scheduledFor: scheduledIso,
         timezone: userTimezone,
         content: editedContent,
@@ -1353,6 +1455,22 @@ export function ScheduleModal({
                           </Button>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                             <Hash className="h-4 w-4" />
+                          </Button>
+                          <div className="w-px h-6 bg-border/60 mx-1" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 hover:bg-primary/10 hover:text-primary gap-1"
+                            onClick={handleAIFormat}
+                            disabled={isFormatting || editedContent.length < 20}
+                            title={editedContent.length < 20 ? 'Content must be at least 20 characters' : 'Format with AI (0.5 credits)'}
+                          >
+                            {isFormatting ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4" />
+                            )}
+                            <span className="text-xs">AI Format</span>
                           </Button>
                         </div>
                         <div className="text-xs text-muted-foreground">

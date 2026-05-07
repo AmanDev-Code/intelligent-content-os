@@ -58,6 +58,7 @@ import { api } from "@/lib/apiClient";
 import { apiClient } from "@/lib/apiClient";
 import { dispatchFeedbackEligibilityRefresh } from "@/lib/feedbackEvents";
 import { useProfanityCheck } from '@/hooks/useProfanityCheck';
+import { useSocialChannelCheck } from '@/hooks/useSocialChannelCheck';
 import {
   formatInTimezone,
   getPreferredTimezoneSync,
@@ -120,7 +121,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const [customTopic, setCustomTopic] = useState('');
   const [selectedTrending, setSelectedTrending] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationMode, setGenerationMode] = useState<'trending' | 'custom'>('trending');
+  const [generationMode, setGenerationMode] = useState<'trending' | 'custom' | 'own'>('trending');
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [recentGenerations, setRecentGenerations] = useState<any[]>([]);
   const [totalGenerationsCount, setTotalGenerationsCount] = useState<number>(0);
@@ -220,6 +221,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   >('auto');
   const [trainingDatasetOptIn, setTrainingDatasetOptIn] = useState(false);
   const { isBlocked: isProfanityBlocked, checkText: checkProfanity } = useProfanityCheck();
+  const { showConnectionRequired, isLinkedInConnected, isLoading: isCheckingConnection } = useSocialChannelCheck();
 
   /** Advanced carousel plate / density / subject controls only for educational tone. */
   const showCarouselStudyControls = selectedType === 'carousel' && tonality === 'educational';
@@ -773,6 +775,26 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
   // Helper function to calculate credit cost
   const calculateCreditCost = (content: any, isScheduling: boolean = false) => {
+    // For "own content" mode, calculate based on what user uploads
+    // No AI generation cost - only posting/scheduling cost
+    if (content?.isOwnContent) {
+      // Base cost for text post
+      let baseCost = isScheduling ? 4 : 2.5;
+      
+      // Check for uploaded media (will be set when user uploads)
+      const hasUploadedImages = uploadedImages.length > 0;
+      const hasUploadedPdf = false; // PDF state is in ScheduleModal, not here
+      
+      if (hasUploadedPdf) {
+        baseCost = isScheduling ? 15 : 12; // Carousel cost
+        baseCost += 12; // PDF attachment cost
+      } else if (hasUploadedImages) {
+        baseCost = isScheduling ? 7.5 : 6; // Image cost
+      }
+      
+      return baseCost;
+    }
+    
     const hasValidImage = content?.visual_url?.startsWith('http') || 
                          (content?.media_urls && content.media_urls.length > 0) ||
                          uploadedImages.length > 0;
@@ -1229,6 +1251,11 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
 
   const generateViralTopics = async () => {
+    // Check LinkedIn connection before generating
+    if (!showConnectionRequired('linkedin', 'generate')) {
+      return;
+    }
+
     if (isGenerating) {
       toast.error("A job is already running. Please wait for it to complete.");
       return;
@@ -1294,6 +1321,11 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   };
 
   const handleGenerate = async () => {
+    // Check LinkedIn connection before generating
+    if (!showConnectionRequired('linkedin', 'generate')) {
+      return;
+    }
+
     // Trending mode: first request usually lists topics via the default n8n workflow.
     // Carousel uses a separate full-pipeline workflow (news → slides); skip the topic-only
     // step so we do not always hit N8N_WEBHOOK_URL with contentType "topics".
@@ -1364,6 +1396,11 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   };
 
   const handleCustomTopicGenerate = async () => {
+    // Check LinkedIn connection before generating
+    if (!showConnectionRequired('linkedin', 'generate')) {
+      return;
+    }
+
     if (isGenerating) {
       toast.error("A job is already running. Please wait for it to complete.");
       return;
@@ -1743,7 +1780,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           {/* Generation Mode Tabs */}
           <Card>
             <CardHeader>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant={generationMode === 'trending' ? 'default' : 'outline'}
                     onClick={() => setGenerationMode('trending')}
@@ -1751,7 +1788,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     size="sm"
                   >
                     <TrendingUp className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
-                    <span className="truncate">Find Viral Topic</span>
+                    <span className="truncate hidden sm:inline">Find Viral Topic</span>
+                    <span className="truncate sm:hidden">Viral</span>
                   </Button>
                   <Button
                     variant={generationMode === 'custom' ? 'default' : 'outline'}
@@ -1760,7 +1798,31 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     size="sm"
                   >
                     <Globe className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
-                    <span className="truncate">Custom Topic</span>
+                    <span className="truncate hidden sm:inline">Custom Topic</span>
+                    <span className="truncate sm:hidden">Custom</span>
+                  </Button>
+                  <Button
+                    variant={generationMode === 'own' ? 'default' : 'outline'}
+                    onClick={() => {
+                      setGenerationMode('own');
+                      setSelectedContent({
+                        id: `own-content-${Date.now()}`,
+                        title: '',
+                        content: '',
+                        hashtags: [],
+                        visual_url: null,
+                        carousel_urls: [],
+                        pdf_url: null,
+                        isOwnContent: true,
+                      });
+                      setShowContentModal(true);
+                    }}
+                    className={cn("w-full text-xs sm:text-sm", generationMode === 'own' && "bg-primary text-primary-foreground")}
+                    size="sm"
+                  >
+                    <FileText className="h-3.5 w-3.5 sm:mr-1.5 shrink-0" />
+                    <span className="truncate hidden sm:inline">Your Content</span>
+                    <span className="truncate sm:hidden">Yours</span>
                   </Button>
                 </div>
             </CardHeader>
@@ -2202,7 +2264,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : generationMode === 'custom' ? (
                 <div className="space-y-2.5">
                   <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -2533,12 +2595,89 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     </div>
                   )}
                 </div>
+              ) : (
+                /* "Your Content" mode - shows info about the flow */
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm sm:text-base mb-1">Post Your Own Content</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                          Already have content ready? Paste it directly and schedule or post immediately. No AI generation needed.
+                        </p>
+                        <div className="space-y-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            <span>Paste your own text content</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            <span>Add hashtags and images</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            <span>Upload PDF for carousel posts</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                            <span>Schedule or post immediately</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2.5">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium mb-2">
+                      Credit costs (only charged when posting)
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded bg-background/50">
+                        <span className="text-muted-foreground">Text post</span>
+                        <span className="font-medium flex items-center gap-1">2.5 <Coins className="h-3 w-3" /></span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded bg-background/50">
+                        <span className="text-muted-foreground">With images</span>
+                        <span className="font-medium flex items-center gap-1">6 <Coins className="h-3 w-3" /></span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 rounded bg-background/50">
+                        <span className="text-muted-foreground">PDF carousel</span>
+                        <span className="font-medium flex items-center gap-1">12 <Coins className="h-3 w-3" /></span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    onClick={() => {
+                      setSelectedContent({
+                        id: `own-content-${Date.now()}`,
+                        title: '',
+                        content: '',
+                        hashtags: [],
+                        visual_url: null,
+                        carousel_urls: [],
+                        pdf_url: null,
+                        isOwnContent: true,
+                      });
+                      setShowContentModal(true);
+                    }}
+                    className="w-full gradient-primary text-base py-4 sm:py-5"
+                    size="lg"
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    Create Your Post
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
 
 
-          {/* Generate Button */}
+          {/* Generate Button - Hidden in "own" mode */}
+          {generationMode !== 'own' && (
           <Card>
             <CardContent className="pt-6">
               <Button
@@ -2577,6 +2716,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
               </p>
             </CardContent>
           </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -3182,12 +3322,13 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
               <span className="text-foreground font-medium">{carouselStyleStatusLabel}</span>
             </p>
           )}
-          {/* Show parallel generation indicator */}
+          {/* Show parallel generation indicator - only for carousel */}
           {(() => {
             const runningCount = customProgressSteps.filter(s => s.status === "running").length;
             const doneCount = customProgressSteps.filter(s => s.status === "done").length;
             const totalSlides = customProgressSteps.filter(s => s.key.startsWith("slide_")).length;
-            return runningCount > 1 ? (
+            // Only show parallel indicator for carousel generation (when there are actual slides)
+            return runningCount > 1 && totalSlides > 0 ? (
               <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-primary/10 border border-primary/20 mb-2">
                 <div className="flex -space-x-1">
                   {Array.from({ length: Math.min(runningCount, 3) }).map((_, i) => (

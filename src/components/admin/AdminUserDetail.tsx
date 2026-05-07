@@ -95,6 +95,32 @@ function parseQuotaPayload(raw: unknown): QuotaPayload | null {
   };
 }
 
+type OnboardingResponseRow = {
+  questionText: string;
+  questionKey: string;
+  selectedValue: string;
+  selectedLabel: string;
+  answeredAt: string;
+};
+
+type OnboardingData = {
+  responses: OnboardingResponseRow[];
+  hasCompletedOnboarding: boolean;
+  responseCount: number;
+} | null;
+
+type ReferralInfo = {
+  referredBy: { id: string; username: string | null; full_name: string | null } | null;
+  referralsMade: Array<{
+    id: string;
+    status: string;
+    credits_awarded: number;
+    created_at: string;
+    referred_user?: { username: string | null; full_name: string | null };
+  }>;
+  totalCreditsEarned: number;
+} | null;
+
 export function AdminUserDetail({
   userId,
   superAdmin,
@@ -109,6 +135,8 @@ export function AdminUserDetail({
   const [billing, setBilling] = useState<{ items: BillingRow[]; source: string } | null>(
     null,
   );
+  const [onboarding, setOnboarding] = useState<OnboardingData>(null);
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo>(null);
 
   const [creditDelta, setCreditDelta] = useState("");
   const [creditReason, setCreditReason] = useState("");
@@ -118,9 +146,11 @@ export function AdminUserDetail({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [detail, inv] = await Promise.all([
+      const [detail, inv, onb, refInfo] = await Promise.all([
         apiClient.get(`/platform-admin/users/${userId}`),
         apiClient.get(`/platform-admin/users/${userId}/billing`).catch(() => null),
+        apiClient.get(`/platform-admin/users/${userId}/onboarding-responses`).catch(() => null),
+        apiClient.get(`/admin/referral/user/${userId}`).catch(() => null),
       ]);
       setProfile(detail.profile as ProfileRow);
       setQuota(parseQuotaPayload((detail as { quota?: unknown }).quota));
@@ -129,6 +159,16 @@ export function AdminUserDetail({
         setBilling(inv as { items: BillingRow[]; source: string });
       } else {
         setBilling(null);
+      }
+      if (onb && typeof onb === "object" && (onb as { data?: unknown }).data) {
+        setOnboarding((onb as { data: OnboardingData }).data);
+      } else {
+        setOnboarding(null);
+      }
+      if (refInfo && typeof refInfo === "object") {
+        setReferralInfo(refInfo as ReferralInfo);
+      } else {
+        setReferralInfo(null);
       }
       const sub = detail.subscription as { plan_type?: string; billing_cycle?: string } | null;
       if (sub?.plan_type) setPlanType(sub.plan_type);
@@ -421,6 +461,145 @@ export function AdminUserDetail({
                 ))}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Onboarding Responses</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            User&apos;s answers to onboarding questions.
+            {onboarding?.hasCompletedOnboarding ? (
+              <span className="ml-2 text-green-600">✓ Completed</span>
+            ) : (
+              <span className="ml-2 text-amber-600">○ Not completed</span>
+            )}
+          </p>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          {!onboarding || onboarding.responses.length === 0 ? (
+            <div className="p-6">
+              <p className="text-sm text-muted-foreground">
+                No onboarding responses recorded for this user.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Question</TableHead>
+                  <TableHead>Answer</TableHead>
+                  <TableHead className="text-right">Answered</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {onboarding.responses.map((resp, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-sm font-medium">
+                      {resp.questionText}
+                      <span className="ml-2 text-xs text-muted-foreground font-mono">
+                        ({resp.questionKey})
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {resp.selectedLabel}
+                      {resp.selectedLabel !== resp.selectedValue && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          [{resp.selectedValue}]
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-right whitespace-nowrap">
+                      {new Date(resp.answeredAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Referral Information</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Referral program activity for this user.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!referralInfo ? (
+            <p className="text-sm text-muted-foreground">
+              No referral information available.
+            </p>
+          ) : (
+            <>
+              {referralInfo.referredBy && (
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-1">Referred by</p>
+                  <p className="text-sm text-muted-foreground">
+                    {referralInfo.referredBy.full_name || referralInfo.referredBy.username || "Unknown user"}
+                    <span className="ml-2 text-xs">({referralInfo.referredBy.id.slice(0, 8)}...)</span>
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium">Users Referred</p>
+                  <p className="text-2xl font-bold">{referralInfo.referralsMade?.length || 0}</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium">Credits Earned</p>
+                  <p className="text-2xl font-bold">{referralInfo.totalCreditsEarned || 0}</p>
+                </div>
+              </div>
+
+              {referralInfo.referralsMade && referralInfo.referralsMade.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Referrals Made</p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Credits</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {referralInfo.referralsMade.map((ref) => (
+                        <TableRow key={ref.id}>
+                          <TableCell className="text-sm">
+                            {ref.referred_user?.full_name || ref.referred_user?.username || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full ${
+                                ref.status === "credited"
+                                  ? "bg-green-100 text-green-700"
+                                  : ref.status === "completed"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {ref.status}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm tabular-nums">
+                            {ref.credits_awarded || 0}
+                          </TableCell>
+                          <TableCell className="text-sm text-right whitespace-nowrap">
+                            {new Date(ref.created_at).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -24,6 +24,7 @@ import {
   BarChart3,
   Eye,
   EyeOff,
+  Gift,
 } from "lucide-react";
 import {
   FaLinkedinIn,
@@ -55,6 +56,10 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralValid, setReferralValid] = useState<boolean | null>(null);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [validatingReferral, setValidatingReferral] = useState(false);
 
   // OTP is shown inline when this is true — set immediately on signup (local, no async)
   const [showOtp, setShowOtp] = useState(false);
@@ -104,6 +109,41 @@ export default function Auth() {
     });
   }, [searchParams, toast]);
 
+  // Auto-fill referral code from URL param and switch to signup mode
+  useEffect(() => {
+    const refCode = searchParams.get("ref");
+    if (refCode && !referralCode) {
+      setReferralCode(refCode.toUpperCase());
+      validateReferralCode(refCode);
+      // Switch to signup mode when referral code is present
+      setIsLogin(false);
+    }
+  }, [searchParams]);
+
+  const validateReferralCode = async (code: string) => {
+    if (!code || code.trim().length < 3) {
+      setReferralValid(null);
+      setReferrerName(null);
+      return;
+    }
+    setValidatingReferral(true);
+    try {
+      const res = await apiClient.post(`/public/referral/validate/${encodeURIComponent(code.trim())}`);
+      if (res.success && res.data.valid) {
+        setReferralValid(true);
+        setReferrerName(res.data.referrer?.name || null);
+      } else {
+        setReferralValid(false);
+        setReferrerName(null);
+      }
+    } catch {
+      setReferralValid(false);
+      setReferrerName(null);
+    } finally {
+      setValidatingReferral(false);
+    }
+  };
+
   // Focus first OTP input
   useEffect(() => {
     if (showOtp) {
@@ -145,6 +185,7 @@ export default function Auth() {
           password,
           username: trimmedUsername,
           fullName: fullName.trim() || undefined,
+          referralCode: referralCode.trim() || undefined,
         });
         if (!regRes.success) throw new Error(regRes.message || "Registration failed");
 
@@ -420,6 +461,52 @@ export default function Auth() {
                     className="pl-10"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code (optional)</Label>
+                <div className="relative">
+                  <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="referralCode"
+                    type="text"
+                    placeholder="TRND-XXXXX"
+                    value={referralCode}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setReferralCode(val);
+                      if (val.length >= 3) {
+                        validateReferralCode(val);
+                      } else {
+                        setReferralValid(null);
+                        setReferrerName(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (referralCode.trim().length >= 3) {
+                        validateReferralCode(referralCode);
+                      }
+                    }}
+                    className={`pl-10 ${
+                      referralValid === true
+                        ? "border-green-500 focus:border-green-500"
+                        : referralValid === false
+                          ? "border-destructive focus:border-destructive"
+                          : ""
+                    }`}
+                  />
+                  {validatingReferral && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {referralValid === true && referrerName && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <Gift className="h-3 w-3" />
+                    Referred by {referrerName}
+                  </p>
+                )}
+                {referralValid === false && (
+                  <p className="text-xs text-destructive">Invalid referral code</p>
+                )}
               </div>
             </>
           )}

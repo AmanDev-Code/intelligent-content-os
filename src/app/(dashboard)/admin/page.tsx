@@ -17,6 +17,8 @@ import {
   Activity,
   Server,
   ShieldAlert,
+  ClipboardList,
+  Gift,
 } from "lucide-react";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 import { apiClient } from "@/lib/apiClient";
@@ -218,6 +220,20 @@ export default function AdminOverviewPage() {
           description: "Toggle maintenance mode or schedule a downtime window.",
           icon: ShieldAlert,
           show: sections.maintenance,
+        },
+        {
+          href: "/admin/onboarding",
+          title: "Onboarding",
+          description: "Manage onboarding questions and view user responses.",
+          icon: ClipboardList,
+          show: sections.settings, // Use settings permission for now
+        },
+        {
+          href: "/admin/referrals",
+          title: "Referrals",
+          description: "Manage referral program settings, banners, and analytics.",
+          icon: Gift,
+          show: sections.settings, // Use settings permission for now
         },
       ] as const,
     [sections],
