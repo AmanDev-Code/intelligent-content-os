@@ -8,6 +8,7 @@ import {
   Save,
   Trash2,
   Coins,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,7 @@ export function SystemSettings() {
   const [loadingCredits, setLoadingCredits] = useState(true);
   const [savingCredits, setSavingCredits] = useState(false);
   const [flushingCache, setFlushingCache] = useState(false);
+  const [cleaningStaleJobs, setCleaningStaleJobs] = useState(false);
 
   const loadFreeCreditLimit = useCallback(async () => {
     try {
@@ -99,6 +101,27 @@ export function SystemSettings() {
       toast.error("Failed to flush Redis cache");
     } finally {
       setFlushingCache(false);
+    }
+  }
+
+  async function handleCleanupStaleJobs() {
+    setCleaningStaleJobs(true);
+    try {
+      const response = (await apiClient.post("/admin/generation/cleanup-stale", {
+        maxAgeMinutes: 5,
+      })) as {
+        success: boolean;
+        message: string;
+        cleanedCount?: number;
+      };
+
+      if (response.success) {
+        toast.success(response.message || `Cleaned up ${response.cleanedCount || 0} stale jobs`);
+      }
+    } catch {
+      toast.error("Failed to cleanup stale jobs");
+    } finally {
+      setCleaningStaleJobs(false);
     }
   }
 
@@ -176,6 +199,70 @@ export function SystemSettings() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Generation Jobs Management Card */}
+      <Card className="border-amber-500/25">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <Zap className="h-4 w-4" />
+            Generation Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Cleanup Stale Jobs</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Remove stuck generation jobs that are older than 5 minutes. Use this if
+                users are hitting the &quot;max 5 active jobs&quot; limit due to failed jobs.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+                  disabled={cleaningStaleJobs}
+                >
+                  {cleaningStaleJobs ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      Cleaning...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-3.5 w-3.5 mr-1.5" />
+                      Cleanup Jobs
+                    </>
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cleanup Stale Generation Jobs?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will mark all generation jobs older than 5 minutes as failed and
+                    refund credits to affected users. This helps clear stuck jobs that are
+                    blocking new generations.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCleanupStaleJobs}
+                    className="bg-amber-600 text-white hover:bg-amber-700"
+                  >
+                    Cleanup Jobs
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
 

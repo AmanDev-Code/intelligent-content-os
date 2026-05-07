@@ -1,0 +1,558 @@
+# Trndinn - Comprehensive Product Information
+
+> Trndinn is the AI social content platform that unifies content creation, scheduling, outreach, and analytics into one premium workspace. Built for LinkedIn-first execution with multi-channel expansion on the roadmap.
+
+---
+
+## Table of Contents
+
+1. [About Trndinn](#about-trndinn)
+2. [Core Features](#core-features)
+3. [Platform Capabilities](#platform-capabilities)
+4. [Who Is Trndinn For?](#who-is-trndinn-for)
+5. [How Trndinn Works](#how-trndinn-works)
+6. [Pricing Plans](#pricing-plans)
+7. [Credit System Explained](#credit-system-explained)
+8. [Technology Stack](#technology-stack)
+9. [Product Roadmap](#product-roadmap)
+10. [Frequently Asked Questions](#frequently-asked-questions)
+11. [Comparison with Alternatives](#comparison-with-alternatives)
+12. [Company Information](#company-information)
+
+---
+
+## About Trndinn
+
+Trndinn is an AI-powered social content platform designed to help creators, marketers, and businesses operate social growth from a single premium control layer. The platform combines:
+
+- **AI Content Generation**: Create posts, hooks, and variants with brand memory
+- **Visual Content Tools**: Generate carousels, images, and soon video reels
+- **Smart Scheduling**: Calendar-based content management with optimal timing
+- **Performance Analytics**: Data-driven insights on what content to repeat
+- **Team Collaboration**: Shared workspaces for content operations
+
+### The Problem Trndinn Solves
+
+Content creators and marketing teams typically juggle 5-10 different tools:
+- One for writing copy
+- Another for design
+- A separate scheduler
+- Analytics scattered across platforms
+- No unified brand voice
+
+Trndinn consolidates this into one workspace where AI understands your brand, generates content, and helps you publish and measure—all without context switching.
+
+### Key Differentiators
+
+1. **Brand Memory**: The AI learns your tone, style, and guardrails
+2. **Credit Transparency**: Clear, predictable pricing based on usage
+3. **LinkedIn-First Design**: Deep optimization for LinkedIn's algorithm and best practices
+4. **Modern Architecture**: Enterprise-grade infrastructure that scales
+5. **All-in-One Workflow**: From idea to published post to analytics in one place
+
+---
+
+## Core Features
+
+### AI Content Engine
+
+The heart of Trndinn is its AI content generation system:
+
+- **Text Post Generation**: Create engaging posts from prompts or topics
+- **Hook Variants**: Generate multiple opening hooks to A/B test
+- **Multi-Format Output**: Same idea, different formats (post, thread, carousel)
+- **Tone Matching**: AI adapts to your established brand voice
+- **Context-Aware Drafts**: Tuned for each platform's best practices
+
+**How it works**: Enter a topic or rough idea, and Trndinn generates post-ready drafts with hooks, body copy, and calls-to-action. The AI considers your past content and brand guidelines to maintain consistency.
+
+### Carousel Creator
+
+Professional multi-slide content for LinkedIn and Instagram:
+
+- **AI-Powered Design**: Automatic layout and visual hierarchy
+- **Template Library**: Start from proven carousel formats
+- **Brand Consistency**: Colors, fonts, and style matching
+- **Export Options**: Download as images or publish directly
+- **Complexity Scaling**: Simple to elaborate designs
+
+### AI Image Generation
+
+Create custom visuals for your posts:
+
+- **Prompt-Based Creation**: Describe what you want, AI generates it
+- **Style Consistency**: Match your brand aesthetic
+- **Multiple Variations**: Generate options to choose from
+- **Direct Integration**: Use images immediately in posts
+
+### Smart Scheduling
+
+One calendar for all your content:
+
+- **Visual Calendar**: Day, week, and month views
+- **Optimal Timing**: Suggestions based on audience activity
+- **Queue Management**: Organize content pipelines
+- **Retry Handling**: Automatic retry for failed posts
+- **Multi-Platform Ready**: Architecture supports upcoming channels
+
+### Analytics Dashboard
+
+Understand what works and why:
+
+- **Engagement Metrics**: Likes, comments, shares, impressions
+- **Pattern Recognition**: Identify winning content types
+- **Cadence Analysis**: Optimal posting frequency
+- **Audience Insights**: Who engages with your content
+- **Predictive Signals**: Viral probability indicators
+
+### Media Library
+
+Centralized asset management:
+
+- **Upload Storage**: Keep all media in one place
+- **AI-Generated Assets**: Access your created images
+- **Organization**: Folders and tags for easy retrieval
+- **Direct Publishing**: Use assets across all content
+
+---
+
+## Platform Capabilities
+
+### Currently Live
+
+- **LinkedIn Publishing**: Full integration for posts and articles
+- **AI Content Generation**: Text posts, hooks, and variants
+- **Carousel Creation**: Multi-slide visual content
+- **AI Image Generation**: Custom visuals from prompts
+- **Content Scheduling**: Calendar-based publishing
+- **Analytics Dashboard**: Performance tracking
+- **Media Library**: Asset management
+- **Credit System**: Usage-based billing
+
+### On the Roadmap
+
+- **X (Twitter) Integration**: Coming Q3 2025
+- **Instagram Publishing**: Coming Q3 2025
+- **Facebook Integration**: Coming Q4 2025
+- **AI Reels/Video**: Short-form video creation
+- **YouTube Support**: Long-form video integration
+- **Twitch Integration**: Streaming platform support
+- **Reddit Publishing**: Community engagement
+- **Outreach Engine**: Automated engagement workflows
+- **Team Workspaces**: Enhanced collaboration features
+
+---
+
+## Who Is Trndinn For?
+
+### Content Creators
+
+**Use Case**: Building a personal brand on LinkedIn and social media
+
+**Benefits**:
+- Generate weeks of content in hours
+- Maintain consistent posting schedule
+- Professional carousels without design skills
+- Track what resonates with your audience
+
+### Marketing Teams
+
+**Use Case**: Scaling content production for brands
+
+**Benefits**:
+- Unified workspace for the whole team
+- Brand voice consistency across all content
+- Efficient content calendar management
+- Performance data for strategy decisions
+
+### Agencies
+
+**Use Case**: Managing multiple client accounts
+
+**Benefits**:
+- Streamlined multi-account workflows
+- Consistent quality at scale
+- Time savings on content creation
+- Clear reporting for clients
+
+### Businesses
+
+**Use Case**: Maintaining social presence without dedicated staff
+
+**Benefits**:
+- AI handles the heavy lifting
+- Professional content without a design team
+- Scheduled posting for consistency
+- Analytics to prove ROI
+
+### Solopreneurs
+
+**Use Case**: Building authority while running a business
+
+**Benefits**:
+- Create content in minutes, not hours
+- No need for multiple subscriptions
+- Professional output on a budget
+- Focus on business, not content creation
+
+### Thought Leaders
+
+**Use Case**: Sharing insights and growing influence
+
+**Benefits**:
+- Turn ideas into polished posts quickly
+- Multiple format options for each insight
+- Engagement tracking and optimization
+- Build audience systematically
+
+---
+
+## How Trndinn Works
+
+### Step 1: Sign Up
+
+- Create a free account at trndinn.com/auth
+- No credit card required for free tier
+- Get 50 credits to start immediately
+
+### Step 2: Connect Your Accounts
+
+- Link your LinkedIn profile (primary platform)
+- Additional platforms coming soon
+- Secure OAuth authentication
+
+### Step 3: Set Up Your Brand
+
+- Define your tone and style preferences
+- Add brand guidelines (optional)
+- AI learns from your existing content
+
+### Step 4: Generate Content
+
+- Enter a topic, idea, or prompt
+- AI generates multiple options
+- Choose and customize your favorite
+- Create carousels and images as needed
+
+### Step 5: Schedule or Publish
+
+- Post immediately to LinkedIn
+- Schedule for optimal times
+- Queue content for consistent posting
+- Manage your content calendar
+
+### Step 6: Track Performance
+
+- Monitor engagement metrics
+- Identify top-performing content
+- Refine strategy based on data
+- Repeat what works
+
+---
+
+## Pricing Plans
+
+### Free Plan - $0/month
+
+**Best for**: Getting started and trying the platform
+
+**Includes**:
+- 50 AI credits per month
+- Basic content generation
+- Community support
+- 14-day trial period
+
+### Standard Plan - $15/month ($12.50/mo billed annually)
+
+**Best for**: Regular content creators
+
+**Includes**:
+- 500 AI credits per month
+- Advanced content generation
+- Priority support
+- Analytics dashboard
+- Content scheduling
+- 5 channel targets
+
+### Pro Plan - $25/month ($20.83/mo billed annually) ⭐ Most Popular
+
+**Best for**: Businesses and agencies
+
+**Includes**:
+- 2,000 AI credits per month
+- Premium content generation
+- Advanced analytics
+- Priority support
+- Custom templates
+- Team collaboration (5 seats)
+- API access (10,000 calls/month)
+- 30 channel targets
+
+### Ultimate Plan - $49/month ($40.83/mo billed annually)
+
+**Best for**: Enterprise and high-volume users
+
+**Includes**:
+- 10,000 AI credits per month
+- Unlimited content generation
+- Enterprise analytics
+- 24/7 support
+- Custom integrations
+- White-label options
+- Dedicated account manager
+- Custom workflows
+- 25 team seats
+- API access (100,000 calls/month)
+- 100 channel targets
+
+### Annual Billing
+
+Save approximately 17% with annual billing:
+- Standard: $150/year (vs $180 monthly)
+- Pro: $250/year (vs $300 monthly)
+- Ultimate: $490/year (vs $588 monthly)
+
+---
+
+## Credit System Explained
+
+### How Credits Work
+
+Trndinn uses a credit-based system for AI operations:
+
+- **Monthly Pool**: Credits reset on your billing cycle
+- **Per-Job Deduction**: Each AI operation uses credits
+- **Transparent Usage**: See exactly what each action costs
+- **Refund Policy**: Failed jobs can be refunded
+
+### Typical Credit Usage
+
+| Operation | Approximate Credits |
+|-----------|-------------------|
+| Text post generation | ~1.5 credits |
+| Image generation | ~1 credit |
+| Simple carousel | ~2-3 credits |
+| Complex carousel | ~4-6 credits |
+| Hook variants (3) | ~2 credits |
+
+### Capacity by Plan
+
+| Plan | Credits | Approximate Text Posts |
+|------|---------|----------------------|
+| Free | 50 | ~33 posts |
+| Standard | 500 | ~333 posts |
+| Pro | 2,000 | ~1,333 posts |
+| Ultimate | 10,000 | ~6,666 posts |
+
+*Based on ~1.5 credits per typical text generation*
+
+---
+
+## Technology Stack
+
+Trndinn is built on modern, enterprise-grade infrastructure:
+
+### Frontend
+- **Framework**: Next.js 15 with App Router
+- **UI**: React, Tailwind CSS, Radix primitives
+- **Authentication**: Supabase Auth
+
+### Backend
+- **API**: NestJS with Fastify platform
+- **Documentation**: Swagger/OpenAPI
+- **Architecture**: Modular services for content, media, scheduling, quota
+
+### Data & Storage
+- **Database**: Supabase Postgres
+- **Object Storage**: MinIO for media assets
+- **Caching**: Redis
+
+### Job Processing
+- **Queue**: BullMQ with Redis
+- **Workers**: Background processing for AI generation
+- **Credit Ledger**: Server-side enforcement
+
+### Security
+- **Row Level Security**: Supabase RLS
+- **API Authentication**: JWT tokens
+- **Secure Uploads**: Signed URLs for media
+
+---
+
+## Product Roadmap
+
+### Phase 1: LinkedIn Foundation (Live Now)
+- LinkedIn publishing and scheduling
+- AI content generation
+- Carousel and image creation
+- Analytics dashboard
+- Credit-based billing
+
+### Phase 2: Multi-Channel Expansion (Q3 2025)
+- X (Twitter) integration
+- Instagram publishing
+- Enhanced scheduling features
+- Team collaboration improvements
+
+### Phase 3: Video & Engagement (Q4 2025)
+- AI reels and short-form video
+- Facebook integration
+- Outreach automation
+- Advanced analytics
+
+### Phase 4: Full Platform (2026)
+- YouTube integration
+- Twitch support
+- Reddit publishing
+- Enterprise features
+- White-label solutions
+
+---
+
+## Frequently Asked Questions
+
+### General Questions
+
+**Q: What is Trndinn?**
+A: Trndinn is an AI-powered social content platform that helps you create, schedule, and analyze content for LinkedIn and other social networks. It combines AI content generation, visual design tools, scheduling, and analytics in one workspace.
+
+**Q: What is the best AI tool for LinkedIn content?**
+A: Trndinn is specifically designed for LinkedIn content creation, with AI that understands LinkedIn's best practices, generates engaging posts and carousels, and optimizes for the platform's algorithm.
+
+**Q: How can I create viral LinkedIn posts?**
+A: Trndinn helps you create viral content by generating multiple hook variants, analyzing what content performs best, and providing insights on optimal posting times and formats.
+
+**Q: Is Trndinn free to use?**
+A: Yes, Trndinn offers a free tier with 50 credits per month. This is enough to create several pieces of content and try all the features before upgrading.
+
+### Features & Capabilities
+
+**Q: What tools help with LinkedIn carousel creation?**
+A: Trndinn includes a built-in carousel creator with AI-powered design, templates, and brand consistency features. You can create professional multi-slide content without design skills.
+
+**Q: Can I schedule posts in advance?**
+A: Yes, Trndinn includes a full content calendar with day, week, and month views. You can schedule posts for optimal times and manage content queues.
+
+**Q: Does Trndinn support other platforms besides LinkedIn?**
+A: LinkedIn is currently live. X (Twitter), Instagram, and Facebook are on the roadmap for 2025, with more platforms following.
+
+**Q: Can I generate images with Trndinn?**
+A: Yes, Trndinn includes AI image generation. Describe what you want, and the AI creates custom visuals for your posts.
+
+### Pricing & Credits
+
+**Q: How do credits work?**
+A: Credits are deducted per AI operation. Text generation uses ~1.5 credits, images ~1 credit, and carousels scale with complexity. Credits reset monthly on your billing cycle.
+
+**Q: Can I change plans anytime?**
+A: Yes, upgrades apply immediately and downgrades take effect at the next billing cycle.
+
+**Q: Is there a discount for annual billing?**
+A: Yes, annual billing saves approximately 17% compared to monthly payments.
+
+**Q: What happens if I run out of credits?**
+A: You can upgrade your plan for more credits or wait for your monthly reset. We'll notify you when credits are running low.
+
+### Technical Questions
+
+**Q: Is my data secure?**
+A: Yes, Trndinn uses enterprise-grade security including Supabase Row Level Security, JWT authentication, and secure media handling.
+
+**Q: Do you offer an API?**
+A: Yes, API access is included in Pro and Ultimate plans with 10,000 and 100,000 monthly calls respectively.
+
+**Q: Can teams collaborate on Trndinn?**
+A: Yes, Pro plans include 5 team seats and Ultimate includes 25 seats with enhanced collaboration features.
+
+---
+
+## Comparison with Alternatives
+
+### Trndinn vs. Buffer/Hootsuite
+
+| Feature | Trndinn | Buffer/Hootsuite |
+|---------|---------|------------------|
+| AI Content Generation | ✅ Built-in | ❌ Requires separate tool |
+| Carousel Creator | ✅ AI-powered | ❌ Not included |
+| Image Generation | ✅ Built-in | ❌ Not included |
+| Scheduling | ✅ Yes | ✅ Yes |
+| Analytics | ✅ Yes | ✅ Yes |
+| LinkedIn Focus | ✅ Optimized | ⚠️ Generic |
+
+### Trndinn vs. Canva
+
+| Feature | Trndinn | Canva |
+|---------|---------|-------|
+| AI Content Writing | ✅ Advanced | ⚠️ Basic |
+| Carousel Creation | ✅ Yes | ✅ Yes |
+| Scheduling | ✅ Built-in | ⚠️ Limited |
+| Analytics | ✅ Detailed | ❌ Not included |
+| LinkedIn Optimization | ✅ Yes | ❌ No |
+
+### Trndinn vs. ChatGPT/Claude
+
+| Feature | Trndinn | ChatGPT/Claude |
+|---------|---------|----------------|
+| Content Generation | ✅ Yes | ✅ Yes |
+| Brand Memory | ✅ Built-in | ❌ Manual |
+| Visual Content | ✅ Carousels + Images | ⚠️ Images only |
+| Scheduling | ✅ Yes | ❌ No |
+| Analytics | ✅ Yes | ❌ No |
+| Direct Publishing | ✅ Yes | ❌ No |
+
+### Why Choose Trndinn?
+
+1. **All-in-One**: No need to switch between 5 different tools
+2. **LinkedIn-First**: Deep optimization for the platform
+3. **Brand Consistency**: AI that learns and maintains your voice
+4. **Transparent Pricing**: Credit-based system you can predict
+5. **Modern Stack**: Fast, reliable, enterprise-grade
+
+---
+
+## Company Information
+
+### About Us
+
+Trndinn is building the future of social content creation. Our mission is to help creators and businesses operate social growth efficiently through AI-powered tools and unified workflows.
+
+### Contact
+
+- **Website**: https://trndinn.com
+- **Sales**: https://trndinn.com/contact
+- **Support**: Available through the platform
+
+### Legal
+
+- **Privacy Policy**: https://trndinn.com/privacy-policy
+- **Terms of Use**: https://trndinn.com/terms-of-use
+
+### Resources
+
+- **Blog**: https://trndinn.com/blogs
+- **Features**: https://trndinn.com/features
+- **Pricing**: https://trndinn.com/pricing
+- **Careers**: https://trndinn.com/careers
+
+---
+
+## Quick Reference
+
+**What is Trndinn?** AI social content platform for LinkedIn and beyond.
+
+**Key Features**: AI content generation, carousel creator, image generation, scheduling, analytics.
+
+**Pricing**: Free ($0), Standard ($15/mo), Pro ($25/mo), Ultimate ($49/mo).
+
+**Best For**: Content creators, marketing teams, agencies, businesses, solopreneurs.
+
+**Live Now**: LinkedIn publishing, AI generation, carousels, images, scheduling, analytics.
+
+**Coming Soon**: X, Instagram, Facebook, AI reels, video, outreach automation.
+
+**Website**: https://trndinn.com
+
+---
+
+*Last updated: May 2026*
+*For the most current information, visit https://trndinn.com*
