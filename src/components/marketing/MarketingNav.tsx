@@ -9,12 +9,17 @@ import { TrndinnLogo } from "@/components/brand/TrndinnLogo";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { cn } from "@/lib/utils";
+
+function blogNavActive(pathname: string): boolean {
+  return pathname === BLOG_BASE_PATH || pathname.startsWith(`${BLOG_BASE_PATH}/`);
+}
 
 const links = [
   { href: "/features", label: "Features" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/blogs", label: "Blog" },
+  { href: BLOG_BASE_PATH, label: "Blog" },
   { href: "/careers", label: "Careers" },
   { href: "/contact", label: "Contact" },
 ] as const;
@@ -42,9 +47,7 @@ export function MarketingNav() {
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ href, label }) => {
             const active =
-              href === "/blogs"
-                ? pathname === "/blogs" || pathname.startsWith("/blogs/")
-                : pathname === href;
+              href === BLOG_BASE_PATH ? blogNavActive(pathname) : pathname === href;
             return (
               <Link
                 key={href}
@@ -94,10 +97,7 @@ export function MarketingNav() {
             <SheetContent side="right" className="w-[min(100%,320px)] border-border/50 bg-background/95 backdrop-blur-xl">
               <div className="mt-8 flex flex-col gap-1">
                 {links.map(({ href, label }) => {
-                  const mActive =
-                    href === "/blogs"
-                      ? pathname === "/blogs" || pathname.startsWith("/blogs/")
-                      : pathname === href;
+                  const mActive = href === BLOG_BASE_PATH ? blogNavActive(pathname) : pathname === href;
                   return (
                     <Link
                       key={href}

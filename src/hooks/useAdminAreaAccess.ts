@@ -14,6 +14,7 @@ export type AdminSections = {
   careers: boolean;
   settings: boolean;
   maintenance: boolean;
+  media: boolean;
 };
 
 export function useAdminAreaAccess(): {
@@ -38,6 +39,7 @@ export function useAdminAreaAccess(): {
       careers: isAdmin,
       settings: isAdmin,
       maintenance: isAdmin,
+      media: isAdmin,
     };
   }, [
     canEnter,

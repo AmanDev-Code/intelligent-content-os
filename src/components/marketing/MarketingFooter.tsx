@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { TrndinnLogo } from "@/components/brand/TrndinnLogo";
+import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { siteName } from "@/lib/site";
 
 export function MarketingFooter() {
@@ -29,7 +30,7 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/blogs" className="text-foreground/90 hover:text-primary">
+                  <Link href={BLOG_BASE_PATH} className="text-foreground/90 hover:text-primary">
                     Blog
                   </Link>
                 </li>

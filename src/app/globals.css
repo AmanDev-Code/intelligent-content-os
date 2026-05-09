@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light canvas: aligns with marketing blog parchment (#f9f7f2 → hsl ~43 37% 96%) */
   :root {
-    --background: 0 0% 100%;
+    --background: 43 37% 96%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -16,31 +17,31 @@
     --primary: 21 95% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 43 21% 94%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 210 40% 96%;
+    --muted: 43 21% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96%;
+    --accent: 43 21% 94%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 38 26% 90%;
+    --input: 38 26% 90%;
     --ring: 21 95% 56%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
+    --sidebar-background: 43 37% 96%;
     --sidebar-foreground: 222.2 47.4% 11.2%;
     --sidebar-primary: 21 95% 56%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 43 21% 94%;
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-border: 38 26% 90%;
     --sidebar-ring: 21 95% 56%;
 
     --chart-1: 21 95% 56%;

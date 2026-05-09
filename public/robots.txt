@@ -6,7 +6,7 @@ User-agent: *
 Allow: /
 Allow: /pricing
 Allow: /features
-Allow: /blogs
+Allow: /blog
 Allow: /careers
 Allow: /contact
 Allow: /privacy-policy

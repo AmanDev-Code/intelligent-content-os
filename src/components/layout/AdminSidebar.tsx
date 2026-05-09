@@ -16,6 +16,7 @@ import {
   Menu,
   ArrowLeft,
   Shield,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -52,6 +53,7 @@ function SidebarContent({
     { to: "/admin/feedback", icon: MessageSquareText, label: "Product Feedback", show: sections.feedback },
     { to: "/admin/user-feedback", icon: MessageSquarePlus, label: "User Feedback", show: sections.feedback },
     { to: "/admin/blog", icon: BookOpen, label: "Blog & CMS", show: sections.blog },
+    { to: "/admin/media", icon: FolderOpen, label: "Media", show: sections.media },
     { to: "/admin/careers", icon: Briefcase, label: "Careers", show: sections.careers },
     { to: "/admin/settings", icon: Settings, label: "Admin settings", show: sections.settings },
   ];

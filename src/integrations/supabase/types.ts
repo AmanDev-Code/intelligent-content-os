@@ -269,6 +269,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          author_avatar_url: string | null
+          author_bio: string | null
+          author_linkedin_url: string | null
+          author_role: string | null
           avatar_url: string | null
           created_at: string
           credits_remaining: number
@@ -286,6 +290,10 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          author_avatar_url?: string | null
+          author_bio?: string | null
+          author_linkedin_url?: string | null
+          author_role?: string | null
           avatar_url?: string | null
           created_at?: string
           credits_remaining?: number
@@ -303,6 +311,10 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          author_avatar_url?: string | null
+          author_bio?: string | null
+          author_linkedin_url?: string | null
+          author_role?: string | null
           avatar_url?: string | null
           created_at?: string
           credits_remaining?: number

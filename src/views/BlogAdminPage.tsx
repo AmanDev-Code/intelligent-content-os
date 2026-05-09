@@ -1,10 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
-import { api } from "@/lib/apiClient";
+import type { User } from "@supabase/supabase-js";
+import { api, apiClient } from "@/lib/apiClient";
+import { useAuth } from "@/contexts/AuthContext";
 import { useBlogAccess } from "@/hooks/useBlogAccess";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +32,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { ImageSourceInput } from "@/components/media/ImageSourceInput";
+import {
+  BLOG_CATEGORY_SELECT_CUSTOM,
+  BLOG_CATEGORY_SELECT_NONE,
+  BLOG_CONTENT_CATEGORY_PRESETS,
+  presetSelectValueFromStored,
+  resolvedContentCategoryFromForm,
+} from "@/lib/blogContentCategory";
 
 type PostRow = {
   id: string;
   path: string;
   title: string;
   post_kind?: string;
+  content_category?: string | null;
   status?: string;
   updated_at?: string;
 };
@@ -43,14 +56,23 @@ type FormState = {
   slug: string;
   parent_id: string;
   post_kind: string;
+  /** Value from BLOG_CONTENT_CATEGORY_PRESETS, BLOG_CATEGORY_SELECT_NONE, or BLOG_CATEGORY_SELECT_CUSTOM */
+  category_preset: string;
+  category_custom: string;
   status: string;
   excerpt: string;
   body: string;
   tags: string;
   subtitle: string;
   featured_image_url: string;
+  /** Preset for listing/hero focal point (empty = product default cropping). */
+  featured_image_object_position: string;
   reading_minutes: string;
   author_display_name: string;
+  author_bio: string;
+  author_avatar_url: string;
+  author_role: string;
+  author_linkedin_url: string;
   scheduled_publish_at: string;
   published_at: string;
   seo_title: string;
@@ -70,14 +92,21 @@ const emptyForm = (): FormState => ({
   slug: "",
   parent_id: "",
   post_kind: "article",
+  category_preset: BLOG_CATEGORY_SELECT_NONE,
+  category_custom: "",
   status: "draft",
   excerpt: "",
   body: "",
   tags: "",
   subtitle: "",
   featured_image_url: "",
+  featured_image_object_position: "",
   reading_minutes: "",
   author_display_name: "",
+  author_bio: "",
+  author_avatar_url: "",
+  author_role: "",
+  author_linkedin_url: "",
   scheduled_publish_at: "",
   published_at: "",
   seo_title: "",
@@ -92,21 +121,103 @@ const emptyForm = (): FormState => ({
   custom_css: "",
 });
 
+function trimAuth(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+/** Name from OAuth/user_metadata when profiles.full_name is empty. */
+function displayNameFromAuthUser(user: User | null): string {
+  if (!user) return "";
+  const m = user.user_metadata || {};
+  return (
+    trimAuth(m.full_name) ||
+    trimAuth(m.name) ||
+    [trimAuth(m.given_name), trimAuth(m.family_name)].filter(Boolean).join(" ").trim() ||
+    trimAuth(m.preferred_username) ||
+    trimAuth((m as { user_name?: string }).user_name) ||
+    trimAuth(user.email?.split("@")[0])
+  );
+}
+
+/** Avatar URL from OAuth (e.g. Google picture) when profiles.avatar_url is empty. */
+function avatarUrlFromAuthUser(user: User | null): string {
+  if (!user) return "";
+  const m = user.user_metadata || {};
+  return trimAuth(m.avatar_url) || trimAuth(m.picture) || trimAuth((m as { image?: string }).image);
+}
+
+/** Vanity → public URL when user signed up with LinkedIn OpenID (field names vary). */
+function linkedInUrlFromAuthIdentities(user: User | null): string {
+  const id = user?.identities?.find((i) => /linkedin/i.test(String(i.provider)));
+  if (!id?.identity_data || typeof id.identity_data !== "object") return "";
+  const d = id.identity_data as Record<string, unknown>;
+  const vn =
+    trimAuth(d.vanity_name) ||
+    trimAuth(d.vanityName) ||
+    trimAuth(d.public_identifier) ||
+    trimAuth(d.profile);
+  if (!vn) return "";
+  if (/^https?:\/\//i.test(vn)) return vn;
+  const clean = vn.replace(/^\/+|\/+$/g, "");
+  return clean ? `https://www.linkedin.com/in/${clean}` : "";
+}
+
+/** Profile row + Auth user_metadata (OAuth name/photo) merged for blog defaults. */
+function authorDefaultsFromProfile(
+  profile: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+    author_bio?: string | null;
+    author_role?: string | null;
+    author_avatar_url?: string | null;
+    author_linkedin_url?: string | null;
+  } | null,
+  user: User | null,
+): Pick<
+  FormState,
+  "author_display_name" | "author_bio" | "author_avatar_url" | "author_role" | "author_linkedin_url"
+> {
+  const avatar =
+    profile?.author_avatar_url?.trim() ||
+    profile?.avatar_url?.trim() ||
+    avatarUrlFromAuthUser(user) ||
+    "";
+  const linkedin =
+    profile?.author_linkedin_url?.trim() || linkedInUrlFromAuthIdentities(user) || "";
+
+  return {
+    author_display_name: profile?.full_name?.trim() || displayNameFromAuthUser(user) || "",
+    author_bio: profile?.author_bio?.trim() || "",
+    author_role: profile?.author_role?.trim() || "",
+    author_avatar_url: avatar,
+    author_linkedin_url: linkedin,
+  };
+}
+
 function fromPost(p: Record<string, unknown>): FormState {
   const tags = Array.isArray(p.tags) ? (p.tags as string[]).join(", ") : "";
+  const storedCat = typeof p.content_category === "string" ? p.content_category : null;
+  const { preset, custom } = presetSelectValueFromStored(storedCat);
   return {
     title: String(p.title || ""),
     slug: String(p.slug || ""),
     parent_id: p.parent_id ? String(p.parent_id) : "",
     post_kind: String(p.post_kind || "article"),
+    category_preset: preset,
+    category_custom: custom,
     status: String(p.status || "draft"),
     excerpt: String(p.excerpt || ""),
     body: String(p.body || ""),
     tags,
     subtitle: String(p.subtitle || ""),
     featured_image_url: String(p.featured_image_url || ""),
+    featured_image_object_position: String(p.featured_image_object_position || "").toLowerCase(),
     reading_minutes: p.reading_minutes != null ? String(p.reading_minutes) : "",
     author_display_name: String(p.author_display_name || ""),
+    author_bio: String(p.author_bio || ""),
+    author_avatar_url: String(p.author_avatar_url || ""),
+    author_role: String(p.author_role || ""),
+    author_linkedin_url: String(p.author_linkedin_url || ""),
     scheduled_publish_at: p.scheduled_publish_at
       ? new Date(String(p.scheduled_publish_at)).toISOString().slice(0, 16)
       : "",
@@ -126,17 +237,25 @@ function fromPost(p: Record<string, unknown>): FormState {
 
 export default function BlogAdminPage() {
   const access = useBlogAccess();
+  const { isAdmin } = useAdmin();
+  const { user } = useAuth();
+  const { profile, refetch: refetchProfile } = useProfile();
   const { toast } = useToast();
   const [posts, setPosts] = useState<PostRow[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingAuthorProfile, setSavingAuthorProfile] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [filterStatus, setFilterStatus] = useState<string>("");
 
   const [editors, setEditors] = useState<{ user_id: string; created_at?: string }[]>([]);
   const [grantId, setGrantId] = useState("");
+
+  const pendingAuthorHydrate = useRef(false);
+
+  const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [seoPages, setSeoPages] = useState<Record<string, unknown>[]>([]);
   const [seoForm, setSeoForm] = useState({
@@ -196,11 +315,19 @@ export default function BlogAdminPage() {
     }
   }, [toast]);
 
-  function openCreate() {
+  async function openCreate() {
     setEditingId(null);
-    setForm(emptyForm());
+    const latestRow = await refetchProfile();
+    setForm({ ...emptyForm(), ...authorDefaultsFromProfile(latestRow ?? profile, user) });
+    pendingAuthorHydrate.current = false;
     setDialogOpen(true);
   }
+
+  useEffect(() => {
+    if (!pendingAuthorHydrate.current || !dialogOpen || editingId !== null || !profile) return;
+    setForm((prev) => ({ ...prev, ...authorDefaultsFromProfile(profile, user) }));
+    pendingAuthorHydrate.current = false;
+  }, [profile, dialogOpen, editingId, user?.id]);
 
   async function openEdit(id: string) {
     try {
@@ -214,6 +341,31 @@ export default function BlogAdminPage() {
         description: e instanceof Error ? e.message : "Error",
         variant: "destructive",
       });
+    }
+  }
+
+  async function saveAuthorProfileDefaults() {
+    setSavingAuthorProfile(true);
+    try {
+      const res = await apiClient.patch("/profile", {
+        author_bio: form.author_bio.trim() || null,
+        author_role: form.author_role.trim() || null,
+        author_avatar_url: form.author_avatar_url.trim() || null,
+        author_linkedin_url: form.author_linkedin_url.trim() || null,
+      });
+      if (!(res as { success?: boolean }).success) {
+        throw new Error((res as { error?: string }).error || "Update failed");
+      }
+      toast({ title: "Saved your author defaults for future posts" });
+      void refetchProfile();
+    } catch (e: unknown) {
+      toast({
+        title: "Could not save author profile",
+        description: e instanceof Error ? e.message : "Error",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingAuthorProfile(false);
     }
   }
 
@@ -233,14 +385,20 @@ export default function BlogAdminPage() {
         slug: form.slug.trim(),
         parent_id: form.parent_id.trim() || null,
         post_kind: form.post_kind,
+        content_category: resolvedContentCategoryFromForm(form.category_preset, form.category_custom),
         status: form.status,
         excerpt: form.excerpt.trim() || null,
         body: form.body,
         tags,
         subtitle: form.subtitle.trim() || null,
         featured_image_url: form.featured_image_url.trim() || null,
+        featured_image_object_position: form.featured_image_object_position.trim() || null,
         reading_minutes: form.reading_minutes ? Number(form.reading_minutes) : null,
         author_display_name: form.author_display_name.trim() || null,
+        author_bio: form.author_bio.trim() || null,
+        author_avatar_url: form.author_avatar_url.trim() || null,
+        author_role: form.author_role.trim() || null,
+        author_linkedin_url: form.author_linkedin_url.trim() || null,
         scheduled_publish_at: form.scheduled_publish_at
           ? new Date(form.scheduled_publish_at).toISOString()
           : null,
@@ -289,6 +447,28 @@ export default function BlogAdminPage() {
         description: e instanceof Error ? e.message : "Error",
         variant: "destructive",
       });
+    }
+  }
+
+  function insertImageMarkdownAtCursor(url: string) {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    const textarea = bodyTextareaRef.current;
+    const snippet = `![image](${trimmed})`;
+    if (textarea) {
+      const start = textarea.selectionStart ?? form.body.length;
+      const end = textarea.selectionEnd ?? form.body.length;
+      const before = form.body.slice(0, start);
+      const after = form.body.slice(end);
+      const newBody = `${before}${snippet}${after}`;
+      setForm((f) => ({ ...f, body: newBody }));
+      setTimeout(() => {
+        textarea.focus();
+        const pos = start + snippet.length;
+        textarea.setSelectionRange(pos, pos);
+      }, 0);
+    } else {
+      setForm((f) => ({ ...f, body: f.body + "\n" + snippet }));
     }
   }
 
@@ -359,7 +539,7 @@ export default function BlogAdminPage() {
         <h1 className="font-heading text-2xl font-bold">Blog CMS</h1>
         <p className="mt-2 text-muted-foreground">You do not have blog management access. Ask a platform admin to grant you editor rights.</p>
         <Button asChild className="mt-6 rounded-full">
-          <Link href="/blogs">View public blog</Link>
+          <Link href="/blog">View public blog</Link>
         </Button>
       </div>
     );
@@ -377,7 +557,7 @@ export default function BlogAdminPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" className="rounded-full" asChild>
-            <Link href="/blogs" target="_blank" rel="noopener noreferrer">
+            <Link href="/blog" target="_blank" rel="noopener noreferrer">
               <BookOpen className="mr-2 h-4 w-4" />
               Public blog
             </Link>
@@ -441,6 +621,11 @@ export default function BlogAdminPage() {
                           <p className="truncate text-xs text-muted-foreground">/{p.path}</p>
                           <div className="mt-1 flex flex-wrap gap-2">
                             {p.post_kind ? <Badge variant="outline">{p.post_kind}</Badge> : null}
+                            {p.content_category ? (
+                              <Badge variant="outline" className="border-primary/35 text-primary">
+                                {p.content_category}
+                              </Badge>
+                            ) : null}
                             {p.status ? <Badge variant="secondary">{p.status}</Badge> : null}
                           </div>
                         </div>
@@ -514,9 +699,16 @@ export default function BlogAdminPage() {
                     <Label>Keywords (comma-separated)</Label>
                     <Input value={seoForm.seo_keywords} onChange={(e) => setSeoForm((s) => ({ ...s, seo_keywords: e.target.value }))} />
                   </div>
-                  <div className="space-y-1">
-                    <Label>OG image URL</Label>
-                    <Input value={seoForm.og_image_url} onChange={(e) => setSeoForm((s) => ({ ...s, og_image_url: e.target.value }))} />
+                  <div className="space-y-1 sm:col-span-2">
+                    <ImageSourceInput
+                      mode="field"
+                      label="OG image URL"
+                      value={seoForm.og_image_url}
+                      dialogTitle="OG image"
+                      confirmLabel="Use image"
+                      uploadCmsPath={isAdmin ? "blog" : undefined}
+                      onChange={(url) => setSeoForm((s) => ({ ...s, og_image_url: url }))}
+                    />
                   </div>
                   <div className="space-y-1">
                     <Label>Canonical URL</Label>
@@ -671,6 +863,37 @@ export default function BlogAdminPage() {
               </Select>
             </div>
             <div className="space-y-1 sm:col-span-2">
+              <Label>Category (marketing)</Label>
+              <Select
+                value={form.category_preset}
+                onValueChange={(v) => setForm((f) => ({ ...f, category_preset: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={BLOG_CATEGORY_SELECT_NONE}>Uncategorized</SelectItem>
+                  {BLOG_CONTENT_CATEGORY_PRESETS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={BLOG_CATEGORY_SELECT_CUSTOM}>Custom…</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                Public blog card pill (separate from Kind). Choose Custom to enter any label.
+              </p>
+              {form.category_preset === BLOG_CATEGORY_SELECT_CUSTOM ? (
+                <Input
+                  className="mt-2"
+                  placeholder="e.g. Influencer marketing"
+                  value={form.category_custom}
+                  onChange={(e) => setForm((f) => ({ ...f, category_custom: e.target.value }))}
+                />
+              ) : null}
+            </div>
+            <div className="space-y-1 sm:col-span-2">
               <Label>Subtitle</Label>
               <Input value={form.subtitle} onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))} />
             </div>
@@ -679,24 +902,144 @@ export default function BlogAdminPage() {
               <Textarea rows={2} value={form.excerpt} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <Label>Body (Markdown)</Label>
-              <Textarea rows={12} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} className="font-mono text-xs" />
+              <div className="flex items-center justify-between">
+                <Label>Body (Markdown)</Label>
+                <ImageSourceInput
+                  mode="trigger"
+                  value=""
+                  label="Insert image"
+                  dialogTitle="Insert image"
+                  confirmLabel="Insert"
+                  dialogDescription="Upload, paste a URL, or paste from clipboard. The image is stored on the platform CDN; markdown is inserted at the cursor."
+                  uploadCmsPath={isAdmin ? "blog" : undefined}
+                  onChange={insertImageMarkdownAtCursor}
+                />
+              </div>
+              <Textarea
+                ref={bodyTextareaRef}
+                rows={12}
+                value={form.body}
+                onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
+                className="font-mono text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Tip: use <code className="rounded bg-muted px-1">![alt](url &quot;Caption&quot;)</code> for images with a caption, or the Insert image button above.
+              </p>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label>Tags (comma-separated)</Label>
               <Input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} />
             </div>
-            <div className="space-y-1">
-              <Label>Featured image URL</Label>
-              <Input value={form.featured_image_url} onChange={(e) => setForm((f) => ({ ...f, featured_image_url: e.target.value }))} />
+            <div className="space-y-1 sm:col-span-2">
+              <ImageSourceInput
+                mode="field"
+                label="Featured image"
+                value={form.featured_image_url}
+                dialogTitle="Featured image"
+                confirmLabel="Use image"
+                uploadCmsPath={isAdmin ? "blog" : undefined}
+                onChange={(url) => setForm((f) => ({ ...f, featured_image_url: url }))}
+              />
+              <div className="mt-3 space-y-1">
+                <Label className="text-muted-foreground">Featured image focal point</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Controls how the image is cropped on blog cards and the post hero. Default (auto) uses a right-weighted crop on listings and centered on the hero.
+                </p>
+                <Select
+                  value={
+                    ["left", "center", "right", "top", "bottom"].includes(
+                      form.featured_image_object_position,
+                    )
+                      ? form.featured_image_object_position
+                      : "__auto__"
+                  }
+                  onValueChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      featured_image_object_position: v === "__auto__" ? "" : v,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-9 max-w-xs">
+                    <SelectValue placeholder="Default (auto)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__auto__">Default (auto)</SelectItem>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="center">Center</SelectItem>
+                    <SelectItem value="right">Right</SelectItem>
+                    <SelectItem value="top">Top</SelectItem>
+                    <SelectItem value="bottom">Bottom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Reading minutes</Label>
               <Input value={form.reading_minutes} onChange={(e) => setForm((f) => ({ ...f, reading_minutes: e.target.value }))} />
             </div>
+            <div className="space-y-1 sm:col-span-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Defaults use your Settings name/photo (<code className="text-[10px]">profiles.avatar_url</code>) and OAuth name/photo if present. Blog-specific LinkedIn URL must be set here or saved below — connecting LinkedIn in Settings is for publishing, not this byline. Saving the post only updates this article — use{" "}
+                  <strong className="font-medium text-foreground">Save as my author profile</strong> to reuse next time.
+                </p>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        ...authorDefaultsFromProfile(profile, user),
+                      }))
+                    }
+                  >
+                    Use my saved profile
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    disabled={savingAuthorProfile}
+                    onClick={() => void saveAuthorProfileDefaults()}
+                  >
+                    {savingAuthorProfile ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save as my author profile"}
+                  </Button>
+                </div>
+              </div>
+            </div>
             <div className="space-y-1">
               <Label>Author display name</Label>
               <Input value={form.author_display_name} onChange={(e) => setForm((f) => ({ ...f, author_display_name: e.target.value }))} />
+              <p className="text-[10px] text-muted-foreground">
+                From Settings (<code className="text-[10px]">full_name</code>) or your sign-in provider (Google etc.). Change globally in Settings.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label>Author role</Label>
+              <Input value={form.author_role} onChange={(e) => setForm((f) => ({ ...f, author_role: e.target.value }))} placeholder="e.g. Founder & CEO" />
+            </div>
+            <div className="space-y-1">
+              <Label>Author avatar URL</Label>
+              <Input value={form.author_avatar_url} onChange={(e) => setForm((f) => ({ ...f, author_avatar_url: e.target.value }))} placeholder="https://…" />
+              <p className="text-[10px] text-muted-foreground">
+                Uses Settings upload / <code className="text-[10px]">avatar_url</code>, optional <code className="text-[10px]">author_avatar_url</code>, then OAuth photo.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label>Author LinkedIn URL</Label>
+              <Input value={form.author_linkedin_url} onChange={(e) => setForm((f) => ({ ...f, author_linkedin_url: e.target.value }))} placeholder="https://linkedin.com/in/…" />
+              <p className="text-[10px] text-muted-foreground">
+                Filled from saved blog defaults or LinkedIn sign-in vanity when Supabase exposes it — otherwise paste your profile URL once and save as default.
+              </p>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label>Author bio</Label>
+              <Textarea rows={2} value={form.author_bio} onChange={(e) => setForm((f) => ({ ...f, author_bio: e.target.value }))} placeholder="Short bio shown at the bottom of the post…" />
             </div>
             <div className="space-y-1">
               <Label>Scheduled publish (local)</Label>
@@ -726,9 +1069,16 @@ export default function BlogAdminPage() {
               <Label>Canonical URL</Label>
               <Input value={form.canonical_url} onChange={(e) => setForm((f) => ({ ...f, canonical_url: e.target.value }))} />
             </div>
-            <div className="space-y-1">
-              <Label>OG image URL</Label>
-              <Input value={form.og_image_url} onChange={(e) => setForm((f) => ({ ...f, og_image_url: e.target.value }))} />
+            <div className="space-y-1 sm:col-span-2">
+              <ImageSourceInput
+                mode="field"
+                label="OG image URL"
+                value={form.og_image_url}
+                dialogTitle="OG image"
+                confirmLabel="Use image"
+                uploadCmsPath={isAdmin ? "blog" : undefined}
+                onChange={(url) => setForm((f) => ({ ...f, og_image_url: url }))}
+              />
             </div>
             <div className="space-y-1">
               <Label>Twitter card</Label>

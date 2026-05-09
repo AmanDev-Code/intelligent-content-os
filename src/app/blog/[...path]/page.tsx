@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchPublishedBlogPost } from "@/lib/serverBlog";
+import { fetchPublishedBlogPost, fetchPublishedBlogPosts } from "@/lib/serverBlog";
+import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl, siteName } from "@/lib/site";
 import BlogPostView from "@/views/BlogPostView";
+import type { RelatedPost } from "@/components/blog/BlogRelatedPosts";
 
 type Props = { params: Promise<{ path: string[] }> };
 
@@ -21,11 +23,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       `${post.title} — ${siteName}`) as string;
   const canonical =
     ((post.canonical_url as string)?.trim() ||
-      `${site.replace(/\/$/, "")}/blogs/${slugPath}`) as string;
+      `${site.replace(/\/$/, "")}${BLOG_BASE_PATH}/${slugPath}`) as string;
   const kw = (post.seo_keywords as string)?.trim();
   const keywords = kw ? kw.split(",").map((k) => k.trim()).filter(Boolean) : undefined;
   const og =
     ((post.og_image_url as string)?.trim() || (post.featured_image_url as string)?.trim()) || undefined;
+
+  const authorName = (post.author_display_name as string | undefined)?.trim();
 
   return {
     title,
@@ -33,6 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords,
     robots: (post.robots as string)?.trim() || undefined,
     alternates: { canonical },
+    authors: authorName ? [{ name: authorName }] : undefined,
     openGraph: {
       title: `${title} | ${siteName}`,
       description,
@@ -41,6 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       siteName,
       locale: "en_US",
       images: og ? [{ url: og }] : undefined,
+      ...(authorName ? { authors: [authorName] } : {}),
     },
     twitter: {
       card: "summary_large_image",
@@ -54,7 +60,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogDetailPage({ params }: Props) {
   const { path } = await params;
   const slugPath = path.join("/");
-  const post = await fetchPublishedBlogPost(slugPath);
+
+  const [post, { posts: allPosts }] = await Promise.all([
+    fetchPublishedBlogPost(slugPath),
+    fetchPublishedBlogPosts({ limit: 10 }),
+  ]);
+
   if (!post) notFound();
-  return <BlogPostView post={post as never} />;
+
+  const currentId = post.id as string | undefined;
+  const relatedPosts: RelatedPost[] = (allPosts as unknown as RelatedPost[])
+    .filter((p) => p.id !== currentId)
+    .slice(0, 3);
+
+  return <BlogPostView post={post as never} relatedPosts={relatedPosts} />;
 }

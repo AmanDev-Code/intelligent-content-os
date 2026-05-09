@@ -73,6 +73,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
         heading: ["var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-fraunces)", "Georgia", "Cambria", "Times New Roman", "serif"],
       },
       keyframes: {
         "accordion-down": {

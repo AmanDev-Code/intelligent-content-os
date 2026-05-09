@@ -182,8 +182,14 @@ class ApiClient {
     return this.request(endpoint, options);
   }
 
-  async delete(endpoint: string): Promise<any> {
-    return this.request(endpoint, { method: 'DELETE' });
+  async delete(endpoint: string, data?: unknown): Promise<any> {
+    const options: RequestInit = {
+      method: 'DELETE',
+    };
+    if (data !== undefined) {
+      options.body = JSON.stringify(data);
+    }
+    return this.request(endpoint, options);
   }
 
   async patch(endpoint: string, data?: any): Promise<any> {
@@ -448,6 +454,19 @@ export const api = {
     seoPagesUpsert: (payload: Record<string, unknown>) => apiClient.put('/admin/seo/pages', payload),
     seoPagesDelete: (route: string) =>
       apiClient.delete(`/admin/seo/pages?route=${encodeURIComponent(route)}`),
+    mediaBrowse: (opts?: { path?: string; scope?: 'bucket' | 'cms' }) =>
+      apiClient.get('/admin/media/browse', {
+        params: {
+          ...(opts?.path ? { path: opts.path } : {}),
+          ...(opts?.scope === 'cms' ? { scope: 'cms' } : {}),
+        },
+      }),
+    mediaCreateFolder: (payload: { path?: string; name: string }) =>
+      apiClient.post("/admin/media/folder", payload),
+    mediaDeleteObject: (key: string) =>
+      apiClient.delete("/admin/media/object", { key }),
+    mediaUpload: (payload: { image: string; filename: string; path?: string }) =>
+      apiClient.post("/admin/media/upload", payload),
   },
 
   maintenance: {
@@ -561,5 +580,68 @@ export const api = {
   platformAdmin: {
     deleteUser: (userId: string): Promise<{ success: boolean; message: string; deletedUserId: string }> =>
       apiClient.delete(`/platform-admin/users/${userId}`),
+  },
+
+  /** SEO keyword management. */
+  seoKeywords: {
+    list: (params?: {
+      status?: string;
+      cluster?: string;
+      intent?: string;
+      q?: string;
+      page?: number;
+      limit?: number;
+    }) => apiClient.get('/admin/seo/keywords', { params }),
+    create: (data: {
+      keyword: string;
+      intent?: string;
+      cluster?: string;
+      priority?: number;
+      language?: string;
+      status?: string;
+      notes?: string;
+    }) => apiClient.post('/admin/seo/keywords', data),
+    update: (id: string, data: {
+      keyword?: string;
+      intent?: string;
+      cluster?: string | null;
+      priority?: number;
+      language?: string;
+      status?: string;
+      notes?: string | null;
+    }) => apiClient.patch(`/admin/seo/keywords/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/admin/seo/keywords/${id}`),
+    bulkImport: (payload: {
+      keywords: string[];
+      cluster?: string | null;
+      intent?: string;
+      priority?: number;
+      language?: string;
+      status?: string;
+    }) => apiClient.post('/admin/seo/keywords/bulk-import', payload),
+    bulkPermanentDelete: (ids: string[]) =>
+      apiClient.post('/admin/seo/keywords/bulk-delete', { ids }),
+    bulkStatus: (ids: string[], status: string) =>
+      apiClient.post('/admin/seo/keywords/bulk-status', { ids, status }),
+    clusters: () => apiClient.get('/admin/seo/keywords/clusters'),
+    getAssignments: (targetType: string, targetRef: string) =>
+      apiClient.get('/admin/seo/assignments', {
+        params: { target_type: targetType, target_ref: targetRef },
+      }),
+    upsertAssignment: (data: {
+      keyword_id: string;
+      target_type: string;
+      target_ref: string;
+      weight?: number;
+      is_primary?: boolean;
+    }) => apiClient.post('/admin/seo/assignments', data),
+    bulkUpsertAssignments: (data: {
+      target_type: string;
+      target_ref: string;
+      keyword_ids: string[];
+      weight?: number;
+      primary_keyword_id?: string | null;
+    }) => apiClient.post('/admin/seo/assignments/bulk', data),
+    deleteAssignment: (id: string) => apiClient.delete(`/admin/seo/assignments/${id}`),
   },
 };

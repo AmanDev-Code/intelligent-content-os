@@ -79,7 +79,7 @@ A: Yes, Trndinn includes a full scheduling calendar with optimal posting time su
 - Features: https://trndinn.com/features
 - Sign Up: https://trndinn.com/auth
 - Contact: https://trndinn.com/contact
-- Blog: https://trndinn.com/blogs
+- Blog: https://trndinn.com/blog
 
 ## Contact
 

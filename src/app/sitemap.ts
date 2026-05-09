@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -7,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "",
     "/features",
     "/pricing",
-    "/blogs",
+    BLOG_BASE_PATH,
     "/careers",
     "/contact",
     "/auth",

@@ -18,7 +18,9 @@ import {
   Server,
   ShieldAlert,
   ClipboardList,
+  Globe,
   Gift,
+  FolderOpen,
 } from "lucide-react";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 import { apiClient } from "@/lib/apiClient";
@@ -208,6 +210,13 @@ export default function AdminOverviewPage() {
           show: sections.blog,
         },
         {
+          href: "/admin/media",
+          title: "Media",
+          description: "Browse and upload CMS assets in MinIO (media/cms).",
+          icon: FolderOpen,
+          show: sections.media,
+        },
+        {
           href: "/admin/careers",
           title: "Careers",
           description: "Job listings and applications.",
@@ -234,6 +243,13 @@ export default function AdminOverviewPage() {
           description: "Manage referral program settings, banners, and analytics.",
           icon: Gift,
           show: sections.settings, // Use settings permission for now
+        },
+        {
+          href: "/admin/seo",
+          title: "SEO & Keywords",
+          description: "Keyword library, assignments, and cluster management.",
+          icon: Globe,
+          show: sections.settings,
         },
       ] as const,
     [sections],

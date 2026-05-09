@@ -62,7 +62,12 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [quickActionLoading, setQuickActionLoading] = useState(false);
   
-  const [profileForm, setProfileForm] = useState({ username: "", full_name: "", avatar_url: "" });
+  const [profileForm, setProfileForm] = useState({
+    username: "",
+    full_name: "",
+    avatar_url: "",
+    author_linkedin_url: "",
+  });
   const [profileSaving, setProfileSaving] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -72,6 +77,7 @@ export default function Settings() {
         username: profile.username || "",
         full_name: profile.full_name || "",
         avatar_url: profile.avatar_url || "",
+        author_linkedin_url: profile.author_linkedin_url?.trim() || "",
       });
     }
   }, [profile]);
@@ -207,11 +213,12 @@ export default function Settings() {
       // Trigger a refresh of LinkedIn connection status across the app
       refreshConnection();
       refreshMetrics();
+      void refetchProfile();
       // Also trigger localStorage event for other tabs
       localStorage.setItem('linkedin-connected', 'true');
       localStorage.removeItem('linkedin-connected'); // Trigger the event
     }
-  }, [searchParams, refreshConnection, refreshMetrics, clearLinkedInConnecting]);
+  }, [searchParams, refreshConnection, refreshMetrics, clearLinkedInConnecting, refetchProfile]);
 
   // Update integrations state when LinkedIn context changes
   useEffect(() => {
@@ -232,6 +239,8 @@ export default function Settings() {
         username: profileForm.username.trim() || undefined,
         full_name: profileForm.full_name.trim() || undefined,
         avatar_url: profileForm.avatar_url.trim() || undefined,
+        author_linkedin_url:
+          profileForm.author_linkedin_url.trim() || null,
       });
       if (res.success) {
         toast.success("Profile updated successfully");
@@ -408,17 +417,41 @@ export default function Settings() {
                     />
                     <p className="text-xs text-muted-foreground mt-1">Letters, numbers, underscores, hyphens. Must be unique.</p>
                   </div>
-                  <div>
-                    <Label htmlFor="fullName" className="text-xs">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      placeholder="John Doe"
-                      value={profileForm.full_name}
-                      onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
-                      className="mt-1"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="fullName" className="text-xs">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="John Doe"
+                    value={profileForm.full_name}
+                    onChange={(e) => setProfileForm((p) => ({ ...p, full_name: e.target.value }))}
+                    className="mt-1"
+                  />
                 </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="linkedinProfile" className="text-xs">
+                    LinkedIn profile
+                  </Label>
+                  <Input
+                    id="linkedinProfile"
+                    type="url"
+                    inputMode="url"
+                    autoComplete="url"
+                    placeholder="https://www.linkedin.com/in/your-handle"
+                    value={profileForm.author_linkedin_url}
+                    onChange={(e) =>
+                      setProfileForm((p) => ({ ...p, author_linkedin_url: e.target.value }))
+                    }
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {profile?.author_linkedin_url?.trim()
+                      ? "Used as the default LinkedIn URL when you publish blog posts. Edit anytime."
+                      : linkedinConnected
+                        ? "Add your public profile link, or reconnect LinkedIn if it did not sync automatically."
+                        : "Connect LinkedIn below to auto-fill your public profile URL."}
+                  </p>
+                </div>
+              </div>
                 <div>
                   <Label className="text-xs">Email Address</Label>
                   <Input value={user?.email ?? ""} className="mt-1" disabled />
