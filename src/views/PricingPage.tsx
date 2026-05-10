@@ -117,7 +117,7 @@ export default function PricingPage({ h1Override }: { h1Override?: string | null
               },
               {
                 q: "What is live vs roadmap?",
-                a: "LinkedIn publishing, AI creation, scheduling, media, and analytics are live. Multi-channel rollouts, reels expansion, and outreach continue in phased releases.",
+                a: "LinkedIn publishing, AI creation, scheduling, media, and analytics are live. Multi-channel publishing, reels expansion, and richer reporting continue in phased releases.",
               },
               {
                 q: "Do you support teams?",

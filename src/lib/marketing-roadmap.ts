@@ -41,8 +41,8 @@ export const marketingRoadmap: MarketingRoadmapItem[] = [
   {
     quarter: "Q3 '26",
     status: "In progress",
-    title: "LinkedIn outreach engine",
-    body: "Smart outreach to grow your network & pipeline.",
+    title: "Richer LinkedIn analytics",
+    body: "Clearer post performance and audience insights for the accounts you manage—so you double down on content that works.",
     icons: [{ Icon: FaLinkedinIn, color: "text-[#0A66C2]" }],
   },
   {

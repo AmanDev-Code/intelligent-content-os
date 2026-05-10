@@ -41,7 +41,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     key: "scheduledPosts",
     title: "Scheduled Posts",
-    description: "Plan your pipeline and keep posting consistency with scheduling.",
+    description: "Keep a steady content calendar and consistent posting rhythm with scheduling.",
     route: "/scheduled-posts",
     selector: '[data-tour="tour-scheduled-actions"]',
   },

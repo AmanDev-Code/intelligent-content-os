@@ -40,7 +40,7 @@ const bentoHighlights = [
     icon: Video,
     label: "Studio",
     stat: "1 → N",
-    sub: "reels pipeline",
+    sub: "reels & shorts",
     accent: "from-red-500/15 to-transparent",
   },
 ];
@@ -85,8 +85,8 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
               </h1>
 
               <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-                Trndinn unifies AI creation, scheduling, outreach and analytics into one polished workspace your team can
-                actually run every day.
+                Trndinn unifies AI creation, scheduling, and analytics into one polished workspace your team can actually
+                run every day—content for your own channels and pages, not cold or unsolicited messaging.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -164,7 +164,7 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
               </span>
               <span className="inline-flex items-center gap-2">
                 <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                Outreach engine in Q3
+                Deeper analytics in Q3
               </span>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
               <div className="mt-8 rounded-2xl border border-border/70 bg-muted/30 p-5 dark:border-white/10 dark:bg-background/40 dark:backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium">
                   <Zap className="h-4 w-4 text-primary" />
-                  Prompt → publish pipeline
+                  Prompt → scheduled publish
                 </div>
                 <div className="space-y-2">
                   <div className="h-2 rounded-full bg-muted dark:bg-white/10" />

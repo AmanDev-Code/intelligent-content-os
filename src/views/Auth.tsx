@@ -308,7 +308,7 @@ export default function Auth() {
     { label: "X", Icon: FaXTwitter },
     { label: "Reddit", Icon: FaRedditAlien },
     { label: "Pinterest", Icon: FaPinterestP },
-    { label: "Outreach", Icon: CirclePlay },
+    { label: "More channels", Icon: CirclePlay },
     { label: "Brand Voice", Icon: Megaphone },
     { label: "AI Video", Icon: Clapperboard },
     { label: "Analytics", Icon: BarChart3 },

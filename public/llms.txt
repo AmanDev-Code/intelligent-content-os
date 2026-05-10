@@ -4,7 +4,9 @@
 
 ## What is Trndinn?
 
-Trndinn is an all-in-one AI content creation and social media management platform. It combines AI-powered content generation, visual design tools, scheduling, and analytics into a single workspace that teams can use daily. Think of it as your AI content co-pilot that understands your brand voice and helps you create engaging social media content in seconds.
+Trndinn is an all-in-one AI content creation and social media management platform. It combines AI-powered content generation, visual design tools, scheduling, and analytics into a single workspace that teams can use daily. Content is drafted and scheduled for profiles and pages users authenticate—not for unsolicited bulk outbound messaging.
+
+Think of it as your AI content co-pilot that understands your brand voice and helps you create engaging social media content in seconds.
 
 The platform is built for LinkedIn-first execution (live now) with expansion to X, Instagram, Facebook, YouTube, Twitch, and Reddit on the roadmap.
 

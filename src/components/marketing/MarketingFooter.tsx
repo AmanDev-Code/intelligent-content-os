@@ -74,7 +74,7 @@ export function MarketingFooter() {
             <div className="col-span-2 sm:col-span-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Build</p>
               <p className="mt-3 text-sm text-muted-foreground">
-                LinkedIn is live today. More channels, AI reels, and outreach are on the roadmap-ship with us.
+                LinkedIn is live today. More channels, AI reels, and richer analytics are on the roadmap—ship with us.
               </p>
             </div>
           </div>

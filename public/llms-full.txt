@@ -1,6 +1,6 @@
 # Trndinn - Comprehensive Product Information
 
-> Trndinn is the AI social content platform that unifies content creation, scheduling, outreach, and analytics into one premium workspace. Built for LinkedIn-first execution with multi-channel expansion on the roadmap.
+> Trndinn is the AI social content platform that unifies content creation, scheduling, and analytics into one premium workspace—for drafting and publishing to your own social profiles and pages. LinkedIn is live today with multi-channel expansion on the roadmap.
 
 ---
 
@@ -91,7 +91,7 @@ One calendar for all your content:
 
 - **Visual Calendar**: Day, week, and month views
 - **Optimal Timing**: Suggestions based on audience activity
-- **Queue Management**: Organize content pipelines
+- **Queue Management**: Organize drafts and scheduled posts in your calendar
 - **Retry Handling**: Automatic retry for failed posts
 - **Multi-Platform Ready**: Architecture supports upcoming channels
 
@@ -138,7 +138,7 @@ Centralized asset management:
 - **YouTube Support**: Long-form video integration
 - **Twitch Integration**: Streaming platform support
 - **Reddit Publishing**: Community engagement
-- **Outreach Engine**: Automated engagement workflows
+- **Growth analytics**: Deeper insights into post performance on channels you manage
 - **Team Workspaces**: Enhanced collaboration features
 
 ---
@@ -397,8 +397,7 @@ Trndinn is built on modern, enterprise-grade infrastructure:
 ### Phase 3: Video & Engagement (Q4 2025)
 - AI reels and short-form video
 - Facebook integration
-- Outreach automation
-- Advanced analytics
+- Expanded analytics and reporting for the channels you publish to
 
 ### Phase 4: Full Platform (2026)
 - YouTube integration
@@ -548,7 +547,7 @@ Trndinn is building the future of social content creation. Our mission is to hel
 
 **Live Now**: LinkedIn publishing, AI generation, carousels, images, scheduling, analytics.
 
-**Coming Soon**: X, Instagram, Facebook, AI reels, video, outreach automation.
+**Coming Soon**: X, Instagram, Facebook, AI reels, video, richer reporting across channels.
 
 **Website**: https://trndinn.com
 
