@@ -13,9 +13,13 @@ export type StaticPageSeoRow = {
   seo_description?: string | null;
   seo_keywords?: string | null;
   og_image_url?: string | null;
+  og_title?: string | null;
+  og_description?: string | null;
   canonical_url?: string | null;
   robots?: string | null;
   structured_data?: unknown;
+  /** Overrides the page's visible <h1> when set. Drives on-page ranking signal. */
+  h1_override?: string | null;
   /** Primary active keyword for this route (`target_type=route`); drives title/description when CMS fields empty. */
   assignment_primary_keyword?: string | null;
 };
@@ -59,8 +63,11 @@ export function mergeStaticSeo(
 
   /** Matches root layout `metadata.title.default` — use absolute title so `title.template` does not append `| ${siteName}` again. */
   const homeHeadlineDefault = `${siteName} — AI social content platform`;
-  const ogTitle =
-    resolvedTitle === homeHeadlineDefault ? resolvedTitle : `${resolvedTitle} | ${siteName}`;
+  const resolvedOgTitle =
+    seo?.og_title?.trim() ||
+    (resolvedTitle === homeHeadlineDefault ? resolvedTitle : `${resolvedTitle} | ${siteName}`);
+  const resolvedOgDescription = seo?.og_description?.trim() || description;
+  const ogTitle = resolvedOgTitle;
 
   const meta: Metadata = {
     title: resolvedTitle === homeHeadlineDefault ? { absolute: resolvedTitle } : resolvedTitle,
@@ -69,7 +76,7 @@ export function mergeStaticSeo(
     robots: seo?.robots?.trim() || undefined,
     openGraph: {
       title: ogTitle,
-      description,
+      description: resolvedOgDescription,
       url: canonical,
       type: "website",
       siteName,
@@ -79,7 +86,7 @@ export function mergeStaticSeo(
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
-      description,
+      description: resolvedOgDescription,
       images: seo?.og_image_url ? [seo.og_image_url] : undefined,
     },
   };
@@ -98,4 +105,22 @@ export async function buildMarketingMetadata(
 ): Promise<Metadata> {
   const seo = await fetchStaticPageSeo(route);
   return mergeStaticSeo(route, seo, fallback);
+}
+
+/**
+ * Returns the admin-set h1_override for a marketing route, or null.
+ * Use in server page.tsx to pass to the view component as the visible <h1>.
+ */
+export async function fetchMarketingH1Override(route: string): Promise<string | null> {
+  const seo = await fetchStaticPageSeo(route);
+  return seo?.h1_override?.trim() || null;
+}
+
+/**
+ * Returns the raw structured_data from static_page_seo for a route, or null.
+ * Used to inject custom JSON-LD into the page <head>.
+ */
+export async function fetchMarketingStructuredData(route: string): Promise<unknown | null> {
+  const seo = await fetchStaticPageSeo(route);
+  return seo?.structured_data ?? null;
 }

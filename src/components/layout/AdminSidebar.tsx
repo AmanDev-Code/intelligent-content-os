@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Shield,
   FolderOpen,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -55,6 +56,7 @@ function SidebarContent({
     { to: "/admin/blog", icon: BookOpen, label: "Blog & CMS", show: sections.blog },
     { to: "/admin/media", icon: FolderOpen, label: "Media", show: sections.media },
     { to: "/admin/careers", icon: Briefcase, label: "Careers", show: sections.careers },
+    { to: "/admin/pricing-plans", icon: CreditCard, label: "Pricing plans", show: sections.settings },
     { to: "/admin/settings", icon: Settings, label: "Admin settings", show: sections.settings },
   ];
 

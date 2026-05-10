@@ -5,6 +5,7 @@ import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl, siteName } from "@/lib/site";
 import BlogPostView from "@/views/BlogPostView";
 import type { RelatedPost } from "@/components/blog/BlogRelatedPosts";
+import { BlogJsonLd } from "@/components/seo/BlogJsonLd";
 
 type Props = { params: Promise<{ path: string[] }> };
 
@@ -73,5 +74,10 @@ export default async function BlogDetailPage({ params }: Props) {
     .filter((p) => p.id !== currentId)
     .slice(0, 3);
 
-  return <BlogPostView post={post as never} relatedPosts={relatedPosts} />;
+  return (
+    <>
+      <BlogJsonLd post={post} slugPath={slugPath} />
+      <BlogPostView post={post as never} relatedPosts={relatedPosts} />
+    </>
+  );
 }

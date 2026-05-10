@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HelpCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   CREDIT_USAGE_NOTE,
   PLAN_COMPARISON_ROWS,
   getPlanPriceCells,
+  getPlanPriceCellsFromPayload,
   type PlanColumnId,
 } from "@/config/plan-comparison";
-import { calculateYearlyDiscount, SUBSCRIPTION_PLANS } from "@/config/plans";
+import { calculateYearlyDiscount } from "@/config/plans";
 import { cn } from "@/lib/utils";
+import type { PublicPlansPayload } from "@/types/publicPlans";
+import { getPublicPlansCached } from "@/lib/publicPlansCache";
 
 const COLS: { id: PlanColumnId; label: string }[] = [
   { id: "free", label: "Free" },
@@ -19,14 +22,38 @@ const COLS: { id: PlanColumnId; label: string }[] = [
   { id: "ultimate", label: "Ultimate" },
 ];
 
-export function PricingComparisonTable() {
-  const [annual, setAnnual] = useState(true);
-  const prices = getPlanPriceCells(annual);
+export type PricingComparisonTableProps = {
+  /** When set (e.g. /pricing), avoids a second API call and matches MarketingPlanGrid currency. */
+  plansPayload?: PublicPlansPayload | null;
+  currency?: string;
+};
 
-  const proPlan = SUBSCRIPTION_PLANS.find((p) => p.id === "pro");
+export function PricingComparisonTable({ plansPayload: controlled, currency = "USD" }: PricingComparisonTableProps) {
+  const [annual, setAnnual] = useState(true);
+  const [fallback, setFallback] = useState<PublicPlansPayload | null>(controlled ?? null);
+
+  useEffect(() => {
+    setFallback(controlled ?? null);
+  }, [controlled]);
+
+  useEffect(() => {
+    if (controlled) return;
+    void getPublicPlansCached().then(setFallback);
+  }, [controlled]);
+
+  const plansPayload = controlled ?? fallback;
+
+  const prices = useMemo(() => {
+    if (plansPayload?.plans?.length) {
+      return getPlanPriceCellsFromPayload(plansPayload.plans, annual, currency);
+    }
+    return getPlanPriceCells(annual);
+  }, [plansPayload, annual, currency]);
+
+  const proPlan = plansPayload?.plans?.find((p) => p.planType === "pro");
   const yearlyDisc =
-    proPlan && proPlan.pricing.monthly > 0 && proPlan.pricing.yearly > 0
-      ? calculateYearlyDiscount(proPlan.pricing.monthly, proPlan.pricing.yearly)
+    proPlan && proPlan.priceMonthly > 0 && proPlan.priceYearly > 0
+      ? calculateYearlyDiscount(proPlan.priceMonthly, proPlan.priceYearly)
       : 0;
 
   return (

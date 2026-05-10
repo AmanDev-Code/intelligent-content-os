@@ -88,7 +88,7 @@ const stackItems = [
   },
 ];
 
-export default function FeaturesPage() {
+export default function FeaturesPage({ h1Override }: { h1Override?: string | null }) {
   const { session } = useAuth();
   const primaryHref = session ? "/dashboard" : "/auth";
 
@@ -110,8 +110,9 @@ export default function FeaturesPage() {
                 The Celestial Interface
               </span>
               <h1 className="mt-6 font-heading text-[2.25rem] font-black leading-[1.08] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                One Pulse,{" "}
-                <KineticGradient>Infinite Channels.</KineticGradient>
+                {h1Override ? h1Override : (
+                  <>AI Social Media Platform —{" "}<KineticGradient>One Pulse, Infinite Channels.</KineticGradient></>
+                )}
               </h1>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg md:text-xl">
                 Orchestrate your entire digital presence through a single high-performance instrument. Automated,

@@ -85,6 +85,8 @@ type FormState = {
   hero_style: string;
   locale: string;
   custom_css: string;
+  /** Raw JSON string for faq_json: [{question, answer}, ...] */
+  faq_json: string;
 };
 
 const emptyForm = (): FormState => ({
@@ -119,6 +121,7 @@ const emptyForm = (): FormState => ({
   hero_style: "default",
   locale: "en",
   custom_css: "",
+  faq_json: "",
 });
 
 function trimAuth(v: unknown): string {
@@ -232,6 +235,7 @@ function fromPost(p: Record<string, unknown>): FormState {
     hero_style: String(p.hero_style || "default"),
     locale: String(p.locale || "en"),
     custom_css: String(p.custom_css || ""),
+    faq_json: Array.isArray(p.faq_json) ? JSON.stringify(p.faq_json, null, 2) : "",
   };
 }
 
@@ -258,15 +262,56 @@ export default function BlogAdminPage() {
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [seoPages, setSeoPages] = useState<Record<string, unknown>[]>([]);
+  const [routePrimaryKeyword, setRoutePrimaryKeyword] = useState<string | null>(null);
   const [seoForm, setSeoForm] = useState({
     route_path: "/pricing",
     seo_title: "",
     seo_description: "",
     seo_keywords: "",
     og_image_url: "",
+    og_title: "",
+    og_description: "",
     canonical_url: "",
     robots: "index,follow",
+    h1_override: "",
+    structured_data_json: "",
   });
+  const [aiFillOpen, setAiFillOpen] = useState(false);
+  const [aiFillPrompt, setAiFillPrompt] = useState("");
+  const [aiFillLoading, setAiFillLoading] = useState(false);
+
+  const ROUTE_DEFAULTS: Record<string, { h1: string; title: string; description: string }> = {
+    "/": {
+      h1: "AI Content Creator for Social Media — one premium control layer.",
+      title: "Trndinn — AI Social Media Platform",
+      description: "Create, schedule, and publish AI-powered social media content from one dashboard.",
+    },
+    "/features": {
+      h1: "AI Social Media Platform — One Pulse, Infinite Channels.",
+      title: "Features — Trndinn AI Social Media Tool",
+      description: "Explore Trndinn's AI content creation, scheduling, and analytics features.",
+    },
+    "/pricing": {
+      h1: "Social Media Tool Pricing — Credit-Based Plans That Scale",
+      title: "Pricing — Trndinn AI Social Media Plans",
+      description: "Flexible credit-based pricing for AI social media content creation. Start free.",
+    },
+    "/blog": {
+      h1: "Trndinn Blog: Social Media Growth Tips",
+      title: "Blog — Trndinn | Social Media Growth Tips",
+      description: "Expert tips on AI content creation, social media strategy, and growth tactics.",
+    },
+    "/contact": {
+      h1: "Contact Trndinn",
+      title: "Contact Us — Trndinn",
+      description: "Get in touch with the Trndinn team for support, partnerships, or general inquiries.",
+    },
+    "/careers": {
+      h1: "Careers at Trndinn",
+      title: "Careers — Join Trndinn",
+      description: "Join Trndinn and help build the future of AI-powered social media content.",
+    },
+  };
 
   const loadPosts = useCallback(async () => {
     setLoadingList(true);
@@ -374,6 +419,15 @@ export default function BlogAdminPage() {
       toast({ title: "Title and slug are required", variant: "destructive" });
       return;
     }
+    let parsedFaqJson: Array<{ question: string; answer: string }> | null = null;
+    if (form.faq_json.trim()) {
+      try {
+        parsedFaqJson = JSON.parse(form.faq_json) as Array<{ question: string; answer: string }>;
+      } catch {
+        toast({ title: "FAQ JSON is invalid — fix the JSON or clear the field", variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     try {
       const tags = form.tags
@@ -413,6 +467,7 @@ export default function BlogAdminPage() {
         hero_style: form.hero_style,
         locale: form.locale.trim() || "en",
         custom_css: form.custom_css.trim() || null,
+        faq_json: parsedFaqJson,
       };
       if (editingId) {
         const { slug: _s, parent_id: _p, ...rest } = payload;
@@ -504,6 +559,15 @@ export default function BlogAdminPage() {
   }
 
   async function saveSeo() {
+    let parsedStructuredData: Record<string, unknown> | null = null;
+    if (seoForm.structured_data_json.trim()) {
+      try {
+        parsedStructuredData = JSON.parse(seoForm.structured_data_json) as Record<string, unknown>;
+      } catch {
+        toast({ title: "Structured data JSON is invalid", variant: "destructive" });
+        return;
+      }
+    }
     try {
       await api.admin.seoPagesUpsert({
         route_path: seoForm.route_path.trim(),
@@ -511,8 +575,12 @@ export default function BlogAdminPage() {
         seo_description: seoForm.seo_description.trim() || null,
         seo_keywords: seoForm.seo_keywords.trim() || null,
         og_image_url: seoForm.og_image_url.trim() || null,
+        og_title: seoForm.og_title.trim() || null,
+        og_description: seoForm.og_description.trim() || null,
         canonical_url: seoForm.canonical_url.trim() || null,
         robots: seoForm.robots.trim() || "index,follow",
+        h1_override: seoForm.h1_override.trim() || null,
+        structured_data: parsedStructuredData,
       });
       toast({ title: "SEO saved" });
       await loadSeoPages();
@@ -522,6 +590,41 @@ export default function BlogAdminPage() {
         description: e instanceof Error ? e.message : "Error",
         variant: "destructive",
       });
+    }
+  }
+
+  async function runAiFill() {
+    setAiFillLoading(true);
+    try {
+      const result = await api.admin.seoAiFill({
+        route: seoForm.route_path.trim() || "/",
+        prompt: aiFillPrompt.trim() || undefined,
+        primaryKeyword: routePrimaryKeyword ?? undefined,
+      }) as {
+        meta_title?: string;
+        meta_description?: string;
+        h1_override?: string;
+        og_title?: string;
+        og_description?: string;
+      };
+      setSeoForm((s) => ({
+        ...s,
+        ...(result.meta_title ? { seo_title: result.meta_title } : {}),
+        ...(result.meta_description ? { seo_description: result.meta_description } : {}),
+        ...(result.h1_override ? { h1_override: result.h1_override } : {}),
+        ...(result.og_title ? { og_title: result.og_title } : {}),
+        ...(result.og_description ? { og_description: result.og_description } : {}),
+      }));
+      setAiFillOpen(false);
+      toast({ title: "AI fields applied — review and save when ready" });
+    } catch (e: unknown) {
+      toast({
+        title: "AI fill failed",
+        description: e instanceof Error ? e.message : "Error",
+        variant: "destructive",
+      });
+    } finally {
+      setAiFillLoading(false);
     }
   }
 
@@ -682,22 +785,89 @@ export default function BlogAdminPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardContent className="space-y-3 p-4 sm:p-6">
-                  <h2 className="font-semibold">Edit route SEO</h2>
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="font-semibold">Edit route SEO</h2>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const route = seoForm.route_path.trim() || "/";
+                        setAiFillPrompt(
+                          `Generate SEO fields for the page at route ${route}. The page is about: [describe the page]. Target keyword: ${routePrimaryKeyword ?? ""}`.trim(),
+                        );
+                        setAiFillOpen(true);
+                      }}
+                    >
+                      ✨ Fill with AI
+                    </Button>
+                  </div>
+                  <Dialog open={aiFillOpen} onOpenChange={setAiFillOpen}>
+                    <DialogContent className="sm:max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>✨ AI SEO Fill</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-3 py-2">
+                        <p className="text-sm text-muted-foreground">
+                          Edit the prompt below, then click <strong>Generate</strong>. The AI will fill
+                          all matching SEO fields — you can review and adjust before saving.
+                        </p>
+                        <Textarea
+                          rows={5}
+                          value={aiFillPrompt}
+                          onChange={(e) => setAiFillPrompt(e.target.value)}
+                          placeholder="Describe what you want to generate…"
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setAiFillOpen(false)} disabled={aiFillLoading}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => void runAiFill()} disabled={aiFillLoading}>
+                          {aiFillLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating…</> : "Generate"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                   <div className="space-y-1">
                     <Label>Route path</Label>
                     <Input value={seoForm.route_path} onChange={(e) => setSeoForm((s) => ({ ...s, route_path: e.target.value }))} placeholder="/pricing" />
                   </div>
                   <div className="space-y-1">
                     <Label>Meta title</Label>
-                    <Input value={seoForm.seo_title} onChange={(e) => setSeoForm((s) => ({ ...s, seo_title: e.target.value }))} />
+                    <Input
+                      value={seoForm.seo_title}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, seo_title: e.target.value }))}
+                      placeholder={ROUTE_DEFAULTS[seoForm.route_path]?.title ?? "e.g. Trndinn — AI Social Media Platform"}
+                    />
+                    {!seoForm.seo_title.trim() && ROUTE_DEFAULTS[seoForm.route_path]?.title ? (
+                      <p className="text-[10px] text-muted-foreground">
+                        ℹ️ Current default: &ldquo;{ROUTE_DEFAULTS[seoForm.route_path].title}&rdquo;
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-1">
                     <Label>Meta description</Label>
-                    <Textarea rows={3} value={seoForm.seo_description} onChange={(e) => setSeoForm((s) => ({ ...s, seo_description: e.target.value }))} />
+                    <Textarea
+                      rows={3}
+                      value={seoForm.seo_description}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, seo_description: e.target.value }))}
+                      placeholder={ROUTE_DEFAULTS[seoForm.route_path]?.description ?? "e.g. Create, schedule, and publish AI-powered social media content from one dashboard."}
+                    />
+                    {!seoForm.seo_description.trim() && ROUTE_DEFAULTS[seoForm.route_path]?.description ? (
+                      <p className="text-[10px] text-muted-foreground">
+                        ℹ️ Current default: &ldquo;{ROUTE_DEFAULTS[seoForm.route_path].description}&rdquo;
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-1">
                     <Label>Keywords (comma-separated)</Label>
-                    <Input value={seoForm.seo_keywords} onChange={(e) => setSeoForm((s) => ({ ...s, seo_keywords: e.target.value }))} />
+                    <Input
+                      value={seoForm.seo_keywords}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, seo_keywords: e.target.value }))}
+                      placeholder="e.g. ai social media tool, social media scheduler, content creator"
+                    />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
                     <ImageSourceInput
@@ -716,7 +886,68 @@ export default function BlogAdminPage() {
                   </div>
                   <div className="space-y-1">
                     <Label>Robots</Label>
-                    <Input value={seoForm.robots} onChange={(e) => setSeoForm((s) => ({ ...s, robots: e.target.value }))} />
+                    <Input value={seoForm.robots} onChange={(e) => setSeoForm((s) => ({ ...s, robots: e.target.value }))} placeholder="index,follow" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-primary font-semibold">H1 Override</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Sets the visible &lt;h1&gt; on this page — the most important on-page ranking signal.
+                      Leave blank to keep the page&apos;s default heading.
+                    </p>
+                    {routePrimaryKeyword && !seoForm.h1_override.trim() ? (
+                      <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+                        ⚠️ Primary keyword <strong>&quot;{routePrimaryKeyword}&quot;</strong> is assigned but your H1 is not set.
+                        Add it via H1 Override below to apply it as the page heading.
+                      </div>
+                    ) : null}
+                    <Input
+                      value={seoForm.h1_override}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, h1_override: e.target.value }))}
+                      placeholder={
+                        ROUTE_DEFAULTS[seoForm.route_path]?.h1
+                          ? `Leave blank to use page default: ${ROUTE_DEFAULTS[seoForm.route_path].h1}`
+                          : routePrimaryKeyword
+                            ? `e.g. ${routePrimaryKeyword}`
+                            : "e.g. AI Social Media Platform for Creators"
+                      }
+                    />
+                    {!seoForm.h1_override.trim() && ROUTE_DEFAULTS[seoForm.route_path]?.h1 ? (
+                      <p className="text-[10px] text-muted-foreground">
+                        ℹ️ Current default: &ldquo;{ROUTE_DEFAULTS[seoForm.route_path].h1}&rdquo;
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="space-y-1">
+                    <Label>OG title (social share override)</Label>
+                    <p className="text-[10px] text-muted-foreground">Falls back to Meta title if empty.</p>
+                    <Input
+                      value={seoForm.og_title}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, og_title: e.target.value }))}
+                      placeholder="Falls back to Meta title if empty"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>OG description (social share override)</Label>
+                    <p className="text-[10px] text-muted-foreground">Falls back to Meta description if empty.</p>
+                    <Textarea
+                      rows={2}
+                      value={seoForm.og_description}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, og_description: e.target.value }))}
+                      placeholder="Falls back to Meta description if empty"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Structured data JSON-LD (advanced)</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Optional raw JSON-LD object to inject in &lt;head&gt; for this page. Must be valid JSON.
+                    </p>
+                    <Textarea
+                      rows={4}
+                      value={seoForm.structured_data_json}
+                      onChange={(e) => setSeoForm((s) => ({ ...s, structured_data_json: e.target.value }))}
+                      className="font-mono text-xs"
+                      placeholder={'{"@context":"https://schema.org","@type":"WebPage",...}'}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" onClick={() => void saveSeo()}>
@@ -749,15 +980,27 @@ export default function BlogAdminPage() {
                       onClick={async () => {
                         try {
                           const row = await api.admin.seoPagesOne(seoForm.route_path.trim());
+                          const routePath = String(row.route_path || seoForm.route_path);
                           setSeoForm({
-                            route_path: String(row.route_path || seoForm.route_path),
+                            route_path: routePath,
                             seo_title: String(row.seo_title || ""),
                             seo_description: String(row.seo_description || ""),
                             seo_keywords: String(row.seo_keywords || ""),
                             og_image_url: String(row.og_image_url || ""),
+                            og_title: String(row.og_title || ""),
+                            og_description: String(row.og_description || ""),
                             canonical_url: String(row.canonical_url || ""),
                             robots: String(row.robots || "index,follow"),
+                            h1_override: String(row.h1_override || ""),
+                            structured_data_json: row.structured_data
+                              ? JSON.stringify(row.structured_data, null, 2)
+                              : "",
                           });
+                          try {
+                            const assigns = await api.seoKeywords.getAssignments("route", routePath);
+                            const primary = (assigns as { assignments?: Array<{ is_primary: boolean; keyword?: { keyword: string } }> }).assignments?.find((a) => a.is_primary);
+                            setRoutePrimaryKeyword(primary?.keyword?.keyword ?? null);
+                          } catch { setRoutePrimaryKeyword(null); }
                         } catch {
                           toast({ title: "No row for this route yet", variant: "destructive" });
                         }
@@ -785,8 +1028,14 @@ export default function BlogAdminPage() {
                                 seo_description: String(p.seo_description || ""),
                                 seo_keywords: String(p.seo_keywords || ""),
                                 og_image_url: String(p.og_image_url || ""),
+                                og_title: String(p.og_title || ""),
+                                og_description: String(p.og_description || ""),
                                 canonical_url: String(p.canonical_url || ""),
                                 robots: String(p.robots || "index,follow"),
+                                h1_override: String(p.h1_override || ""),
+                                structured_data_json: p.structured_data
+                                  ? JSON.stringify(p.structured_data, null, 2)
+                                  : "",
                               })
                             }
                           >
@@ -1107,6 +1356,20 @@ export default function BlogAdminPage() {
             <div className="space-y-1 sm:col-span-2">
               <Label>Custom CSS (advanced)</Label>
               <Textarea rows={3} value={form.custom_css} onChange={(e) => setForm((f) => ({ ...f, custom_css: e.target.value }))} className="font-mono text-xs" />
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-primary font-semibold">FAQ (JSON array)</Label>
+              <p className="text-[10px] text-muted-foreground">
+                Optional. Renders a FAQ section before the author card and emits FAQPage JSON-LD.
+                Format: <code className="rounded bg-muted px-1">[{`{"question":"...","answer":"..."}`}, ...]</code>
+              </p>
+              <Textarea
+                rows={5}
+                value={form.faq_json}
+                onChange={(e) => setForm((f) => ({ ...f, faq_json: e.target.value }))}
+                className="font-mono text-xs"
+                placeholder={`[\n  {"question": "What is Trndinn?", "answer": "Trndinn is an AI social media platform..."}\n]`}
+              />
             </div>
           </div>
           <DialogFooter className="gap-2 sm:justify-end">

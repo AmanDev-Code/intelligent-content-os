@@ -21,6 +21,7 @@ import {
   Globe,
   Gift,
   FolderOpen,
+  CreditCard,
 } from "lucide-react";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 import { apiClient } from "@/lib/apiClient";
@@ -249,6 +250,13 @@ export default function AdminOverviewPage() {
           title: "SEO & Keywords",
           description: "Keyword library, assignments, and cluster management.",
           icon: Globe,
+          show: sections.settings,
+        },
+        {
+          href: "/admin/pricing-plans",
+          title: "Pricing plans",
+          description: "Display pricing, copy, and currencies for marketing and billing.",
+          icon: CreditCard,
           show: sections.settings,
         },
       ] as const,

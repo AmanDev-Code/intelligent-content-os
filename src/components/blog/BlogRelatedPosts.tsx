@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { cssObjectPositionForFeaturedImage } from "@/lib/blogFeaturedImagePosition";
@@ -45,20 +46,20 @@ export function BlogRelatedPosts({ posts }: BlogRelatedPostsProps) {
             href={`${BLOG_BASE_PATH}/${post.path}`}
             className="group flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card transition-all hover:border-primary/30 hover:shadow-md"
           >
-            <div className="h-44 overflow-hidden">
+            <div className="relative h-44 overflow-hidden">
               {post.featured_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={post.featured_image_url}
                   alt={post.title}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                   style={{
                     objectPosition: cssObjectPositionForFeaturedImage(
                       post.featured_image_object_position,
                       "listing",
                     ),
                   }}
+                  sizes="(max-width: 768px) 100vw, 400px"
                 />
               ) : (
                 <div

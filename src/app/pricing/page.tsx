@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import PricingPage from "@/views/PricingPage";
 import { siteName } from "@/lib/site";
-import { buildMarketingMetadata } from "@/lib/serverSeo";
+import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
+import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/pricing", {
@@ -17,6 +18,15 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function Page() {
-  return <PricingPage />;
+export default async function Page() {
+  const [h1Override, structuredData] = await Promise.all([
+    fetchMarketingH1Override("/pricing"),
+    fetchMarketingStructuredData("/pricing"),
+  ]);
+  return (
+    <>
+      <MarketingStructuredData data={structuredData} />
+      <PricingPage h1Override={h1Override} />
+    </>
+  );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import BlogMarketingIndexPage from "@/views/BlogMarketingIndexPage";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl, siteName } from "@/lib/site";
+import { fetchMarketingH1Override } from "@/lib/serverSeo";
 
 const url = getSiteUrl();
 const blogPath = `${url.replace(/\/$/, "")}${BLOG_BASE_PATH}`;
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
-  return <BlogMarketingIndexPage />;
+export default async function Page() {
+  const h1Override = await fetchMarketingH1Override("/blog");
+  return <BlogMarketingIndexPage h1Override={h1Override} />;
 }

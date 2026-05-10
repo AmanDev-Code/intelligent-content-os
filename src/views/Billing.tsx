@@ -21,19 +21,60 @@ import { toast } from "sonner";
 import { getVisiblePlans, getPlanById, calculateYearlyDiscount, type PlanConfig } from "@/config/plans";
 import { api } from "@/lib/apiClient";
 import { openPaddleCheckout } from "@/lib/paddle";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { normalizePublicPlansResponse } from "@/lib/normalizePublicPlans";
+import type { SubscriptionPlanPayload } from "@/types/publicPlans";
+import {
+  formatPlanMoney,
+  resolveDisplayedPrices,
+  resolveYearlyBilledTotal,
+} from "@/lib/planDisplayFormatting";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fireConfettiSnip } from "@/registry/magicui/confetti";
 
+type BillingPlanCard = {
+  id: string;
+  name: string;
+  price: { monthly: number; yearly: number };
+  description: string;
+  features: string[];
+  popular: boolean;
+  current: boolean;
+  /** When present, enables multi-currency strike/offer display */
+  raw?: SubscriptionPlanPayload;
+};
+
+const DISPLAY_CURRENCY_LS = "trndinn_display_currency";
+
 // Convert plan config to billing page format
-const formatPlansForBilling = (plans: PlanConfig[]) => {
-  return plans.map(plan => ({
+const formatPlansForBilling = (plans: PlanConfig[]): BillingPlanCard[] => {
+  return plans.map((plan) => ({
     id: plan.id,
     name: plan.name,
     price: { monthly: plan.pricing.monthly, yearly: plan.pricing.yearly },
     description: plan.description,
     features: plan.features,
     popular: plan.popular || false,
-    current: false
+    current: false,
+    raw: {
+      id: plan.id,
+      planType: plan.id,
+      name: plan.name,
+      description: plan.description,
+      creditsLimit: plan.credits,
+      priceMonthly: plan.pricing.monthly,
+      priceYearly: plan.pricing.yearly,
+      features: [...plan.features],
+      isActive: true,
+      sortOrder: 0,
+      displayPricing: null,
+    },
   }));
 };
 
@@ -41,7 +82,9 @@ export default function Billing() {
   const { user } = useAuth();
   const { quota: userQuota, refreshQuota } = useQuota();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [plans, setPlans] = useState(formatPlansForBilling(getVisiblePlans()));
+  const [plans, setPlans] = useState<BillingPlanCard[]>(formatPlansForBilling(getVisiblePlans()));
+  const [billingCurrency, setBillingCurrency] = useState("USD");
+  const [supportedCurrencies, setSupportedCurrencies] = useState<string[]>(["USD", "INR"]);
   const [usageData, setUsageData] = useState({
     posts: { used: 0, limit: 0 },
     aiCredits: { used: 0, limit: 0 },
@@ -100,21 +143,33 @@ export default function Billing() {
   const fetchPlansOnce = async () => {
     if (hasLoadedPlansRef.current) return;
     try {
-      const plansData = await api.subscription.plans();
-      const visiblePlansData = plansData.filter((plan: any) => plan.planType !== 'free');
-      const formattedPlans = visiblePlansData.map((plan: any) => ({
+      const raw = await api.subscription.plans();
+      const { plans: planRows, pricingDisplay } = normalizePublicPlansResponse(raw);
+      setSupportedCurrencies(pricingDisplay.supportedCurrencies);
+      let cur = pricingDisplay.defaultCurrency.toUpperCase();
+      if (typeof window !== "undefined") {
+        const ls = window.localStorage.getItem(DISPLAY_CURRENCY_LS);
+        if (ls && pricingDisplay.supportedCurrencies.map((c) => c.toUpperCase()).includes(ls.toUpperCase())) {
+          cur = ls.toUpperCase();
+        }
+      }
+      setBillingCurrency(cur);
+
+      const visiblePlansData = planRows.filter((plan) => plan.planType !== "free");
+      const formattedPlans: BillingPlanCard[] = visiblePlansData.map((plan) => ({
         id: plan.planType,
         name: plan.name,
         price: { monthly: plan.priceMonthly, yearly: plan.priceYearly },
         description: plan.description,
         features: plan.features,
-        popular: plan.planType === 'pro',
+        popular: plan.planType === "pro",
         current: false,
+        raw: plan,
       }));
       setPlans(formattedPlans);
       hasLoadedPlansRef.current = true;
     } catch (error) {
-      console.error('Error fetching plans:', error);
+      console.error("Error fetching plans:", error);
       setPlans(formatPlansForBilling(getVisiblePlans()));
       hasLoadedPlansRef.current = true;
     }
@@ -425,25 +480,61 @@ export default function Billing() {
         <CardContent className="pt-6">
           <div className="text-center space-y-3">
             <p className="text-sm text-muted-foreground">Compare pricing options</p>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <span className={cn("text-sm font-medium", billingCycle === 'monthly' && "text-primary")}>Monthly</span>
-              <Switch
-                checked={billingCycle === 'yearly'}
-                onCheckedChange={(checked) => {
-                  const newCycle = checked ? 'yearly' : 'monthly';
-                  setBillingCycle(newCycle);
-                  // This is just for display comparison - doesn't change your actual subscription
-                }}
-                disabled={loading}
-              />
-              <span className={cn("text-sm font-medium", billingCycle === 'yearly' && "text-primary")}>Yearly</span>
-              <Badge variant="secondary" className="text-xs">
-                {calculateYearlyDiscount(25, 250)}% Off
-              </Badge>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <span className={cn("text-sm font-medium", billingCycle === "monthly" && "text-primary")}>Monthly</span>
+                <Switch
+                  checked={billingCycle === "yearly"}
+                  onCheckedChange={(checked) => {
+                    const newCycle = checked ? "yearly" : "monthly";
+                    setBillingCycle(newCycle);
+                  }}
+                  disabled={loading}
+                />
+                <span className={cn("text-sm font-medium", billingCycle === "yearly" && "text-primary")}>Yearly</span>
+                <Badge variant="secondary" className="text-xs">
+                  {(() => {
+                    const proPlanRow = plans.find((p) => p.id === "pro");
+                    if (!proPlanRow) return "—";
+                    const d = calculateYearlyDiscount(proPlanRow.price.monthly, proPlanRow.price.yearly);
+                    return d > 0 ? `~${d}% Off vs monthly × 12` : "Annual option";
+                  })()}
+                </Badge>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Preview currency
+                </span>
+                <Select
+                  value={billingCurrency}
+                  onValueChange={(v) => {
+                    const u = v.toUpperCase();
+                    setBillingCurrency(u);
+                    if (typeof window !== "undefined") {
+                      window.localStorage.setItem(DISPLAY_CURRENCY_LS, u);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-[160px] text-xs" aria-label="Billing display currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedCurrencies.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            <p className="mx-auto max-w-xl text-[11px] text-muted-foreground">
+              Shown amounts come from <span className="font-medium text-foreground">Admin → Pricing plans</span>. Checkout totals
+              follow Paddle; keep catalog prices aligned with what you publish here.
+            </p>
             {currentSubscription && currentSubscription.subscription.billingCycle !== billingCycle && (
               <p className="text-xs text-muted-foreground">
-                You're currently on <strong>{currentSubscription.subscription.billingCycle}</strong> billing. 
+                You're currently on <strong>{currentSubscription.subscription.billingCycle}</strong> billing.
                 Use "Update to {billingCycle}" button above to change.
               </p>
             )}
@@ -453,7 +544,30 @@ export default function Billing() {
 
       {/* Plans - 3 columns on lg, 2 on sm with 3rd full width */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
-        {plans.map((plan) => (
+        {plans.map((plan) => {
+          const payload: SubscriptionPlanPayload =
+            plan.raw ??
+            ({
+              id: plan.id,
+              planType: plan.id,
+              name: plan.name,
+              description: plan.description,
+              creditsLimit: 0,
+              priceMonthly: plan.price.monthly,
+              priceYearly: plan.price.yearly,
+              features: [...plan.features],
+              isActive: true,
+              sortOrder: 0,
+              displayPricing: null,
+            } satisfies SubscriptionPlanPayload);
+          const disp = resolveDisplayedPrices(payload, billingCurrency, billingCycle === "yearly");
+          const yearlyTot = resolveYearlyBilledTotal(payload, billingCurrency);
+          const mainStr = formatPlanMoney(disp.mainAmount, disp.currencyCode, disp.symbolFallback);
+          const strikeStr =
+            disp.strikeAmount != null
+              ? formatPlanMoney(disp.strikeAmount, disp.currencyCode, disp.symbolFallback)
+              : null;
+          return (
           <Card key={plan.id} className={cn(
             "relative flex flex-col h-full",
             plan.popular && "ring-2 ring-primary",
@@ -481,14 +595,24 @@ export default function Billing() {
                 <h3 className="text-lg font-bold">{plan.name}</h3>
                 {plan.id === 'ultimate' && <Crown className="h-4 w-4 text-primary" />}
               </div>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-2xl font-bold">
-                  ${billingCycle === 'yearly' ? Math.round(plan.price.yearly / 12) : plan.price.monthly}
-                </span>
+              <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 mb-1">
+                {strikeStr && (
+                  <span className="text-sm text-muted-foreground line-through mr-1" aria-hidden>
+                    {strikeStr}
+                  </span>
+                )}
+                <span className="text-2xl font-bold">{mainStr}</span>
                 <span className="text-sm text-muted-foreground">/month</span>
+                {strikeStr && (
+                  <Badge variant="outline" className="ml-1 text-[10px] font-normal">
+                    Offer
+                  </Badge>
+                )}
               </div>
-              {billingCycle === 'yearly' && (
-                <p className="text-xs text-muted-foreground mb-1">${plan.price.yearly} billed yearly</p>
+              {billingCycle === "yearly" && yearlyTot != null && yearlyTot > 0 && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  {formatPlanMoney(yearlyTot, disp.currencyCode, disp.symbolFallback)} billed yearly
+                </p>
               )}
               <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
               <ul className="space-y-1.5 mb-4 flex-1">
@@ -519,7 +643,8 @@ export default function Billing() {
               </Button>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Billing History + Payment Method */}

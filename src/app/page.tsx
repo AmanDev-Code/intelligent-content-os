@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Landing from "../views/Landing";
 import { defaultDescription, siteName } from "@/lib/site";
-import { buildMarketingMetadata } from "@/lib/serverSeo";
+import { buildMarketingMetadata, fetchMarketingH1Override } from "@/lib/serverSeo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/", {
@@ -22,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function HomePage() {
-  return <Landing />;
+export default async function HomePage() {
+  const h1Override = await fetchMarketingH1Override("/");
+  return <Landing h1Override={h1Override} />;
 }

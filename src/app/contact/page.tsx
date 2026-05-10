@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import ContactPage from "@/views/ContactPage";
 import { siteName } from "@/lib/site";
-import { buildMarketingMetadata } from "@/lib/serverSeo";
+import { buildMarketingMetadata, fetchMarketingH1Override } from "@/lib/serverSeo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/contact", {
@@ -10,6 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function Page() {
-  return <ContactPage />;
+export default async function Page() {
+  const h1Override = await fetchMarketingH1Override("/contact");
+  return <ContactPage h1Override={h1Override} />;
 }

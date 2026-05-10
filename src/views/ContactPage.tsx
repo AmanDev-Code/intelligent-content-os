@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const supportEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "hello@trndinn.com";
 
-export default function ContactPage() {
+export default function ContactPage({ h1Override }: { h1Override?: string | null }) {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,7 +40,7 @@ export default function ContactPage() {
               <MessageSquare className="h-3.5 w-3.5 text-primary" />
               Inquiry Terminal
             </p>
-            <h1 className="mt-5 font-heading text-4xl font-black tracking-tight sm:text-6xl">Let us sync up.</h1>
+            <h1 className="mt-5 font-heading text-4xl font-black tracking-tight sm:text-6xl">{h1Override ?? "Let us sync up."}</h1>
             <p className="mt-4 text-lg text-muted-foreground">
               Whether you are launching solo or scaling a team, we can help you set up the right Trndinn workflow.
             </p>

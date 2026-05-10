@@ -23,7 +23,7 @@ type JobRow = {
   visa_sponsorship: boolean;
 };
 
-export default function CareersPage() {
+export default function CareersPage({ h1Override }: { h1Override?: string | null }) {
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [filter, setFilter] = useState<string>("all");
@@ -68,7 +68,7 @@ export default function CareersPage() {
               Talent network
             </p>
             <h1 className="mt-5 font-heading text-4xl font-black tracking-tight sm:text-6xl">
-              Build the calm command center for social growth.
+              {h1Override ?? "Build the calm command center for social growth."}
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
               We are a small, product-obsessed team shipping AI-assisted workflows for creators and teams. If you love

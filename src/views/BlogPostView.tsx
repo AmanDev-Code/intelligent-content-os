@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { MarkdownBody } from "@/components/blog/MarkdownBody";
 import { BlogAuthorCard } from "@/components/blog/BlogAuthorCard";
 import { BlogRelatedPosts, type RelatedPost } from "@/components/blog/BlogRelatedPosts";
 import { BlogPostShareAndSummarize } from "@/components/blog/BlogPostShareAndSummarize";
+import { BlogFaqSection, BlogFaqJsonLd } from "@/components/blog/BlogFaqSection";
 import { blogCategoryPillClass, displayCategoryLabel } from "@/lib/blogContentCategory";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl } from "@/lib/site";
@@ -35,6 +37,7 @@ type BlogPost = {
   featured_image_object_position?: string | null;
   tags?: string[] | null;
   custom_css?: string | null;
+  faq_json?: Array<{ question: string; answer: string }> | null;
 };
 
 export default function BlogPostView({
@@ -143,18 +146,23 @@ export default function BlogPostView({
           />
 
           {post.featured_image_url ? (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-border/50 bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div
+              className="mt-6 overflow-hidden rounded-2xl border border-border/50 bg-muted"
+              style={{ position: "relative", aspectRatio: "16/7" }}
+            >
+              <Image
                 src={post.featured_image_url}
                 alt=""
-                className="w-full object-cover"
+                fill
+                className="object-cover"
                 style={{
                   objectPosition: cssObjectPositionForFeaturedImage(
                     post.featured_image_object_position,
                     "hero",
                   ),
                 }}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 900px"
+                priority
               />
             </div>
           ) : null}
@@ -178,6 +186,13 @@ export default function BlogPostView({
           <div className="mt-8">
             <MarkdownBody markdown={post.body || ""} />
           </div>
+
+          {Array.isArray(post.faq_json) && post.faq_json.length > 0 ? (
+            <>
+              <BlogFaqJsonLd faqs={post.faq_json as { question: string; answer: string }[]} />
+              <BlogFaqSection faqs={post.faq_json as { question: string; answer: string }[]} />
+            </>
+          ) : null}
 
           {showAuthorBioCard ? (
             <BlogAuthorCard

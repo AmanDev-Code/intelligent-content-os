@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { cn } from "@/lib/utils";
@@ -86,7 +87,7 @@ function CategoryPill({
   );
 }
 
-export default function BlogMarketingIndexPage() {
+export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: string | null }) {
   const [posts, setPosts] = useState<MarketingPostCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +129,7 @@ export default function BlogMarketingIndexPage() {
             Home
           </Link>
           <h1 className="mt-10 font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-[3.35rem] sm:leading-[1.05]">
-            Blog
+            {h1Override ?? "Trndinn Blog: Social Media Growth Tips"}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
             Practical notes from the Trndinn team — how teams scale social workflows, ship product, and tune growth without
@@ -153,17 +154,19 @@ export default function BlogMarketingIndexPage() {
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:aspect-auto sm:min-h-[280px] sm:rounded-l-3xl sm:rounded-r-none">
                   {featured.featured_image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={featured.featured_image_url}
                       alt=""
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       style={{
                         objectPosition: cssObjectPositionForFeaturedImage(
                           featured.featured_image_object_position,
                           "listing",
                         ),
                       }}
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      priority
                     />
                   ) : (
                     <PostImagePlaceholder className="h-full w-full" />
@@ -202,17 +205,18 @@ export default function BlogMarketingIndexPage() {
                       >
                         <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl">
                           {p.featured_image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={p.featured_image_url}
                               alt=""
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                               style={{
                                 objectPosition: cssObjectPositionForFeaturedImage(
                                   p.featured_image_object_position,
                                   "listing",
                                 ),
                               }}
+                              sizes="(max-width: 768px) 100vw, 33vw"
                             />
                           ) : (
                             <PostImagePlaceholder className="h-full w-full" />

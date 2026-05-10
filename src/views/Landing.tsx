@@ -45,7 +45,7 @@ const bentoHighlights = [
   },
 ];
 
-export default function Landing() {
+export default function Landing({ h1Override }: { h1Override?: string | null }) {
   const { session } = useAuth();
   const primaryHref = session ? "/dashboard" : "/auth";
   const primaryLabel = session ? "Open your workspace" : "Start free";
@@ -73,12 +73,15 @@ export default function Landing() {
               </span>
 
               <h1 className="mt-6 max-w-5xl font-heading text-[2.35rem] font-black leading-[1.04] tracking-tight sm:text-5xl md:text-6xl lg:text-[4rem]">
-                Operate social growth
-                <br className="hidden sm:block" /> with one{" "}
-                <span className="bg-gradient-to-r from-[#ffc14a] via-[#ff8a1f] to-[#ff5d4f] bg-clip-text text-transparent">
-                  premium control layer
-                </span>
-                .
+                {h1Override ? h1Override : (
+                  <>
+                    AI Content Creator for Social Media —
+                    <br className="hidden sm:block" />{" "}
+                    <span className="bg-gradient-to-r from-[#ffc14a] via-[#ff8a1f] to-[#ff5d4f] bg-clip-text text-transparent">
+                      one premium control layer.
+                    </span>
+                  </>
+                )}
               </h1>
 
               <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">

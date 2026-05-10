@@ -1,14 +1,47 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { HelpCircle, ShieldCheck, Users, Zap } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { MarketingPlanGrid } from "@/components/marketing/MarketingPlanGrid";
 import { PricingComparisonTable } from "@/components/marketing/PricingComparisonTable";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { getPublicPlansCached } from "@/lib/publicPlansCache";
+import type { PublicPlansPayload } from "@/types/publicPlans";
 
-export default function PricingPage() {
+const DISPLAY_CURRENCY_LS = "trndinn_display_currency";
+
+export default function PricingPage({ h1Override }: { h1Override?: string | null }) {
+  const [plansPayload, setPlansPayload] = useState<PublicPlansPayload | null>(null);
+  const [currency, setCurrency] = useState<string>("USD");
+
+  useEffect(() => {
+    void getPublicPlansCached().then((p) => {
+      setPlansPayload(p);
+      let next = p.pricingDisplay.defaultCurrency.toUpperCase();
+      if (typeof window !== "undefined") {
+        const ls = window.localStorage.getItem(DISPLAY_CURRENCY_LS);
+        if (
+          ls &&
+          p.pricingDisplay.supportedCurrencies.map((x) => x.toUpperCase()).includes(ls.toUpperCase())
+        ) {
+          next = ls.toUpperCase();
+        }
+      }
+      setCurrency(next);
+    });
+  }, []);
+
+  const onCurrencyChange = (c: string) => {
+    const u = c.toUpperCase();
+    setCurrency(u);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DISPLAY_CURRENCY_LS, u);
+    }
+  };
+
   return (
     <MarketingShell>
       <main className="pb-24">
@@ -21,14 +54,17 @@ export default function PricingPage() {
           <div className="mx-auto max-w-6xl text-center">
             <p className="font-heading text-xs font-semibold uppercase tracking-[0.28em] text-primary">Transparent growth economics</p>
             <h1 className="mt-4 font-heading text-4xl font-black tracking-tight sm:text-6xl md:text-7xl md:leading-[1.05]">
-              Credit-based plans that scale with your output
+              {h1Override ?? "Social Media Tool Pricing — Credit-Based Plans That Scale"}
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Start free, graduate to Standard or Pro as volume grows, and open Ultimate when you need fleet-scale credits and
-              support. Same numbers everywhere—marketing, app, and checkout.
+              Start free, graduate to Standard or Pro as volume grows, and open Ultimate when you need fleet-scale credits and support.
+              Shown amounts are driven from your subscription plans in admin; checkout totals follow Paddle&apos;s catalogue.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button className="rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-xl shadow-primary/25" asChild>
+              <Button
+                className="rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-xl shadow-primary/25"
+                asChild
+              >
                 <Link href="/auth">Start free</Link>
               </Button>
               <Button variant="outline" className="rounded-full border-white/15 bg-background/40 backdrop-blur-md" asChild>
@@ -39,11 +75,19 @@ export default function PricingPage() {
         </section>
 
         <section className="mx-auto mt-16 max-w-6xl sm:mt-20">
-          <MarketingPlanGrid />
+          {plansPayload ? (
+            <MarketingPlanGrid payload={plansPayload} currency={currency} onCurrencyChange={onCurrencyChange} />
+          ) : (
+            <div className="mx-auto max-w-6xl px-6 py-16 text-center text-sm text-muted-foreground">
+              Loading plans…
+            </div>
+          )}
         </section>
 
         <section className="mx-auto mt-20 sm:mt-24">
-          <PricingComparisonTable />
+          {plansPayload ? (
+            <PricingComparisonTable plansPayload={plansPayload} currency={currency} />
+          ) : null}
         </section>
 
         <section className="mx-auto mt-16 grid max-w-6xl gap-6 px-4 sm:mt-20 sm:px-6 md:grid-cols-3">

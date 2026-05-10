@@ -1,4 +1,6 @@
 import { PLAN_LIMITS, SUBSCRIPTION_PLANS } from "@/config/plans";
+import type { SubscriptionPlanPayload } from "@/types/publicPlans";
+import { formatPlanMoney, resolveDisplayedPrices } from "@/lib/planDisplayFormatting";
 
 /** Mirrors backend `QuotaService` monthly pools (see backend/src/services/quota.service.ts). */
 export const BACKEND_MONTHLY_CREDITS = {
@@ -86,6 +88,35 @@ export function getPlanPriceCells(annual: boolean): Record<PlanColumnId, string>
     } else {
       const display = annual && y > 0 ? Math.round((y / 12) * 100) / 100 : m;
       out[id] = `$${display}/mo`;
+    }
+  }
+  return out;
+}
+
+export function getPlanPriceCellsFromPayload(
+  plans: SubscriptionPlanPayload[],
+  annual: boolean,
+  currency: string,
+): Record<PlanColumnId, string> {
+  const out = {} as Record<PlanColumnId, string>;
+  for (const id of ["free", "standard", "pro", "ultimate"] as PlanColumnId[]) {
+    const plan = plans.find((p) => p.planType === id);
+    if (!plan) continue;
+    const { mainAmount, strikeAmount, currencyCode, symbolFallback } = resolveDisplayedPrices(
+      plan,
+      currency,
+      annual,
+    );
+    if (id === "free" && mainAmount === 0) {
+      out[id] = "Free";
+      continue;
+    }
+    const main = formatPlanMoney(mainAmount, currencyCode, symbolFallback);
+    if (strikeAmount != null && strikeAmount > mainAmount) {
+      const strike = formatPlanMoney(strikeAmount, currencyCode, symbolFallback);
+      out[id] = `${strike} → ${main}/mo`;
+    } else {
+      out[id] = `${main}/mo`;
     }
   }
   return out;

@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import { getPreferredTimezoneSync } from "@/services/timezoneService";
+import type { AdminUpdateSubscriptionPlanBody, AdminUpdateSubscriptionPlanResponse, ImportFromPaddleCatalogResponse, PaddleCatalogLivePayload, PricingDisplaySettings, SubscriptionPlanPayload } from "@/types/publicPlans";
 
 // In-flight request deduplication cache
 // Key: method + endpoint, Value: Promise of the response
@@ -10,6 +11,13 @@ const inFlightRequests = new Map<string, Promise<any>>();
 // Response cache with TTL for GET requests
 const responseCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 3000; // 3 seconds
+
+/** Drop GET dedupe + short TTL response cache for a path (e.g. after admin updates public payloads). */
+export function clearClientGetCache(endpoint: string) {
+  const cacheKey = `GET:${endpoint}`;
+  responseCache.delete(cacheKey);
+  inFlightRequests.delete(cacheKey);
+}
 
 class ApiClient {
   private baseURL: string;
@@ -169,7 +177,7 @@ class ApiClient {
     return this.request(endpoint, options);
   }
 
-  async put(endpoint: string, data?: any): Promise<any> {
+  async put<T = any>(endpoint: string, data?: any): Promise<T> {
     const options: RequestInit = {
       method: 'PUT',
     };
@@ -454,6 +462,8 @@ export const api = {
     seoPagesUpsert: (payload: Record<string, unknown>) => apiClient.put('/admin/seo/pages', payload),
     seoPagesDelete: (route: string) =>
       apiClient.delete(`/admin/seo/pages?route=${encodeURIComponent(route)}`),
+    seoAiFill: (payload: { route: string; prompt?: string; primaryKeyword?: string }) =>
+      apiClient.post('/admin/seo/ai-fill', payload),
     mediaBrowse: (opts?: { path?: string; scope?: 'bucket' | 'cms' }) =>
       apiClient.get('/admin/media/browse', {
         params: {
@@ -467,6 +477,23 @@ export const api = {
       apiClient.delete("/admin/media/object", { key }),
     mediaUpload: (payload: { image: string; filename: string; path?: string }) =>
       apiClient.post("/admin/media/upload", payload),
+
+    /** Subscription plan copy + per-currency display amounts (admin). */
+    subscriptionPlansList: (): Promise<SubscriptionPlanPayload[]> =>
+      apiClient.get("/admin/subscription-plans"),
+    subscriptionPlansPricingDisplayGet: (): Promise<PricingDisplaySettings> =>
+      apiClient.get("/admin/subscription-plans/pricing-display"),
+    subscriptionPlansPricingDisplayPut: (payload: PricingDisplaySettings) =>
+      apiClient.put("/admin/subscription-plans/pricing-display", {
+        defaultCurrency: payload.defaultCurrency,
+        supportedCurrencies: payload.supportedCurrencies,
+      }),
+    subscriptionPlansUpdate: (planType: string, payload: AdminUpdateSubscriptionPlanBody) =>
+      apiClient.put<AdminUpdateSubscriptionPlanResponse>(`/admin/subscription-plans/${planType}`, payload),
+    subscriptionPlansPaddleCatalogLive: (): Promise<PaddleCatalogLivePayload> =>
+      apiClient.get("/admin/subscription-plans/paddle-catalog-live"),
+    subscriptionPlansImportFromPaddle: (): Promise<ImportFromPaddleCatalogResponse> =>
+      apiClient.post("/admin/subscription-plans/import-from-paddle-catalog", {}),
   },
 
   maintenance: {
