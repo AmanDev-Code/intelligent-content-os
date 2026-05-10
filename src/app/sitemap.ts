@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
-import { fetchPublishedBlogPosts } from "@/lib/serverBlog";
+import { fetchAllBlogPathsForSitemap } from "@/lib/serverBlog";
 import { getSiteUrl } from "@/lib/site";
 
 // Re-generate the sitemap at most every hour so new posts appear quickly.
@@ -35,27 +35,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority,
   }));
 
-  // Fetch all published posts. On error (e.g. cold start), fall back gracefully.
+  // Fetch all published posts via dedicated endpoint (no pagination cap).
   let blogEntries: MetadataRoute.Sitemap = [];
-  try {
-    // Fetch up to 500 posts; adjust if the blog grows beyond this.
-    const { posts } = await fetchPublishedBlogPosts({ limit: 500 });
-    blogEntries = posts
-      .filter((p) => p.path && typeof p.path === "string")
-      .map((p) => ({
-        url: `${base}${BLOG_BASE_PATH}/${p.path as string}`,
-        lastModified: p.updated_at
-          ? new Date(p.updated_at as string)
-          : p.published_at
-          ? new Date(p.published_at as string)
-          : now,
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-      }));
-  } catch {
-    // Log but don't break the sitemap — static pages still get indexed.
-    console.error("[sitemap] Failed to fetch blog posts");
-  }
+  const paths = await fetchAllBlogPathsForSitemap();
+  blogEntries = paths.map((p) => ({
+    url: `${base}${BLOG_BASE_PATH}/${p.path}`,
+    lastModified: p.updated_at
+      ? new Date(p.updated_at)
+      : p.published_at
+      ? new Date(p.published_at)
+      : now,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
 
   return [...staticEntries, ...blogEntries];
 }

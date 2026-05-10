@@ -13,6 +13,23 @@ export async function fetchPublishedBlogPost(path: string): Promise<Record<strin
   return res.json() as Promise<Record<string, unknown>>;
 }
 
+export async function fetchAllBlogPathsForSitemap(): Promise<
+  { path: string; published_at: string | null; updated_at: string | null }[]
+> {
+  const base = apiBase();
+  const url = `${base}/blog/sitemap-paths`;
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 3600 },
+      headers: { "ngrok-skip-browser-warning": "true" },
+    });
+    if (!res.ok) return [];
+    return res.json() as Promise<{ path: string; published_at: string | null; updated_at: string | null }[]>;
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchPublishedBlogPosts(params?: {
   post_kind?: string;
   tag?: string;
