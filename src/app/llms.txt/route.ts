@@ -40,6 +40,7 @@ function buildLlmsTxt(base: string): string {
     `- Careers: ${base}/careers`,
     `- Privacy policy: ${base}/privacy-policy`,
     `- Terms of use: ${base}/terms-of-use`,
+    `- Refund policy: ${base}/refund-policy`,
     "",
     "## Branding and citation",
     `- Preferred spelling: ${siteName} (capital T; no space).`,

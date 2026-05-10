@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
 import { toast } from "sonner";
-import { getVisiblePlans, getPlanById, calculateYearlyDiscount, type PlanConfig } from "@/config/plans";
+import { getVisiblePlans, type PlanConfig } from "@/config/plans";
 import { api } from "@/lib/apiClient";
 import { openPaddleCheckout } from "@/lib/paddle";
 import { normalizePublicPlansResponse } from "@/lib/normalizePublicPlans";
@@ -346,19 +346,42 @@ export default function Billing() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Billing & Subscription</h1>
           <p className="text-sm text-muted-foreground">Manage your subscription and billing information</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!latestBill?.id}
-          onClick={() => {
-            if (latestBill?.id) {
-              openInvoice(latestBill.id);
-            }
-          }}
-        >
-          <Download className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Download Invoice</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Select
+            value={billingCurrency}
+            onValueChange={(v) => {
+              const u = v.toUpperCase();
+              setBillingCurrency(u);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(DISPLAY_CURRENCY_LS, u);
+              }
+            }}
+          >
+            <SelectTrigger className="h-9 w-[112px] text-xs" aria-label="Pricing display currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {supportedCurrencies.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!latestBill?.id}
+            onClick={() => {
+              if (latestBill?.id) {
+                openInvoice(latestBill.id);
+              }
+            }}
+          >
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Download Invoice</span>
+          </Button>
+        </div>
       </div>
 
       {checkoutSuccess && (
@@ -475,69 +498,24 @@ export default function Billing() {
         </Card>
       </div>
 
-      {/* Billing Toggle - For Pricing Display Only */}
+      {/* Compare plan pricing cadence — display only */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="text-center space-y-3">
-            <p className="text-sm text-muted-foreground">Compare pricing options</p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:flex-wrap">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <span className={cn("text-sm font-medium", billingCycle === "monthly" && "text-primary")}>Monthly</span>
-                <Switch
-                  checked={billingCycle === "yearly"}
-                  onCheckedChange={(checked) => {
-                    const newCycle = checked ? "yearly" : "monthly";
-                    setBillingCycle(newCycle);
-                  }}
-                  disabled={loading}
-                />
-                <span className={cn("text-sm font-medium", billingCycle === "yearly" && "text-primary")}>Yearly</span>
-                <Badge variant="secondary" className="text-xs">
-                  {(() => {
-                    const proPlanRow = plans.find((p) => p.id === "pro");
-                    if (!proPlanRow) return "—";
-                    const d = calculateYearlyDiscount(proPlanRow.price.monthly, proPlanRow.price.yearly);
-                    return d > 0 ? `~${d}% Off vs monthly × 12` : "Annual option";
-                  })()}
-                </Badge>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Preview currency
-                </span>
-                <Select
-                  value={billingCurrency}
-                  onValueChange={(v) => {
-                    const u = v.toUpperCase();
-                    setBillingCurrency(u);
-                    if (typeof window !== "undefined") {
-                      window.localStorage.setItem(DISPLAY_CURRENCY_LS, u);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-9 w-[160px] text-xs" aria-label="Billing display currency">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supportedCurrencies.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <CardContent className="py-6">
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-sm text-muted-foreground text-center">Compare pricing options</p>
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
+              <span className={cn("text-sm font-medium", billingCycle === "monthly" && "text-primary")}>
+                Monthly
+              </span>
+              <Switch
+                checked={billingCycle === "yearly"}
+                onCheckedChange={(checked) => {
+                  setBillingCycle(checked ? "yearly" : "monthly");
+                }}
+                disabled={loading}
+              />
+              <span className={cn("text-sm font-medium", billingCycle === "yearly" && "text-primary")}>Yearly</span>
             </div>
-            <p className="mx-auto max-w-xl text-[11px] text-muted-foreground">
-              Shown amounts come from <span className="font-medium text-foreground">Admin → Pricing plans</span>. Checkout totals
-              follow Paddle; keep catalog prices aligned with what you publish here.
-            </p>
-            {currentSubscription && currentSubscription.subscription.billingCycle !== billingCycle && (
-              <p className="text-xs text-muted-foreground">
-                You're currently on <strong>{currentSubscription.subscription.billingCycle}</strong> billing.
-                Use "Update to {billingCycle}" button above to change.
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>

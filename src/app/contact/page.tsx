@@ -7,6 +7,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/contact", {
     title: "Contact",
     description: `Contact ${siteName} for product questions, partnerships, and support. We read every message.`,
+    keywords: [
+      "contact Trndinn",
+      "support",
+      "sales",
+      `${siteName} contact`,
+      "customer service",
+      "partnerships",
+    ],
   });
 }
 

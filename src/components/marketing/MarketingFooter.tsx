@@ -64,6 +64,11 @@ export function MarketingFooter() {
                     Terms
                   </Link>
                 </li>
+                <li>
+                  <Link href="/refund-policy" className="text-foreground/90 hover:text-primary">
+                    Refunds
+                  </Link>
+                </li>
               </ul>
             </div>
             <div className="col-span-2 sm:col-span-1">

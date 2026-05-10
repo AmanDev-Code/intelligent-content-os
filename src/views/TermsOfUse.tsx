@@ -23,7 +23,8 @@ const regulatoryItems = [
   "Developer policies, terms, and API restrictions imposed by LinkedIn and any other platform integrated into the service.",
 ];
 
-export default function TermsOfUse() {
+export default function TermsOfUse({ h1Override }: { h1Override?: string | null }) {
+  const headline = (h1Override?.trim()?.length ?? 0) > 0 ? h1Override!.trim() : "Trndinn Terms of Use";
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-12 md:px-8">
@@ -32,7 +33,7 @@ export default function TermsOfUse() {
             <FileText className="h-4 w-4" />
             Terms of Use
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Trndinn Terms of Use</h1>
+          <h1 className="text-4xl font-bold tracking-tight">{headline}</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Effective date: March 12, 2026. These Terms govern your access to and use of Trndinn,
             including its AI content generation, scheduling, publishing, analytics, billing, media, API,

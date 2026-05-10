@@ -39,7 +39,8 @@ const regulatorItems = [
   "Platform governance obligations imposed by service providers such as LinkedIn and other connected platforms whose APIs or developer policies apply to the product.",
 ];
 
-export default function PrivacyPolicy() {
+export default function PrivacyPolicy({ h1Override }: { h1Override?: string | null }) {
+  const headline = (h1Override?.trim()?.length ?? 0) > 0 ? h1Override!.trim() : "Trndinn Privacy Policy";
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-12 md:px-8">
@@ -48,7 +49,7 @@ export default function PrivacyPolicy() {
             <Shield className="h-4 w-4" />
             Privacy Policy
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Trndinn Privacy Policy</h1>
+          <h1 className="text-4xl font-bold tracking-tight">{headline}</h1>
           <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
             Effective date: March 12, 2026. This Privacy Policy explains how Trndinn collects,
             uses, stores, secures, and discloses information when you use our AI content strategy,
