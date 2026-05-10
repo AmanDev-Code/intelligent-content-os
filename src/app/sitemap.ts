@@ -3,8 +3,9 @@ import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { fetchAllBlogPathsForSitemap } from "@/lib/serverBlog";
 import { getSiteUrl } from "@/lib/site";
 
-// Re-generate the sitemap at most every hour so new posts appear quickly.
-export const revalidate = 3600;
+// Re-generate the sitemap on every request (no ISR cache) so new blog posts
+// appear in the sitemap immediately after publishing.
+export const dynamic = "force-dynamic";
 
 type StaticRoute = {
   path: string;

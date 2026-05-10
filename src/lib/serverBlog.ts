@@ -20,7 +20,7 @@ export async function fetchAllBlogPathsForSitemap(): Promise<
   const url = `${base}/blog/sitemap-paths`;
   try {
     const res = await fetch(url, {
-      next: { revalidate: 3600 },
+      cache: "no-store",
       headers: { "ngrok-skip-browser-warning": "true" },
     });
     if (!res.ok) return [];
