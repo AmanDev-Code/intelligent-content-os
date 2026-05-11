@@ -175,9 +175,9 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
           <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
             <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-7 lg:p-10">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The engine</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">AI creation with brand memory</h2>
+              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">AI content creation with brand memory</h2>
               <p className="mt-4 max-w-lg text-muted-foreground">
-                From rough idea to post-ready drafts, hooks, and variants—with your tone and guardrails baked in.
+                Turn a rough idea into post-ready drafts, hooks, and variants in under two seconds—with your brand tone and guardrails baked in from the start. Trndinn learns your voice from examples you provide, so every AI-generated LinkedIn post, carousel, or caption sounds like you wrote it, not a generic AI. No prompting from scratch every time.
               </p>
               <div className="mt-8 rounded-2xl border border-border/70 bg-muted/30 p-5 dark:border-white/10 dark:bg-background/40 dark:backdrop-blur-md">
                 <div className="mb-3 flex items-center gap-2 text-sm font-medium">
@@ -192,8 +192,8 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
             </div>
             <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-5 lg:p-10">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The matrix</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Scheduling that stays calm</h2>
-              <p className="mt-4 text-muted-foreground">One calendar for queues, retries, and the windows that actually convert.</p>
+              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Social media scheduling that stays calm</h2>
+              <p className="mt-4 text-muted-foreground">One unified content calendar for all your queues, retries, and optimal posting windows — across every connected channel. See what's scheduled, what's drafting, and what needs attention, without switching between tools. LinkedIn is live today; Instagram, X, and Facebook are on the roadmap.</p>
               <div className="mt-8 grid grid-cols-4 gap-2">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div
@@ -211,8 +211,8 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
 
             <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-5 lg:p-10">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The studio</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">One clip, all reels</h2>
-              <p className="mt-4 text-muted-foreground">Upload once, reframe for vertical, layer kinetic captions, schedule per channel.</p>
+              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">AI video reels — one clip, every format</h2>
+              <p className="mt-4 text-muted-foreground">Upload one video and Trndinn reframes it for vertical, layers kinetic captions, and schedules it per channel automatically. No editing software needed — the AI handles smart face tracking and subtitle styles so short-form video fits your brand in seconds.</p>
               <ul className="mt-6 space-y-3 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" /> Smart face tracking
@@ -227,8 +227,8 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
             </div>
             <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-7 lg:p-10">
               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The intelligence</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Analytics that tell you what to repeat</h2>
-              <p className="mt-4 max-w-xl text-muted-foreground">Cadence, resonance, and patterns—not vanity charts you ignore by week two.</p>
+              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Social media analytics that tell you what to repeat</h2>
+              <p className="mt-4 max-w-xl text-muted-foreground">Track engagement patterns, posting cadence, and content resonance across your linked accounts — not just vanity metrics you stop checking by week two. Trndinn surfaces which post formats, topics, and timing windows actually drive reach for your audience, so you can double down on what works instead of guessing.</p>
               <div className="mt-8 flex items-end gap-2 sm:gap-3">
                 {[35, 52, 40, 68, 88].map((h, idx) => (
                   <div
@@ -238,6 +238,42 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
                   />
                 ))}
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Who it's for */}
+        <section className="py-12 sm:py-16">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <h2 className="text-center font-heading text-2xl font-bold tracking-tight sm:text-3xl">
+              Built for every team that publishes social content
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
+              Whether you're a solo creator growing a personal brand or a marketing team managing multiple LinkedIn company pages, Trndinn gives you one AI-powered workspace to plan, create, schedule, and measure — without stitching together five different tools.
+            </p>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  title: "Content creators & personal brands",
+                  body: "Build a consistent LinkedIn presence with AI-drafted posts that sound like you. Schedule a week of content in one session and track which posts grow your audience fastest.",
+                },
+                {
+                  title: "Marketing teams & agencies",
+                  body: "Manage multiple social accounts from one workspace. Collaborate on drafts, maintain brand voice consistency across team members, and report on performance without exporting spreadsheets.",
+                },
+                {
+                  title: "Founders & solopreneurs",
+                  body: "Stay visible on LinkedIn without spending hours writing. Generate post variants from a single prompt, pick the best hook, and publish or schedule — all in under five minutes.",
+                },
+              ].map(({ title, body }) => (
+                <div
+                  key={title}
+                  className="rounded-2xl border border-border/70 bg-card p-6 dark:border-white/10 dark:bg-card/60"
+                >
+                  <h3 className="font-heading text-base font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>

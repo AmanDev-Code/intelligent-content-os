@@ -12,7 +12,7 @@ export function BlogFaqSection({ faqs }: Props) {
 
   return (
     <section className="mt-12 border-t border-border/60 pt-10">
-      <h2 className="mb-6 font-heading text-2xl font-bold tracking-tight">Frequently Asked Questions</h2>
+      <h2 className="mb-6 font-heading text-2xl font-bold tracking-tight">Quick Answers</h2>
       <dl className="space-y-6">
         {faqs.map((faq, i) => (
           <div key={i} className="rounded-xl border border-border/50 bg-muted/30 px-5 py-4">

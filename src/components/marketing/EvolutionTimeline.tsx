@@ -339,14 +339,14 @@ function EvolutionTimelineMobile({
                   >
                     {m.quarter} · {m.status}
                   </div>
-                  <h4
+                  <h3
                     className={cn(
                       "mt-0.5 font-heading text-[clamp(0.84rem,2.35vw,1.02rem)] font-bold leading-snug text-foreground",
                       !isLeftNode && "text-right",
                     )}
                   >
                     {m.title}
-                  </h4>
+                  </h3>
                   <p
                     className={cn(
                       "mt-0.5 text-[clamp(0.68rem,1.95vw,0.82rem)] leading-snug text-muted-foreground",
@@ -394,9 +394,9 @@ function milestoneCopy(m: EvolutionMilestone, opts: { align?: "left" | "right"; 
       >
         {m.quarter} · {m.status}
       </div>
-      <h4 className={cn("mt-1.5 font-heading text-[clamp(1rem,1.55vw,1.2rem)] font-bold leading-snug text-foreground")}>
+      <h3 className={cn("mt-1.5 font-heading text-[clamp(1rem,1.55vw,1.2rem)] font-bold leading-snug text-foreground")}>
         {m.title}
-      </h4>
+      </h3>
       <p className={cn("mt-2 text-[clamp(0.8rem,1.05vw,0.95rem)] leading-relaxed text-muted-foreground")}>{m.body}</p>
       {m.icons ? (
         <div

@@ -152,7 +152,7 @@ export default function BlogPostView({
             >
               <Image
                 src={post.featured_image_url}
-                alt=""
+                alt={post.title}
                 fill
                 className="object-cover"
                 style={{

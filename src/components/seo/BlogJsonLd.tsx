@@ -3,6 +3,11 @@ import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 
 type BlogPost = Record<string, unknown>;
 
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
 interface Props {
   post: BlogPost;
   slugPath: string;
@@ -23,8 +28,21 @@ export function BlogJsonLd({ post, slugPath }: Props) {
     (post.featured_image_url as string)?.trim() ||
     `${base}/og/default.png`;
   const authorName = (post.author_display_name as string)?.trim() || siteName;
+  const authorLinkedIn = (post.author_linkedin_url as string)?.trim() || undefined;
   const publishedAt = (post.published_at as string) || undefined;
   const updatedAt = (post.updated_at as string) || publishedAt;
+
+  // Parse FAQ array if present — powers FAQPage rich result
+  let faqItems: FaqItem[] = [];
+  const rawFaq = post.faq;
+  if (rawFaq) {
+    try {
+      const parsed = typeof rawFaq === "string" ? JSON.parse(rawFaq) : rawFaq;
+      if (Array.isArray(parsed)) faqItems = parsed as FaqItem[];
+    } catch {
+      // malformed JSON — skip FAQ schema
+    }
+  }
 
   // BreadcrumbList segments
   const segments = slugPath.split("/").filter(Boolean);
@@ -54,6 +72,7 @@ export function BlogJsonLd({ post, slugPath }: Props) {
         author: {
           "@type": "Person",
           name: authorName,
+          ...(authorLinkedIn ? { sameAs: [authorLinkedIn] } : {}),
         },
         publisher: {
           "@type": "Organization",
@@ -68,6 +87,21 @@ export function BlogJsonLd({ post, slugPath }: Props) {
         "@type": "BreadcrumbList",
         itemListElement: breadcrumbItems,
       },
+      ...(faqItems.length > 0
+        ? [
+            {
+              "@type": "FAQPage",
+              mainEntity: faqItems.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            },
+          ]
+        : []),
     ],
   };
 
