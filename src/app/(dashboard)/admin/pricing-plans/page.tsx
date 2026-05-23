@@ -2,6 +2,7 @@
 
 import { useAdminSectionGate } from "@/hooks/useAdminAreaAccess";
 import { PricingPlansAdmin } from "@/components/admin/PricingPlansAdmin";
+import { DiscountCodesAdmin } from "@/components/admin/DiscountCodesAdmin";
 
 export default function AdminPricingPlansPage() {
   const { loading, allowed } = useAdminSectionGate("settings");
@@ -17,10 +18,12 @@ export default function AdminPricingPlansPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Pricing plans</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Control marketing and in-app display names, bullets, and per-currency list/offer amounts. Checkout still uses Paddle.
+          Control marketing and in-app display names, bullets, and per-currency list/offer amounts. Checkout uses{" "}
+          <code className="text-[11px]">BILLING_PROVIDER</code> (Polar).
         </p>
       </div>
       <PricingPlansAdmin />
+      <DiscountCodesAdmin />
     </div>
   );
 }

@@ -27,9 +27,13 @@ export type PricingDisplaySettings = {
   supportedCurrencies: string[];
 };
 
+export type BillingProviderKind = "polar";
+
 export type PublicPlansPayload = {
   plans: SubscriptionPlanPayload[];
   pricingDisplay: PricingDisplaySettings;
+  /** From backend when `/public/plans` returns it. */
+  billingProvider?: BillingProviderKind;
 };
 
 /** Body for `PUT /admin/subscription-plans/:planType` (optional fields per Nest DTO). */
@@ -48,10 +52,10 @@ export type AdminUpdateSubscriptionPlanBody = {
 /** Response from `PUT /admin/subscription-plans/:planType`. */
 export type AdminUpdateSubscriptionPlanResponse = {
   ok: true;
-  paddleCatalogUpdated?: boolean;
+  billingCatalogSynced?: boolean;
 };
 
-export type PaddleCatalogLiveSlot = {
+export type BillingCatalogLiveSlot = {
   planType: "standard" | "pro" | "ultimate";
   billingCycle: "monthly" | "yearly";
   priceId: string;
@@ -61,13 +65,13 @@ export type PaddleCatalogLiveSlot = {
   error?: string;
 };
 
-export type PaddleCatalogLivePayload = {
+export type BillingCatalogLivePayload = {
   fetchedAt: string;
   apiKeyConfigured: boolean;
-  items: PaddleCatalogLiveSlot[];
+  items: BillingCatalogLiveSlot[];
 };
 
-export type ImportFromPaddleCatalogResponse = {
+export type ImportFromBillingCatalogResponse = {
   ok: true;
   updatedPlanTypes: Array<"standard" | "pro" | "ultimate">;
   warnings: string[];

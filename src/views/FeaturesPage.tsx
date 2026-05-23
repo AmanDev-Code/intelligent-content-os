@@ -453,7 +453,7 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
               eyebrow: "Investment",
               title: "Scale your signal",
               description:
-                "Same credit pools the API enforces—Free 50, Standard 500, Pro 2,000, Ultimate 10,000 monthly credits—with billing via Paddle.",
+                "Same credit pools the API enforces—Free 50, Standard 500, Pro 2,000, Ultimate 10,000 monthly credits—with billing via Polar.",
             }}
             className="max-w-6xl"
           />

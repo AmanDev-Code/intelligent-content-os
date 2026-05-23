@@ -210,43 +210,43 @@ export function SocialComingSoonModal({ platform, onClose }: SocialComingSoonMod
                 );
 
                 return (
-                  <div key={phase.phase} className="relative pl-10">
-                    {/* Timeline dot */}
-                    <div
-                      className={`absolute left-0 top-1 w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors z-10 ${
-                        isActivePhase
-                          ? "border-primary bg-[hsl(var(--card))]"
-                          : phase.labelVariant === "current"
-                          ? "border-green-500 bg-[hsl(var(--card))]"
-                          : "border-border bg-[hsl(var(--card))]"
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {phase.labelVariant === "current" ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-400" />
-                      ) : isActivePhase ? (
-                        <Star className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-
-                    {/* Phase header */}
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                      <span className="font-semibold text-sm">{phase.phase}</span>
-                      <span className="text-muted-foreground text-sm">—</span>
-                      <span className="font-medium text-sm">{phase.period}</span>
-                      <span
-                        className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                          LABEL_STYLES[phase.labelVariant]
+                  <div key={phase.phase}>
+                    <div className="flex items-center gap-4 mb-3">
+                      <div
+                        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center border-2 transition-colors z-10 ${
+                          isActivePhase
+                            ? "border-primary bg-[hsl(var(--card))]"
+                            : phase.labelVariant === "current"
+                            ? "border-green-500 bg-[hsl(var(--card))]"
+                            : "border-border bg-[hsl(var(--card))]"
                         }`}
+                        aria-hidden="true"
                       >
-                        {phase.label}
-                      </span>
+                        {phase.labelVariant === "current" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-400" />
+                        ) : isActivePhase ? (
+                          <Star className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="font-semibold text-sm">{phase.phase}</span>
+                        <span className="text-muted-foreground text-sm">—</span>
+                        <span className="font-medium text-sm">{phase.period}</span>
+                        <span
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                            LABEL_STYLES[phase.labelVariant]
+                          }`}
+                        >
+                          {phase.label}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Items */}
-                    <div className="space-y-2">
+                    {/* Items — indented to align with header text */}
+                    <div className="space-y-2 pl-[calc(2.25rem+1rem)]">
                       {phase.items.map((item, idx) => {
                         const isHighlighted = item.platform === platform;
                         return (

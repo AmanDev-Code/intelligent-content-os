@@ -5,10 +5,7 @@ export interface PlanConfig {
   id: string;
   name: string;
   description: string;
-  pricing: {
-    monthly: number;
-    yearly: number;
-  };
+  /** Marketing copy only — live prices come from `/public/plans` or launch pricing. */
   credits: number;
   features: string[];
   popular?: boolean;
@@ -20,10 +17,6 @@ export const SUBSCRIPTION_PLANS: PlanConfig[] = [
     id: 'free',
     name: 'Free',
     description: 'Perfect for getting started',
-    pricing: {
-      monthly: 0,
-      yearly: 0,
-    },
     credits: 50,
     features: [
       '50 AI credits per month',
@@ -37,10 +30,6 @@ export const SUBSCRIPTION_PLANS: PlanConfig[] = [
     id: 'standard',
     name: 'Standard',
     description: 'Great for regular content creators',
-    pricing: {
-      monthly: 15,
-      yearly: 150, // 17% discount
-    },
     credits: 500,
     features: [
       '500 AI credits per month',
@@ -55,10 +44,6 @@ export const SUBSCRIPTION_PLANS: PlanConfig[] = [
     id: 'pro',
     name: 'Pro',
     description: 'Perfect for businesses and agencies',
-    pricing: {
-      monthly: 25,
-      yearly: 250, // 17% discount
-    },
     credits: 2000,
     features: [
       '2000 AI credits per month',
@@ -75,10 +60,6 @@ export const SUBSCRIPTION_PLANS: PlanConfig[] = [
     id: 'ultimate',
     name: 'Ultimate',
     description: 'For enterprise and high-volume users',
-    pricing: {
-      monthly: 49,
-      yearly: 490, // 17% discount
-    },
     credits: 10000,
     features: [
       '10000 AI credits per month',

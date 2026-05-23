@@ -6,11 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import {
   CREDIT_USAGE_NOTE,
   PLAN_COMPARISON_ROWS,
-  getPlanPriceCells,
   getPlanPriceCellsFromPayload,
   type PlanColumnId,
 } from "@/config/plan-comparison";
-import { calculateYearlyDiscount } from "@/config/plans";
+import { yearlyDiscountPercentFromPlan } from "@/lib/planDisplayFormatting";
+import type { LaunchPricingConfig } from "@/hooks/useActiveLaunchPricing";
 import { cn } from "@/lib/utils";
 import type { PublicPlansPayload } from "@/types/publicPlans";
 import { getPublicPlansCached } from "@/lib/publicPlansCache";
@@ -26,9 +26,14 @@ export type PricingComparisonTableProps = {
   /** When set (e.g. /pricing), avoids a second API call and matches MarketingPlanGrid currency. */
   plansPayload?: PublicPlansPayload | null;
   currency?: string;
+  activeLaunchConfig?: LaunchPricingConfig | null;
 };
 
-export function PricingComparisonTable({ plansPayload: controlled, currency = "USD" }: PricingComparisonTableProps) {
+export function PricingComparisonTable({
+  plansPayload: controlled,
+  currency = "USD",
+  activeLaunchConfig,
+}: PricingComparisonTableProps) {
   const [annual, setAnnual] = useState(true);
   const [fallback, setFallback] = useState<PublicPlansPayload | null>(controlled ?? null);
 
@@ -44,17 +49,16 @@ export function PricingComparisonTable({ plansPayload: controlled, currency = "U
   const plansPayload = controlled ?? fallback;
 
   const prices = useMemo(() => {
-    if (plansPayload?.plans?.length) {
-      return getPlanPriceCellsFromPayload(plansPayload.plans, annual, currency);
+    if (!plansPayload?.plans?.length) {
+      return Object.fromEntries(
+        (["free", "standard", "pro", "ultimate"] as PlanColumnId[]).map((id) => [id, "—"]),
+      ) as Record<PlanColumnId, string>;
     }
-    return getPlanPriceCells(annual);
-  }, [plansPayload, annual, currency]);
+    return getPlanPriceCellsFromPayload(plansPayload.plans, annual, currency, activeLaunchConfig);
+  }, [plansPayload, annual, currency, activeLaunchConfig]);
 
   const proPlan = plansPayload?.plans?.find((p) => p.planType === "pro");
-  const yearlyDisc =
-    proPlan && proPlan.priceMonthly > 0 && proPlan.priceYearly > 0
-      ? calculateYearlyDiscount(proPlan.priceMonthly, proPlan.priceYearly)
-      : 0;
+  const yearlyDisc = proPlan ? yearlyDiscountPercentFromPlan(proPlan, currency) : 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">

@@ -10,6 +10,7 @@ import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { PostHogInit } from "@/components/analytics/PostHogInit";
 import { PostHogPageProvider } from "@/components/analytics/PostHogPageProvider";
+import { GoogleAnalyticsPageView } from "@/components/analytics/GoogleAnalyticsPageView";
 import {
   MaintenanceProvider,
   useMaintenanceStatus,
@@ -58,6 +59,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           <AuthProvider>
             <PostHogInit>
+              <GoogleAnalyticsPageView />
               <PostHogPageProvider />
               <Toaster />
               <Sonner />

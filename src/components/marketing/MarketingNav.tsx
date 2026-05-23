@@ -77,9 +77,11 @@ export function MarketingNav() {
           >
             {!mounted ? <Sun className="h-4 w-4 opacity-50" /> : isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full" asChild>
-            <Link href="/auth">Sign in</Link>
-          </Button>
+          {!session && (
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full" asChild>
+              <Link href="/auth">Sign in</Link>
+            </Button>
+          )}
           <Button
             size="sm"
             className="hidden rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff5d4f] px-4 font-semibold text-white shadow-lg shadow-primary/20 sm:inline-flex"
@@ -112,9 +114,11 @@ export function MarketingNav() {
                     </Link>
                   );
                 })}
-                <Link href="/auth" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base font-medium">
-                  Sign in
-                </Link>
+                {!session && (
+                  <Link href="/auth" onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 text-base font-medium">
+                    Sign in
+                  </Link>
+                )}
                 <Link
                   href={primaryHref}
                   onClick={() => setOpen(false)}

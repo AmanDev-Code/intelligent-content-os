@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "subscription refund",
       "billing disputes",
       "money back policy",
-      "Paddle refunds",
+      "Polar refunds",
       "Trndinn refunds",
       "SaaS refund policy",
     ],

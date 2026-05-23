@@ -1,4 +1,5 @@
-import { PLAN_LIMITS, SUBSCRIPTION_PLANS } from "@/config/plans";
+import { PLAN_LIMITS } from "@/config/plans";
+import type { LaunchPricingConfig } from "@/hooks/useActiveLaunchPricing";
 import type { SubscriptionPlanPayload } from "@/types/publicPlans";
 import { formatPlanMoney, resolveDisplayedPrices } from "@/lib/planDisplayFormatting";
 
@@ -76,36 +77,24 @@ export const PLAN_COMPARISON_ROWS: ComparisonRow[] = [
   },
 ];
 
-export function getPlanPriceCells(annual: boolean): Record<PlanColumnId, string> {
-  const out = {} as Record<PlanColumnId, string>;
-  for (const id of ["free", "standard", "pro", "ultimate"] as PlanColumnId[]) {
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === id);
-    if (!plan) continue;
-    const m = plan.pricing.monthly;
-    const y = plan.pricing.yearly;
-    if (m === 0 && y === 0) {
-      out[id] = "$0";
-    } else {
-      const display = annual && y > 0 ? Math.round((y / 12) * 100) / 100 : m;
-      out[id] = `$${display}/mo`;
-    }
-  }
-  return out;
-}
-
 export function getPlanPriceCellsFromPayload(
   plans: SubscriptionPlanPayload[],
   annual: boolean,
   currency: string,
+  launchConfig?: LaunchPricingConfig | null,
 ): Record<PlanColumnId, string> {
   const out = {} as Record<PlanColumnId, string>;
   for (const id of ["free", "standard", "pro", "ultimate"] as PlanColumnId[]) {
     const plan = plans.find((p) => p.planType === id);
-    if (!plan) continue;
+    if (!plan) {
+      out[id] = "—";
+      continue;
+    }
     const { mainAmount, strikeAmount, currencyCode, symbolFallback } = resolveDisplayedPrices(
       plan,
       currency,
       annual,
+      launchConfig,
     );
     if (id === "free" && mainAmount === 0) {
       out[id] = "Free";

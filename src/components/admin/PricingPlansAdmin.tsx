@@ -8,7 +8,7 @@ import type {
   AdminUpdateSubscriptionPlanBody,
   PlanDisplayPricingMap,
   PlanDisplayTier,
-  PaddleCatalogLivePayload,
+  BillingCatalogLivePayload,
   PricingDisplaySettings,
   SubscriptionPlanPayload,
 } from "@/types/publicPlans";
@@ -145,8 +145,8 @@ function extractApiMessage(err: unknown): string {
 export function PricingPlansAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [paddleLive, setPaddleLive] = useState<PaddleCatalogLivePayload | null>(null);
-  const [importingPaddle, setImportingPaddle] = useState(false);
+  const [catalogLive, setCatalogLive] = useState<BillingCatalogLivePayload | null>(null);
+  const [importingCatalog, setImportingCatalog] = useState(false);
 
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
   const [supportedInput, setSupportedInput] = useState("USD, INR");
@@ -186,14 +186,14 @@ export function PricingPlansAdmin() {
     return { ...form, tierByCurrency: nextTiers };
   }, []);
 
-  const refreshPaddleSnapshot = useCallback(async () => {
-    clearClientGetCache("/admin/subscription-plans/paddle-catalog-live");
+  const refreshCatalogSnapshot = useCallback(async () => {
+    clearClientGetCache("/admin/subscription-plans/billing-catalog-live");
     try {
-      const snap = await api.admin.subscriptionPlansPaddleCatalogLive();
-      setPaddleLive(snap);
+      const snap = await api.admin.subscriptionPlansBillingCatalogLive();
+      setCatalogLive(snap);
       return snap;
     } catch (e) {
-      setPaddleLive(null);
+      setCatalogLive(null);
       toast.error(extractApiMessage(e));
       return null;
     }
@@ -206,7 +206,7 @@ export function PricingPlansAdmin() {
         api.admin.subscriptionPlansPricingDisplayGet(),
         api.admin.subscriptionPlansList(),
       ]);
-      void refreshPaddleSnapshot();
+      void refreshCatalogSnapshot();
 
       const m: PricingDisplaySettings = meta;
       setDefaultCurrency(m.defaultCurrency);
@@ -259,7 +259,7 @@ export function PricingPlansAdmin() {
     } finally {
       setLoading(false);
     }
-  }, [refreshPaddleSnapshot]);
+  }, [refreshCatalogSnapshot]);
 
   useEffect(() => {
     void load();
@@ -330,18 +330,18 @@ export function PricingPlansAdmin() {
       if (pricingDirty) {
         await api.admin.subscriptionPlansPricingDisplayPut(pricingPayload);
       }
-      let paddleCatalogUpdated = false;
+      let billingCatalogSynced = false;
       for (const u of updates) {
         const res = await api.admin.subscriptionPlansUpdate(u.planType, u.body);
-        if (res.paddleCatalogUpdated) paddleCatalogUpdated = true;
+        if (res.billingCatalogSynced) billingCatalogSynced = true;
       }
       invalidatePublicPlansCache();
-      clearClientGetCache("/admin/subscription-plans/paddle-catalog-live");
+      clearClientGetCache("/admin/subscription-plans/billing-catalog-live");
       clearClientGetCache("/admin/subscription-plans");
-      void refreshPaddleSnapshot();
+      void refreshCatalogSnapshot();
       if (pricingDirty || updates.length > 0) {
-        if (paddleCatalogUpdated) {
-          toast.success("Saved. Paddle catalog updated.");
+        if (billingCatalogSynced) {
+          toast.success("Saved. Polar catalog updated.");
         } else {
           toast.success("Pricing display saved. Public plans cache cleared.");
         }
@@ -363,37 +363,37 @@ export function PricingPlansAdmin() {
     );
   }
 
-  async function handleImportFromPaddle() {
+  async function handleImportFromCatalog() {
     const okConfirm = window.confirm(
-      "Import list prices from Paddle into Supabase for Standard, Pro, and Ultimate?\n\n" +
-        "This sets display list amounts from the catalog (checkout truth), clears offer fields on that Paddle-currency tier, and updates legacy price_monthly / price_yearly.",
+      "Import list prices from the Polar catalog into Supabase for Standard, Pro, and Ultimate?\n\n" +
+        "This sets display list amounts from the catalog (checkout truth), clears offer fields on that catalog-currency tier, and updates legacy price_monthly / price_yearly.",
     );
     if (!okConfirm) return;
-    setImportingPaddle(true);
+    setImportingCatalog(true);
     try {
-      const result = await api.admin.subscriptionPlansImportFromPaddle();
+      const result = await api.admin.subscriptionPlansImportFromBillingCatalog();
       invalidatePublicPlansCache();
-      clearClientGetCache("/admin/subscription-plans/paddle-catalog-live");
+      clearClientGetCache("/admin/subscription-plans/billing-catalog-live");
       clearClientGetCache("/admin/subscription-plans");
       for (const w of result.warnings) toast.message(w);
-      toast.success(`Imported Paddle catalog → ${result.updatedPlanTypes.join(", ")}`);
+      toast.success(`Imported Polar catalog → ${result.updatedPlanTypes.join(", ")}`);
       await load();
     } catch (e) {
       toast.error(extractApiMessage(e));
     } finally {
-      setImportingPaddle(false);
+      setImportingCatalog(false);
     }
   }
 
-  function paddleSlotsFor(plan: PlanType): {
+  function catalogSlotsFor(plan: PlanType): {
     monthly: string;
     yearly: string;
     moId?: string;
     yrId?: string;
   } | null {
-    if (plan === "free" || !paddleLive?.items.length) return null;
-    const m = paddleLive.items.find((x) => x.planType === plan && x.billingCycle === "monthly");
-    const y = paddleLive.items.find((x) => x.planType === plan && x.billingCycle === "yearly");
+    if (plan === "free" || !catalogLive?.items.length) return null;
+    const m = catalogLive.items.find((x) => x.planType === plan && x.billingCycle === "monthly");
+    const y = catalogLive.items.find((x) => x.planType === plan && x.billingCycle === "yearly");
     let mo =
       m?.error ?? (m?.amountMajor != null && m.currencyCode ? formatMoneyMajor(m.amountMajor, m.currencyCode) : "—");
     let yr =
@@ -435,26 +435,26 @@ export function PricingPlansAdmin() {
       <Card>
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-base">Paddle catalog (live)</CardTitle>
+            <CardTitle className="text-base">Polar catalog (live)</CardTitle>
             <CardDescription>
-              Checkout totals follow these Paddle price IDs ({paddleLive?.apiKeyConfigured ? `fetched ${new Date(paddleLive.fetchedAt).toLocaleString()}` : "missing PADDLE_API_KEY — server-side only"})
-              . Saving display pricing can PATCH Paddle when catalog sync is enabled; use Import after you change prices in the Paddle dashboard.
+              Checkout totals follow these Polar product or price IDs ({catalogLive?.apiKeyConfigured ? `fetched ${new Date(catalogLive.fetchedAt).toLocaleString()}` : "missing POLAR_ACCESS_TOKEN — server-side only"})
+              . Saving display pricing can update Polar when catalog sync is enabled; use Import after you change prices in the Polar dashboard.
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => void refreshPaddleSnapshot()}>
+            <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => void refreshCatalogSnapshot()}>
               Refresh catalog
             </Button>
-            <Button type="button" size="sm" disabled={importingPaddle || !paddleLive?.apiKeyConfigured} onClick={() => void handleImportFromPaddle()}>
-              {importingPaddle ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Import from Paddle → DB
+            <Button type="button" size="sm" disabled={importingCatalog || !catalogLive?.apiKeyConfigured} onClick={() => void handleImportFromCatalog()}>
+              {importingCatalog ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Import from Polar → DB
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {!paddleLive?.apiKeyConfigured && (
+          {!catalogLive?.apiKeyConfigured && (
             <p className="text-sm text-amber-600 dark:text-amber-400">
-              Set `PADDLE_API_KEY` on the backend and restart to load catalog rows.
+              Set `POLAR_ACCESS_TOKEN` on the backend and restart to load catalog rows.
             </p>
           )}
           <div className="overflow-x-auto rounded-md border text-sm">
@@ -462,24 +462,24 @@ export function PricingPlansAdmin() {
               <thead>
                 <tr className="border-b bg-muted/40">
                   <th className="p-2 font-medium">Plan</th>
-                  <th className="p-2 font-medium">Paddle monthly</th>
-                  <th className="p-2 font-medium">Paddle yearly</th>
+                  <th className="p-2 font-medium">Polar monthly</th>
+                  <th className="p-2 font-medium">Polar yearly</th>
                   <th className="p-2 font-medium">Your DB lists (preview)</th>
                 </tr>
               </thead>
               <tbody>
                 {(["standard", "pro", "ultimate"] as const).map((pt) => {
-                  const paddle = paddleSlotsFor(pt);
+                  const catalog = catalogSlotsFor(pt);
                   return (
                     <tr key={pt} className="border-b">
                       <td className="p-2 font-medium capitalize">{pt}</td>
                       <td className="p-2 font-mono text-xs">
-                        {paddle?.monthly ?? "—"}
-                        {paddle?.moId ? <div className="text-muted-foreground">{paddle.moId}</div> : null}
+                        {catalog?.monthly ?? "—"}
+                        {catalog?.moId ? <div className="text-muted-foreground">{catalog.moId}</div> : null}
                       </td>
                       <td className="p-2 font-mono text-xs">
-                        {paddle?.yearly ?? "—"}
-                        {paddle?.yrId ? <div className="text-muted-foreground">{paddle.yrId}</div> : null}
+                        {catalog?.yearly ?? "—"}
+                        {catalog?.yrId ? <div className="text-muted-foreground">{catalog.yrId}</div> : null}
                       </td>
                       <td className="p-2 text-xs text-muted-foreground">{dbListSnapshot(pt)}</td>
                     </tr>

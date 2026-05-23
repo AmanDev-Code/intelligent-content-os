@@ -2,7 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import { getPreferredTimezoneSync } from "@/services/timezoneService";
-import type { AdminUpdateSubscriptionPlanBody, AdminUpdateSubscriptionPlanResponse, ImportFromPaddleCatalogResponse, PaddleCatalogLivePayload, PricingDisplaySettings, SubscriptionPlanPayload } from "@/types/publicPlans";
+import type { AdminUpdateSubscriptionPlanBody, AdminUpdateSubscriptionPlanResponse, BillingCatalogLivePayload, ImportFromBillingCatalogResponse, PricingDisplaySettings, SubscriptionPlanPayload } from "@/types/publicPlans";
+import type { CreateDiscountCodeBody, DiscountCodeRow } from "@/types/discountCodes";
 
 // In-flight request deduplication cache
 // Key: method + endpoint, Value: Promise of the response
@@ -229,14 +230,52 @@ export const api = {
   subscription: {
     get: () => apiClient.get('/subscription'),
     plans: () => apiClient.get('/public/plans'),
+    launchPricing: () => apiClient.get('/public/launch-pricing/active'),
     billing: () => apiClient.get('/subscription/billing'),
     update: (planType: string, billingCycle: string) => 
       apiClient.put('/subscription/update', { planType, billingCycle }),
     cancel: () => apiClient.post('/subscription/cancel'),
     changePlan: (planType: 'standard' | 'pro' | 'ultimate', billingCycle: 'monthly' | 'yearly') =>
       apiClient.post('/subscription/change-plan', { planType, billingCycle }),
+    syncFromPolar: (): Promise<{ synced: boolean }> =>
+      apiClient.post('/subscription/sync-from-polar'),
+    customerPortal: (returnUrl?: string): Promise<{ url: string }> =>
+      apiClient.post('/subscription/customer-portal', { returnUrl }),
+    portalUrl: (params?: {
+      intent?: 'change' | 'switch';
+      planType?: 'standard' | 'pro' | 'ultimate';
+      billingCycle?: 'monthly' | 'yearly';
+    }): Promise<{ url: string; intent: 'change' | 'switch' }> =>
+      apiClient.get('/subscription/portal-url', { params }),
     invoiceUrl: (transactionId: string) => apiClient.get(`/subscription/invoice/${transactionId}`),
     usage: () => apiClient.get('/subscription/usage'),
+    checkoutUrl: (payload: {
+      planType: 'standard' | 'pro' | 'ultimate';
+      billingCycle: 'monthly' | 'yearly';
+      discountCode?: string;
+      successUrl?: string;
+      cancelUrl?: string;
+    }): Promise<{
+      url: string;
+      checkoutId?: string | null;
+      discountApplied?: boolean;
+      discountCode?: string;
+      redirectKind?: 'checkout' | 'portal' | 'in_app';
+      message?: string;
+    }> => apiClient.post('/subscription/checkout-url', payload),
+    validateDiscount: (params: {
+      code: string;
+      planType: 'standard' | 'pro' | 'ultimate';
+      billingCycle: 'monthly' | 'yearly';
+    }): Promise<{
+      valid: boolean;
+      code: string;
+      name: string;
+      discountType: string;
+      percentOff: number | null;
+      amountOff: number | null;
+      currency: string;
+    }> => apiClient.get('/subscription/discount/validate', { params }),
   },
 
   // Generation endpoints
@@ -490,10 +529,32 @@ export const api = {
       }),
     subscriptionPlansUpdate: (planType: string, payload: AdminUpdateSubscriptionPlanBody) =>
       apiClient.put<AdminUpdateSubscriptionPlanResponse>(`/admin/subscription-plans/${planType}`, payload),
-    subscriptionPlansPaddleCatalogLive: (): Promise<PaddleCatalogLivePayload> =>
-      apiClient.get("/admin/subscription-plans/paddle-catalog-live"),
-    subscriptionPlansImportFromPaddle: (): Promise<ImportFromPaddleCatalogResponse> =>
-      apiClient.post("/admin/subscription-plans/import-from-paddle-catalog", {}),
+    subscriptionPlansBillingCatalogLive: (): Promise<BillingCatalogLivePayload> =>
+      apiClient.get("/admin/subscription-plans/billing-catalog-live"),
+    subscriptionPlansImportFromBillingCatalog: (): Promise<ImportFromBillingCatalogResponse> =>
+      apiClient.post("/admin/subscription-plans/import-from-billing-catalog", {}),
+
+    discountCodesList: (): Promise<{ ok: boolean; data: DiscountCodeRow[] }> =>
+      apiClient.get("/admin/discount-codes"),
+    discountCodesCreate: (payload: CreateDiscountCodeBody) =>
+      apiClient.post("/admin/discount-codes", payload),
+    discountCodesUpdate: (
+      id: string,
+      payload: Partial<CreateDiscountCodeBody> & { active?: boolean },
+    ) => apiClient.put(`/admin/discount-codes/${id}`, payload),
+    discountCodesDeactivate: (id: string) =>
+      apiClient.post(`/admin/discount-codes/${id}/deactivate`, {}),
+    discountCodesSync: (id: string) =>
+      apiClient.post(`/admin/discount-codes/${id}/sync`, {}),
+
+    // Payment Gateway endpoints
+    paymentGatewayHealth: () => apiClient.get('/admin/payment-gateway/health'),
+    paymentGatewayRunCheckoutLinksScript: () =>
+      apiClient.post('/admin/payment-gateway/run-checkout-links-script', {}),
+
+    // Currency/Exchange rate endpoints
+    refreshExchangeRate: () => apiClient.post('/admin/currency/exchange-rate/refresh', {}),
+    getExchangeRate: () => apiClient.get('/admin/currency/rate'),
   },
 
   maintenance: {

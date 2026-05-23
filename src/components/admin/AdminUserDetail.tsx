@@ -50,13 +50,13 @@ type SubscriptionRow = {
   billing_cycle: string;
   credits_limit: number | null;
   is_active: boolean | null;
-  paddle_subscription_id?: string | null;
-  paddle_customer_id?: string | null;
+  polar_subscription_id?: string | null;
+  polar_customer_id?: string | null;
 } | null;
 
 type BillingRow = {
   id: string;
-  paddle_transaction_id: string;
+  polar_order_id: string;
   invoice_number: string | null;
   status: string;
   amount: number | string;
@@ -350,9 +350,9 @@ export function AdminUserDetail({
                   <span className="tabular-nums">{subscription.credits_limit ?? "—"}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-muted-foreground">Paddle sub</span>
+                  <span className="text-muted-foreground">Polar subscription</span>
                   <span className="text-xs truncate max-w-[180px]">
-                    {subscription.paddle_subscription_id || "—"}
+                    {subscription.polar_subscription_id || "—"}
                   </span>
                 </div>
               </>
@@ -402,7 +402,7 @@ export function AdminUserDetail({
             <CardHeader>
               <CardTitle className="text-base">Set plan (database)</CardTitle>
               <p className="text-xs text-muted-foreground">
-                Overrides subscription row; does not call Paddle. User gets an in-app notice.
+                Overrides subscription row; does not open Polar checkout. User gets an in-app notice.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -452,7 +452,7 @@ export function AdminUserDetail({
         <CardHeader>
           <CardTitle className="text-base">Payment history</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Rows from <code className="text-[11px]">billing_invoices</code> (Paddle webhook). If
+            Rows from <code className="text-[11px]">billing_invoices</code> (Polar webhooks). If
             empty, billing history is not synced to the database yet.
           </p>
         </CardHeader>
@@ -460,12 +460,12 @@ export function AdminUserDetail({
           {invoices.length === 0 ? (
             <div className="p-6 space-y-2">
               <p className="text-sm text-muted-foreground">
-                No stored Paddle invoices for this user yet.
+                No stored invoices for this user yet.
               </p>
               <p className="text-xs text-muted-foreground">
-                Connect Paddle history: ensure webhooks persist to{" "}
-                <code className="text-[11px]">billing_invoices</code>, or open Paddle Billing for
-                this customer using the IDs above when present.
+                Ensure Polar webhooks persist to{" "}
+                <code className="text-[11px]">billing_invoices</code>, or open the Polar customer
+                record using the IDs above when present.
               </p>
             </div>
           ) : (

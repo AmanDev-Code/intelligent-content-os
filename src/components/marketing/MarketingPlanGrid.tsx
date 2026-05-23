@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -12,41 +12,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { calculateYearlyDiscount, SUBSCRIPTION_PLANS } from "@/config/plans";
+import { SUBSCRIPTION_PLANS } from "@/config/plans";
 import type { PricingDisplaySettings, PublicPlansPayload, SubscriptionPlanPayload } from "@/types/publicPlans";
 import { getPublicPlansCached } from "@/lib/publicPlansCache";
 import { cn } from "@/lib/utils";
-import { formatPlanMoney, resolveDisplayedPrices, resolveYearlyBilledTotal } from "@/lib/planDisplayFormatting";
+import { resolvePlanCardPrices, yearlyDiscountPercentFromPlan } from "@/lib/planDisplayFormatting";
+import { PriceDisplay } from "@/components/pricing/PriceDisplay";
+import type { LaunchPricingConfig } from "@/hooks/useActiveLaunchPricing";
 
 const PLAN_ORDER = ["free", "standard", "pro", "ultimate"] as const;
 const CURRENCY_LS = "trndinn_display_currency";
 
 function staticFreePlanFromConfig(): SubscriptionPlanPayload {
   const p = SUBSCRIPTION_PLANS.find((x) => x.id === "free");
-  if (!p) {
-    return {
-      id: "static-free",
-      planType: "free",
-      name: "Free",
-      description: "",
-      creditsLimit: 0,
-      priceMonthly: 0,
-      priceYearly: 0,
-      features: [],
-      isActive: true,
-      sortOrder: 0,
-      displayPricing: null,
-    };
-  }
   return {
     id: "static-free",
     planType: "free",
-    name: p.name,
-    description: p.description,
-    creditsLimit: p.credits,
-    priceMonthly: p.pricing.monthly,
-    priceYearly: p.pricing.yearly,
-    features: [...p.features],
+    name: p?.name ?? "Free",
+    description: p?.description ?? "",
+    creditsLimit: p?.credits ?? 0,
+    priceMonthly: 0,
+    priceYearly: 0,
+    features: p ? [...p.features] : [],
     isActive: true,
     sortOrder: 0,
     displayPricing: null,
@@ -62,6 +49,8 @@ export type MarketingPlanGridProps = {
   payload?: PublicPlansPayload | null;
   currency?: string;
   onCurrencyChange?: (c: string) => void;
+  /** Active launch pricing config to show offer badges and slashed prices */
+  activeLaunchConfig?: LaunchPricingConfig | null;
 };
 
 export function MarketingPlanGrid({
@@ -72,6 +61,7 @@ export function MarketingPlanGrid({
   payload: controlledPayload,
   currency: controlledCurrency,
   onCurrencyChange,
+  activeLaunchConfig,
 }: MarketingPlanGridProps) {
   const [annual, setAnnual] = useState(true);
   const useAnnual = annualLocked !== undefined ? annualLocked : annual;
@@ -119,19 +109,11 @@ export function MarketingPlanGrid({
     supportedCurrencies: ["USD", "INR"],
   };
 
+  const plansLoading = !payload?.plans?.length;
+
   const orderedPlans = useMemo(() => {
     if (!payload?.plans?.length) {
-      return SUBSCRIPTION_PLANS.filter((p) => PLAN_ORDER.includes(p.id as (typeof PLAN_ORDER)[number])).map((p) => ({
-        planType: p.id,
-        name: p.name,
-        description: p.description,
-        creditsLimit: p.credits,
-        priceMonthly: p.pricing.monthly,
-        priceYearly: p.pricing.yearly,
-        features: p.features,
-        popular: p.popular,
-        displayPricing: null,
-      }));
+      return [];
     }
 
     const byType = Object.fromEntries(payload.plans.map((p) => [p.planType, p]));
@@ -150,10 +132,17 @@ export function MarketingPlanGrid({
   const yearlyDiscountBanner = useMemo(() => {
     const proPayload = orderedPlans.find((p) => p.planType === "pro");
     if (!proPayload) return 0;
-    return calculateYearlyDiscount(proPayload.priceMonthly, proPayload.priceYearly);
-  }, [orderedPlans]);
+    return yearlyDiscountPercentFromPlan(proPayload, currency);
+  }, [orderedPlans, currency]);
 
-  const popularPayload = orderedPlans.find((p) => p.planType === "pro");
+  if (plansLoading) {
+    return (
+      <div className={cn("mx-auto max-w-6xl px-4 py-16 text-center sm:px-6", className)}>
+        <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-4 text-sm text-muted-foreground">Loading plans…</p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("mx-auto max-w-6xl px-4 sm:px-6", className)}>
@@ -170,10 +159,7 @@ export function MarketingPlanGrid({
       <div className="mb-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pricing region</span>
-          <Select
-            value={currency}
-            onValueChange={(v) => setCurrency(v)}
-          >
+          <Select value={currency} onValueChange={(v) => setCurrency(v)}>
             <SelectTrigger className="w-[180px]" aria-label="Select currency">
               <SelectValue placeholder={currency} />
             </SelectTrigger>
@@ -204,16 +190,13 @@ export function MarketingPlanGrid({
       ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-        {(orderedPlans as (SubscriptionPlanPayload & { popular?: boolean })[]).map((plan) => {
-          const tierLabel = SUBSCRIPTION_PLANS.find((sp) => sp.id === plan.planType);
-          const popular = tierLabel?.popular ?? false;
-          const { mainAmount, strikeAmount, currencyCode, symbolFallback } = resolveDisplayedPrices(
-            plan,
-            currency,
-            useAnnual,
-          );
-          const yearlyTotal = resolveYearlyBilledTotal(plan, currency);
-          const isFree = plan.planType === "free" || (mainAmount === 0 && plan.priceMonthly === 0 && plan.priceYearly === 0);
+        {orderedPlans.map((plan) => {
+          const tierMeta = SUBSCRIPTION_PLANS.find((sp) => sp.id === plan.planType);
+          const popular = plan.planType === "pro" || tierMeta?.popular === true;
+          const resolved = resolvePlanCardPrices(plan, currency, useAnnual, activeLaunchConfig);
+          const isFree =
+            plan.planType === "free" ||
+            (resolved.mainAmount === 0 && plan.priceMonthly === 0 && plan.priceYearly === 0);
 
           return (
             <article
@@ -223,44 +206,37 @@ export function MarketingPlanGrid({
                 popular ? "border-primary/45 ring-1 ring-primary/20 lg:scale-[1.02]" : "border-white/10",
               )}
             >
-              {popular ? (
+              {activeLaunchConfig?.isActive && activeLaunchConfig.badgeText && plan.planType !== "free" ? (
+                <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white sm:text-[11px]">
+                  <Sparkles className="inline mr-1 h-3 w-3" />
+                  {activeLaunchConfig.badgeText}
+                </span>
+              ) : popular ? (
                 <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff5d4f] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white sm:text-[11px]">
                   Most popular
                 </span>
               ) : null}
+
               <h3 className="font-heading text-xl font-bold">{plan.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
-              <div className="mt-5">
+
+              <div className="mt-5 min-h-[4.5rem]">
                 {isFree ? (
                   <span className="font-heading text-4xl font-black tracking-tight">Free</span>
+                ) : !resolved.pricingReady ? (
+                  <span className="text-sm text-muted-foreground">Price unavailable</span>
                 ) : (
-                  <>
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      {strikeAmount != null && strikeAmount > mainAmount ? (
-                        <span className="text-lg font-semibold tracking-tight text-muted-foreground line-through">
-                          {formatPlanMoney(strikeAmount, currencyCode, symbolFallback)}
-                        </span>
-                      ) : null}
-                      <span className="font-heading text-4xl font-black tracking-tight">
-                        {formatPlanMoney(mainAmount, currencyCode, symbolFallback)}
-                        <span className="text-base font-medium text-muted-foreground">/mo</span>
-                      </span>
-                    </div>
-                    {useAnnual && yearlyTotal != null ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        ≈{" "}
-                        <span className="font-medium text-foreground">
-                          {formatPlanMoney(yearlyTotal, currencyCode, symbolFallback)}
-                        </span>{" "}
-                        per year billed upfront
-                      </p>
-                    ) : null}
-                    {useAnnual && popularPayload && yearlyDiscountBanner > 0 ? (
-                      <p className="mt-1 text-xs text-primary">~{yearlyDiscountBanner}% off vs paying monthly × 12</p>
-                    ) : null}
-                  </>
+                  <PriceDisplay
+                    listPrice={resolved.strikeAmount ?? resolved.mainAmount}
+                    offerPrice={resolved.mainAmount}
+                    currency={(resolved.currencyCode as "INR" | "USD") ?? "USD"}
+                    period={useAnnual ? "yearly" : "monthly"}
+                    showStrikethrough={resolved.isOnSale}
+                    yearlyTotal={useAnnual ? resolved.yearlyTotal : null}
+                  />
                 )}
               </div>
+
               <ul className="mt-6 flex-1 space-y-2.5 text-sm text-muted-foreground">
                 {plan.features.map((f: string) => (
                   <li key={f} className="flex gap-2">
@@ -269,6 +245,7 @@ export function MarketingPlanGrid({
                   </li>
                 ))}
               </ul>
+
               <Button
                 className={cn(
                   "mt-8 w-full rounded-full font-semibold",
@@ -283,12 +260,6 @@ export function MarketingPlanGrid({
           );
         })}
       </div>
-
-      {!payload?.plans?.length && (
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Loading live plans from backend… Showing local defaults briefly if the API is slow.
-        </p>
-      )}
     </div>
   );
 }

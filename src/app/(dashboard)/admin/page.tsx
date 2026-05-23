@@ -22,6 +22,7 @@ import {
   Gift,
   FolderOpen,
   CreditCard,
+  Wallet,
 } from "lucide-react";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 import { apiClient } from "@/lib/apiClient";
@@ -257,6 +258,13 @@ export default function AdminOverviewPage() {
           title: "Pricing plans",
           description: "Display pricing, copy, and currencies for marketing and billing.",
           icon: CreditCard,
+          show: sections.settings,
+        },
+        {
+          href: "/admin/payment-gateway",
+          title: "Payment gateway",
+          description: "Launch pricing, coupons, and health monitoring for Polar billing.",
+          icon: Wallet,
           show: sections.settings,
         },
       ] as const,
