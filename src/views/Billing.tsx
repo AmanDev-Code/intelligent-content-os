@@ -19,7 +19,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
 import { toast } from "sonner";
-import { api, clearClientGetCache } from "@/lib/apiClient";
+import { api, clearClientGetCache, ApiError } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/error-handler";
 import { openPolarPortal, openPolarSwitchPlan } from "@/lib/polar";
 import {
   clearPolarPlanIntent,
@@ -799,10 +800,9 @@ export default function Billing() {
                     await Promise.all([fetchBillingOnly(), refreshQuota()]);
                     window.dispatchEvent(new CustomEvent("trndinn:subscription-updated"));
                   } catch (error) {
-                    // Use ApiError with getErrorMessage if available, fall back to generic message
-                    const { getErrorMessage } = await import("@/lib/error-handler");
-                    const errorMessage = error instanceof Error ? error.message : "Failed to cancel subscription";
-                    toast.error(getErrorMessage({ message: errorMessage, statusCode: (error as { statusCode?: number })?.statusCode }));
+                    // ApiError already has the friendly message from apiClient
+                    const errorMessage = error instanceof Error ? error.message : getErrorMessage(error);
+                    toast.error(errorMessage);
                   }
                 }}
               >
