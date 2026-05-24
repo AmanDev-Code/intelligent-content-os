@@ -1,0 +1,29 @@
+{
+  "statusCodes": {
+    "400": "We couldn't process your request. Please check your information and try again.",
+    "401": "Please log in to continue.",
+    "403": "You don't have permission to do that. Please contact support if you think this is a mistake.",
+    "404": "We couldn't find what you were looking for.",
+    "409": "This action is not available right now. Please refresh and try again.",
+    "422": "We couldn't process your request. Please check your information and try again.",
+    "429": "Too many requests. Please wait a moment and try again.",
+    "500": "Something went wrong on our end. Please try again.",
+    "502": "We're having trouble connecting to our payment provider. Please try again in a moment.",
+    "503": "Our service is temporarily unavailable. Please try again in a moment."
+  },
+  "errorCodes": {
+    "discount_inactive": "This discount code is no longer valid.",
+    "discount_expired": "This discount code has expired.",
+    "discount_at_limit": "This discount code has reached its usage limit.",
+    "discount_not_found": "This discount code doesn't exist. Please check and try again.",
+    "subscription_not_found": "We couldn't find your subscription. Please contact support.",
+    "subscription_environment_mismatch": "Your subscription was created in a different billing environment. Please cancel your current plan and resubscribe.",
+    "plan_not_found": "The selected plan is not available. Please choose a different plan.",
+    "payment_required": "Payment is required to complete this action.",
+    "credits_exhausted": "You've used all your credits. Please upgrade your plan.",
+    "quota_exceeded": "You've reached your usage limit. Please upgrade your plan.",
+    "content_generation_failed": "Content generation failed. Please try again.",
+    "network_error": "Network error. Please check your connection and try again.",
+    "unknown_error": "Something went wrong. Please try again."
+  }
+}

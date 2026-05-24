@@ -2,8 +2,34 @@
 import { supabase } from "@/integrations/supabase/client";
 import { API_CONFIG } from "@/lib/constants";
 import { getPreferredTimezoneSync } from "@/services/timezoneService";
+import { getErrorMessage } from "@/lib/error-handler";
 import type { AdminUpdateSubscriptionPlanBody, AdminUpdateSubscriptionPlanResponse, BillingCatalogLivePayload, ImportFromBillingCatalogResponse, PricingDisplaySettings, SubscriptionPlanPayload } from "@/types/publicPlans";
 import type { CreateDiscountCodeBody, DiscountCodeRow } from "@/types/discountCodes";
+
+// Type for error response from API
+interface ApiErrorResponse {
+  message?: string;
+  code?: string;
+  error?: string;
+  statusCode?: number;
+  action?: string;
+}
+
+class ApiError extends Error {
+  statusCode: number;
+  code?: string;
+  action?: string;
+  originalResponse?: Response;
+
+  constructor(message: string, statusCode: number, code?: string, action?: string, originalResponse?: Response) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.action = action;
+    this.originalResponse = originalResponse;
+  }
+}
 
 // In-flight request deduplication cache
 // Key: method + endpoint, Value: Promise of the response
@@ -109,14 +135,39 @@ class ApiClient {
       });
 
       if (!response.ok) {
-        let errorText;
+        let errorData: ApiErrorResponse | null = null;
+        let errorText = '';
         try {
-          errorText = await response.text();
-        } catch (e) {
-          errorText = 'Unable to read error response';
+          // Try to parse JSON error response
+          errorData = await response.json();
+        } catch {
+          // If JSON fails, try to get text
+          try {
+            errorText = await response.text();
+          } catch {
+            errorText = 'Unable to read error response';
+          }
         }
-        console.error(`❌ API Error: ${response.status} ${errorText}`);
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+
+        // Log for debugging
+        console.error(`❌ API Error: ${response.status}`, errorData || errorText);
+
+        // Build error with user-friendly message
+        const friendlyMessage = errorData?.message
+          ? getErrorMessage({
+              message: errorData.message,
+              code: errorData.code,
+              statusCode: response.status,
+            })
+          : getErrorMessage(errorText || { statusCode: response.status });
+
+        throw new ApiError(
+          friendlyMessage,
+          response.status,
+          errorData?.code,
+          errorData?.action,
+          response
+        );
       }
 
       const data = await response.json();
@@ -131,9 +182,18 @@ class ApiClient {
       if ((error as Error)?.name === 'AbortError') {
         throw error;
       }
-      console.error(`🚨 API Request Failed:`, error);
+      // Don't double-log ApiErrors (already logged above)
+      if (!(error instanceof ApiError)) {
+        console.error(`🚨 API Request Failed:`, error);
+      }
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error(`Network error: Unable to connect to server. Please check your internet connection and try again.`);
+        const networkMessage = getErrorMessage('network_error');
+        throw new ApiError(networkMessage, 0, 'network_error');
+      }
+      if (!(error instanceof ApiError)) {
+        // Wrap unknown errors with friendly message
+        const message = error instanceof Error ? error.message : String(error);
+        throw new ApiError(getErrorMessage(message), 0);
       }
       throw error;
     }
@@ -217,6 +277,9 @@ class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient();
+
+// Export error class for instanceof checks
+export { ApiError };
 
 // Convenience methods for common endpoints
 export const api = {

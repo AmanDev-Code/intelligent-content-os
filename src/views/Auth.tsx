@@ -46,6 +46,23 @@ export default function Auth() {
   const { toast } = useToast();
 
   const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/dashboard";
+
+  // Handle plan intent from sessionStorage on component mount
+  useEffect(() => {
+    const planIntent = sessionStorage.getItem("trndinn_pricing_intent");
+    if (planIntent && !session) {
+      try {
+        const intent = JSON.parse(planIntent);
+        // Only use intent if it's recent (within 10 minutes)
+        if (intent.timestamp && Date.now() - intent.timestamp < 10 * 60 * 1000) {
+          // The intent will be used by the callback handler after login
+        }
+      } catch {
+        // Ignore invalid intent data
+      }
+    }
+  }, [session]);
 
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
@@ -70,12 +87,30 @@ export default function Auth() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const signupEmailRef = useRef("");
 
-  // Verified user with session → go to dashboard
+  // Verified user with session → go to dashboard or returnTo URL
   useEffect(() => {
     if (session && !verificationLoading && verified === true && !showOtp) {
-      router.replace("/dashboard");
+      // Check for pricing intent in sessionStorage
+      const planIntent = sessionStorage.getItem("trndinn_pricing_intent");
+      let redirectUrl = returnTo;
+
+      if (planIntent) {
+        try {
+          const intent = JSON.parse(planIntent);
+          // Only use intent if it's recent (within 10 minutes)
+          if (intent.timestamp && Date.now() - intent.timestamp < 10 * 60 * 1000) {
+            redirectUrl = `/pricing?plan=${intent.planType}&cycle=${intent.billingCycle}`;
+          }
+          // Clear the intent after using it
+          sessionStorage.removeItem("trndinn_pricing_intent");
+        } catch {
+          // Ignore invalid intent data
+        }
+      }
+
+      router.replace(redirectUrl);
     }
-  }, [session, verified, verificationLoading, showOtp, router]);
+  }, [session, verified, verificationLoading, showOtp, router, returnTo]);
 
   // Returning unverified user (has session, DB says not verified) → show OTP
   useEffect(() => {
@@ -252,6 +287,23 @@ export default function Auth() {
     otpRefs.current[Math.min(pasted.length, 5)]?.focus();
   };
 
+  // Helper to get redirect URL after successful login
+  const getPostLoginRedirect = useCallback(() => {
+    const planIntent = sessionStorage.getItem("trndinn_pricing_intent");
+    if (planIntent) {
+      try {
+        const intent = JSON.parse(planIntent);
+        if (intent.timestamp && Date.now() - intent.timestamp < 10 * 60 * 1000) {
+          sessionStorage.removeItem("trndinn_pricing_intent");
+          return `/pricing?plan=${intent.planType}&cycle=${intent.billingCycle}`;
+        }
+      } catch {
+        // Ignore invalid intent
+      }
+    }
+    return returnTo.startsWith("/") ? returnTo : "/dashboard";
+  }, [returnTo]);
+
   const handleVerify = useCallback(async () => {
     const code = otp.join("");
     if (code.length !== 6) return;
@@ -262,7 +314,7 @@ export default function Auth() {
         toast({ title: "Email verified", description: "Welcome to Trndinn!" });
         recheck();
         setShowOtp(false);
-        router.replace("/dashboard");
+        router.replace(getPostLoginRedirect());
       } else {
         toast({ title: "Invalid code", description: res.message || "The code is invalid or expired.", variant: "destructive" });
         setOtp(["", "", "", "", "", ""]);

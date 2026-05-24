@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/integrations/supabase/client';
 
+const PLAN_INTENT_KEY = "trndinn_pricing_intent";
+
 /**
  * OAuth callback landing page.
  *
@@ -21,6 +23,30 @@ import { supabase } from '@/integrations/supabase/client';
 export default function AuthCallback() {
   const router = useRouter();
 
+  // Helper to determine redirect URL after successful login
+  const getRedirectUrl = (): string => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnTo = urlParams.get('returnTo');
+
+    // Check for plan intent in sessionStorage
+    const planIntent = sessionStorage.getItem(PLAN_INTENT_KEY);
+    if (planIntent) {
+      try {
+        const intent = JSON.parse(planIntent);
+        // Only use intent if it's recent (within 10 minutes)
+        if (intent.timestamp && Date.now() - intent.timestamp < 10 * 60 * 1000) {
+          sessionStorage.removeItem(PLAN_INTENT_KEY);
+          return `/pricing?plan=${intent.planType}&cycle=${intent.billingCycle}`;
+        }
+      } catch {
+        // Ignore invalid intent data
+      }
+    }
+
+    // Fall back to returnTo param or default to dashboard
+    return returnTo?.startsWith('/') ? returnTo : '/dashboard';
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
@@ -37,7 +63,7 @@ export default function AuthCallback() {
         if (error) {
           router.replace('/auth?error=google_auth_failed');
         } else {
-          router.replace('/dashboard');
+          router.replace(getRedirectUrl());
         }
       });
       return;
@@ -48,7 +74,7 @@ export default function AuthCallback() {
     // may have already finished by the time this effect runs).
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.replace('/dashboard');
+        router.replace(getRedirectUrl());
         return;
       }
 
@@ -59,7 +85,7 @@ export default function AuthCallback() {
         if (event === 'SIGNED_IN' && sess) {
           subscription.unsubscribe();
           clearTimeout(timeout);
-          router.replace('/dashboard');
+          router.replace(getRedirectUrl());
         }
       });
 

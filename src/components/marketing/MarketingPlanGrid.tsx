@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -18,7 +19,67 @@ import { getPublicPlansCached } from "@/lib/publicPlansCache";
 import { cn } from "@/lib/utils";
 import { resolvePlanCardPrices, yearlyDiscountPercentFromPlan } from "@/lib/planDisplayFormatting";
 import { PriceDisplay } from "@/components/pricing/PriceDisplay";
+import { useAuth } from "@/contexts/AuthContext";
 import type { LaunchPricingConfig } from "@/hooks/useActiveLaunchPricing";
+
+const PLAN_INTENT_KEY = "trndinn_pricing_intent";
+
+interface PlanIntent {
+  planType: string;
+  billingCycle: "monthly" | "yearly";
+  timestamp: number;
+}
+
+function PlanButton({
+  planType,
+  isFree,
+  popular,
+}: {
+  planType: string;
+  isFree: boolean;
+  popular: boolean;
+}) {
+  const { session } = useAuth();
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (session) {
+      // User is logged in - go to subscription/upgrade
+      router.push("/subscription");
+    } else {
+      // User is not logged in - save intent and redirect to auth with returnTo
+      const cycleElement = document.querySelector('[data-billing-toggle]') as HTMLInputElement;
+      const isAnnual = cycleElement?.checked ?? true;
+      const billingCycle = isAnnual ? "yearly" : "monthly";
+
+      const intent: PlanIntent = {
+        planType,
+        billingCycle,
+        timestamp: Date.now(),
+      };
+      sessionStorage.setItem(PLAN_INTENT_KEY, JSON.stringify(intent));
+
+      // Redirect to auth with returnTo pointing to pricing with the selected plan
+      const returnTo = `/pricing?plan=${planType}&cycle=${billingCycle}`;
+      router.push(`/auth?returnTo=${encodeURIComponent(returnTo)}`);
+    }
+  };
+
+  return (
+    <Button
+      className={cn(
+        "mt-8 w-full rounded-full font-semibold",
+        popular
+          ? "bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] text-white shadow-lg shadow-primary/20"
+          : "border-white/15 bg-background/50",
+      )}
+      variant={popular ? "default" : "outline"}
+      onClick={handleClick}
+    >
+      {isFree ? "Start free" : "Choose plan"}
+    </Button>
+  );
+}
 
 const PLAN_ORDER = ["free", "standard", "pro", "ultimate"] as const;
 const CURRENCY_LS = "trndinn_display_currency";
@@ -246,16 +307,11 @@ export function MarketingPlanGrid({
                 ))}
               </ul>
 
-              <Button
-                className={cn(
-                  "mt-8 w-full rounded-full font-semibold",
-                  popular ? "bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] text-white shadow-lg shadow-primary/20" : "border-white/15 bg-background/50",
-                )}
-                variant={popular ? "default" : "outline"}
-                asChild
-              >
-                <Link href="/auth">{isFree ? "Start free" : "Choose plan"}</Link>
-              </Button>
+              <PlanButton
+                planType={plan.planType}
+                isFree={isFree}
+                popular={popular}
+              />
             </article>
           );
         })}
