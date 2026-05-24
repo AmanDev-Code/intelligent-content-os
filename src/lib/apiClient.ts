@@ -11,6 +11,7 @@ interface ApiErrorResponse {
   message?: string;
   code?: string;
   error?: string;
+  errorCode?: string;
   statusCode?: number;
   action?: string;
 }
@@ -156,9 +157,9 @@ class ApiClient {
         const errorResponse = errorData || (errorText ? { message: errorText } : { message: 'Unknown error' });
         
         // Extract error code from various possible locations in the response
-        const errorCode = errorResponse.code || 
-                         errorResponse.errorCode || 
-                         (errorResponse.error as string | undefined);
+        const errorCode = (errorResponse as any).code || 
+                         (errorResponse as any).errorCode ||
+                         (errorResponse as any).error as string | undefined;
         
         // Build error with user-friendly message using getErrorMessage
         const friendlyMessage = getErrorMessage({

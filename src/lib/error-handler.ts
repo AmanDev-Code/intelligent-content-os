@@ -16,8 +16,8 @@ function isValidErrorCode(code: string): code is ErrorCode {
   return code in errorMessages.errorCodes;
 }
 
-function isValidStatusCode(code: number): code is StatusCode {
-  return String(code) in errorMessages.statusCodes;
+function isValidStatusCode(code: number): code is number {
+  return code.toString() in errorMessages.statusCodes;
 }
 
 /**
@@ -160,7 +160,7 @@ export function formatErrorForDisplay(error: unknown): {
   // Log non-recoverable errors or 5xx errors for monitoring
   const err = error as ErrorResponse;
   const statusCode = err.statusCode ?? (error as { status?: number }).status;
-  const shouldLog = !isRecoverable || (statusCode && statusCode >= 500);
+  const shouldLog = !isRecoverable || (statusCode !== undefined && statusCode >= 500);
 
   return { message, isRecoverable, shouldLog };
 }
