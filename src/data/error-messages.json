@@ -18,6 +18,8 @@
     "discount_not_found": "This discount code doesn't exist. Please check and try again.",
     "subscription_not_found": "We couldn't find your subscription. Please contact support.",
     "subscription_environment_mismatch": "Your subscription was created in a different billing environment. Please cancel your current plan and resubscribe.",
+    "SUBSCRIPTION_ENVIRONMENT_MISMATCH": "Your subscription was created in a different billing environment. Please cancel your current plan and resubscribe.",
+    "CANCEL_SUBSCRIPTION_FAILED": "Failed to cancel your subscription. Please try again or contact support.",
     "plan_not_found": "The selected plan is not available. Please choose a different plan.",
     "payment_required": "Payment is required to complete this action.",
     "credits_exhausted": "You've used all your credits. Please upgrade your plan.",

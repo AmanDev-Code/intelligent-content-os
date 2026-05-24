@@ -798,8 +798,11 @@ export default function Billing() {
                     toast.success("Subscription cancelled");
                     await Promise.all([fetchBillingOnly(), refreshQuota()]);
                     window.dispatchEvent(new CustomEvent("trndinn:subscription-updated"));
-                  } catch {
-                    toast.error("Failed to cancel subscription");
+                  } catch (error) {
+                    // Use ApiError with getErrorMessage if available, fall back to generic message
+                    const { getErrorMessage } = await import("@/lib/error-handler");
+                    const errorMessage = error instanceof Error ? error.message : "Failed to cancel subscription";
+                    toast.error(getErrorMessage({ message: errorMessage, statusCode: (error as { statusCode?: number })?.statusCode }));
                   }
                 }}
               >

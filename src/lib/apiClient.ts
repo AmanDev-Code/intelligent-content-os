@@ -152,20 +152,26 @@ class ApiClient {
         // Log for debugging
         console.error(`❌ API Error: ${response.status}`, errorData || errorText);
 
-        // Build error with user-friendly message
-        const friendlyMessage = errorData?.message
-          ? getErrorMessage({
-              message: errorData.message,
-              code: errorData.code,
-              statusCode: response.status,
-            })
-          : getErrorMessage(errorText || { statusCode: response.status });
+        // Handle both structured error objects and plain string responses
+        const errorResponse = errorData || (errorText ? { message: errorText } : { message: 'Unknown error' });
+        
+        // Extract error code from various possible locations in the response
+        const errorCode = errorResponse.code || 
+                         errorResponse.errorCode || 
+                         (errorResponse.error as string | undefined);
+        
+        // Build error with user-friendly message using getErrorMessage
+        const friendlyMessage = getErrorMessage({
+          message: errorResponse.message || errorText,
+          code: errorCode,
+          statusCode: response.status,
+        });
 
         throw new ApiError(
           friendlyMessage,
           response.status,
-          errorData?.code,
-          errorData?.action,
+          errorCode,
+          errorResponse.action || errorData?.action,
           response
         );
       }
