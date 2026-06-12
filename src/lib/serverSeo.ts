@@ -27,11 +27,15 @@ export type StaticPageSeoRow = {
 export async function fetchStaticPageSeo(route: string): Promise<StaticPageSeoRow | null> {
   const base = apiBase();
   const url = `${base}/blog/page-seo?route=${encodeURIComponent(route)}`;
-  const res = await fetch(url, { next: { revalidate: 120 }, headers: { "ngrok-skip-browser-warning": "true" } });
-  if (!res.ok) return null;
-  const data = (await res.json()) as StaticPageSeoRow;
-  if (!data || Object.keys(data).length === 0) return null;
-  return data;
+  try {
+    const res = await fetch(url, { next: { revalidate: 120 }, headers: { "ngrok-skip-browser-warning": "true" } });
+    if (!res.ok) return null;
+    const data = (await res.json()) as StaticPageSeoRow;
+    if (!data || Object.keys(data).length === 0) return null;
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 /**
