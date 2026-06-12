@@ -138,7 +138,7 @@ function CreditIndicator({
           </span>
         </div>
         <div className="mt-1">
-          <MiniProgress value={value} max={max} barClass={barClass} />
+          <MiniProgress value={value} max={max} colorClass={barClass} />
         </div>
       </div>
     </div>

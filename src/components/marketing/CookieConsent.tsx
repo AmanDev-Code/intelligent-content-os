@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -380,9 +381,9 @@ function MobileCookieFAB({
           </div>
 
           <p className="text-center mt-3 text-[10px] text-muted-foreground">
-            <a href="/legal/cookies" className="underline underline-offset-2 hover:text-foreground">
+            <Link href="/legal/cookies" className="underline underline-offset-2 hover:text-foreground">
               Read our Cookie Policy
-            </a>
+            </Link>
           </p>
         </div>
       </div>
@@ -421,12 +422,12 @@ function DesktopCookieBanner({
               <p className="text-sm leading-relaxed text-foreground sm:text-base">
                 We use cookies to enhance your experience, analyze site traffic, and personalize content.
                 By clicking "Accept All", you consent to our use of cookies.
-                <a
+                <Link
                   href="/legal/cookies"
                   className="ml-1 text-orange-500 underline-offset-2 hover:underline"
                 >
                   Learn more
-                </a>
+                </Link>
               </p>
             </div>
           </div>
