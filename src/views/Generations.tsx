@@ -46,6 +46,7 @@ import { apiClient } from '@/lib/apiClient';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { cn } from '@/lib/utils';
 import { useQuota } from '@/contexts/QuotaContext';
+import { useCreditCosts, postNowCost, scheduleCost } from '@/lib/creditCosts';
 import { ScheduleModal } from '@/components/schedule/ScheduleModal';
 
 const statusColors = {
@@ -92,21 +93,19 @@ export default function Generations() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const { refreshQuota } = useQuota();
+  const creditCosts = useCreditCosts();
 
-  // Helper function to calculate credit cost
+  // Credit cost from the single source of truth (GET /credits/costs).
+  // Post Now / Schedule image+carousel costs are FLAT (do not scale by count).
   const calculateCreditCost = (content: any, isScheduling: boolean = false) => {
     const hasValidImage = content?.visual_url?.startsWith('http') || 
                          (content?.media_urls && content.media_urls.length > 0) ||
                          uploadedImages.length > 0;
     const hasCarousel = content?.carousel_urls && content.carousel_urls.length > 0;
-    
-    if (hasCarousel) {
-      return isScheduling ? 15 : 12;
-    } else if (hasValidImage) {
-      return isScheduling ? 7.5 : 6;
-    } else {
-      return isScheduling ? 4 : 2.5;
-    }
+    const type = hasCarousel ? 'carousel' : hasValidImage ? 'image' : 'text';
+    return isScheduling
+      ? scheduleCost(creditCosts, type)
+      : postNowCost(creditCosts, type);
   };
 
   const fetchContent = useCallback(async (page: number = 1, search: string = '', status: string = 'all', source: string = 'all') => {

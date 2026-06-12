@@ -7,7 +7,7 @@ import { MarketingStructuredData } from "@/components/seo/MarketingStructuredDat
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/features", {
     title: "Features",
-    description: `${siteName}: AI Content Engine, one-clip-to-all-reels repurposing, kinetic roadmap across channels, predictive analytics, and plans to scale your signal—one platform from creation to distribution.`,
+    description: `${siteName}: generate on-brand posts from your own examples, plan on a visual calendar, and publish to the accounts you connect. You own your data, and we comply with every platform policy.`,
     keywords: [
       "AI social media",
       "content scheduling",

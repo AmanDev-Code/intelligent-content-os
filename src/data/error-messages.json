@@ -7,6 +7,7 @@
     "409": "This action is not available right now. Please refresh and try again.",
     "422": "We couldn't process your request. Please check your information and try again.",
     "429": "Too many requests. Please wait a moment and try again.",
+    "402": "You don't have enough credits for this action. Please upgrade your plan.",
     "500": "Something went wrong on our end. Please try again.",
     "502": "We're having trouble connecting to our payment provider. Please try again in a moment.",
     "503": "Our service is temporarily unavailable. Please try again in a moment."
@@ -25,6 +26,7 @@
     "credits_exhausted": "You've used all your credits. Please upgrade your plan.",
     "quota_exceeded": "You've reached your usage limit. Please upgrade your plan.",
     "content_generation_failed": "Content generation failed. Please try again.",
+    "post_already_published": "This post has already been published to LinkedIn and can't be posted or scheduled again.",
     "network_error": "Network error. Please check your connection and try again.",
     "unknown_error": "Something went wrong. Please try again."
   }

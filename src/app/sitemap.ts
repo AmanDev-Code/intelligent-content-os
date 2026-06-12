@@ -16,15 +16,30 @@ type StaticRoute = {
 };
 
 const STATIC_ROUTES: StaticRoute[] = [
-  { path: "",               changeFrequency: "weekly",  priority: 1.0, lastModified: new Date("2026-05-10") },
-  { path: "/features",      changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-05-10") },
-  { path: "/pricing",       changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-05-10") },
+  // High priority - Homepage
+  { path: "",               changeFrequency: "weekly",  priority: 1.0, lastModified: new Date("2026-06-12") },
+
+  // Marketing pages - High priority
+  { path: "/features",      changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
+  { path: "/pricing",       changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
+
+  // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
   { path: "/careers",       changeFrequency: "monthly", priority: 0.6, lastModified: new Date("2026-04-01") },
-  { path: "/privacy-policy",changeFrequency: "yearly",  priority: 0.3, lastModified: new Date("2026-04-01") },
-  { path: "/terms-of-use",  changeFrequency: "yearly",  priority: 0.3, lastModified: new Date("2026-04-01") },
-  { path: "/refund-policy", changeFrequency: "yearly",  priority: 0.3, lastModified: new Date("2026-04-01") },
+
+  // Auth pages - Lower priority (user flows, not landing)
+  { path: "/auth",          changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2026-06-01") },
+
+  // Legal pages - Low priority but essential (canonical /legal/* routes)
+  { path: "/legal/privacy",      changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/terms",        changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/cookies",      changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/aup",          changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/dpa",          changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/subprocessors",changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/refund",       changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  { path: "/legal/data-rights",  changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

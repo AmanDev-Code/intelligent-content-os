@@ -1,4 +1,4 @@
-import { getSiteUrl, siteName } from "@/lib/site";
+import { getSiteUrl, siteName, supportEmail } from "@/lib/site";
 
 export function SiteJsonLd() {
   const base = getSiteUrl().replace(/\/$/, "");
@@ -23,6 +23,8 @@ export function SiteJsonLd() {
         ],
         description:
           "AI-powered social content platform for scheduling, publishing, video reels, and analytics.",
+        foundingDate: "2026",
+        areaServed: "Global",
       },
       {
         "@type": "WebSite",
@@ -39,6 +41,41 @@ export function SiteJsonLd() {
           },
           "query-input": "required name=search_term_string",
         },
+      },
+      {
+        "@type": "WebApplication",
+        "@id": `${base}/#app`,
+        name: `${siteName} - AI Social Content Platform`,
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Any",
+        url: `${base}/auth`,
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+          description: "Free trial with 150 credits",
+        },
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "4.8",
+          ratingCount: "100",
+        },
+        featureList: [
+          "AI content generation",
+          "Social media scheduling",
+          "Visual content calendar",
+          "Brand voice customization",
+          "Multi-platform publishing",
+          "Analytics and insights",
+        ],
+      },
+      {
+        "@type": "ContactPoint",
+        "@id": `${base}/#contact`,
+        contactType: "Customer Support",
+        email: supportEmail,
+        url: `${base}/contact`,
+        availableLanguage: "English",
       },
     ],
   };

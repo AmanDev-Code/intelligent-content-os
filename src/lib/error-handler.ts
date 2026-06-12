@@ -28,6 +28,28 @@ export function getErrorMessage(error: unknown): string {
   if (error && typeof error === "object") {
     const err = error as ErrorResponse;
 
+    const statusCode =
+      err.statusCode ??
+      (error as { status?: number }).status ??
+      (error as { statusCode?: number }).statusCode;
+
+    // Credits / paywall — always show the server message (e.g. "requires 6 credits")
+    if (err.message) {
+      const lowerMessage = err.message.toLowerCase();
+      if (
+        lowerMessage.includes("insufficient credits") ||
+        lowerMessage.includes("upgrade your plan")
+      ) {
+        return err.message;
+      }
+    }
+    if (statusCode === 402) {
+      return (
+        err.message ||
+        errorMessages.errorCodes.credits_exhausted
+      );
+    }
+
     // First check for explicit error code
     if (err.code && isValidErrorCode(err.code)) {
       return errorMessages.errorCodes[err.code];
@@ -79,16 +101,8 @@ export function getErrorMessage(error: unknown): string {
     }
 
     // Fall back to status code lookup
-    const statusCode = err.statusCode;
     if (statusCode && isValidStatusCode(statusCode)) {
       return errorMessages.statusCodes[String(statusCode) as StatusCode];
-    }
-
-    // Try to extract status from error object
-    const statusFromError = (error as { status?: number; statusCode?: number }).status
-      ?? (error as { statusCode?: number }).statusCode;
-    if (statusFromError && isValidStatusCode(statusFromError)) {
-      return errorMessages.statusCodes[String(statusFromError) as StatusCode];
     }
   }
 
@@ -96,8 +110,12 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === "string") {
     const lowerError = error.toLowerCase();
 
+    if (lowerError.includes("insufficient credits")) {
+      return error;
+    }
+
     // Check for HTTP status codes in the error string
-    const statusMatch = error.match(/\b(400|401|403|404|409|422|429|500|502|503)\b/);
+    const statusMatch = error.match(/\b(400|401|402|403|404|409|422|429|500|502|503)\b/);
     if (statusMatch) {
       const code = statusMatch[1] as StatusCode;
       if (isValidStatusCode(Number(code))) {

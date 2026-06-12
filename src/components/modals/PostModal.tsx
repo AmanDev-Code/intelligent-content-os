@@ -94,7 +94,11 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
       dispatchFeedbackEligibilityRefresh();
       onClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to publish post');
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to publish post',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +121,11 @@ export function PostModal({ isOpen, onClose, post, mode: initialMode = 'preview'
       dispatchFeedbackEligibilityRefresh();
       onClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to schedule post');
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          'Failed to schedule post',
+      );
     } finally {
       setIsLoading(false);
     }

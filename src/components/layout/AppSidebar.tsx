@@ -17,6 +17,7 @@ import {
   Shield,
   MessageSquarePlus,
   Gift,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ const navItems = [
   { to: "/agent", icon: Zap, label: "AI Agent" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
   { to: "/scheduled-posts", icon: Calendar, label: "Scheduled Posts" },
+  { to: "/brand", icon: Palette, label: "Brand Kit" },
   { to: "/media", icon: Image, label: "Media" },
 ];
 
@@ -77,12 +79,12 @@ function SidebarContent({ collapsed, onToggle, onItemClick }: { collapsed: boole
         collapsed ? "justify-center px-2" : "justify-between px-6"
       )}>
         {!collapsed && (
-          <Link href="/dashboard" className="flex flex-1 items-center justify-center min-w-0" aria-label="Trndinn home">
+          <Link href="/" className="flex flex-1 items-center justify-center min-w-0 cursor-pointer" aria-label="Trndinn home">
             <TrndinnLogo variant="full" priority className="shrink-0" />
           </Link>
         )}
         {collapsed && (
-          <Link href="/dashboard" className="flex justify-center" aria-label="Trndinn home">
+          <Link href="/" className="flex justify-center cursor-pointer" aria-label="Trndinn home">
             <TrndinnLogo variant="icon" priority className="h-11 w-11" />
           </Link>
         )}

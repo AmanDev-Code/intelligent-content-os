@@ -73,6 +73,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
         heading: ["var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "var(--font-poppins)", "ui-sans-serif", "system-ui", "sans-serif"],
         serif: ["var(--font-fraunces)", "Georgia", "Cambria", "Times New Roman", "serif"],
       },
       keyframes: {
@@ -109,6 +110,22 @@ export default {
           "33%": { transform: "translate(2%, -1%) scale(1.03)" },
           "66%": { transform: "translate(-1%, 2%) scale(0.98)" },
         },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "marquee-x": {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "reveal-up": {
+          from: { opacity: "0", transform: "translateY(24px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -119,6 +136,10 @@ export default {
         "wave-seamless": "wave-seamless 18s linear infinite",
         "wave-seamless-rev": "wave-seamless-rev 24s linear infinite",
         "mesh-drift": "mesh-drift 22s ease-in-out infinite",
+        "gradient-x": "gradient-x 6s ease infinite",
+        "marquee-x": "marquee-x 30s linear infinite",
+        "reveal-up": "reveal-up 0.6s ease-out forwards",
+        float: "float 6s ease-in-out infinite",
       },
     },
   },

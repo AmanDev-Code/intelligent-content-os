@@ -659,11 +659,11 @@ export default function Auth() {
         <div className="border-t pt-4 text-center text-xs text-muted-foreground">
           <p>
             By continuing, you agree to our{" "}
-            <Link href="/terms-of-use" className="text-primary hover:underline">
+            <Link href="/legal/terms" className="text-primary hover:underline">
               Terms of Use
             </Link>{" "}
             and{" "}
-            <Link href="/privacy-policy" className="text-primary hover:underline">
+            <Link href="/legal/privacy" className="text-primary hover:underline">
               Privacy Policy
             </Link>
             .

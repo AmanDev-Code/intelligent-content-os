@@ -39,10 +39,10 @@ export default function RefundPolicy({ h1Override }: { h1Override?: string | nul
             final accounting, tax invoicing format, or additional processor rules may also apply alongside this policy.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Link href="/terms-of-use" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/legal/terms" className="text-primary underline-offset-4 hover:underline">
               Terms of Use
             </Link>
-            <Link href="/privacy-policy" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/legal/privacy" className="text-primary underline-offset-4 hover:underline">
               Privacy Policy
             </Link>
             <Link href="/contact" className="text-primary underline-offset-4 hover:underline">

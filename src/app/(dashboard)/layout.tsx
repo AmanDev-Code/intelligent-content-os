@@ -1,8 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { LinkedInOAuthReturnHandler } from "@/components/linkedin/LinkedInOAuthReturnHandler";
 import { OnboardingGate } from "@/components/onboarding/OnboardingGate";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { LinkedInProvider } from "@/contexts/LinkedInContext";
@@ -23,14 +25,18 @@ export default function DashboardLayout({
       <OnboardingGate>
         <QuotaProvider>
           <LinkedInProvider>
-            <NotificationProvider>
-              {!isAdminArea && <FeedbackPromptGate />}
-              {isAdminArea ? (
-                <AdminLayout>{children}</AdminLayout>
-              ) : (
-                <AppLayout>{children}</AppLayout>
-              )}
-            </NotificationProvider>
+            <Suspense fallback={null}>
+              <LinkedInOAuthReturnHandler>
+                <NotificationProvider>
+                  {!isAdminArea && <FeedbackPromptGate />}
+                  {isAdminArea ? (
+                    <AdminLayout>{children}</AdminLayout>
+                  ) : (
+                    <AppLayout>{children}</AppLayout>
+                  )}
+                </NotificationProvider>
+              </LinkedInOAuthReturnHandler>
+            </Suspense>
           </LinkedInProvider>
         </QuotaProvider>
       </OnboardingGate>

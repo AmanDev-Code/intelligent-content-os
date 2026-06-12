@@ -56,7 +56,7 @@ export default function PrivacyPolicy({ h1Override }: { h1Override?: string | nu
             creation, scheduling, publishing, analytics, media, billing, and connected-platform features.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Link href="/terms-of-use" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/legal/terms" className="text-primary underline-offset-4 hover:underline">
               View Terms of Use
             </Link>
             <Link href="/auth" className="text-primary underline-offset-4 hover:underline">

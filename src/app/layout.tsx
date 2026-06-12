@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Poppins } from "next/font/google";
+import { Fraunces, Poppins, Space_Grotesk } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { CookieConsent } from "@/components/marketing/CookieConsent";
 import { defaultDescription, getSiteUrl, siteName } from "@/lib/site";
 
 const poppins = Poppins({
@@ -16,6 +17,13 @@ const poppins = Poppins({
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -75,10 +83,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${fraunces.variable} min-h-screen bg-background font-sans antialiased`}>
+      <body className={`${poppins.variable} ${fraunces.variable} ${spaceGrotesk.variable} min-h-screen bg-background font-sans antialiased`}>
         <GoogleAnalytics />
         <SiteJsonLd />
         <Providers>{children}</Providers>
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, memo } from "react";
+import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,12 @@ XPlatformIcon.displayName = "XPlatformIcon";
 
 const COMING_SOON_PLATFORMS = ["twitter", "instagram", "facebook"];
 
-export function SocialChannels() {
+interface SocialChannelsProps {
+  onOpenPagePicker?: () => void;
+}
+
+export function SocialChannels({ onOpenPagePicker }: SocialChannelsProps) {
+  const pathname = usePathname();
   const { user } = useAuth();
   const { isConnected: linkedinConnected, metrics: linkedinMetrics, needsReauth } = useLinkedIn();
   const { isConnecting, startConnecting, clearConnecting } = useLinkedInConnectionStatus();
@@ -92,7 +98,7 @@ export function SocialChannels() {
     if (channelId === "linkedin") {
       try {
         startConnecting();
-        const { url } = await api.linkedin.startOAuth();
+        const { url } = await api.linkedin.startOAuth(pathname);
         window.location.href = url;
       } catch {
         clearConnecting();
@@ -104,6 +110,31 @@ export function SocialChannels() {
     if (COMING_SOON_PLATFORMS.includes(channelId)) {
       setComingSoonPlatform(channelId);
       return;
+    }
+  };
+
+  const handleConnectCompanyPages = async () => {
+    if (!user) {
+      toast.error("Please sign in to connect company pages.");
+      return;
+    }
+    if (!linkedinConnected) {
+      toast.error("Connect your personal LinkedIn account first, then add company pages.");
+      return;
+    }
+
+    // Unified flow: scopes already granted during initial OAuth, just open picker.
+    // No need for a second OAuth redirect.
+    try {
+      const res = await api.linkedin.orgPages();
+      const pages = Array.isArray(res?.pages) ? res.pages : [];
+      if (pages.length > 0) {
+        onOpenPagePicker?.();
+      } else {
+        toast.info("No company pages found. You must be an admin of a LinkedIn Company Page.");
+      }
+    } catch {
+      toast.error("Could not load company pages. Please try again.");
     }
   };
 
@@ -189,15 +220,29 @@ export function SocialChannels() {
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-1 text-xs mt-1">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Followers</span>
-                            <span className="font-medium">{channel.followers}</span>
+                        <div className="flex flex-col flex-1 mt-1">
+                          <div className="space-y-1 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Followers</span>
+                              <span className="font-medium">{channel.followers}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Engagement</span>
+                              <span className="font-medium">{channel.engagement}</span>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Engagement</span>
-                            <span className="font-medium">{channel.engagement}</span>
-                          </div>
+                          {channel.id === "linkedin" && (
+                            <div className="mt-auto pt-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs"
+                                onClick={handleConnectCompanyPages}
+                              >
+                                + Company Pages
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )
                     ) : (

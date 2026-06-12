@@ -141,7 +141,7 @@ export function SystemSettings() {
         <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground">
             Set the global credit limit for free tier users. This overrides the default
-            50 credits. Changes apply to all free users immediately.
+            150 credits. Changes apply to all free users immediately.
           </p>
 
           {loadingCredits ? (
@@ -163,7 +163,7 @@ export function SystemSettings() {
                     max={100000}
                     value={freeCreditInput}
                     onChange={(e) => setFreeCreditInput(e.target.value)}
-                    placeholder="50"
+                    placeholder="150"
                     className="flex-1 max-w-[200px]"
                   />
                   <Button

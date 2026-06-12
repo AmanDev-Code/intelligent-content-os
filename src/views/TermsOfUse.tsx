@@ -40,7 +40,7 @@ export default function TermsOfUse({ h1Override }: { h1Override?: string | null 
             and connected-platform features.
           </p>
           <div className="flex flex-wrap gap-3 text-sm">
-            <Link href="/privacy-policy" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/legal/privacy" className="text-primary underline-offset-4 hover:underline">
               View Privacy Policy
             </Link>
             <Link href="/auth" className="text-primary underline-offset-4 hover:underline">

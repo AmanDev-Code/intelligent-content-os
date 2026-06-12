@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   CreditCard,
   Check,
+  CheckCircle2,
   Calendar,
   Download,
   Crown,
@@ -42,9 +43,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from "@/lib/marketing/pricing";
 import { fireConfettiSnip } from "@/registry/magicui/confetti";
 import { PromoCodeInput, type DiscountValidation } from "@/components/billing/PromoCodeInput";
 import { DiscountBadge } from "@/components/billing/DiscountBadge";
@@ -58,10 +61,13 @@ type BillingPlanCard = {
   id: string;
   name: string;
   price: { monthly: number; yearly: number };
+  tagline: string;
   description: string;
   features: string[];
   popular: boolean;
   current: boolean;
+  credits: number;
+  creditsAsOutput: string;
   /** When present, enables multi-currency strike/offer display */
   raw?: SubscriptionPlanPayload;
 };
@@ -69,6 +75,43 @@ type BillingPlanCard = {
 const DISPLAY_CURRENCY_LS = "trndinn_display_currency";
 const BILLING_CYCLE_UPGRADE_KEY = "__billing_cycle__";
 const PORTAL_LOADING_KEY = "__portal__";
+
+// Plan display meta for credits and output descriptions
+const PLAN_DISPLAY_META: Record<string, { credits: number; creditsAsOutput: string; tagline: string }> = {
+  free: { credits: 150, creditsAsOutput: "~25 AI posts to try the workflow", tagline: "Start creating with AI — no card required." },
+  standard: { credits: 500, creditsAsOutput: "~80 AI posts or ~60 image posts / month", tagline: "For solo creators publishing consistently." },
+  pro: { credits: 2000, creditsAsOutput: "~320 AI posts or ~130 carousels / month", tagline: "For teams that ship content as a system." },
+  ultimate: { credits: 10000, creditsAsOutput: "~1,600 AI posts / month for multiple brands", tagline: "For agencies managing many brands at scale." },
+};
+
+// Currency toggle component matching the pricing page design
+function CurrencyToggle({
+  currency,
+  onChange,
+}: {
+  currency: SupportedCurrency;
+  onChange: (c: SupportedCurrency) => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/30 dark:bg-white/[0.04] px-1 py-0.5 backdrop-blur-xl">
+      {SUPPORTED_CURRENCIES.map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={cn(
+            "rounded-full px-3 py-1 text-xs font-medium transition-all",
+            currency === c
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+          aria-label={`Show prices in ${c}`}
+        >
+          {c === "USD" ? "$ USD" : "₹ INR"}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 type BillingApiResponse = {
   subscription: {
@@ -107,7 +150,7 @@ export default function Billing() {
   const { quota: userQuota, refreshQuota } = useQuota();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [plans, setPlans] = useState<BillingPlanCard[]>([]);
-  const [billingCurrency, setBillingCurrency] = useState("USD");
+  const [billingCurrency, setBillingCurrency] = useState<SupportedCurrency>("USD");
   const [supportedCurrencies, setSupportedCurrencies] = useState<string[]>(["USD", "INR"]);
   const [usageData, setUsageData] = useState({
     posts: { used: 0, limit: 0 },
@@ -247,19 +290,29 @@ export default function Billing() {
           cur = ls.toUpperCase();
         }
       }
-      setBillingCurrency(cur);
+      setBillingCurrency(cur as SupportedCurrency);
 
       const visiblePlansData = planRows.filter((plan) => plan.planType !== "free");
-      const formattedPlans: BillingPlanCard[] = visiblePlansData.map((plan) => ({
-        id: plan.planType,
-        name: plan.name,
-        price: { monthly: plan.priceMonthly, yearly: plan.priceYearly },
-        description: plan.description,
-        features: plan.features,
-        popular: plan.planType === "pro",
-        current: false,
-        raw: plan,
-      }));
+      const formattedPlans: BillingPlanCard[] = visiblePlansData.map((plan) => {
+        const displayMeta = PLAN_DISPLAY_META[plan.planType] ?? { 
+          credits: plan.creditsLimit, 
+          creditsAsOutput: `${plan.creditsLimit} credits / month`,
+          tagline: plan.description,
+        };
+        return {
+          id: plan.planType,
+          name: plan.name,
+          price: { monthly: plan.priceMonthly, yearly: plan.priceYearly },
+          tagline: displayMeta.tagline,
+          description: plan.description,
+          features: plan.features,
+          popular: plan.planType === "pro",
+          current: false,
+          credits: displayMeta.credits,
+          creditsAsOutput: displayMeta.creditsAsOutput,
+          raw: plan,
+        };
+      });
       setPlans(formattedPlans);
       hasLoadedPlansRef.current = true;
     } catch (error) {
@@ -652,27 +705,15 @@ export default function Billing() {
           <p className="text-sm text-muted-foreground">Manage your subscription and billing information</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Select
-            value={billingCurrency}
-            onValueChange={(v) => {
-              const u = v.toUpperCase();
-              setBillingCurrency(u);
+          <CurrencyToggle
+            currency={billingCurrency}
+            onChange={(v) => {
+              setBillingCurrency(v);
               if (typeof window !== "undefined") {
-                window.localStorage.setItem(DISPLAY_CURRENCY_LS, u);
+                window.localStorage.setItem(DISPLAY_CURRENCY_LS, v);
               }
             }}
-          >
-            <SelectTrigger className="h-9 w-[112px] text-xs" aria-label="Pricing display currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {supportedCurrencies.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
           <Button
             variant="outline"
             size="sm"
@@ -840,27 +881,29 @@ export default function Billing() {
         </Card>
       </div>
 
-      {/* Compare plan pricing cadence — display only */}
-      <Card className="border-border/70 bg-muted/20 shadow-none">
-        <CardContent className="py-6">
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-sm text-muted-foreground text-center">Compare pricing options</p>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <span className={cn("text-sm font-medium", billingCycle === "monthly" && "text-primary")}>
-                Monthly
-              </span>
-              <Switch
-                checked={billingCycle === "yearly"}
-                onCheckedChange={(checked) => {
-                  setBillingCycle(checked ? "yearly" : "monthly");
-                }}
-                disabled={loading}
-              />
-              <span className={cn("text-sm font-medium", billingCycle === "yearly" && "text-primary")}>Yearly</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Compare plan pricing cadence — matching pricing page toggle style */}
+      <div className="flex flex-col items-center gap-4 py-6 rounded-2xl border border-border/70 bg-muted/30 dark:bg-white/[0.04]">
+        <p className="text-sm text-muted-foreground text-center">Compare pricing options</p>
+        <div className="inline-flex items-center gap-3 rounded-full border border-border/70 bg-card/50 px-4 py-2 backdrop-blur-xl">
+          <span className={cn("text-sm", billingCycle === "monthly" && "font-semibold text-foreground")}>
+            Monthly
+          </span>
+          <Switch
+            checked={billingCycle === "yearly"}
+            onCheckedChange={(checked) => {
+              setBillingCycle(checked ? "yearly" : "monthly");
+            }}
+            disabled={loading}
+            aria-label="Toggle annual billing"
+          />
+          <span className={cn("text-sm", billingCycle === "yearly" && "font-semibold text-foreground")}>
+            Annual <span className="text-primary">· save more</span>
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Save with annual billing — discount applied automatically at checkout.
+        </p>
+      </div>
 
       {/* Promo Code Section */}
       <Card className="border-border/70 bg-card shadow-sm">
@@ -961,7 +1004,7 @@ export default function Billing() {
       {/* Plans - 3 columns on lg, 2 on sm with 3rd full width */}
       <div
         id="billing-plan-cards"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1"
       >
         {plans.map((plan) => {
           const payload: SubscriptionPlanPayload =
@@ -971,7 +1014,7 @@ export default function Billing() {
               planType: plan.id,
               name: plan.name,
               description: plan.description,
-              creditsLimit: 0,
+              creditsLimit: plan.credits,
               priceMonthly: plan.price.monthly,
               priceYearly: plan.price.yearly,
               features: [...plan.features],
@@ -992,138 +1035,149 @@ export default function Billing() {
             resolved.strikeAmount != null && resolved.strikeAmount > resolved.mainAmount
               ? formatPlanMoney(resolved.strikeAmount, resolved.currencyCode, resolved.symbolFallback)
               : null;
+          const yearlyTotal = resolved.yearlyTotal;
+          const savingsPct =
+            resolved.mainAmount && yearlyTotal && resolved.mainAmount > 0
+              ? Math.round((1 - yearlyTotal / (resolved.mainAmount * 12)) * 100)
+              : 0;
+          const featured = plan.popular && !plan.current;
           return (
-          <Card key={plan.id} className={cn(
-            "relative flex flex-col h-full border-border/70 bg-card shadow-sm",
-            plan.popular && !plan.current && "ring-1 ring-primary/40",
-            plan.current && "border-primary/30 bg-primary/[0.03]"
-          )}>
-            <CardContent className="p-4 sm:p-5 flex flex-col flex-1">
-              <div className="flex items-start justify-between gap-2 mb-2 min-h-[1.75rem]">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <h3 className="text-lg font-bold truncate">{plan.name}</h3>
-                  {plan.id === "ultimate" && <Crown className="h-4 w-4 text-primary shrink-0" />}
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {plan.current && (
-                    <Badge variant="secondary" className="text-[10px] whitespace-nowrap">
-                      <Check className="h-3 w-3 mr-1" />
-                      Current
-                    </Badge>
-                  )}
-                  {plan.popular && !plan.current && (
-                    <Badge className="bg-primary text-primary-foreground text-[10px] whitespace-nowrap">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Popular
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              {/* Price display with promo code discount */}
-              <div className="space-y-1 mb-1">
-                <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
-                  {promoValidated && !plan.current ? (
-                    <>
-                      <span className="text-sm text-muted-foreground line-through mr-1">
-                        {mainStr}
-                      </span>
-                      <span className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {
-                          (() => {
-                            let discounted = resolved.mainAmount;
-                            if (promoValidated.discountType === "percentage" && promoValidated.percentOff) {
-                              discounted = resolved.mainAmount * (1 - promoValidated.percentOff / 100);
-                            } else if (promoValidated.discountType === "fixed" && promoValidated.amountOff) {
-                              discounted = Math.max(0, resolved.mainAmount - promoValidated.amountOff);
-                            }
-                            return formatPlanMoney(discounted, resolved.currencyCode, resolved.symbolFallback);
-                          })()
-                        }
-                      </span>
-                      <span className="text-sm text-muted-foreground">/month</span>
-                      <Badge
-                        variant="outline"
-                        className="ml-1 text-[10px] font-normal border-green-200 dark:border-green-900 text-green-600 dark:text-green-400"
-                      >
-                        {promoValidated.discountType === "percentage" && promoValidated.percentOff
-                          ? `${promoValidated.percentOff}% off`
-                          : `-$${promoValidated.amountOff || 0}`}
-                      </Badge>
-                    </>
-                  ) : (
-                    <>
-                      {strikeStr && (
-                        <span className="text-sm text-muted-foreground line-through mr-1" aria-hidden>
-                          {strikeStr}
-                        </span>
-                      )}
-                      <span className="text-2xl font-bold">{mainStr}</span>
-                      <span className="text-sm text-muted-foreground">/month</span>
-                      {strikeStr && (
-                        <Badge variant="outline" className="ml-1 text-[10px] font-normal">
-                          Offer
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </div>
-                {promoValidated && !plan.current && (
-                  <p className="text-xs text-green-600 dark:text-green-400">
-                    Saves {
-                      (() => {
-                        let savings = 0;
+          <article
+            key={plan.id}
+            className={cn(
+              "relative flex flex-col rounded-2xl border bg-gradient-to-b from-card/80 to-card/40 p-6 backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-primary/40",
+              featured
+                ? "border-primary/45 ring-1 ring-primary/25 lg:scale-[1.03]"
+                : "border-border/70 hover:shadow-xl hover:shadow-primary/10",
+              plan.current && "border-primary/30 bg-primary/[0.03]"
+            )}
+          >
+            {/* Highlight badge */}
+            {plan.popular && !plan.current ? (
+              <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white bg-gradient-to-r from-[#ff8a1f] to-[#ff5d4f]">
+                <Sparkles className="mr-1 inline h-3 w-3" />
+                Most popular
+              </span>
+            ) : plan.id === "ultimate" && !plan.current ? (
+              <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white bg-foreground/80">
+                Best value
+              </span>
+            ) : null}
+
+            {/* Current plan badge */}
+            {plan.current && (
+              <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-foreground">
+                <Check className="mr-1 inline h-3 w-3" />
+                Current plan
+              </span>
+            )}
+
+            <h3 className="font-display text-xl font-bold">{plan.name}</h3>
+            <p className="mt-1 min-h-[2.5rem] text-sm text-muted-foreground">{plan.tagline}</p>
+
+            {/* Price display */}
+            <div className="mt-5 min-h-[5rem]">
+              {promoValidated && !plan.current ? (
+                <>
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-sm text-muted-foreground line-through mr-1">
+                      {mainStr}
+                    </span>
+                    <span className="font-display text-4xl font-black tracking-tight text-green-600 dark:text-green-400">
+                      {(() => {
+                        let discounted = resolved.mainAmount;
                         if (promoValidated.discountType === "percentage" && promoValidated.percentOff) {
-                          savings = resolved.mainAmount * (promoValidated.percentOff / 100);
+                          discounted = resolved.mainAmount * (1 - promoValidated.percentOff / 100);
                         } else if (promoValidated.discountType === "fixed" && promoValidated.amountOff) {
-                          savings = promoValidated.amountOff;
+                          discounted = Math.max(0, resolved.mainAmount - promoValidated.amountOff);
                         }
-                        return formatPlanMoney(savings, resolved.currencyCode, resolved.symbolFallback);
-                      })()
-                    }/{billingCycle === "yearly" ? "year" : "month"} with {promoValidated.name}
+                        return formatPlanMoney(discounted, resolved.currencyCode, resolved.symbolFallback);
+                      })()}
+                    </span>
+                    <span className="mb-1 text-sm text-muted-foreground">/ mo</span>
+                  </div>
+                  <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                    {promoValidated.discountType === "percentage" && promoValidated.percentOff
+                      ? `${promoValidated.percentOff}% off with ${promoValidated.name}`
+                      : `$${promoValidated.amountOff || 0} off with ${promoValidated.name}`}
                   </p>
-                )}
-              </div>
-              {billingCycle === "yearly" && resolved.yearlyTotal != null && resolved.yearlyTotal > 0 && (
-                <p className="text-xs text-muted-foreground mb-1">
-                  {formatPlanMoney(resolved.yearlyTotal, resolved.currencyCode, resolved.symbolFallback)} billed yearly
-                </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-end gap-1.5">
+                    {strikeStr && (
+                      <span className="text-sm text-muted-foreground line-through mr-1" aria-hidden>
+                        {strikeStr}
+                      </span>
+                    )}
+                    <span className="font-display text-4xl font-black tracking-tight">{mainStr}</span>
+                    <span className="mb-1 text-sm text-muted-foreground">/ mo</span>
+                    {strikeStr && (
+                      <Badge variant="outline" className="ml-1 text-[10px] font-normal mb-1">
+                        Offer
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {billingCycle === "yearly"
+                      ? yearlyTotal != null
+                        ? `${formatPlanMoney(yearlyTotal, resolved.currencyCode, resolved.symbolFallback)} billed yearly${savingsPct > 0 ? ` · save ${savingsPct}%` : ""}`
+                        : "Annual price unavailable"
+                      : "billed monthly"}
+                  </p>
+                </>
               )}
-              <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
-              <ul className="space-y-1.5 mb-4 flex-1">
-                {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs">
-                    <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                className={cn("w-full mt-auto", plan.popular && !plan.current && "bg-primary text-primary-foreground")}
-                variant={plan.current ? "outline" : "default"}
-                disabled={plan.current || loading || upgradingPlanId !== null}
-                size="sm"
-                onClick={() => !plan.current && void handleSwitchPlan(plan.id)}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : upgradingPlanId === plan.id ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Redirecting…
-                  </>
-                ) : plan.current ? (
-                  'Current Plan'
-                ) : hasActivePolarSubscription ? (
-                  `Switch to ${plan.name}`
-                ) : (
-                  `Upgrade to ${plan.name}`
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Credits highlight box - matching pricing page */}
+            <div className="mt-4 rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5">
+              <p className="text-sm font-semibold text-foreground">
+                {plan.credits.toLocaleString()} credits / mo
+              </p>
+              <p className="text-xs text-muted-foreground">{plan.creditsAsOutput}</p>
+            </div>
+
+            {/* Features list */}
+            <ul className="mt-6 flex-1 space-y-2.5 text-sm text-muted-foreground">
+              {plan.features.map((feature, i) => (
+                <li key={i} className="flex gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA Button */}
+            <Button
+              className={cn(
+                "mt-7 w-full cursor-pointer rounded-full font-semibold",
+                featured
+                  ? "bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] text-white shadow-lg shadow-primary/20"
+                  : "",
+              )}
+              variant={plan.current ? "outline" : featured ? "default" : "outline"}
+              disabled={plan.current || loading || upgradingPlanId !== null}
+              onClick={() => !plan.current && void handleSwitchPlan(plan.id)}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : upgradingPlanId === plan.id ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Redirecting…
+                </>
+              ) : plan.current ? (
+                'Current Plan'
+              ) : hasActivePolarSubscription ? (
+                `Switch to ${plan.name}`
+              ) : (
+                `Upgrade to ${plan.name}`
+              )}
+            </Button>
+          </article>
           );
         })}
       </div>

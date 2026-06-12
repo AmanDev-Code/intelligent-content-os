@@ -373,7 +373,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             if (line.startsWith('event: ')) {
               eventType = line.slice(7).trim();
             } else if (line.startsWith('data: ')) {
-              if (!initialLoadDone.current) {
+              // Generation events are time-sensitive — never drop them while the
+              // notification list is still loading (would freeze step indicators).
+              const isGenerationEvent = eventType.startsWith('generation.');
+              if (!initialLoadDone.current && !isGenerationEvent) {
                 continue;
               }
               try {
@@ -405,6 +408,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 } else if (eventType === 'generation.carousel_regenerated') {
                   window.dispatchEvent(
                     new CustomEvent('trndinn:carousel-regenerated', { detail: data }),
+                  );
+                } else if (eventType === 'generation.post_regenerated') {
+                  window.dispatchEvent(
+                    new CustomEvent('trndinn:post-regenerated', { detail: data }),
                   );
                 }
               } catch {

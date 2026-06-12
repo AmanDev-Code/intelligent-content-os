@@ -5,6 +5,20 @@ import { getPreferredTimezoneSync } from "@/services/timezoneService";
 import { getErrorMessage } from "@/lib/error-handler";
 import type { AdminUpdateSubscriptionPlanBody, AdminUpdateSubscriptionPlanResponse, BillingCatalogLivePayload, ImportFromBillingCatalogResponse, PricingDisplaySettings, SubscriptionPlanPayload } from "@/types/publicPlans";
 import type { CreateDiscountCodeBody, DiscountCodeRow } from "@/types/discountCodes";
+import type {
+  BrandProfile,
+  BrandProfileInput,
+  ExtractedBrandKit,
+} from "@/types/brandProfile";
+import type {
+  AiModelsState,
+  AiModelCategory,
+  AiCatalogModel,
+  AiModelTestResult,
+  WebResearchConfigResponse,
+  WebResearchConfigPatch,
+  WebResearchTestResult,
+} from "@/types/aiModels";
 
 // Type for error response from API
 interface ApiErrorResponse {
@@ -288,12 +302,68 @@ export const apiClient = new ApiClient();
 // Export error class for instanceof checks
 export { ApiError };
 
+// Sprint 1.9 — usage tracking (display only, never enforced).
+export interface UsageMetric {
+  used: number;
+  limit: number | null;
+  percentUsed: number | null;
+}
+
+export interface UsageSummary {
+  userId: string;
+  planType: string;
+  planDisplayName: string;
+  period: { start: string; end: string };
+  posts: UsageMetric & { published: number; scheduledPending: number };
+  aiGenerations: UsageMetric;
+  enforced: false;
+}
+
+// Sprint 1.9b — multi-bucket credit model (single source of truth on backend).
+export interface CreditCostMatrix {
+  postNow: { text: number; image: number; carousel: number };
+  schedule: { text: number; image: number; carousel: number };
+  reschedule: number;
+  pdfAddOn: number;
+  generate: { textBase: number; imagePerUnit: number; slidePerUnit: number };
+  regenerate: { singleImage: number; imagePerUnit: number; slidePerUnit: number };
+  legacyGenerate: number;
+  aiTextFormatting: number;
+}
+
+export interface CreditBalance {
+  userId: string;
+  trial: number;
+  plan: number;
+  reward: number;
+  total: number;
+  trialExpiresAt: string | null;
+  planResetsAt: string | null;
+  planType: string;
+  planDisplayName: string;
+  periodStart: string | null;
+  consumedThisPeriod: number;
+  consumptionByType: Record<string, number>;
+}
+
 // Convenience methods for common endpoints
 export const api = {
   // Quota endpoints
   quota: {
     get: () => apiClient.get('/quota'),
     check: () => apiClient.get('/quota/check'),
+  },
+
+  // Usage tracking (Sprint 1.9 — data only, no enforcement)
+  usage: {
+    get: (): Promise<UsageSummary> => apiClient.get('/usage'),
+  },
+
+  // Credits (Sprint 1.9b — multi-bucket model + single source of truth costs)
+  credits: {
+    costs: (): Promise<{ costs: CreditCostMatrix }> =>
+      apiClient.get('/credits/costs'),
+    balance: (): Promise<CreditBalance> => apiClient.get('/credits/balance'),
   },
 
   // Subscription endpoints
@@ -358,6 +428,10 @@ export const api = {
       contentType: 'text' | 'image' | 'carousel' | 'post';
       tonality: string;
       wordLimit: { kind: 'short' | 'medium' | 'long' } | { kind: 'custom'; words: number };
+      /** Toggle a live web search (Tavily) on the topic before generating. */
+      onlineSearch?: boolean;
+      /** When false, skip full brand kit (name, tone, voice examples, colors, image analysis). Only do_use/do_not_use + past posts are kept. */
+      includeBrandKit?: boolean;
       imageCount?: number;
       slideCount?: number;
       carouselVisualStyle?:
@@ -372,7 +446,8 @@ export const api = {
       /** Opt in to internal SaaS dataset capture metadata (no vendor retraining). */
       trainingDataCaptureOptIn?: boolean;
     }) => apiClient.post('/generation/custom-topic', data),
-    job: (jobId: string) => apiClient.get(`/generation/job/${jobId}`),
+    /** Cache-bust: job status is polled during active generations. */
+    job: (jobId: string) => apiClient.get(`/generation/job/${jobId}?_=${Date.now()}`),
     checkCompletion: (jobId: string) => apiClient.post(`/generation/job/${jobId}/check-completion`),
     content: (page = 1, limit = 50, source?: string) => apiClient.get(`/generation/content?page=${page}&limit=${limit}${source ? `&source=${source}` : ''}`),
     contentById: (contentId: string) => apiClient.get(`/generation/content/${contentId}`),
@@ -387,13 +462,20 @@ export const api = {
     regenerateImage: (
       contentId: string,
       imageIndex: number,
-      opts?: { originalPrompt?: string; userOverridePrompt?: string },
+      opts?: {
+        originalPrompt?: string;
+        userOverridePrompt?: string;
+        caption?: string;
+        includeBrandKit?: boolean;
+      },
     ): Promise<{ jobId: string; estimatedCost: number; message: string }> =>
       apiClient.post('/generation/regenerate/image', {
         contentId,
         imageIndex,
         originalPrompt: opts?.originalPrompt,
         userOverridePrompt: opts?.userOverridePrompt,
+        caption: opts?.caption,
+        includeBrandKit: opts?.includeBrandKit,
       }),
     /**
      * Regenerate every slide of an existing carousel using the persisted deck
@@ -407,6 +489,18 @@ export const api = {
       apiClient.post('/generation/regenerate/carousel', {
         contentId,
         slideCount: opts?.slideCount,
+      }),
+    /**
+     * Re-run full custom-topic generation for an existing post (same topic +
+     * stored settings). Updates the content row in place on completion.
+     */
+    regeneratePost: (
+      contentId: string,
+      opts?: { includeBrandKit?: boolean },
+    ): Promise<{ jobId: string; totalCost: number; message: string }> =>
+      apiClient.post('/generation/regenerate/post', {
+        contentId,
+        includeBrandKit: opts?.includeBrandKit,
       }),
     /**
      * Soft-delete generated content. Removes from recent generations and all generations.
@@ -465,10 +559,48 @@ export const api = {
       const qs = search.toString();
       return apiClient.get(`/linkedin/organization${qs ? `?${qs}` : ''}`);
     },
-    /** Server-issued OAuth URL (opaque state in Redis; do not use GET /linkedin/auth). */
-    startOAuth: () => apiClient.post('/linkedin/oauth/start', {}),
+    /** Start unified LinkedIn OAuth (requests all scopes in single flow). */
+    startOAuth: (returnTo?: string) =>
+      apiClient.post('/linkedin/oauth/start', returnTo ? { returnTo } : {}),
+    /**
+     * @deprecated Use startOAuth instead. Unified flow now requests all scopes.
+     * Kept for backward compatibility — redirects to same unified flow on backend.
+     */
+    startOAuthForPages: (returnTo?: string) =>
+      apiClient.post('/linkedin/oauth/start-pages', returnTo ? { returnTo } : {}),
+    orgPages: () => apiClient.get('/linkedin/org-pages'),
+    connectPages: (pages: Array<{
+      organizationUrn: string;
+      organizationId: string;
+      name: string;
+      logoUrl?: string;
+      vanityName?: string;
+    }>) => apiClient.post('/linkedin/connect-pages', { pages }),
     publish: (contentId: string) => apiClient.post('/linkedin/publish', { contentId }),
     disconnect: () => apiClient.post('/linkedin/disconnect'),
+  },
+
+  webhooks: {
+    list: () => apiClient.get('/webhooks'),
+    create: (data: { url: string; events?: string[]; description?: string }) =>
+      apiClient.post('/webhooks', data),
+    get: (id: string) => apiClient.get(`/webhooks/${id}`),
+    update: (id: string, data: { url?: string; events?: string[]; description?: string; enabled?: boolean }) =>
+      apiClient.put(`/webhooks/${id}`, data),
+    delete: (id: string) => apiClient.delete(`/webhooks/${id}`),
+    deliveries: (id: string, limit?: number) =>
+      apiClient.get(`/webhooks/${id}/deliveries${limit ? `?limit=${limit}` : ''}`),
+    test: (id: string) => apiClient.post(`/webhooks/${id}/test`, {}),
+    supportedEvents: () => apiClient.get('/webhooks/supported-events'),
+  },
+
+  // Public API keys (Sprint 1.8) — manage `trnd_*` keys for the v1 REST API.
+  apiKeys: {
+    list: () => apiClient.get('/api-keys'),
+    scopes: () => apiClient.get('/api-keys/scopes'),
+    create: (data: { name: string; scopes?: string[]; expiresAt?: string | null }) =>
+      apiClient.post('/api-keys', data),
+    revoke: (id: string) => apiClient.delete(`/api-keys/${id}`),
   },
 
   // Media endpoints
@@ -482,10 +614,37 @@ export const api = {
     getUsage: () => apiClient.get('/media/usage'),
   },
 
+  // Brand Kit (Sprint 1.5) — user's brand profile(s) that drive AI voice.
+  brandProfiles: {
+    list: (): Promise<BrandProfile[]> => apiClient.get('/brand-profiles'),
+    get: (id: string): Promise<BrandProfile> => apiClient.get(`/brand-profiles/${id}`),
+    create: (payload: BrandProfileInput): Promise<BrandProfile> =>
+      apiClient.post('/brand-profiles', payload),
+    update: (id: string, payload: BrandProfileInput): Promise<BrandProfile> =>
+      apiClient.put(`/brand-profiles/${id}`, payload),
+    remove: (id: string): Promise<{ success: boolean }> =>
+      apiClient.delete(`/brand-profiles/${id}`),
+    // Smart Import: parse pasted text into brand fields via AI (0.5 credits, not saved).
+    extract: (
+      text: string,
+    ): Promise<{ extracted: ExtractedBrandKit; creditsCost: number }> =>
+      apiClient.post('/brand-profiles/extract', { text }),
+  },
+
   // Posts endpoints
   posts: {
     publish: (data: any) => apiClient.post('/posts/publish', data),
     schedule: (data: any) => apiClient.post('/posts/schedule', data),
+    /**
+     * Move an already-scheduled post to a new time WITHOUT charging credits.
+     * Use this (not `schedule`) for calendar drag-and-drop rescheduling.
+     * `scheduledPostId` is the `scheduled_posts` row id (calendar event id).
+     */
+    reschedule: (
+      scheduledPostId: string,
+      data: { scheduledFor: string; timezone?: string },
+    ) =>
+      apiClient.patch(`/posts/scheduled/${scheduledPostId}/reschedule`, data),
     getScheduled: (params?: any) => apiClient.get(`/posts/scheduled${params ? `?${new URLSearchParams(params)}` : ''}`),
     getPublished: (params?: any) => apiClient.get(`/posts/published${params ? `?${new URLSearchParams(params)}` : ''}`),
     cancelScheduled: (jobId: string) => apiClient.post(`/posts/scheduled/${jobId}/cancel`),
@@ -573,6 +732,67 @@ export const api = {
       apiClient.delete(`/admin/seo/pages?route=${encodeURIComponent(route)}`),
     seoAiFill: (payload: { route: string; prompt?: string; primaryKeyword?: string }) =>
       apiClient.post('/admin/seo/ai-fill', payload),
+    // AI model registry (Bifrost gateway): per-category (text/image/video) model
+    // lists with priority/fallback ordering, used by every generation + formatting path.
+    aiModelsList: (): Promise<AiModelsState> => apiClient.get('/admin/ai-models'),
+    aiModelsCatalog: (
+      refresh = false,
+    ): Promise<{ ok: boolean; models: AiCatalogModel[]; message?: string }> =>
+      apiClient.get('/admin/ai-models/catalog', {
+        params: refresh ? { refresh: '1' } : {},
+      }),
+    aiModelsAdd: (payload: {
+      label?: string;
+      model: string;
+      provider?: string;
+      category?: AiModelCategory;
+      makeActive?: boolean;
+    }): Promise<AiModelsState> => apiClient.post('/admin/ai-models', payload),
+    aiModelsSetActive: (
+      category: AiModelCategory,
+      id: string,
+    ): Promise<AiModelsState> =>
+      apiClient.put('/admin/ai-models/active', { category, id }),
+    aiModelsSetEnabled: (id: string, enabled: boolean): Promise<AiModelsState> =>
+      apiClient.put('/admin/ai-models/enabled', { id, enabled }),
+    aiModelsReorder: (
+      category: AiModelCategory,
+      orderedIds: string[],
+    ): Promise<AiModelsState> =>
+      apiClient.put('/admin/ai-models/reorder', { category, orderedIds }),
+    aiModelsRemove: (id: string): Promise<AiModelsState> =>
+      apiClient.delete(`/admin/ai-models/${id}`),
+    aiModelsTest: (
+      model: string,
+      category: AiModelCategory = 'text',
+    ): Promise<AiModelTestResult> =>
+      apiClient.post('/admin/ai-models/test', { model, category }),
+    aiModelsVisionAnalyze: (
+      model: string,
+      imageDataUrl: string,
+      prompt?: string,
+    ): Promise<{
+      ok: boolean;
+      model?: string;
+      analysis?: string;
+      latencyMs: number;
+      message?: string;
+    }> =>
+      apiClient.post('/admin/ai-models/vision-analyze', {
+        model,
+        imageDataUrl,
+        prompt,
+      }),
+    webResearchGet: (): Promise<WebResearchConfigResponse> =>
+      apiClient.get('/admin/ai-models/web-research'),
+    webResearchUpdate: (
+      patch: Partial<WebResearchConfigPatch>,
+    ): Promise<WebResearchConfigResponse> =>
+      apiClient.put('/admin/ai-models/web-research', patch),
+    webResearchTest: (
+      query?: string,
+    ): Promise<WebResearchTestResult> =>
+      apiClient.post('/admin/ai-models/web-research/test', { query }),
     mediaBrowse: (opts?: { path?: string; scope?: 'bucket' | 'cms' }) =>
       apiClient.get('/admin/media/browse', {
         params: {
@@ -646,6 +866,18 @@ export const api = {
     postByPath: (path: string) => apiClient.get('/blog/post', { params: { path } }),
     pageSeo: (route: string) => apiClient.get('/blog/page-seo', { params: { route } }),
     myAccess: () => apiClient.get('/blog/my-access'),
+  },
+
+  /** Public contact form (no auth required). */
+  contact: {
+    submit: (payload: {
+      name?: string;
+      email: string;
+      company?: string;
+      message: string;
+      website?: string;
+    }): Promise<{ ok: boolean; id?: string }> =>
+      apiClient.post('/public/contact', payload),
   },
 
   careers: {

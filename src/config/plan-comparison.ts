@@ -5,7 +5,7 @@ import { formatPlanMoney, resolveDisplayedPrices } from "@/lib/planDisplayFormat
 
 /** Mirrors backend `QuotaService` monthly pools (see backend/src/services/quota.service.ts). */
 export const BACKEND_MONTHLY_CREDITS = {
-  free: 50,
+  free: 150,
   standard: 500,
   pro: 2000,
   ultimate: 10000,

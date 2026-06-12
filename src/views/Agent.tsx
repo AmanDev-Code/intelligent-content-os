@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Wand2,
   Globe,
+  Palette,
   Hash,
   CheckCircle2,
   Heart,
@@ -49,6 +50,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
+import {
+  useCreditCosts,
+  postNowCost,
+  scheduleCost,
+  generateCost,
+} from "@/lib/creditCosts";
 import { ScheduleModal } from '@/components/schedule/ScheduleModal';
 import { toast } from "sonner";
 import { useGenerationJob } from "@/hooks/useGenerationJob";
@@ -159,6 +166,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const [editedHashtags, setEditedHashtags] = useState<string[]>([]);
   const [newHashtagInput, setNewHashtagInput] = useState('');
   const { quota: userQuota, loading: loadingQuota, refreshQuota } = useQuota();
+  const creditCosts = useCreditCosts();
   const [tourDemoStep, setTourDemoStep] = useState<
     "idle" | "generated" | "scheduled"
   >("idle");
@@ -169,6 +177,10 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const trendingModalSessionRef = useRef<AbortController | null>(null);
   /** Buffer SSE events that arrive before currentJobId is set (timing race between API response and worker). */
   const sseEventBufferRef = useRef<Map<string, Array<{ type: 'progress' | 'completed'; detail: any }>>>(new Map());
+  /** Refs mirror generation tracking state so SSE handlers never drop events on stale closures. */
+  const currentJobIdRef = useRef<string | null>(null);
+  const isGeneratingRef = useRef(false);
+  const generationModeRef = useRef<'trending' | 'custom' | 'own'>('trending');
   // Fetch guards to prevent duplicate requests
   const fetchingPostingIdentitiesRef = useRef(false);
   const lastPostingIdentitiesFetchRef = useRef<number>(0);
@@ -192,6 +204,10 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const [customWordCountInput, setCustomWordCountInput] = useState('150');
   const [imageCount, setImageCount] = useState(1);
   const [slideCount, setSlideCount] = useState(5);
+  /** When on, the backend runs a live web search (Tavily) on the topic before writing the post. */
+  const [onlineSearch, setOnlineSearch] = useState(false);
+  /** When on, include full brand kit (name, tone, voice examples, colors, image analysis). When off, only do_use/do_not_use + past posts. */
+  const [includeBrandKit, setIncludeBrandKit] = useState(true);
 
   /** Custom-topic carousel visual base style (`auto` = server infers from topic). */
   const [carouselVisualStyle, setCarouselVisualStyle] = useState<
@@ -237,11 +253,17 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     return id;
   };
 
+  // Generation cost from the single source of truth. Generate costs SCALE
+  // per image / per slide (unlike the FLAT Post Now / Schedule costs).
   const customTopicCreditCost = useMemo(() => {
-    if (selectedType === 'image') return 2 + 3 * imageCount;
-    if (selectedType === 'carousel') return 2 + 2.5 * slideCount;
-    return 2;
-  }, [selectedType, imageCount, slideCount]);
+    const type =
+      selectedType === 'image'
+        ? 'image'
+        : selectedType === 'carousel'
+          ? 'carousel'
+          : 'text';
+    return generateCost(creditCosts, type, imageCount, slideCount);
+  }, [creditCosts, selectedType, imageCount, slideCount]);
 
   // N1: Custom-topic progress steps driven by SSE
   type ProgressStepStatus = 'pending' | 'running' | 'done' | 'failed';
@@ -252,8 +274,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
    *
    * Step keys MUST match the backend's `subtaskKey` values emitted by
    * `notification.service.ts → emitGenerationProgress` and the worker pipeline
-   * (`validating`, `reserving_credits`, `generating_text`, `enhancing_text`,
-   * `planning_slides` a.k.a. `composing_pages`, `slide_1` … `slide_N`,
+   * (`validating`, `reserving_credits`, `researching_web`, `generating_text`,
+   * `enhancing_text`, `planning_slides` a.k.a. `composing_pages`, `slide_1` … `slide_N`,
    * `saving`, `done`).
    *
    * `enhancing_text` covers quality-gate / sparse expansion / model rewrite —
@@ -267,6 +289,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     const steps: ProgressStep[] = [
       { key: 'validating', label: 'Validating topic', status: 'pending' },
       { key: 'reserving_credits', label: 'Reserving credits', status: 'pending' },
+      { key: 'researching_web', label: 'Researching web', status: 'pending' },
       { key: 'generating_text', label: 'Generating text', status: 'pending' },
       { key: 'enhancing_text', label: 'Enhancing & expanding', status: 'pending' },
     ];
@@ -301,6 +324,16 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
 
   const [customProgressSteps, setCustomProgressSteps] = useState<ProgressStep[]>([]);
   const [customProgressStartedAt, setCustomProgressStartedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    currentJobIdRef.current = currentJobId;
+  }, [currentJobId]);
+  useEffect(() => {
+    isGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
+  useEffect(() => {
+    generationModeRef.current = generationMode;
+  }, [generationMode]);
   const [customProgressElapsed, setCustomProgressElapsed] = useState(0);
   const [autoOpenContentId, setAutoOpenContentId] = useState<string | null>(null);
 
@@ -407,7 +440,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       });
 
       // When slide_N starts running, mark all earlier prep phases (validating,
-      // reserving_credits, generating_text, enhancing_text,
+      // reserving_credits, researching_web, generating_text, enhancing_text,
       // composing_pages/planning_slides) and earlier slides as done. This gives
       // users a smooth advance through the modal even when the worker emits
       // per-slide events back-to-back without an explicit `succeeded` for the
@@ -424,6 +457,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           if (
             (s.key === 'validating' ||
               s.key === 'reserving_credits' ||
+              s.key === 'researching_web' ||
               s.key === 'generating_text' ||
               s.key === 'enhancing_text' ||
               PLANNING_SLIDES_KEYS.has(s.key)) &&
@@ -434,6 +468,15 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
           }
           return s;
         });
+      }
+
+      // Auto-advance generating_text when web research completes.
+      if (subtaskKey === 'researching_web' && (status === 'succeeded' || status === 'skipped')) {
+        updated = updated.map(s =>
+          s.key === 'generating_text' && s.status === 'pending'
+            ? { ...s, status: 'running' as ProgressStepStatus }
+            : s
+        );
       }
 
       // Auto-advance the enhancing_text row whenever generating_text resolves
@@ -497,6 +540,67 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     });
   }, [PLANNING_SLIDES_KEYS]);
 
+  /**
+   * Fallback step sync from `generation_jobs.current_stage` (polled every 3s by
+   * useGenerationJob). The progress bar already used this path; step indicators
+   * previously relied only on SSE and stayed frozen when events were dropped.
+   */
+  const syncStepsFromStage = useCallback((stage: string | null) => {
+    if (!stage) return;
+    const stageKey =
+      stage === 'initializing' || stage === 'Starting...'
+        ? 'validating'
+        : stage === 'planning_slides'
+          ? 'composing_pages'
+          : stage;
+
+    setCustomProgressSteps((prev) => {
+      if (prev.length === 0) return prev;
+
+      if (stageKey === 'done') {
+        return prev.map((s) =>
+          s.status === 'failed' ? s : { ...s, status: 'done' as ProgressStepStatus },
+        );
+      }
+
+      let stageIndex = prev.findIndex(
+        (s) =>
+          s.key === stageKey ||
+          (PLANNING_SLIDES_KEYS.has(s.key) && PLANNING_SLIDES_KEYS.has(stageKey)),
+      );
+      // Worker stores `composing_pages` during image/slide rendering even when
+      // the FE row is `Planning slides` or `Generating image N`.
+      if (stageIndex < 0 && stageKey === 'composing_pages') {
+        const planningIdx = prev.findIndex((s) => PLANNING_SLIDES_KEYS.has(s.key));
+        if (planningIdx >= 0) {
+          stageIndex = planningIdx;
+        } else {
+          const firstImageIdx = prev.findIndex((s) => s.key.startsWith('image_'));
+          if (firstImageIdx >= 0) stageIndex = firstImageIdx;
+        }
+      }
+      if (stageIndex < 0) return prev;
+
+      const statusOrder: Record<ProgressStepStatus, number> = {
+        pending: 0,
+        running: 1,
+        done: 2,
+        failed: 2,
+      };
+
+      return prev.map((s, i) => {
+        if (s.status === 'failed') return s;
+        if (i < stageIndex && statusOrder[s.status] < statusOrder.done) {
+          return { ...s, status: 'done' as ProgressStepStatus };
+        }
+        if (i === stageIndex && s.status === 'pending') {
+          return { ...s, status: 'running' as ProgressStepStatus };
+        }
+        return s;
+      });
+    });
+  }, [PLANNING_SLIDES_KEYS]);
+
   // Helper to process a completed event
   const processCompletedEvent = useCallback((detail: any) => {
     setCustomProgressSteps(prev => prev.map(s => ({ ...s, status: s.status === 'pending' ? 'done' : s.status })));
@@ -530,15 +634,26 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     const handleSSEProgress = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const eventJobId = detail?.generationId;
+      const subtaskKey = detail?.subtaskKey;
+      const activeJobId = currentJobIdRef.current;
+      const generating = isGeneratingRef.current;
 
-      if (currentJobId && eventJobId === currentJobId) {
+      if (
+        showContentModal &&
+        typeof subtaskKey === 'string' &&
+        subtaskKey.startsWith('image_regen_')
+      ) {
+        return;
+      }
+
+      if (activeJobId && eventJobId === activeJobId) {
         processProgressEvent(detail);
         return;
       }
 
       // Buffer events that arrive before currentJobId is set (worker can emit
       // before the start-generation HTTP response returns).
-      if (!currentJobId && isGenerating && eventJobId) {
+      if (!activeJobId && generating && eventJobId) {
         const buffer = sseEventBufferRef.current.get(eventJobId) || [];
         buffer.push({ type: 'progress', detail });
         sseEventBufferRef.current.set(eventJobId, buffer);
@@ -548,13 +663,19 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     const handleSSECompleted = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       const eventJobId = detail?.generationId;
+      const activeJobId = currentJobIdRef.current;
+      const generating = isGeneratingRef.current;
 
-      if (currentJobId && eventJobId === currentJobId) {
+      if (showContentModal && detail?.regenerated) {
+        return;
+      }
+
+      if (activeJobId && eventJobId === activeJobId) {
         processCompletedEvent(detail);
         return;
       }
 
-      if (!currentJobId && isGenerating && eventJobId) {
+      if (!activeJobId && generating && eventJobId) {
         const buffer = sseEventBufferRef.current.get(eventJobId) || [];
         buffer.push({ type: 'completed', detail });
         sseEventBufferRef.current.set(eventJobId, buffer);
@@ -567,28 +688,39 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       window.removeEventListener('trndinn:generation-progress', handleSSEProgress);
       window.removeEventListener('trndinn:generation-completed', handleSSECompleted);
     };
-  }, [currentJobId, isGenerating, processProgressEvent, processCompletedEvent]);
+  }, [showContentModal, processProgressEvent, processCompletedEvent]);
 
-  // N1: 5s polling fallback when SSE stalls
+  // API polling fallback when SSE is dropped (multi-instance deploys) or Supabase
+  // realtime is unavailable. Runs immediately on job start, then every 3s.
   useEffect(() => {
     if (!currentJobId || !isGenerating || generationMode !== 'custom') return;
-    const pollInterval = setInterval(async () => {
+
+    let cancelled = false;
+
+    const pollJobStatus = async () => {
+      if (cancelled) return;
       try {
         const jobStatus = await api.generation.job(currentJobId);
-        if (jobStatus?.status === 'ready' && jobStatus?.contentId) {
-          setCustomProgressSteps(prev => prev.map(s => ({ ...s, status: s.status === 'pending' ? 'done' : s.status })));
+        if (cancelled || !jobStatus) return;
+
+        if (jobStatus.currentStage) {
+          syncStepsFromStage(jobStatus.currentStage);
+        }
+
+        if (jobStatus.status === 'ready' && jobStatus.contentId) {
+          setCustomProgressSteps(prev =>
+            prev.map(s => ({ ...s, status: s.status === 'pending' ? 'done' : s.status })),
+          );
           setCustomProgressStartedAt(null);
           setAutoOpenContentId(jobStatus.contentId);
           setIsGenerating(false);
           setIsComplete(true);
           setIsFailed(false);
-          clearInterval(pollInterval);
-        } else if (jobStatus?.status === 'failed') {
+        } else if (jobStatus.status === 'failed') {
           setIsGenerating(false);
           setIsFailed(true);
           setIsComplete(true);
           setCustomProgressStartedAt(null);
-          // Mark in-flight steps as failed but keep the list so late events can settle.
           setCustomProgressSteps(prev =>
             prev.map(s =>
               s.status === 'pending' || s.status === 'running'
@@ -596,12 +728,19 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                 : s,
             ),
           );
-          clearInterval(pollInterval);
         }
-      } catch { /* ignore polling errors */ }
-    }, 5000);
-    return () => clearInterval(pollInterval);
-  }, [currentJobId, isGenerating, generationMode]);
+      } catch {
+        /* ignore polling errors */
+      }
+    };
+
+    void pollJobStatus();
+    const pollInterval = setInterval(pollJobStatus, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(pollInterval);
+    };
+  }, [currentJobId, isGenerating, generationMode, syncStepsFromStage]);
 
   // N2: Auto-open PostModal when generation completes
   useEffect(() => {
@@ -773,40 +912,27 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       );
   }, []);
 
-  // Helper function to calculate credit cost
+  // Post Now / Schedule cost from the single source of truth (GET /credits/costs).
+  // These image/carousel costs are FLAT (do not scale by count); PDF adds a flat add-on.
   const calculateCreditCost = (content: any, isScheduling: boolean = false) => {
-    // For "own content" mode, calculate based on what user uploads
-    // No AI generation cost - only posting/scheduling cost
+    // "Own content" mode: cost is based on what the user uploads.
     if (content?.isOwnContent) {
-      // Base cost for text post
-      let baseCost = isScheduling ? 4 : 2.5;
-      
-      // Check for uploaded media (will be set when user uploads)
       const hasUploadedImages = uploadedImages.length > 0;
       const hasUploadedPdf = false; // PDF state is in ScheduleModal, not here
-      
-      if (hasUploadedPdf) {
-        baseCost = isScheduling ? 15 : 12; // Carousel cost
-        baseCost += 12; // PDF attachment cost
-      } else if (hasUploadedImages) {
-        baseCost = isScheduling ? 7.5 : 6; // Image cost
-      }
-      
-      return baseCost;
+      const type = hasUploadedImages ? 'image' : 'text';
+      return isScheduling
+        ? scheduleCost(creditCosts, type, { pdf: hasUploadedPdf })
+        : postNowCost(creditCosts, type, { pdf: hasUploadedPdf });
     }
-    
+
     const hasValidImage = content?.visual_url?.startsWith('http') || 
                          (content?.media_urls && content.media_urls.length > 0) ||
                          uploadedImages.length > 0;
     const hasCarousel = content?.carousel_urls && content.carousel_urls.length > 0;
-    
-    if (hasCarousel) {
-      return isScheduling ? 15 : 12;
-    } else if (hasValidImage) {
-      return isScheduling ? 7.5 : 6;
-    } else {
-      return isScheduling ? 4 : 2.5;
-    }
+    const type = hasCarousel ? 'carousel' : hasValidImage ? 'image' : 'text';
+    return isScheduling
+      ? scheduleCost(creditCosts, type)
+      : postNowCost(creditCosts, type);
   };
   const { displayProgress, setTarget } = useSmoothProgress();
 
@@ -1208,6 +1334,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       'initializing': 'Initializing...',
       'validating': 'Validating topic...',
       'reserving_credits': 'Reserving credits...',
+      'researching_web': 'Researching web...',
       'generating_text': 'Generating text...',
       'enhancing_text': 'Enhancing & expanding...',
       'composing_pages': 'Planning slides...',
@@ -1228,7 +1355,10 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
   const handleProgress = useCallback((progress: number, currentStage: string | null) => {
     setTarget(progress);
     setStage(formatStageLabel(currentStage));
-  }, [setTarget]);
+    if (generationMode === 'custom' && currentStage) {
+      syncStepsFromStage(currentStage);
+    }
+  }, [setTarget, syncStepsFromStage, generationMode]);
 
   useGenerationJob({
     jobId,
@@ -1417,14 +1547,21 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     }
 
     setIsGenerating(true);
+    isGeneratingRef.current = true;
     setTarget(0);
     setStage("Starting custom topic generation...");
     setIsComplete(false);
     setIsFailed(false);
     setGeneratedContent([]);
+    setJobId(null);
     setCurrentJobId(null);
+    currentJobIdRef.current = null;
     sseEventBufferRef.current.clear(); // Clear any stale buffered events
-    setCustomProgressSteps(buildProgressSteps());
+    const initialSteps = buildProgressSteps();
+    if (initialSteps.length > 0) {
+      initialSteps[0] = { ...initialSteps[0], status: 'running' };
+    }
+    setCustomProgressSteps(initialSteps);
     setCustomProgressStartedAt(Date.now());
     setCarouselStyleStatusLabel(null);
 
@@ -1437,6 +1574,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         wordLimit: wordLimitKind === 'custom'
           ? { kind: 'custom', words: customWordCount }
           : { kind: wordLimitKind },
+        onlineSearch,
+        includeBrandKit,
         ...(selectedType === 'image' ? { imageCount } : {}),
         ...(selectedType === 'carousel'
           ? {
@@ -1459,6 +1598,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       await refreshQuota(true);
 
       if (data.jobId) {
+        currentJobIdRef.current = data.jobId;
         setJobId(data.jobId);
         setCurrentJobId(data.jobId);
         setTarget(15);
@@ -1482,6 +1622,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       }
 
       setIsGenerating(false);
+      isGeneratingRef.current = false;
       setTarget(0);
       setStage(null);
       await refreshQuota(true);
@@ -2538,6 +2679,42 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                     </div>
                   )}
 
+                  <label className="flex cursor-pointer items-start justify-between gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2.5">
+                    <span className="flex items-start gap-2">
+                      <Globe className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex flex-col">
+                        <span className="text-xs font-medium">Search the web first</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          Look up your topic online and use the latest facts + sources in the post.
+                        </span>
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                      checked={onlineSearch}
+                      onChange={(e) => setOnlineSearch(e.target.checked)}
+                    />
+                  </label>
+
+                  <label className="flex cursor-pointer items-start justify-between gap-2 rounded-md border border-border/70 bg-muted/20 px-3 py-2.5">
+                    <span className="flex items-start gap-2">
+                      <Palette className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex flex-col">
+                        <span className="text-xs font-medium">Use brand kit</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          Include your brand voice, tone, and image style. OFF = only vocabulary rules + past posts.
+                        </span>
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                      checked={includeBrandKit}
+                      onChange={(e) => setIncludeBrandKit(e.target.checked)}
+                    />
+                  </label>
+
                   <div className="flex items-center justify-between px-1 py-1.5 rounded-md bg-muted/30 text-xs">
                     <span className="text-muted-foreground">Est. credits</span>
                     <span className="font-semibold tabular-nums flex items-center gap-1">
@@ -3410,6 +3587,15 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         onOpenChange={setShowContentModal}
         content={selectedContent}
         onSuccess={fetchRecentGenerations}
+        includeBrandKit={includeBrandKit}
+        onContentRegenerated={(patch) => {
+          setSelectedContent((prev: any) =>
+            prev && prev.id === patch.id ? { ...prev, ...patch } : prev,
+          );
+          setGeneratedContent((prev) =>
+            prev.map((c) => (c.id === patch.id ? { ...c, ...patch } : c)),
+          );
+        }}
         calculateCreditCost={calculateCreditCost}
         postingTarget={
           selectedPostingIdentity

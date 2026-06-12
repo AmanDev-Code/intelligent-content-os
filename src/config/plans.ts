@@ -17,9 +17,9 @@ export const SUBSCRIPTION_PLANS: PlanConfig[] = [
     id: 'free',
     name: 'Free',
     description: 'Perfect for getting started',
-    credits: 50,
+    credits: 150,
     features: [
-      '50 AI credits per month',
+      '150 AI credits per month',
       'Basic content generation',
       'Community support'
     ],
@@ -91,7 +91,7 @@ export const calculateYearlyDiscount = (monthly: number, yearly: number) => {
 // Plan limits and quotas
 export const PLAN_LIMITS = {
   free: {
-    credits: 50,
+    credits: 150,
     trialDays: 14,
   },
   standard: {

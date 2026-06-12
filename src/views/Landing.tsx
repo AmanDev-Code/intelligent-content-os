@@ -1,333 +1,113 @@
 "use client";
 
-import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  CheckCircle2,
-  Clapperboard,
-  Linkedin,
-  Sparkles,
-  Target,
-  Video,
-  Zap,
-} from "lucide-react";
-import { ChannelMarquee } from "@/components/marketing/ChannelMarquee";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { EvolutionTimeline } from "@/components/marketing/EvolutionTimeline";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { MARKETING_MARQUEE_CHANNELS } from "@/lib/marketing-channels";
-import { marketingRoadmap } from "@/lib/marketing-roadmap";
-import { cn } from "@/lib/utils";
-
-const bentoHighlights = [
-  {
-    icon: Zap,
-    label: "Latency",
-    stat: "< 2s",
-    sub: "draft to variants",
-    accent: "from-primary/25 to-transparent",
-  },
-  {
-    icon: BarChart3,
-    label: "Signal",
-    stat: "Live",
-    sub: "LinkedIn analytics",
-    accent: "from-cyan-500/20 to-transparent",
-  },
-  {
-    icon: Video,
-    label: "Studio",
-    stat: "1 → N",
-    sub: "reels & shorts",
-    accent: "from-red-500/15 to-transparent",
-  },
-];
+import { LandingHero, type LandingHeroContent } from "@/components/marketing/LandingHero";
+import { BackersBand } from "@/components/marketing/BackersBand";
+import { ChannelCloud } from "@/components/marketing/ChannelCloud";
+import { BentoFeatures } from "@/components/marketing/BentoFeatures";
+import { HowItWorks } from "@/components/marketing/HowItWorks";
+import { AudienceSegments } from "@/components/marketing/AudienceSegments";
+import { ComparisonBand } from "@/components/marketing/ComparisonBand";
+import { SecondaryFeatures } from "@/components/marketing/SecondaryFeatures";
+import { StatBand } from "@/components/marketing/StatBand";
+import { TrustBand } from "@/components/marketing/TrustBand";
+import { Testimonials } from "@/components/marketing/Testimonials";
+import { PricingTeaser } from "@/components/marketing/PricingTeaser";
+import { LandingFaq } from "@/components/marketing/LandingFaq";
+import { FinalCta } from "@/components/marketing/FinalCta";
+import { DEFAULT_MARKETING_CONTENT, useSiteContent } from "@/lib/marketing/siteContent";
 
 export default function Landing({ h1Override }: { h1Override?: string | null }) {
-  const { session } = useAuth();
-  const primaryHref = session ? "/dashboard" : "/auth";
-  const primaryLabel = session ? "Open your workspace" : "Start free";
+  const { content, loading } = useSiteContent();
+
+  const hero = (content.landing_hero ?? DEFAULT_MARKETING_CONTENT.landing_hero) as LandingHeroContent;
+  const backers = content.landing_backers ?? DEFAULT_MARKETING_CONTENT.landing_backers;
+  const pillars = content.landing_pillars ?? DEFAULT_MARKETING_CONTENT.landing_pillars;
+  const how = content.landing_how ?? DEFAULT_MARKETING_CONTENT.landing_how;
+  const comparison = content.landing_comparison ?? DEFAULT_MARKETING_CONTENT.landing_comparison;
+  const secondary = content.landing_secondary_features ?? DEFAULT_MARKETING_CONTENT.landing_secondary_features;
+  const stats = content.landing_stats ?? DEFAULT_MARKETING_CONTENT.landing_stats;
+  const integrations = content.landing_integrations ?? DEFAULT_MARKETING_CONTENT.landing_integrations;
+  const trust = content.landing_trust ?? DEFAULT_MARKETING_CONTENT.landing_trust;
+  const pricingTeaser = content.landing_pricing_teaser ?? DEFAULT_MARKETING_CONTENT.landing_pricing_teaser;
+  const faq = content.landing_faq ?? DEFAULT_MARKETING_CONTENT.landing_faq;
+
+  const heroContent: LandingHeroContent = h1Override ? { ...hero, title: h1Override } : hero;
 
   return (
     <MarketingShell>
       <main>
-        {/* Hero */}
-        <section className="relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(255,138,31,0.22),transparent_50%)]" />
-            <div className="absolute -left-32 top-1/4 h-[420px] w-[420px] rounded-full bg-primary/15 blur-[100px]" />
-            <div className="absolute -right-24 top-1/2 h-[380px] w-[380px] rounded-full bg-red-500/10 blur-[90px]" />
-            <div className="absolute bottom-0 left-1/2 h-64 w-[80%] max-w-3xl -translate-x-1/2 rounded-full bg-cyan-500/5 blur-[80px]" />
-          </div>
+        <LandingHero hero={heroContent} loading={loading} />
 
-          <div className="mx-auto max-w-6xl px-4 pb-8 pt-14 sm:px-6 sm:pb-10 sm:pt-16 md:pt-20">
-            <div className="relative">
-              <div className="pointer-events-none absolute -right-20 -top-16 h-64 w-64 rounded-full bg-gradient-to-br from-primary/25 to-red-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute -left-24 bottom-0 h-52 w-52 rounded-full bg-cyan-500/10 blur-3xl" />
+        <BackersBand
+          title={backers?.title}
+          subtitle={backers?.subtitle}
+          items={backers?.items ?? DEFAULT_MARKETING_CONTENT.landing_backers.items}
+        />
 
-              <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md dark:border-white/15 dark:bg-background/40">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                The Kinetic Curator · Social workspace
-              </span>
+        <ChannelCloud
+          title={integrations?.title}
+          subtitle={integrations?.subtitle}
+          channels={integrations?.channels ?? DEFAULT_MARKETING_CONTENT.landing_integrations.channels}
+        />
 
-              <h1 className="mt-6 max-w-5xl font-heading text-[2.35rem] font-black leading-[1.04] tracking-tight sm:text-5xl md:text-6xl lg:text-[4rem]">
-                {h1Override ? h1Override : (
-                  <>
-                    AI Content Creator for Social Media —
-                    <br className="hidden sm:block" />{" "}
-                    <span className="bg-gradient-to-r from-[#ffc14a] via-[#ff8a1f] to-[#ff5d4f] bg-clip-text text-transparent">
-                      one premium control layer.
-                    </span>
-                  </>
-                )}
-              </h1>
+        <BentoFeatures
+          title={pillars?.title}
+          subtitle={pillars?.subtitle}
+          items={pillars?.items ?? DEFAULT_MARKETING_CONTENT.landing_pillars.items}
+        />
 
-              <p className="mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl">
-                Trndinn unifies AI creation, scheduling, and analytics into one polished workspace your team can actually
-                run every day—content for your own channels and pages, not cold or unsolicited messaging.
-              </p>
+        <HowItWorks
+          title={how?.title}
+          subtitle={how?.subtitle}
+          steps={how?.steps ?? DEFAULT_MARKETING_CONTENT.landing_how.steps}
+        />
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button
-                  size="lg"
-                  className="h-12 rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-xl shadow-primary/30"
-                  asChild
-                >
-                  <Link href={primaryHref}>
-                    {primaryLabel}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="h-12 rounded-full border-border bg-secondary/60 hover:bg-secondary dark:border-white/20 dark:bg-background/50 dark:backdrop-blur-md"
-                  asChild
-                >
-                  <Link href="/features">Explore the platform</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
+        <AudienceSegments />
 
-          {/* Marquee — flows seamlessly, no border */}
-          <div className="mx-auto max-w-6xl px-4 py-2 sm:px-6">
-            <p className="pb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground sm:text-[11px]">
-              Channels on the roadmap — LinkedIn live today
-            </p>
-            <ChannelMarquee channels={MARKETING_MARQUEE_CHANNELS} />
-          </div>
-        </section>
+        <ComparisonBand
+          title={comparison?.title}
+          subtitle={comparison?.subtitle}
+          manualLabel={comparison?.manualLabel}
+          trndinnLabel={comparison?.trndinnLabel}
+          rows={comparison?.rows ?? DEFAULT_MARKETING_CONTENT.landing_comparison.rows}
+        />
 
-        {/* Hero metrics moved out of hero */}
-        <section className="py-8 sm:py-10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:pb-0">
-            {bentoHighlights.map(({ icon: Icon, label, stat, sub, accent }) => (
-              <div
-                key={label}
-                className={cn(
-                  "relative w-[82vw] shrink-0 snap-start overflow-hidden rounded-2xl border border-border/80 bg-card p-5 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/70 dark:to-card/35 dark:backdrop-blur-xl sm:w-auto sm:shrink sm:snap-none",
-                )}
-              >
-                <div className={cn("pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-gradient-to-br blur-2xl", accent)} />
-                <div className="relative flex items-start gap-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-muted/40 dark:border-white/10 dark:bg-background/50">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </span>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-                    <p className="mt-1 font-heading text-2xl font-black tracking-tight text-foreground">{stat}</p>
-                    <p className="text-sm text-muted-foreground">{sub}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
-        </section>
+        <StatBand
+          title={stats?.title}
+          items={stats?.items ?? DEFAULT_MARKETING_CONTENT.landing_stats.items}
+          loading={loading}
+        />
 
-        {/* Ship faster — chips */}
-        <div className="py-8 sm:py-10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground sm:gap-8">
-              <span className="w-full text-center text-sm font-semibold uppercase tracking-[0.16em] text-foreground/90 sm:w-auto">Ship faster</span>
-              <span className="inline-flex items-center gap-2">
-                <Linkedin className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                LinkedIn publishing live
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Clapperboard className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                AI reels on the roadmap
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                Deeper analytics in Q3
-              </span>
-            </div>
-          </div>
-        </div>
+        <SecondaryFeatures
+          title={secondary?.title}
+          subtitle={secondary?.subtitle}
+          items={secondary?.items ?? DEFAULT_MARKETING_CONTENT.landing_secondary_features.items}
+        />
 
-        {/* Bento cards */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
-            <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-7 lg:p-10">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The engine</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">AI content creation with brand memory</h2>
-              <p className="mt-4 max-w-lg text-muted-foreground">
-                Turn a rough idea into post-ready drafts, hooks, and variants in under two seconds—with your brand tone and guardrails baked in from the start. Trndinn learns your voice from examples you provide, so every AI-generated LinkedIn post, carousel, or caption sounds like you wrote it, not a generic AI. No prompting from scratch every time.
-              </p>
-              <div className="mt-8 rounded-2xl border border-border/70 bg-muted/30 p-5 dark:border-white/10 dark:bg-background/40 dark:backdrop-blur-md">
-                <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-                  <Zap className="h-4 w-4 text-primary" />
-                  Prompt → scheduled publish
-                </div>
-                <div className="space-y-2">
-                  <div className="h-2 rounded-full bg-muted dark:bg-white/10" />
-                  <div className="h-2 w-2/3 rounded-full bg-gradient-to-r from-primary/50 to-primary/10" />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-5 lg:p-10">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The matrix</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Social media scheduling that stays calm</h2>
-              <p className="mt-4 text-muted-foreground">One unified content calendar for all your queues, retries, and optimal posting windows — across every connected channel. See what's scheduled, what's drafting, and what needs attention, without switching between tools. LinkedIn is live today; Instagram, X, and Facebook are on the roadmap.</p>
-              <div className="mt-8 grid grid-cols-4 gap-2">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "aspect-square rounded-xl border transition-colors",
-                      i === 2 || i === 5
-                        ? "border-primary/40 bg-primary/15"
-                        : "border-border/60 bg-muted/50 dark:border-white/10 dark:bg-background/40",
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
+        <TrustBand
+          title={trust?.title}
+          subtitle={trust?.subtitle}
+          disclaimer={trust?.disclaimer}
+          items={trust?.items ?? DEFAULT_MARKETING_CONTENT.landing_trust.items}
+        />
 
-            <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-5 lg:p-10">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The studio</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight sm:text-4xl">AI video reels — one clip, every format</h2>
-              <p className="mt-4 text-muted-foreground">Upload one video and Trndinn reframes it for vertical, layers kinetic captions, and schedules it per channel automatically. No editing software needed — the AI handles smart face tracking and subtitle styles so short-form video fits your brand in seconds.</p>
-              <ul className="mt-6 space-y-3 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Smart face tracking
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Kinetic subtitle styles
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Hook-level analytics
-                </li>
-              </ul>
-            </div>
-            <div className="rounded-[1.75rem] border border-border/80 bg-card p-8 dark:border-white/10 dark:bg-gradient-to-br dark:from-card/80 dark:to-card/40 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-2xl lg:col-span-7 lg:p-10">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary">The intelligence</span>
-              <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Social media analytics that tell you what to repeat</h2>
-              <p className="mt-4 max-w-xl text-muted-foreground">Track engagement patterns, posting cadence, and content resonance across your linked accounts — not just vanity metrics you stop checking by week two. Trndinn surfaces which post formats, topics, and timing windows actually drive reach for your audience, so you can double down on what works instead of guessing.</p>
-              <div className="mt-8 flex items-end gap-2 sm:gap-3">
-                {[35, 52, 40, 68, 88].map((h, idx) => (
-                  <div
-                    key={idx}
-                    className="flex-1 rounded-md bg-gradient-to-t from-[#FF8A1F] to-[#ffb783]"
-                    style={{ height: `${h * 1.6}px`, opacity: 0.3 + (h / 100) * 0.7 }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        <Testimonials />
 
-        {/* Who it's for */}
-        <section className="py-12 sm:py-16">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <h2 className="text-center font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-              Built for every team that publishes social content
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-muted-foreground">
-              Whether you're a solo creator growing a personal brand or a marketing team managing multiple LinkedIn company pages, Trndinn gives you one AI-powered workspace to plan, create, schedule, and measure — without stitching together five different tools.
-            </p>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                {
-                  title: "Content creators & personal brands",
-                  body: "Build a consistent LinkedIn presence with AI-drafted posts that sound like you. Schedule a week of content in one session and track which posts grow your audience fastest.",
-                },
-                {
-                  title: "Marketing teams & agencies",
-                  body: "Manage multiple social accounts from one workspace. Collaborate on drafts, maintain brand voice consistency across team members, and report on performance without exporting spreadsheets.",
-                },
-                {
-                  title: "Founders & solopreneurs",
-                  body: "Stay visible on LinkedIn without spending hours writing. Generate post variants from a single prompt, pick the best hook, and publish or schedule — all in under five minutes.",
-                },
-              ].map(({ title, body }) => (
-                <div
-                  key={title}
-                  className="rounded-2xl border border-border/70 bg-card p-6 dark:border-white/10 dark:bg-card/60"
-                >
-                  <h3 className="font-heading text-base font-semibold text-foreground">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <PricingTeaser
+          title={pricingTeaser?.title}
+          subtitle={pricingTeaser?.subtitle}
+          ctaLabel={pricingTeaser?.ctaLabel}
+          ctaHref={pricingTeaser?.ctaHref}
+          highlights={pricingTeaser?.highlights ?? DEFAULT_MARKETING_CONTENT.landing_pricing_teaser.highlights}
+        />
 
-        {/* Vertical left–right snake roadmap */}
-        <section className="py-8 sm:py-12">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6">
-            <EvolutionTimeline
-              heading={
-                <>
-                  <h2 className="font-heading text-3xl font-black text-foreground sm:text-4xl">Evolution timeline</h2>
-                  <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-                    A clear path from LinkedIn-first execution to full multi-channel growth.
-                  </p>
-                </>
-              }
-              milestones={marketingRoadmap.map((item) => ({
-                quarter: item.quarter,
-                status: item.status,
-                isLive: item.status === "Live now",
-                title: item.title,
-                body: item.body,
-                icons: (
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.icons.map(({ Icon, color }, idx) => (
-                      <span key={idx} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-muted/30 dark:border-white/8 dark:bg-white/[0.04]">
-                        <Icon className={cn("h-4 w-4", color)} aria-hidden />
-                      </span>
-                    ))}
-                  </div>
-                ),
-              }))}
-            />
-          </div>
-        </section>
+        <LandingFaq
+          title={faq?.title}
+          items={faq?.items ?? DEFAULT_MARKETING_CONTENT.landing_faq.items}
+        />
 
-        {/* CTA */}
-        <section className="px-4 py-16 sm:px-6 sm:py-20">
-          <div className="mx-auto max-w-5xl rounded-[2rem] border border-primary/30 bg-gradient-to-br from-primary/10 via-card to-red-500/5 px-8 py-12 text-center backdrop-blur-2xl dark:from-primary/20 dark:via-card/50 dark:to-red-500/10 dark:shadow-2xl dark:shadow-primary/10 sm:px-12 sm:py-14">
-            <Video className="mx-auto h-8 w-8 text-primary" />
-            <h2 className="mt-4 font-heading text-3xl font-black tracking-tight sm:text-4xl">Ready to orchestrate growth?</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-              Replace tool sprawl with one premium workflow for planning, publishing, and performance.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button className="rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white shadow-lg" asChild>
-                <Link href={primaryHref}>{primaryLabel}</Link>
-              </Button>
-              <Button variant="outline" className="rounded-full border-border bg-secondary/60 hover:bg-secondary dark:border-white/20 dark:bg-background/40 dark:backdrop-blur-md" asChild>
-                <Link href="/pricing">View pricing</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+        <FinalCta />
       </main>
     </MarketingShell>
   );

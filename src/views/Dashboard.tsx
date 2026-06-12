@@ -7,18 +7,24 @@ import {
   CalendarDays
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, api } from "@/lib/apiClient";
+import { getErrorMessage } from "@/lib/error-handler";
+import { getPreferredTimezoneSync } from "@/services/timezoneService";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { UsagePanel } from "@/components/dashboard/UsagePanel";
 import { SocialChannels } from "@/components/dashboard/SocialChannels";
 import { CalendarView } from "@/components/calendar/CalendarView";
+import { useLinkedInPagePicker } from "@/components/linkedin/LinkedInOAuthReturnHandler";
 
 const POSTS_CACHE_TTL = 5000; // 5 seconds
 
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useAuth();
+  const { openPagePicker } = useLinkedInPagePicker();
   const [currentView, setCurrentView] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [posts, setPosts] = useState<any[]>([]);
@@ -68,6 +74,11 @@ export default function Dashboard() {
 
       const transformedPosts = events.map((event: any) => ({
         id: event.id,
+        // The generated_content id is what the schedule/reschedule API keys on.
+        // For scheduled events event.id is the scheduled_posts row id, so the
+        // real contentId lives on event.content.id; for published events they
+        // are the same. Preserve it so drag-drop rescheduling can target it.
+        contentId: event?.content?.id || event.id,
         title:
           event.title ||
           event?.content?.title ||
@@ -75,6 +86,7 @@ export default function Dashboard() {
         content:
           event?.content?.content ||
           "",
+        hashtags: event?.content?.hashtags || [],
         scheduledFor:
           event.start ||
           event.scheduled_for ||
@@ -116,6 +128,7 @@ export default function Dashboard() {
         if (!supabaseError && data) {
           const transformedPosts = data.map((post: any) => ({
             id: post.id,
+            contentId: post.id,
             title: post.title || 'Untitled Post',
             content: post.content || '',
             scheduledFor: post.scheduled_for || post.created_at,
@@ -157,6 +170,71 @@ export default function Dashboard() {
   }, [posts, searchQuery, filterStatus]);
 
   const handleCreatePost = (date?: Date) => router.push('/agent');
+
+  /**
+   * Drag-drop reschedule. Calls the dedicated no-charge endpoint
+   * (PATCH /posts/scheduled/:id/reschedule) which moves the existing
+   * scheduled_posts row + re-enqueues the BullMQ job WITHOUT consuming credits
+   * (unlike POST /posts/schedule, which charges per call). Optimistically moves
+   * the post in the UI, then rolls back on error.
+   *
+   * `post.id` is the scheduled_posts row id (the calendar event id) that the
+   * reschedule endpoint keys on; `post.contentId` is the generated_content id.
+   */
+  const handleReschedule = useCallback(async (post: any, newDate: Date) => {
+    if (!post?.id) {
+      toast.error('This post cannot be rescheduled.');
+      return;
+    }
+    if (post.status === 'published') {
+      toast.error('Published posts are already live and cannot be rescheduled.');
+      return;
+    }
+    if (newDate.getTime() <= Date.now()) {
+      toast.error('Pick a future time to reschedule.');
+      return;
+    }
+
+    const scheduledIso = newDate.toISOString();
+    const previousScheduledFor = post.scheduledFor;
+
+    // Optimistic move
+    setPosts((current) =>
+      current.map((p) =>
+        p.id === post.id ? { ...p, scheduledFor: scheduledIso, status: 'scheduled' } : p,
+      ),
+    );
+
+    const loadingId = toast.loading('Rescheduling post…');
+    try {
+      await api.posts.reschedule(post.id, {
+        scheduledFor: scheduledIso,
+        timezone: getPreferredTimezoneSync(),
+      });
+      toast.success(
+        `Rescheduled to ${newDate.toLocaleString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })}`,
+        { id: loadingId },
+      );
+      // Re-sync from server so the scheduled_posts row id is fresh.
+      fetchPosts(true);
+    } catch (error: any) {
+      // Roll back the optimistic move
+      setPosts((current) =>
+        current.map((p) =>
+          p.id === post.id ? { ...p, scheduledFor: previousScheduledFor } : p,
+        ),
+      );
+      const message =
+        error?.message || getErrorMessage('Failed to reschedule post');
+      toast.error(message, { id: loadingId, duration: 5000 });
+    }
+  }, [fetchPosts]);
 
   return (
     <div className="flex-1 space-y-6">
@@ -204,7 +282,7 @@ export default function Dashboard() {
       <StatsCards />
 
       {/* Social Channels */}
-      <SocialChannels />
+      <SocialChannels onOpenPagePicker={openPagePicker} />
 
       {/* Content Calendar */}
       <div className="space-y-3">
@@ -225,8 +303,10 @@ export default function Dashboard() {
           posts={filteredPosts}
           onCreatePost={handleCreatePost}
           onRefresh={() => fetchPosts(true)}
+          onReschedule={handleReschedule}
         />
       </div>
+
     </div>
   );
 }

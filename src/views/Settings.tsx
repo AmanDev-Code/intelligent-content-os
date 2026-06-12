@@ -33,10 +33,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useLinkedInPagePicker } from "@/components/linkedin/LinkedInOAuthReturnHandler";
+import { WebhookManager } from "@/components/webhooks/WebhookManager";
+import { ApiKeyManager } from "@/components/api-keys/ApiKeyManager";
 import { apiClient, api } from '@/lib/apiClient';
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { XIcon } from "@/components/icons/XIcon";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,7 +60,9 @@ export default function Settings() {
   const { isConnected: linkedinConnected, refreshConnection, refreshMetrics, disconnect: disconnectLinkedIn } = useLinkedIn();
   const { isConnecting: linkedinConnecting, startConnecting: startLinkedInConnecting, clearConnecting: clearLinkedInConnecting } = useLinkedInConnectionStatus();
   const { isAdmin } = useAdmin();
-  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { openPagePicker } = useLinkedInPagePicker();
+  const linkedinConnectedPrev = React.useRef(linkedinConnected);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [quickActionLoading, setQuickActionLoading] = useState(false);
@@ -81,6 +86,13 @@ export default function Settings() {
       });
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (!linkedinConnectedPrev.current && linkedinConnected) {
+      void refetchProfile();
+    }
+    linkedinConnectedPrev.current = linkedinConnected;
+  }, [linkedinConnected, refetchProfile]);
 
   const [quickActionDialogs, setQuickActionDialogs] = useState({
     featureUpdate: false,
@@ -203,23 +215,6 @@ export default function Settings() {
     { name: 'Facebook', id: 'facebook', icon: Facebook, connected: false, color: '#1877F2' },
   ]);
 
-  useEffect(() => {
-    // If we were redirected back with ?linkedin=connected, refresh LinkedIn context
-    const linkedinParam = searchParams.get("linkedin");
-    if (linkedinParam === "connected") {
-      // Clear the connecting progress flag before showing the toast
-      clearLinkedInConnecting();
-      toast.success("LinkedIn connected successfully!");
-      // Trigger a refresh of LinkedIn connection status across the app
-      refreshConnection();
-      refreshMetrics();
-      void refetchProfile();
-      // Also trigger localStorage event for other tabs
-      localStorage.setItem('linkedin-connected', 'true');
-      localStorage.removeItem('linkedin-connected'); // Trigger the event
-    }
-  }, [searchParams, refreshConnection, refreshMetrics, clearLinkedInConnecting, refetchProfile]);
-
   // Update integrations state when LinkedIn context changes
   useEffect(() => {
     setIntegrations(prev =>
@@ -296,7 +291,7 @@ export default function Settings() {
     if (id === "linkedin") {
       try {
         startLinkedInConnecting();
-        const { url } = await api.linkedin.startOAuth();
+        const { url } = await api.linkedin.startOAuth(pathname);
         window.location.href = url;
       } catch {
         clearLinkedInConnecting();
@@ -306,6 +301,31 @@ export default function Settings() {
     }
 
     toast.info(`OAuth connection for ${id} will be implemented later`);
+  };
+
+  const handleConnectCompanyPages = async () => {
+    if (!user) {
+      toast.error("Please sign in to connect company pages.");
+      return;
+    }
+    if (!linkedinConnected) {
+      toast.error("Connect your personal LinkedIn account first, then add company pages.");
+      return;
+    }
+
+    // Unified flow: scopes already granted during initial OAuth, just open picker.
+    // No need for a second OAuth redirect.
+    try {
+      const res = await api.linkedin.orgPages();
+      const pages = Array.isArray(res?.pages) ? res.pages : [];
+      if (pages.length > 0) {
+        openPagePicker();
+      } else {
+        toast.info("No company pages found. You must be an admin of a LinkedIn Company Page.");
+      }
+    } catch {
+      toast.error("Could not load company pages. Please try again.");
+    }
   };
 
   const handleDisconnect = async (id: string) => {
@@ -661,6 +681,16 @@ export default function Settings() {
                         <Badge variant="secondary" className="gap-1 text-xs">
                           <Zap className="h-3 w-3 text-green-500" /> Connected
                         </Badge>
+                        {integration.id === 'linkedin' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={handleConnectCompanyPages}
+                          >
+                            + Company Pages
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -679,6 +709,20 @@ export default function Settings() {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Outbound Webhooks */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <WebhookManager />
+          </CardContent>
+        </Card>
+
+        {/* Public API Keys */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <ApiKeyManager />
           </CardContent>
         </Card>
 
@@ -1039,6 +1083,7 @@ export default function Settings() {
         )}
 
       </div>
+
     </div>
   );
 }

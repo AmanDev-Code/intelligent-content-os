@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import { api } from '@/lib/apiClient';
 
 interface UseGenerationJobOptions {
   jobId: string | null;
@@ -37,16 +36,13 @@ const HARD_TIMEOUT_MS = 600000; // 10 minutes
  */
 function getStallTimeoutMs(contentType?: string, slideCount?: number): number {
   if (contentType === 'carousel') {
-    // Base 90s for text generation + 30s per slide (accounts for concurrency batching)
-    // With concurrency 3 and 10 slides, we have ~4 batches, each taking 15-30s
-    // Add buffer for text generation phase which doesn't emit per-slide progress
     const slides = slideCount ?? 10;
-    return 90_000 + slides * 30_000; // 90s + 30s per slide
+    return 90_000 + slides * 30_000;
   }
   if (contentType === 'image') {
-    return 120_000; // 2 minutes for image generation
+    return 120_000;
   }
-  return 90_000; // 90 seconds for text-only
+  return 90_000;
 }
 
 export function useGenerationJob({
@@ -57,7 +53,6 @@ export function useGenerationJob({
   onFailed,
   onProgress,
 }: UseGenerationJobOptions) {
-  const channelRef = useRef<RealtimeChannel | null>(null);
   const pollRef = useRef<number | null>(null);
   const hardTimeoutRef = useRef<number | null>(null);
   const stallTimeoutRef = useRef<number | null>(null);
@@ -67,7 +62,6 @@ export function useGenerationJob({
   const callbacksRef = useRef({ onComplete, onFailed, onProgress });
   callbacksRef.current = { onComplete, onFailed, onProgress };
 
-  // Calculate stall timeout based on content type and slide count
   const stallTimeoutMs = getStallTimeoutMs(contentType, slideCount);
 
   const cleanup = useCallback(() => {
@@ -83,10 +77,6 @@ export function useGenerationJob({
       window.clearTimeout(stallTimeoutRef.current);
       stallTimeoutRef.current = null;
     }
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
   }, []);
 
   useEffect(() => {
@@ -98,14 +88,12 @@ export function useGenerationJob({
     lastSnapshotRef.current = '';
     lastProgressAtRef.current = Date.now();
 
-    // Heartbeat-based stall detection: reset every time progress is observed.
     const armStallTimer = () => {
       if (stallTimeoutRef.current) {
         window.clearTimeout(stallTimeoutRef.current);
       }
       stallTimeoutRef.current = window.setTimeout(() => {
         if (isTerminalRef.current) return;
-        // Listen one more time for SSE side-channel updates before surrendering.
         const sinceLast = Date.now() - lastProgressAtRef.current;
         if (sinceLast < stallTimeoutMs) {
           armStallTimer();
@@ -147,20 +135,24 @@ export function useGenerationJob({
     const fetchLatest = async () => {
       if (isTerminalRef.current) return;
 
-      const { data } = await supabase
-        .from('generation_jobs')
-        .select('status, progress, current_stage, content_id, error')
-        .eq('id', jobId)
-        .maybeSingle();
-
-      if (data) processRow(data as JobRow);
+      try {
+        const data = await api.generation.job(jobId);
+        if (!data) return;
+        processRow({
+          status: data.status,
+          progress: data.progress ?? 0,
+          current_stage: data.currentStage ?? null,
+          content_id: data.contentId ?? null,
+          error: data.error ?? null,
+        });
+      } catch {
+        // Polling errors are non-fatal; SSE may still deliver updates.
+      }
     };
 
     void fetchLatest();
     pollRef.current = window.setInterval(fetchLatest, POLL_INTERVAL_MS);
 
-    // SSE pings the same window — treat any progress event for our job as a heartbeat
-    // so the stall detector doesn't trip while slides are actively rendering.
     const sseHeartbeat = (e: Event) => {
       const detail = (e as CustomEvent).detail as { generationId?: string } | undefined;
       if (detail?.generationId === jobId) noteProgress();
@@ -177,26 +169,6 @@ export function useGenerationJob({
         'Generation timeout: maximum duration exceeded (10 minutes). Please retry.',
       );
     }, HARD_TIMEOUT_MS);
-
-    const channel = supabase
-      .channel(`generation-job-${jobId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'generation_jobs',
-          filter: `id=eq.${jobId}`,
-        },
-        (payload) => {
-          if (!isTerminalRef.current) {
-            processRow(payload.new as JobRow);
-          }
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel;
 
     return () => {
       window.removeEventListener('trndinn:generation-progress', sseHeartbeat);

@@ -23,6 +23,7 @@ import {
   FolderOpen,
   CreditCard,
   Wallet,
+  Bot,
 } from "lucide-react";
 import { useAdminAreaAccess } from "@/hooks/useAdminAreaAccess";
 import { apiClient } from "@/lib/apiClient";
@@ -251,6 +252,13 @@ export default function AdminOverviewPage() {
           title: "SEO & Keywords",
           description: "Keyword library, assignments, and cluster management.",
           icon: Globe,
+          show: sections.settings,
+        },
+        {
+          href: "/admin/ai-models",
+          title: "AI Models",
+          description: "Switch, add, or remove the Bifrost model used by all AI features.",
+          icon: Bot,
           show: sections.settings,
         },
         {
