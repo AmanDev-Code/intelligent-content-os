@@ -97,10 +97,14 @@ export type Database = {
           deleted_at: string | null
           hashtags: string[] | null
           id: string
+          is_scheduled: boolean | null
           job_id: string | null
+          linkedin_post_id: string | null
           linkedin_post_url: string | null
           performance_prediction: Json | null
+          publish_status: string | null
           published_at: string | null
+          scheduled_for: string | null
           status: Database["public"]["Enums"]["content_status"]
           suggested_improvements: string[] | null
           title: string
@@ -119,10 +123,14 @@ export type Database = {
           deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
+          is_scheduled?: boolean | null
           job_id?: string | null
+          linkedin_post_id?: string | null
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
+          publish_status?: string | null
           published_at?: string | null
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           suggested_improvements?: string[] | null
           title: string
@@ -141,10 +149,14 @@ export type Database = {
           deleted_at?: string | null
           hashtags?: string[] | null
           id?: string
+          is_scheduled?: boolean | null
           job_id?: string | null
+          linkedin_post_id?: string | null
           linkedin_post_url?: string | null
           performance_prediction?: Json | null
+          publish_status?: string | null
           published_at?: string | null
+          scheduled_for?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           suggested_improvements?: string[] | null
           title?: string
