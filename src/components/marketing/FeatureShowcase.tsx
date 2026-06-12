@@ -308,7 +308,7 @@ function ApiMock() {
       <p className="text-white/70">
         <span className="text-sky-300">&quot;status&quot;</span>: <span className="text-amber-300">&quot;scheduled&quot;</span>
       </p>
-      <p className="mt-1 text-white/40">// HMAC-signed webhook on publish</p>
+      <p className="mt-1 text-white/40">{"// HMAC-signed webhook on publish"}</p>
       <p className="text-white/70">
         <span className="text-sky-300">200</span> OK
       </p>

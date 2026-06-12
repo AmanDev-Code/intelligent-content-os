@@ -44,20 +44,17 @@ function CookiePreferencesModal({
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Don't render if not open
-  if (!isOpen) return null;
-
-  // Use useEffect to handle body scroll lock
+  // Lock body scroll while modal is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // Don't render if not open
+  if (!isOpen) return null;
 
   return (
     <div
