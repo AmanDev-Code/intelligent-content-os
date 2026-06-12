@@ -61,6 +61,21 @@ export const FALLBACK_PRICING_META: PricingMeta = {
 export const SUPPORTED_CURRENCIES = ["USD", "INR"] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
+/** User-facing plan copy keyed by internal plan type (pricing page + billing). */
+export function getPlanDisplayMetaFromPricing(
+  planType: string,
+  meta: PricingMeta = FALLBACK_PRICING_META,
+): PlanDisplayMeta | undefined {
+  return meta.plans.find((p) => p.planType === planType);
+}
+
+export function getPlanPublicName(
+  planType: string,
+  meta: PricingMeta = FALLBACK_PRICING_META,
+): string {
+  return getPlanDisplayMetaFromPricing(planType, meta)?.publicName ?? planType;
+}
+
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", INR: "\u20b9", EUR: "\u20ac", GBP: "\u00a3" };
 export function currencySymbol(code: string): string {
   return CURRENCY_SYMBOLS[code?.toUpperCase()] ?? `${code} `;

@@ -46,6 +46,9 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   SUPPORTED_CURRENCIES,
+  getPlanDisplayMetaFromPricing,
+  getPlanPublicName,
+  usePricing,
   type SupportedCurrency,
 } from "@/lib/marketing/pricing";
 import { fireConfettiSnip } from "@/registry/magicui/confetti";
@@ -75,14 +78,6 @@ type BillingPlanCard = {
 const DISPLAY_CURRENCY_LS = "trndinn_display_currency";
 const BILLING_CYCLE_UPGRADE_KEY = "__billing_cycle__";
 const PORTAL_LOADING_KEY = "__portal__";
-
-// Plan display meta for credits and output descriptions
-const PLAN_DISPLAY_META: Record<string, { credits: number; creditsAsOutput: string; tagline: string }> = {
-  free: { credits: 150, creditsAsOutput: "~25 AI posts to try the workflow", tagline: "Start creating with AI — no card required." },
-  standard: { credits: 500, creditsAsOutput: "~80 AI posts or ~60 image posts / month", tagline: "For solo creators publishing consistently." },
-  pro: { credits: 2000, creditsAsOutput: "~320 AI posts or ~130 carousels / month", tagline: "For teams that ship content as a system." },
-  ultimate: { credits: 10000, creditsAsOutput: "~1,600 AI posts / month for multiple brands", tagline: "For agencies managing many brands at scale." },
-};
 
 // Currency toggle component matching the pricing page design
 function CurrencyToggle({
@@ -175,6 +170,7 @@ export default function Billing() {
   const [portalLoading, setPortalLoading] = useState(false);
   const { config: activeLaunchConfig, refetch: refetchLaunchPricing } =
     useActiveLaunchPricing();
+  const { meta: pricingMeta } = usePricing();
 
   const polarSubscriptionId =
     currentSubscription?.subscription?.polarSubscriptionId ||
@@ -294,22 +290,18 @@ export default function Billing() {
 
       const visiblePlansData = planRows.filter((plan) => plan.planType !== "free");
       const formattedPlans: BillingPlanCard[] = visiblePlansData.map((plan) => {
-        const displayMeta = PLAN_DISPLAY_META[plan.planType] ?? { 
-          credits: plan.creditsLimit, 
-          creditsAsOutput: `${plan.creditsLimit} credits / month`,
-          tagline: plan.description,
-        };
+        const displayMeta = getPlanDisplayMetaFromPricing(plan.planType, pricingMeta);
         return {
           id: plan.planType,
-          name: plan.name,
+          name: getPlanPublicName(plan.planType, pricingMeta),
           price: { monthly: plan.priceMonthly, yearly: plan.priceYearly },
-          tagline: displayMeta.tagline,
+          tagline: displayMeta?.tagline ?? plan.description,
           description: plan.description,
-          features: plan.features,
-          popular: plan.planType === "pro",
+          features: displayMeta?.features ?? plan.features,
+          popular: displayMeta?.featured ?? plan.planType === "pro",
           current: false,
-          credits: displayMeta.credits,
-          creditsAsOutput: displayMeta.creditsAsOutput,
+          credits: displayMeta?.credits ?? plan.creditsLimit,
+          creditsAsOutput: displayMeta?.creditsAsOutput ?? `${plan.creditsLimit} credits / month`,
           raw: plan,
         };
       });
@@ -583,11 +575,29 @@ export default function Billing() {
     }
   };
 
-  const currentPlan = plans.find(plan => plan.current);
+  const displayPlans = useMemo(
+    () =>
+      plans.map((plan) => {
+        const displayMeta = getPlanDisplayMetaFromPricing(plan.id, pricingMeta);
+        return {
+          ...plan,
+          name: getPlanPublicName(plan.id, pricingMeta),
+          tagline: displayMeta?.tagline ?? plan.tagline,
+          features: displayMeta?.features ?? plan.features,
+          popular: displayMeta?.featured ?? plan.popular,
+          credits: displayMeta?.credits ?? plan.credits,
+          creditsAsOutput: displayMeta?.creditsAsOutput ?? plan.creditsAsOutput,
+        };
+      }),
+    [plans, pricingMeta],
+  );
+
+  const currentPlan = displayPlans.find((plan) => plan.current);
   const billingHistory = currentSubscription?.billing?.history || [];
   const latestBill = billingHistory[0];
   const processorLabel = "Polar";
   const sub = currentSubscription?.subscription;
+  const currentPlanMeta = getPlanDisplayMetaFromPricing(sub?.planType ?? "free", pricingMeta);
   const bill = currentSubscription?.billing;
   const renewalLabel =
     bill?.nextBillingDate != null && bill.nextBillingDate !== ""
@@ -765,11 +775,14 @@ export default function Billing() {
             ) : (
               <>
                 <h3 className="text-lg font-bold">
-                  {currentPlan?.name || (sub?.planType === "free" ? "Free Trial" : "No Plan")}
+                  {currentPlan?.name ||
+                    getPlanPublicName(sub?.planType ?? "free", pricingMeta) ||
+                    "No Plan"}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {currentPlan?.description ||
-                    (sub?.planType === "free" ? "14-day free trial" : "Select a plan to get started")}
+                  {currentPlan?.tagline ||
+                    currentPlanMeta?.tagline ||
+                    "Select a plan to get started"}
                 </p>
                 <div className="mt-2">
                   <div className="flex items-baseline gap-1">
@@ -1006,7 +1019,7 @@ export default function Billing() {
         id="billing-plan-cards"
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 items-stretch [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1"
       >
-        {plans.map((plan) => {
+        {displayPlans.map((plan) => {
           const payload: SubscriptionPlanPayload =
             plan.raw ??
             ({
