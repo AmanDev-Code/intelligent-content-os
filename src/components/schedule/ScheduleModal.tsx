@@ -1244,7 +1244,6 @@ export function ScheduleModal({
         </div>
       )}
       <DialogContent
-        overlayClassName={showIdentityModal || regenConfirmDialog ? "bg-transparent" : undefined}
         className={`w-[calc(100vw-1rem)] sm:w-full ${isSchedulingExpanded ? 'max-w-4xl' : 'max-w-[560px]'} max-h-[90vh] overflow-hidden p-0 gap-0 rounded-xl border border-border/60 shadow-xl [&>button]:hidden transition-all duration-300`}
       >
         <DialogHeader className="sr-only">

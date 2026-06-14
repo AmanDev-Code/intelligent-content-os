@@ -29,7 +29,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   overlayClassName?: string;
-  /** Elevated stacking for dialogs opened above another dialog (single dim layer). */
+  /** Elevated stacking for dialogs opened above another dialog (adds a second dim layer). */
   nested?: boolean;
 };
 
@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
   <DialogPortal>
     <DialogOverlay
       className={cn(
-        nested && "z-[200] bg-black/50",
+        nested && "z-[200] bg-black/60",
         overlayClassName,
       )}
     />
