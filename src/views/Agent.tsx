@@ -48,6 +48,7 @@ import {
   Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { stripModelAttribution } from "@/lib/stripModelAttribution";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuota } from "@/contexts/QuotaContext";
 import {
@@ -1811,7 +1812,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         setSelectedContent(content);
         setShowContentModal(true);
         setIsSchedulingExpanded(true);
-        setEditedContent(content.content || '');
+        setEditedContent(stripModelAttribution(content.content || ''));
         setEditedHashtags(content.hashtags || []);
         setUploadedImages(content.media_urls || []);
       }
@@ -1842,7 +1843,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
     setSelectedContent(content);
     setShowContentModal(true);
     setIsSchedulingExpanded(true);
-    setEditedContent(content.content || '');
+    setEditedContent(stripModelAttribution(content.content || ''));
     setEditedHashtags(content.hashtags || []);
     setUploadedImages(content.media_urls || []);
   };
@@ -2299,7 +2300,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                                 setSelectedContent(content);
                               }}
                             >
-                              {content.content?.substring(0, 120)}...
+                              {stripModelAttribution(content.content)?.substring(0, 120)}...
                             </p>
 
                             {/* Metadata Row */}
@@ -2721,56 +2722,6 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
                       {customTopicCreditCost} <Coins className="h-3.5 w-3.5" />
                     </span>
                   </div>
-
-                  {/* Inline Progress Display - Custom mode */}
-                  {isGenerating && customProgressSteps.length > 0 && (
-                    <div className="mt-4 p-4 border rounded-lg bg-muted/20">
-                      <div className="flex items-center gap-2 mb-3">
-                        <RefreshCw className="h-4 w-4 text-primary animate-spin" />
-                        <span className="text-sm font-medium">Generating custom post</span>
-                        <span className="text-xs text-muted-foreground ml-auto">{customProgressElapsed}s</span>
-                      </div>
-                      {selectedType === "carousel" && carouselStyleStatusLabel && (
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Visuals: <span className="text-foreground font-medium">{carouselStyleStatusLabel}</span>
-                        </p>
-                      )}
-                      <div className="w-full mb-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{Math.round(displayProgress)}%</span>
-                        </div>
-                        <Progress value={displayProgress} className="h-2" />
-                      </div>
-                      <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                        {customProgressSteps.map((step) => (
-                          <div key={step.key} className={cn(
-                            "flex items-center gap-2 text-xs py-0.5 px-1 rounded transition-colors",
-                            step.status === "done" && "bg-green-500/5",
-                            step.status === "running" && "bg-primary/5"
-                          )}>
-                            {step.status === "done" ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500 fill-green-500/20 shrink-0" />
-                            ) : step.status === "running" ? (
-                              <RefreshCw className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
-                            ) : step.status === "failed" ? (
-                              <X className="h-3.5 w-3.5 text-destructive shrink-0" />
-                            ) : (
-                              <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/30 shrink-0" />
-                            )}
-                            <span className={cn(
-                              step.status === "running" ? "text-primary font-medium" :
-                              step.status === "done" ? "text-green-600 dark:text-green-400" :
-                              step.status === "failed" ? "text-destructive" :
-                              "text-muted-foreground/50"
-                            )}>
-                              {step.label}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ) : (
                 /* "Your Content" mode - shows info about the flow */
@@ -3379,7 +3330,7 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
       </Dialog>
 
       <Dialog open={showPostingAccountModal} onOpenChange={setShowPostingAccountModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent nested className="max-w-md">
           <DialogHeader>
             <DialogTitle>Choose LinkedIn account</DialogTitle>
           </DialogHeader>
@@ -3480,7 +3431,8 @@ const getIdentityDisplayName = (identity: PostingIdentity): string => {
         onOpenChange={() => undefined}
       >
         <DialogContent
-          className="sm:max-w-md gap-3 p-4 z-[60] [&>button]:hidden"
+          className="sm:max-w-md gap-3 p-4 [&>button]:hidden"
+          overlayClassName="bg-black/50"
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >

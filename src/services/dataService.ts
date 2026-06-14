@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cacheService, userKey, jobKey } from "./cacheService";
 import { API_CONFIG } from "@/lib/constants";
 import { api } from "@/lib/apiClient";
+import { stripModelAttribution } from "@/lib/stripModelAttribution";
 
 export interface GeneratedContent {
   id: string;
@@ -99,8 +100,12 @@ export class DataService {
     const carouselUrls = item.carousel_urls ?? item.carouselUrls ?? null;
     const mediaUrls = item.media_urls ?? item.mediaUrls ?? null;
 
+    const content =
+      typeof item.content === "string" ? stripModelAttribution(item.content) : item.content;
+
     return {
       ...item,
+      content,
       visual_url: this.normalizeMediaUrl(visualUrl),
       pdf_url: this.normalizeMediaUrl(pdfUrl) ?? undefined,
       carousel_urls: Array.isArray(carouselUrls)
