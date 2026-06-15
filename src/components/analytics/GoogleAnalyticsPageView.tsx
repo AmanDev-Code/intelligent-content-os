@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef } from "react";
+import { isCredentialPath } from "@/lib/credentialRoutes";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -11,7 +12,13 @@ function GoogleAnalyticsPageViewInner() {
   const skippedInitial = useRef(false);
 
   useEffect(() => {
-    if (!GA_ID || typeof window === "undefined") return;
+    if (
+      !GA_ID ||
+      typeof window === "undefined" ||
+      isCredentialPath(pathname)
+    ) {
+      return;
+    }
 
     const qs = searchParams?.toString();
     const pagePath = `${pathname}${qs ? `?${qs}` : ""}`;

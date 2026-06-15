@@ -38,6 +38,7 @@ import {
 } from "react-icons/fa6";
 import { BRAND } from "@/lib/brand";
 import { TrndinnLogo } from "@/components/brand/TrndinnLogo";
+import { sanitizeReturnTo } from "@/lib/sanitizeReturnTo";
 
 export default function Auth() {
   const { session, user, signOut } = useAuth();
@@ -46,7 +47,7 @@ export default function Auth() {
   const { toast } = useToast();
 
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/dashboard";
+  const returnTo = sanitizeReturnTo(searchParams.get("returnTo"), "/dashboard");
 
   // Handle plan intent from sessionStorage on component mount
   useEffect(() => {
@@ -301,7 +302,7 @@ export default function Auth() {
         // Ignore invalid intent
       }
     }
-    return returnTo.startsWith("/") ? returnTo : "/dashboard";
+    return sanitizeReturnTo(returnTo, "/dashboard");
   }, [returnTo]);
 
   const handleVerify = useCallback(async () => {

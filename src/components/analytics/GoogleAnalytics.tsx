@@ -1,11 +1,15 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { isCredentialPath } from "@/lib/credentialRoutes";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export function GoogleAnalytics() {
-  if (!GA_MEASUREMENT_ID) {
+  const pathname = usePathname();
+
+  if (!GA_MEASUREMENT_ID || isCredentialPath(pathname)) {
     return null;
   }
 

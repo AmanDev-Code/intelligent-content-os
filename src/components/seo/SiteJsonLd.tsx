@@ -48,17 +48,12 @@ export function SiteJsonLd() {
         name: `${siteName} - AI Social Content Platform`,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
-        url: `${base}/auth`,
+        url: base,
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "USD",
           description: "Free trial with 150 credits",
-        },
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "4.8",
-          ratingCount: "100",
         },
         featureList: [
           "AI content generation",

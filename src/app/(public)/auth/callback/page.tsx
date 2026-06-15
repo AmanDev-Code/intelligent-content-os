@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeReturnTo } from '@/lib/sanitizeReturnTo';
 
 const PLAN_INTENT_KEY = "trndinn_pricing_intent";
 
@@ -43,8 +44,7 @@ export default function AuthCallback() {
       }
     }
 
-    // Fall back to returnTo param or default to dashboard
-    return returnTo?.startsWith('/') ? returnTo : '/dashboard';
+    return sanitizeReturnTo(returnTo, '/dashboard');
   };
 
   useEffect(() => {

@@ -28,9 +28,6 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
   { path: "/careers",       changeFrequency: "monthly", priority: 0.6, lastModified: new Date("2026-04-01") },
 
-  // Auth pages - Lower priority (user flows, not landing)
-  { path: "/auth",          changeFrequency: "monthly", priority: 0.5, lastModified: new Date("2026-06-01") },
-
   // Legal pages - Low priority but essential (canonical /legal/* routes)
   { path: "/legal/privacy",      changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
   { path: "/legal/terms",        changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
