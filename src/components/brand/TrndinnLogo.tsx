@@ -25,7 +25,7 @@ export function TrndinnLogo({ variant = "full", className, priority }: Props) {
 
   if (variant === "wordmark") {
     return (
-      <span className={cn("relative inline-block", className)}>
+      <span className={cn("relative inline-block", className)} role="img" aria-label="Trndinn">
         <Image
           src={BRAND.wordmark.light}
           alt=""
@@ -37,7 +37,7 @@ export function TrndinnLogo({ variant = "full", className, priority }: Props) {
         />
         <Image
           src={BRAND.wordmark.dark}
-          alt="Trndinn"
+          alt=""
           width={1400}
           height={560}
           priority={priority}

@@ -534,13 +534,12 @@ function ActivePanel({ segment }: { segment: Segment }) {
           <dl className="mt-7 flex min-w-0 flex-wrap gap-x-10 gap-y-4">
             {segment.stats.map((stat) => (
               <div key={stat.label} className="min-w-0">
-                <dt className="sr-only">{stat.label}</dt>
-                <dd className="font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
+                <dt className="font-display text-2xl font-bold leading-none tracking-tight text-foreground sm:text-3xl">
                   {stat.value}
-                </dd>
-                <p className="mt-1.5 max-w-[14rem] text-xs leading-snug text-muted-foreground">
+                </dt>
+                <dd className="mt-1.5 max-w-[14rem] text-xs leading-snug text-foreground/75">
                   {stat.label}
-                </p>
+                </dd>
               </div>
             ))}
           </dl>

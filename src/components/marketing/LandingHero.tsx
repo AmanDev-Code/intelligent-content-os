@@ -51,7 +51,7 @@ function renderGradientTitle(title: string): ReactNode {
   return (
     <>
       {before}
-      <span className="text-gradient-brand animate-gradient-x">{hit}</span>
+      <span className="text-gradient-brand motion-safe:animate-gradient-x">{hit}</span>
       {after}
     </>
   );
@@ -96,23 +96,23 @@ export function LandingHero({
       <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-10 pt-10 sm:gap-10 sm:px-6 sm:pb-16 sm:pt-16 md:pb-20 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
         {/* Copy column */}
         <div className="text-center lg:text-left">
-          <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md dark:bg-white/5 dark:text-white/70">
+          <Reveal immediate>
+            <span className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70 backdrop-blur-md dark:bg-white/5 dark:text-white/80">
               <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
               {eyebrow}
             </span>
           </Reveal>
 
-          <Reveal delay={60}>
+          <Reveal immediate>
             <h1 className="mt-5 font-display text-[2rem] font-black leading-[1.1] tracking-tight text-foreground sm:mt-6 sm:text-5xl sm:leading-[1.05] md:text-6xl lg:text-[4.1rem]">
               {renderGradientTitle(title)}
             </h1>
           </Reveal>
 
-          <Reveal delay={120}>
+          <Reveal immediate>
             <p
               className={cn(
-                "mx-auto mt-5 max-w-xl text-[0.95rem] leading-relaxed text-muted-foreground sm:mt-6 sm:max-w-2xl sm:text-lg lg:mx-0",
+                "mx-auto mt-5 max-w-xl text-[0.95rem] leading-relaxed text-foreground/80 sm:mt-6 sm:max-w-2xl sm:text-lg lg:mx-0",
                 loading && "animate-pulse",
               )}
             >

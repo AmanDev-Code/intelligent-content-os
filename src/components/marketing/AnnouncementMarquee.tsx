@@ -28,12 +28,20 @@ export interface SiteAnnouncement {
   dismissible: boolean;
 }
 
+function announcementLinkLabel(linkUrl: string | null, linkLabel: string | null): string {
+  const trimmed = linkLabel?.trim();
+  if (trimmed) return trimmed;
+  const path = linkUrl?.split("?")[0]?.split("#")[0] ?? "";
+  if (path === "/brand" || path.startsWith("/brand/")) return "Brand kit";
+  return "Learn more";
+}
+
 const VARIANT_STYLES: Record<
   AnnouncementVariant,
   { bar: string; icon: typeof Info; iconColor: string }
 > = {
   info: {
-    bar: "bg-sky-600 text-white dark:bg-sky-500",
+    bar: "bg-sky-700 text-white dark:bg-sky-600",
     icon: Info,
     iconColor: "text-white",
   },
@@ -143,9 +151,10 @@ export function AnnouncementMarquee() {
           {current.linkUrl ? (
             <Link
               href={current.linkUrl}
+              aria-label={announcementLinkLabel(current.linkUrl, current.linkLabel)}
               className="hidden shrink-0 items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold transition-colors hover:bg-white/30 sm:inline-flex"
             >
-              {current.linkLabel ?? "Learn more"}
+              {announcementLinkLabel(current.linkUrl, current.linkLabel)}
               <ArrowUpRight className="h-3 w-3" aria-hidden />
             </Link>
           ) : null}
@@ -188,9 +197,10 @@ export function AnnouncementMarquee() {
           {detail?.linkUrl ? (
             <Link
               href={detail.linkUrl}
+              aria-label={announcementLinkLabel(detail.linkUrl, detail.linkLabel)}
               className="inline-flex w-fit items-center gap-1 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
-              {detail.linkLabel ?? "Learn more"}
+              {announcementLinkLabel(detail.linkUrl, detail.linkLabel)}
               <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           ) : null}
@@ -224,9 +234,10 @@ export function AnnouncementMarquee() {
                     {a.linkUrl ? (
                       <Link
                         href={a.linkUrl}
+                        aria-label={announcementLinkLabel(a.linkUrl, a.linkLabel)}
                         className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                       >
-                        {a.linkLabel ?? "Learn more"}
+                        {announcementLinkLabel(a.linkUrl, a.linkLabel)}
                         <ArrowUpRight className="h-3 w-3" aria-hidden />
                       </Link>
                     ) : null}

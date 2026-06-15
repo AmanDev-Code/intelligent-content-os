@@ -65,7 +65,7 @@ export function Testimonials() {
           <Reveal key={t.name} delay={(index % 3) * 80} className="h-full">
             <figure className="group relative flex h-full flex-col rounded-2xl bg-card/80 p-6 backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5 dark:bg-white/[0.04]">
               <Quote className="h-7 w-7 text-primary/30" aria-hidden />
-              <div className="mt-3 flex gap-0.5" aria-label="5 out of 5 stars">
+              <div className="mt-3 flex gap-0.5" role="img" aria-label="5 out of 5 stars">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-primary text-primary" aria-hidden />
                 ))}

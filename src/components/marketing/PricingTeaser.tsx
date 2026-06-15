@@ -51,15 +51,17 @@ export function PricingTeaser({
           {highlights?.length ? (
             <ul className="space-y-4">
               {highlights.map((plan, index) => (
-                <Reveal key={plan.name ?? index} delay={index * 60}>
-                  <li className="flex items-start gap-3 rounded-xl bg-muted/50 p-4 dark:bg-white/[0.05]">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    <span className="leading-snug">
-                      <span className="block font-display font-bold text-foreground">{plan.name}</span>
-                      <span className="mt-0.5 block text-sm text-muted-foreground">{plan.detail}</span>
-                    </span>
-                  </li>
-                </Reveal>
+                <li key={plan.name ?? index}>
+                  <Reveal delay={index * 60}>
+                    <div className="flex items-start gap-3 rounded-xl bg-muted/50 p-4 dark:bg-white/[0.05]">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <span className="leading-snug">
+                        <span className="block font-display font-bold text-foreground">{plan.name}</span>
+                        <span className="mt-0.5 block text-sm text-foreground/75">{plan.detail}</span>
+                      </span>
+                    </div>
+                  </Reveal>
+                </li>
               ))}
             </ul>
           ) : null}

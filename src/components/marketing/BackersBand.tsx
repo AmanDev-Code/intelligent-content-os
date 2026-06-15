@@ -33,6 +33,7 @@ function ThemedLogo({
   imgClassName,
   width,
   height,
+  sizes,
 }: {
   light: string;
   dark: string;
@@ -40,6 +41,7 @@ function ThemedLogo({
   imgClassName: string;
   width?: number;
   height?: number;
+  sizes?: string;
 }): ReactNode {
   return (
     <>
@@ -48,16 +50,20 @@ function ThemedLogo({
         alt={alt}
         className={cn(imgClassName, "block dark:hidden")}
         loading="lazy"
+        decoding="async"
         width={width}
         height={height}
+        sizes={sizes}
       />
       <img
         src={dark}
         alt={alt}
         className={cn(imgClassName, "hidden dark:block")}
         loading="lazy"
+        decoding="async"
         width={width}
         height={height}
+        sizes={sizes}
       />
     </>
   );
@@ -111,8 +117,9 @@ function BackerLogo({ keyName, name }: { keyName: string; name: string }): React
           dark="/backers/elevenlabs-grants-white.webp"
           alt={name}
           imgClassName="h-6 w-auto max-w-full object-contain sm:h-7"
-          width={204}
-          height={28}
+          width={408}
+          height={36}
+          sizes="(max-width: 640px) 140px, 204px"
         />
       );
     default:

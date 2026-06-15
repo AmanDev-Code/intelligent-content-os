@@ -56,7 +56,7 @@ export function MarketingNav() {
                   "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                   active
                     ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    : "text-foreground/75 hover:bg-muted/60 hover:text-foreground",
                 )}
               >
                 {label}

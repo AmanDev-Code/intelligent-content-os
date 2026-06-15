@@ -21,7 +21,7 @@ export function MarketingFooter() {
           </div>
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Product</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Product</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
                   <Link href="/features" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
@@ -46,7 +46,7 @@ export function MarketingFooter() {
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Company</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Company</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
                   <Link href="/careers" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
@@ -66,7 +66,7 @@ export function MarketingFooter() {
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Legal</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
                   <Link href="/legal/privacy" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">

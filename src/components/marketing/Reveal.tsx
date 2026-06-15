@@ -11,6 +11,8 @@ type RevealProps = {
   as?: ElementType;
   /** Reveal once then stop observing (default true). */
   once?: boolean;
+  /** Skip scroll animation — content is visible on first paint (use for LCP / above-fold). */
+  immediate?: boolean;
 };
 
 /**
@@ -18,12 +20,13 @@ type RevealProps = {
  * enters the viewport; styling lives in globals.css (.reveal-on-scroll). Respects
  * prefers-reduced-motion (CSS forces visible).
  */
-export function Reveal({ children, className, delay = 0, as, once = true }: RevealProps) {
+export function Reveal({ children, className, delay = 0, as, once = true, immediate = false }: RevealProps) {
   const Comp = (as ?? "div") as ElementType;
   const ref = useRef<HTMLElement | null>(null);
-  const [revealed, setRevealed] = useState(false);
+  const [revealed, setRevealed] = useState(immediate);
 
   useEffect(() => {
+    if (immediate) return;
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === "undefined") {
@@ -45,7 +48,11 @@ export function Reveal({ children, className, delay = 0, as, once = true }: Reve
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [once]);
+  }, [immediate, once]);
+
+  if (immediate) {
+    return <Comp className={className}>{children}</Comp>;
+  }
 
   return (
     <Comp

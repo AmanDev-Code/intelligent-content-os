@@ -316,6 +316,8 @@ function MobileCookieFAB({
             <button
               onClick={() => setIsExpanded(false)}
               className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-accent"
+              aria-label="Close cookie preferences panel"
+              type="button"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
@@ -421,9 +423,9 @@ function DesktopCookieBanner({
                 By clicking "Accept All", you consent to our use of cookies.
                 <Link
                   href="/legal/cookies"
-                  className="ml-1 text-orange-500 underline-offset-2 hover:underline"
+                  className="ml-1 font-medium text-orange-600 underline-offset-2 hover:text-orange-700 hover:underline dark:text-orange-400 dark:hover:text-orange-300"
                 >
-                  Learn more
+                  Cookie Policy
                 </Link>
               </p>
             </div>
@@ -432,10 +434,10 @@ function DesktopCookieBanner({
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={onOpenPreferences}
-              className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="text-sm font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
               type="button"
             >
-              Preferences
+              Cookie preferences
             </button>
             <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none sm:gap-3">
               <Button variant="outline" size="sm" onClick={onDecline} className="shrink-0">
