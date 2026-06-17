@@ -6,6 +6,7 @@ import { AnnouncementsAdmin } from "@/components/admin/AnnouncementsAdmin";
 import { MarketingContentAdmin } from "@/components/admin/MarketingContentAdmin";
 import { PricingMetaAdmin } from "@/components/admin/PricingMetaAdmin";
 import { LegalPagesAdmin } from "@/components/admin/LegalPagesAdmin";
+import { AboutUsAdmin } from "@/components/admin/AboutUsAdmin";
 
 export default function AdminSiteContentPage() {
   const { loading, allowed } = useAdminSectionGate("settings");
@@ -19,7 +20,7 @@ export default function AdminSiteContentPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Marketing site</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage the announcement marquee, marketing copy, pricing display metadata, and legal pages.
+          Manage the announcement marquee, marketing copy, pricing display metadata, About Us page, and legal pages.
           Prices are pulled live from Polar and are not edited here.
         </p>
       </div>
@@ -28,6 +29,7 @@ export default function AdminSiteContentPage() {
         <TabsList className="flex flex-wrap">
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="content">Marketing copy</TabsTrigger>
+          <TabsTrigger value="about">About Us</TabsTrigger>
           <TabsTrigger value="pricing">Pricing display</TabsTrigger>
           <TabsTrigger value="legal">Legal pages</TabsTrigger>
         </TabsList>
@@ -36,6 +38,9 @@ export default function AdminSiteContentPage() {
         </TabsContent>
         <TabsContent value="content" className="mt-6">
           <MarketingContentAdmin />
+        </TabsContent>
+        <TabsContent value="about" className="mt-6">
+          <AboutUsAdmin />
         </TabsContent>
         <TabsContent value="pricing" className="mt-6">
           <PricingMetaAdmin />

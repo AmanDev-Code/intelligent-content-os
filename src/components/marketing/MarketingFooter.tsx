@@ -49,6 +49,11 @@ export function MarketingFooter() {
               <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Company</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
+                  <Link href="/about-us" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    About Us
+                  </Link>
+                </li>
+                <li>
                   <Link href="/careers" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
                     Careers
                   </Link>

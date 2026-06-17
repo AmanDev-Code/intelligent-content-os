@@ -252,6 +252,53 @@ export const DEFAULT_MARKETING_CONTENT: MarketingContent = {
       },
     ],
   },
+  about_us: {
+    seoTitle: "About Us | Trndinn",
+    seoDescription: "Learn about Trndinn's mission, values, and the team building the future of social content creation.",
+    heroHeadline: "Building the future of social content creation",
+    heroSubtitle: "We're on a mission to help creators, brands, and teams publish with confidence—powered by AI that respects your voice and your data.",
+    heroEyebrow: "About Trndinn",
+    mainContent: `## Our Story
+
+Trndinn was founded with a simple belief: creating great social content shouldn't require an army of agencies or hours of manual work. We set out to build a platform that combines the power of AI with your unique brand voice—because the best content comes from what makes you, you.
+
+## Our Mission
+
+We exist to help creators, founders, marketers, and teams publish consistently and confidently across social platforms. Everyone who creates should have access to tools that amplify their voice, not replace it.
+
+## Our Approach
+
+- **Your voice, your data**: Your Brand Voice is built only from the examples you provide. We never scrape your feeds or train AI on your platform data.
+- **Platform compliance**: We build to comply with every connected platform's developer and content policies.
+- **Creator-first**: Whether you're a solo founder or a marketing team, our tools are designed to fit your workflow, not the other way around.
+
+## Our Values
+
+- **Transparency**: Clear pricing, honest roadmap, no dark patterns.
+- **Ownership**: You own your content, your examples, and your brand voice.
+- **Reliability**: 99.9% delivery target, encrypted tokens, secure by default.
+- **Creativity**: AI assists; humans create. We're here to amplify, not replace.
+`,
+    missionStatement: "Helping creators publish with confidence—powered by AI that respects their voice.",
+    values: [
+      {
+        title: "Transparency",
+        description: "Clear pricing, honest roadmap, no dark patterns. We believe in building trust through openness.",
+      },
+      {
+        title: "Ownership",
+        description: "You own your content. Your examples stay yours. Your brand voice belongs to you alone.",
+      },
+      {
+        title: "Reliability",
+        description: "99.9% delivery target, encrypted tokens, secure by default. Your trust is our foundation.",
+      },
+      {
+        title: "Creativity",
+        description: "AI assists; humans create. We amplify your ideas, not replace your creative spark.",
+      },
+    ],
+  },
 };
 
 let cache: MarketingContent | null = null;
