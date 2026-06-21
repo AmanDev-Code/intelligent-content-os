@@ -17,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings } from "lucide-react";
+import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings, Image, Link2, RefreshCw, BarChart3 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { PlatformIcon } from "./PlatformIcon";
@@ -73,6 +73,14 @@ type Distribution = {
   adapted_content: string | null;
   published_url: string | null;
   published_at: string | null;
+  cover_image_url?: string | null;
+  inline_images?: { position: number; url: string; alt: string }[];
+  hashtags?: string[];
+  character_count?: number;
+  seo_score?: number;
+  engagement_score?: number;
+  platform_title?: string;
+  is_manual?: boolean;
 };
 
 type PlatformAccountStatus = {
@@ -106,6 +114,19 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
     discussion: true,
     legacy: false,
   });
+
+  const [copiedImageUrl, setCopiedImageUrl] = useState<string | null>(null);
+
+  const handleCopyImageUrl = async (platform: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedImageUrl(platform);
+      toast({ title: "Image URL copied!" });
+      setTimeout(() => setCopiedImageUrl(null), 2000);
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -245,16 +266,37 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
     const isGenerating = generating === platform.id;
     const isPublishing = publishing === platform.id;
     const isCopied = copied === platform.id;
+    const isCopiedImage = copiedImageUrl === platform.id;
     const isConnected = connectedPlatforms.has(platform.id);
     const hasContent = dist?.adapted_content && dist.status === "ready";
     const isPublished = dist?.status === "published";
     const canAutoPublish = tier === "auto" && platform.hasApi !== false;
+    const hasCoverImage = !!dist?.cover_image_url;
 
     return (
       <div
         key={platform.id}
         className="flex flex-col gap-2 p-3 rounded-lg border border-border/50 hover:border-border transition-colors bg-card"
       >
+        {/* Cover Image Preview */}
+        {hasCoverImage && (
+          <div className="relative aspect-[1.91/1] w-full rounded-md overflow-hidden bg-muted mb-1">
+            <img
+              src={dist.cover_image_url!}
+              alt={`${platform.label} cover`}
+              className="w-full h-full object-cover"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-1 right-1 h-6 text-[10px] px-2 opacity-90"
+              onClick={() => handleCopyImageUrl(platform.id, dist.cover_image_url!)}
+            >
+              {isCopiedImage ? <Check className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
+            </Button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <PlatformIcon platform={platform.id} className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-medium flex-1 truncate">
@@ -271,12 +313,39 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
         </div>
 
         {dist && (
-          <Badge
-            variant="secondary"
-            className={`text-[10px] w-fit ${statusColor[dist.status] ?? ""}`}
-          >
-            {dist.status}
-          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge
+              variant="secondary"
+              className={`text-[10px] ${statusColor[dist.status] ?? ""}`}
+            >
+              {dist.status}
+            </Badge>
+            {dist.character_count && (
+              <span className="text-[10px] text-muted-foreground">
+                {dist.character_count.toLocaleString()} chars
+              </span>
+            )}
+            {dist.engagement_score && (
+              <span className="text-[10px] text-muted-foreground flex items-center gap-0.5" title="Engagement Score">
+                <BarChart3 className="h-3 w-3" />
+                {dist.engagement_score}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Hashtags */}
+        {dist?.hashtags && dist.hashtags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {dist.hashtags.slice(0, 3).map((tag, i) => (
+              <span key={i} className="text-[10px] text-primary/70">
+                {tag.startsWith('#') ? tag : `#${tag}`}
+              </span>
+            ))}
+            {dist.hashtags.length > 3 && (
+              <span className="text-[10px] text-muted-foreground">+{dist.hashtags.length - 3}</span>
+            )}
+          </div>
         )}
 
         {isPublished && dist?.published_url && (
@@ -323,6 +392,17 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
                 onClick={() => setViewingPlatform(platform.id)}
               >
                 <Eye className="h-3 w-3 mr-0.5" /> View
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                onClick={() => handleGenerate(platform.id)}
+                disabled={isGenerating}
+                title="Regenerate content"
+              >
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
               </Button>
 
               <Button
@@ -497,7 +577,13 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
           postId={postId}
           platform={viewingPlatform}
           content={viewingDist.adapted_content ?? ""}
+          coverImageUrl={viewingDist.cover_image_url ?? undefined}
+          hashtags={viewingDist.hashtags}
+          characterCount={viewingDist.character_count}
+          seoScore={viewingDist.seo_score}
+          engagementScore={viewingDist.engagement_score}
           onContentSaved={load}
+          onRegenerate={() => handleGenerate(viewingPlatform)}
         />
       )}
 

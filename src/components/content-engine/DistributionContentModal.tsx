@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, Check, Pencil, Save, FileText } from "lucide-react";
+import { Copy, Check, Pencil, Save, FileText, RefreshCw, Link2, BarChart3, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/apiClient";
 import { PlatformIcon } from "./PlatformIcon";
@@ -22,7 +22,13 @@ interface DistributionContentModalProps {
   postId: string;
   platform: string;
   content: string;
+  coverImageUrl?: string;
+  hashtags?: string[];
+  characterCount?: number;
+  seoScore?: number;
+  engagementScore?: number;
   onContentSaved?: () => void;
+  onRegenerate?: () => void;
 }
 
 const CHAR_LIMITS: Record<string, number | null> = {
@@ -59,16 +65,35 @@ export function DistributionContentModal({
   postId,
   platform,
   content,
+  coverImageUrl,
+  hashtags,
+  characterCount,
+  seoScore,
+  engagementScore,
   onContentSaved,
+  onRegenerate,
 }: DistributionContentModalProps) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedImageUrl, setCopiedImageUrl] = useState(false);
 
   const charLimit = CHAR_LIMITS[platform] ?? null;
   const guideline = PLATFORM_GUIDELINES[platform] ?? "";
+
+  const handleCopyImageUrl = async () => {
+    if (!coverImageUrl) return;
+    try {
+      await navigator.clipboard.writeText(coverImageUrl);
+      setCopiedImageUrl(true);
+      toast({ title: "Image URL copied!" });
+      setTimeout(() => setCopiedImageUrl(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
 
   const handleCopy = async (text?: string) => {
     try {
@@ -119,6 +144,75 @@ export function DistributionContentModal({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4 py-2">
+          {/* Cover Image Section */}
+          {coverImageUrl && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Cover Image</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={handleCopyImageUrl}
+                >
+                  {copiedImageUrl ? <Check className="h-3 w-3 mr-1" /> : <Link2 className="h-3 w-3 mr-1" />}
+                  {copiedImageUrl ? "Copied!" : "Copy URL"}
+                </Button>
+              </div>
+              <div className="relative aspect-[1.91/1] w-full rounded-lg overflow-hidden border border-border/50">
+                <img
+                  src={coverImageUrl}
+                  alt={`${platformLabel(platform)} cover`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Scores Section */}
+          {(seoScore || engagementScore || characterCount) && (
+            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 border border-border/50">
+              {seoScore && (
+                <div className="flex items-center gap-1.5">
+                  <Target className="h-4 w-4 text-blue-500" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">SEO Score</p>
+                    <p className="text-sm font-semibold">{seoScore}/100</p>
+                  </div>
+                </div>
+              )}
+              {engagementScore && (
+                <div className="flex items-center gap-1.5">
+                  <BarChart3 className="h-4 w-4 text-emerald-500" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Engagement</p>
+                    <p className="text-sm font-semibold">{engagementScore}/100</p>
+                  </div>
+                </div>
+              )}
+              {characterCount && (
+                <div className="flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-amber-500" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground">Characters</p>
+                    <p className="text-sm font-semibold">{characterCount.toLocaleString()}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Hashtags */}
+          {hashtags && hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {hashtags.map((tag, i) => (
+                <Badge key={i} variant="secondary" className="text-xs">
+                  {tag.startsWith('#') ? tag : `#${tag}`}
+                </Badge>
+              ))}
+            </div>
+          )}
+
           {editing ? (
             <div className="space-y-2">
               <Textarea
@@ -191,6 +285,12 @@ export function DistributionContentModal({
               <Button size="sm" onClick={handleSave} disabled={saving}>
                 <Save className="h-3.5 w-3.5 mr-1" />
                 {saving ? "Saving..." : "Save Edits"}
+              </Button>
+            )}
+            {onRegenerate && !editing && (
+              <Button variant="outline" size="sm" onClick={onRegenerate}>
+                <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                Regenerate
               </Button>
             )}
           </div>
