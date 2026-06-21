@@ -1034,4 +1034,41 @@ export const api = {
     }) => apiClient.post('/admin/seo/assignments/bulk', data),
     deleteAssignment: (id: string) => apiClient.delete(`/admin/seo/assignments/${id}`),
   },
+
+  /** Newsletter public endpoints. */
+  newsletter: {
+    subscribe: (email: string, name?: string, source?: string) =>
+      apiClient.post('/newsletter/subscribe', { email, name, source }),
+  },
+
+  /** Newsletter admin endpoints. */
+  adminNewsletter: {
+    analytics: () => apiClient.get('/admin/newsletter/analytics'),
+    config: () => apiClient.get('/admin/newsletter/config'),
+    subscribers: (params?: { page?: number; limit?: number; status?: string; search?: string }) =>
+      apiClient.get('/admin/newsletter/subscribers', { params }),
+    importSubscribers: (data: Array<{ email: string; name?: string; tags?: string[] }>, filename: string, source?: string) =>
+      apiClient.post('/admin/newsletter/subscribers/import', { data, filename, source }),
+    unsubscribe: (email: string) =>
+      apiClient.post(`/admin/newsletter/subscribers/${encodeURIComponent(email)}/unsubscribe`),
+    campaigns: (params?: { page?: number; limit?: number; status?: string }) =>
+      apiClient.get('/admin/newsletter/campaigns', { params }),
+    createCampaign: (data: { title: string; subject: string; preview_text?: string; body_html?: string; body_text?: string; template_id?: string; blog_post_id?: string }) =>
+      apiClient.post('/admin/newsletter/campaigns', data),
+    createCampaignFromPost: (postId: string) =>
+      apiClient.post(`/admin/newsletter/campaigns/from-post/${postId}`),
+    getCampaign: (id: string) => apiClient.get(`/admin/newsletter/campaigns/${id}`),
+    updateCampaign: (id: string, data: { title?: string; subject?: string; preview_text?: string; body_html?: string; body_text?: string; template_id?: string }) =>
+      apiClient.patch(`/admin/newsletter/campaigns/${id}`, data),
+    sendCampaign: (id: string) => apiClient.post(`/admin/newsletter/campaigns/${id}/send`),
+    scheduleCampaign: (id: string, scheduledAt: string) =>
+      apiClient.post(`/admin/newsletter/campaigns/${id}/schedule`, { scheduled_at: scheduledAt }),
+    cancelCampaign: (id: string) => apiClient.post(`/admin/newsletter/campaigns/${id}/cancel`),
+    getCampaignStats: (id: string) => apiClient.get(`/admin/newsletter/campaigns/${id}/stats`),
+    templates: () => apiClient.get('/admin/newsletter/templates'),
+    createTemplate: (name: string, htmlTemplate: string, isDefault?: boolean) =>
+      apiClient.post('/admin/newsletter/templates', { name, html_template: htmlTemplate, is_default: isDefault }),
+    updateTemplate: (id: string, data: { name?: string; html_template?: string; is_default?: boolean }) =>
+      apiClient.patch(`/admin/newsletter/templates/${id}`, data),
+  },
 };

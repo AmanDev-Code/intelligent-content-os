@@ -31,7 +31,7 @@ export type LandingHeroContent = {
  * editor-customized titles still get a tasteful accent.
  */
 function renderGradientTitle(title: string): ReactNode {
-  const preferred = ["autopilot", "control", "you control", "automatically", "on-brand"];
+  const preferred = ["agents", "agentic", "autopilot", "control", "you control", "automatically", "on-brand"];
   const lower = title.toLowerCase();
   let match = preferred.find((kw) => lower.includes(kw));
 
@@ -64,13 +64,13 @@ export function LandingHero({
   hero: LandingHeroContent;
   loading?: boolean;
 }) {
-  const eyebrow = hero.eyebrow ?? "AI social content platform";
-  const title = hero.title ?? "Run your brand's social presence on autopilot, with AI you control.";
+  const eyebrow = hero.eyebrow ?? "All-in-one agentic social platform";
+  const title = hero.title ?? "Run your social growth on autopilot with AI agents";
   const subtitle =
     hero.subtitle ??
-    "Trndinn turns the examples you provide into on-brand posts, then schedules and publishes them to the accounts you connect.";
-  const primaryCta = hero.primaryCta ?? { label: "Start free", href: "/auth" };
-  const secondaryCta = hero.secondaryCta ?? { label: "See how it works", href: "/features" };
+    "Trndinn's agents draft on-brand posts from the examples you provide, schedule them on a visual calendar, and publish to the accounts you connect.";
+  const primaryCta = hero.primaryCta ?? { label: "Start free — 150 credits", href: "/auth" };
+  const secondaryCta = hero.secondaryCta ?? { label: "See agentic workflows", href: "/features#agentic" };
   const trustLine = hero.trustLine ?? "No card required. 150 free credits to start.";
 
   return (
@@ -138,7 +138,7 @@ export function LandingHero({
                 className="h-12 w-full rounded-full border-0 bg-muted/70 px-8 font-semibold text-foreground backdrop-blur-md hover:bg-muted hover:text-foreground dark:bg-white/10 dark:text-white dark:hover:bg-white/[0.16] dark:hover:text-white sm:w-auto"
                 asChild
               >
-                <Link href={secondaryCta.href ?? "/features"}>{secondaryCta.label ?? "See how it works"}</Link>
+                <Link href={secondaryCta.href ?? "/features#agentic"}>{secondaryCta.label ?? "See agentic workflows"}</Link>
               </Button>
             </div>
           </Reveal>

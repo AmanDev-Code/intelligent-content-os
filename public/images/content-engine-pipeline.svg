@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="400" fill="#ffffff"/>
+  
+  <!-- Title -->
+  <text x="700" y="40" font-family="sans-serif" font-size="24" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Content Engine Pipeline
+  </text>
+  
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+    </marker>
+  </defs>
+
+  <!-- Research -->
+  <rect x="50" y="120" width="140" height="140" 
+        rx="12" fill="#ff8a1f" opacity="0.15" stroke="#ff8a1f" stroke-width="2"/>
+  <text x="120" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Research
+  </text>
+
+  <text x="120" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Keywords
+  </text>
+
+  <text x="120" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Clusters
+  </text>
+
+  <line x1="190" y1="190" 
+        x2="220" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Generate -->
+  <rect x="220" y="120" width="140" height="140" 
+        rx="12" fill="#ff8a1f" opacity="0.15" stroke="#ff8a1f" stroke-width="2"/>
+  <text x="290" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Generate
+  </text>
+
+  <text x="290" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Generate
+  </text>
+
+  <text x="290" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    wizard
+  </text>
+
+  <line x1="360" y1="190" 
+        x2="390" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Publish -->
+  <rect x="390" y="120" width="140" height="140" 
+        rx="12" fill="#ff6b3d" opacity="0.15" stroke="#ff6b3d" stroke-width="2"/>
+  <text x="460" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Publish
+  </text>
+
+  <text x="460" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Articles
+  </text>
+
+  <text x="460" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    + CMS
+  </text>
+
+  <line x1="530" y1="190" 
+        x2="560" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Distribute -->
+  <rect x="560" y="120" width="140" height="140" 
+        rx="12" fill="#ff6b3d" opacity="0.15" stroke="#ff6b3d" stroke-width="2"/>
+  <text x="630" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Distribute
+  </text>
+
+  <text x="630" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Distribution
+  </text>
+
+  <text x="630" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    (31 platforms)
+  </text>
+
+  <line x1="700" y1="190" 
+        x2="730" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Link -->
+  <rect x="730" y="120" width="140" height="140" 
+        rx="12" fill="#ff3d39" opacity="0.15" stroke="#ff3d39" stroke-width="2"/>
+  <text x="800" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Link
+  </text>
+
+  <text x="800" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Internal
+  </text>
+
+  <text x="800" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Links
+  </text>
+
+  <line x1="870" y1="190" 
+        x2="900" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Optimize -->
+  <rect x="900" y="120" width="140" height="140" 
+        rx="12" fill="#ff3d39" opacity="0.15" stroke="#ff3d39" stroke-width="2"/>
+  <text x="970" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Optimize
+  </text>
+
+  <text x="970" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Optimization
+  </text>
+
+  <text x="970" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    AEO/GEO
+  </text>
+
+  <line x1="1040" y1="190" 
+        x2="1070" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Track -->
+  <rect x="1070" y="120" width="140" height="140" 
+        rx="12" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="2"/>
+  <text x="1140" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Track
+  </text>
+
+  <text x="1140" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Rank
+  </text>
+
+  <text x="1140" y="215" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Tracking
+  </text>
+
+  <line x1="1210" y1="190" 
+        x2="1240" y2="190" 
+        stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Newsletter -->
+  <rect x="1240" y="120" width="140" height="140" 
+        rx="12" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="2"/>
+  <text x="1310" y="165" 
+        font-family="sans-serif" font-size="16" font-weight="bold" 
+        fill="#1e293b" text-anchor="middle">
+    Newsletter
+  </text>
+
+  <text x="1310" y="195" 
+        font-family="sans-serif" font-size="13" 
+        fill="#64748b" text-anchor="middle">
+    Newsletter
+  </text>
+
+</svg>

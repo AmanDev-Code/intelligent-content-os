@@ -22,11 +22,18 @@ const STATIC_ROUTES: StaticRoute[] = [
   // Marketing pages - High priority
   { path: "/features",      changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
   { path: "/pricing",       changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
+  { path: "/compare/trndinn/postiz", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-20") },
+  { path: "/mcp",           changeFrequency: "monthly", priority: 0.85, lastModified: new Date("2026-06-20") },
+  { path: "/ai-agent",      changeFrequency: "monthly", priority: 0.85, lastModified: new Date("2026-06-20") },
+  { path: "/content-engine", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-06-20") },
 
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
   { path: "/careers",       changeFrequency: "monthly", priority: 0.6, lastModified: new Date("2026-04-01") },
+
+  // Comparison pages — programmatic SEO
+  { path: "/compare/trndinn/buffer", changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-06-20") },
 
   // Legal pages - Low priority but essential (canonical /legal/* routes)
   { path: "/legal/privacy",      changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },

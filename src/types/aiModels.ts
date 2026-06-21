@@ -5,7 +5,9 @@ export type AiModelCategory =
   | "image"
   | "image_context"
   | "image_enhance"
-  | "video";
+  | "video"
+  | "seo_generation"
+  | "seo_analysis";
 
 export const AI_MODEL_CATEGORIES: AiModelCategory[] = [
   "text",
@@ -15,6 +17,8 @@ export const AI_MODEL_CATEGORIES: AiModelCategory[] = [
   "image_context",
   "image_enhance",
   "video",
+  "seo_generation",
+  "seo_analysis",
 ];
 
 export interface AiModelEntry {

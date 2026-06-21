@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { AgenticSection } from "@/components/marketing/AgenticSection";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Reveal } from "@/components/marketing/Reveal";
 import { type FeatureSection } from "@/components/marketing/FeatureRows";
@@ -33,10 +34,10 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
 
   const featuresContent = content.features_page ?? DEFAULT_MARKETING_CONTENT.features_page;
   const eyebrow: string = featuresContent?.eyebrow ?? "Features";
-  const title: string = h1Override ?? featuresContent?.title ?? "Everything you need to publish with confidence";
+  const title: string = h1Override ?? featuresContent?.title ?? "Everything you need for agentic social media — create, schedule, manage, and grow";
   const subtitle: string =
     featuresContent?.subtitle ??
-    "A complete workflow: generate from your own examples, schedule with precision, publish reliably, and learn from results.";
+    "One platform where AI agents handle the busywork and you keep brand control.";
   const sections: FeatureSection[] = featuresContent?.sections ?? [];
 
   const backers = content.landing_backers ?? DEFAULT_MARKETING_CONTENT.landing_backers;
@@ -97,7 +98,7 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
                   className="h-12 w-full rounded-full border-border bg-background/40 px-8 font-semibold text-foreground backdrop-blur-md hover:bg-muted hover:text-foreground dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white sm:w-auto"
                   asChild
                 >
-                  <Link href="/pricing">View pricing</Link>
+                  <Link href="#agentic">See agentic workflows</Link>
                 </Button>
               </div>
             </Reveal>
@@ -110,6 +111,8 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
           items={backers?.items ?? DEFAULT_MARKETING_CONTENT.landing_backers.items}
         />
 
+        <AgenticSection />
+
         <FeatureShowcase sections={sections} />
 
         <ProductRoadmap content={roadmap} />
@@ -121,8 +124,10 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
         />
 
         <FinalCta
-          title="One workflow for your whole social presence"
-          subtitle="Generate from your own examples, schedule with precision, and publish to the accounts you connect. You own your data, and we comply with every platform's policies."
+          title="One agentic platform for your whole social presence"
+          subtitle="Create with agents, schedule on a visual calendar, publish to LinkedIn today, and grow with Content Engine — you own your data, and we comply with every platform's policies."
+          secondaryLabel="See agentic workflows"
+          secondaryHref="#agentic"
         />
       </main>
     </MarketingShell>

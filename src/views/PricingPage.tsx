@@ -257,18 +257,18 @@ export default function PricingPage({ h1Override }: { h1Override?: string | null
           </div>
           <Reveal className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-primary">
-              Credit-based pricing
+              Agentic pricing
             </span>
             <h1 className="mt-4 font-display text-4xl font-black tracking-tight sm:text-6xl">
               {h1Override ?? (
                 <>
-                  Simple plans that <span className="text-gradient-brand">scale with you</span>
+                  Find the right <span className="text-gradient-brand">agentic plan</span> for how you create and publish
                 </>
               )}
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-              Start free, then pick the plan that matches your output. Prices are pulled live from
-              our billing system &mdash; pay monthly or annually, cancel anytime.
+              Credits power every agent action — generate, schedule, publish, distribute. No surprise post caps.
+              Prices are pulled live from our billing system; pay monthly or annually, cancel anytime.
             </p>
           </Reveal>
 
@@ -397,9 +397,9 @@ export default function PricingPage({ h1Override }: { h1Override?: string | null
 
           <Reveal className="mt-12">
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/15 via-card/60 to-card/40 p-8 text-center sm:p-12">
-              <h3 className="font-display text-2xl font-bold sm:text-3xl">Ready to publish with confidence?</h3>
+              <h3 className="font-display text-2xl font-bold sm:text-3xl">Ready for agentic social growth?</h3>
               <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-                Start free with 150 credits &mdash; no card required. You own your data; we comply with every platform&apos;s policies.
+                Start free with 150 credits — no card required. Agents draft and schedule; you keep brand control.
               </p>
               <Button
                 asChild

@@ -5,7 +5,7 @@ import "./globals.css";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { CookieConsent } from "@/components/marketing/CookieConsent";
-import { defaultDescription, getSiteUrl, siteName } from "@/lib/site";
+import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -30,26 +30,25 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: `${siteName} — AI social content platform`,
+    default: `${siteName} — All-in-One Agentic Social Media Platform`,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
   applicationName: siteName,
   keywords: [
     siteName,
-    "AI content",
+    "agentic social media",
+    "agentic social media scheduling tool",
+    "AI social media agent",
     "social media scheduling",
-    "LinkedIn",
-    "X Twitter",
-    "Instagram scheduling",
-    "YouTube Shorts",
-    "AI reels",
-    "social media analytics",
+    "LinkedIn scheduling",
     "content creation platform",
+    "brand voice AI",
+    "Content Engine",
   ],
   authors: [{ name: siteName }],
   openGraph: {
-    title: `${siteName} — AI social content platform`,
+    title: `${siteName} — All-in-One Agentic Social Media Platform`,
     description: defaultDescription,
     type: "website",
     locale: "en_US",
@@ -60,13 +59,13 @@ export const metadata: Metadata = {
         url: "/og/default.png",
         width: 1200,
         height: 799,
-        alt: `${siteName} — AI-powered social workspace`,
+        alt: `${siteName} — ${siteTagline}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteName} — AI social content platform`,
+    title: `${siteName} — All-in-One Agentic Social Media Platform`,
     description: defaultDescription,
     images: ["/og/default.png"],
   },

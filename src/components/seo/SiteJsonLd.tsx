@@ -1,4 +1,4 @@
-import { getSiteUrl, siteName, supportEmail } from "@/lib/site";
+import { defaultDescription, getSiteUrl, siteName, siteTagline, supportEmail } from "@/lib/site";
 
 export function SiteJsonLd() {
   const base = getSiteUrl().replace(/\/$/, "");
@@ -22,7 +22,7 @@ export function SiteJsonLd() {
           "https://www.linkedin.com/company/trndinn",
         ],
         description:
-          "AI-powered social content platform for scheduling, publishing, video reels, and analytics.",
+          "All-in-one agentic social media platform for creating, scheduling, managing, and growing — with AI agents, Brand Voice from your examples, and Content Engine for SEO and distribution.",
         foundingDate: "2026",
         areaServed: "Global",
       },
@@ -45,7 +45,7 @@ export function SiteJsonLd() {
       {
         "@type": "WebApplication",
         "@id": `${base}/#app`,
-        name: `${siteName} - AI Social Content Platform`,
+        name: `${siteName} - ${siteTagline}`,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
         url: base,
@@ -56,12 +56,12 @@ export function SiteJsonLd() {
           description: "Free trial with 150 credits",
         },
         featureList: [
-          "AI content generation",
-          "Social media scheduling",
+          "Agentic in-app AI Agent",
+          "Brand Voice from your examples",
+          "LinkedIn scheduling and publishing",
           "Visual content calendar",
-          "Brand voice customization",
-          "Multi-platform publishing",
-          "Analytics and insights",
+          "Content Engine for SEO and distribution",
+          "Public API v1 and webhooks",
         ],
       },
       {

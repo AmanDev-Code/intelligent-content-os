@@ -1,28 +1,32 @@
 import type { Metadata } from "next";
 import Landing from "../views/Landing";
+import { MarketingPageJsonLd } from "@/components/seo/MarketingPageJsonLd";
 import { defaultDescription, siteName } from "@/lib/site";
 import { buildMarketingMetadata, fetchMarketingH1Override } from "@/lib/serverSeo";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/", {
-    title: `${siteName} — AI social content platform`,
+    title: `${siteName} — All-in-One Agentic Social Media Platform`,
     description: defaultDescription,
     keywords: [
       siteName,
-      "AI content",
+      "agentic social media scheduling tool",
+      "all-in-one social media tool",
+      "AI social media agent",
       "social media scheduling",
-      "LinkedIn",
-      "X Twitter",
-      "Instagram scheduling",
-      "YouTube Shorts",
-      "AI reels",
-      "social media analytics",
-      "content creation platform",
+      "LinkedIn scheduling",
+      "Content Engine",
+      "brand voice AI",
     ],
   });
 }
 
 export default async function HomePage() {
   const h1Override = await fetchMarketingH1Override("/");
-  return <Landing h1Override={h1Override} />;
+  return (
+    <>
+      <MarketingPageJsonLd />
+      <Landing h1Override={h1Override} />
+    </>
+  );
 }

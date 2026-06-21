@@ -18,6 +18,7 @@ function blogNavActive(pathname: string): boolean {
 
 const links = [
   { href: "/features", label: "Features" },
+  { href: "/features#agentic", label: "Agentic" },
   { href: "/pricing", label: "Pricing" },
   { href: BLOG_BASE_PATH, label: "Blog" },
   { href: "/careers", label: "Careers" },
@@ -47,7 +48,11 @@ export function MarketingNav() {
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(({ href, label }) => {
             const active =
-              href === BLOG_BASE_PATH ? blogNavActive(pathname) : pathname === href;
+              href === BLOG_BASE_PATH
+                ? blogNavActive(pathname)
+                : href.includes("#")
+                  ? pathname === href.split("#")[0]
+                  : pathname === href;
             return (
               <Link
                 key={href}
@@ -99,7 +104,12 @@ export function MarketingNav() {
             <SheetContent side="right" className="w-[min(100%,320px)] border-0 bg-background/95 backdrop-blur-xl">
               <div className="mt-8 flex flex-col gap-1">
                 {links.map(({ href, label }) => {
-                  const mActive = href === BLOG_BASE_PATH ? blogNavActive(pathname) : pathname === href;
+                  const mActive =
+                    href === BLOG_BASE_PATH
+                      ? blogNavActive(pathname)
+                      : href.includes("#")
+                        ? pathname === href.split("#")[0]
+                        : pathname === href;
                   return (
                     <Link
                       key={href}

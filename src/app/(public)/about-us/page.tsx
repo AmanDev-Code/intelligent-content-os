@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingPageJsonLd } from "@/components/seo/MarketingPageJsonLd";
 import { API_CONFIG } from "@/lib/constants";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import AboutUsPage from "@/views/AboutUsPage";
@@ -23,10 +24,12 @@ async function fetchAboutUsContent(): Promise<Record<string, unknown> | null> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await fetchAboutUsContent();
-  const title = (content?.seoTitle as string)?.trim() || "About Us | Trndinn";
+  const title =
+    (content?.seoTitle as string)?.trim() ||
+    "About Trndinn — Building the Agentic Growth OS for Modern Brands";
   const description =
     (content?.seoDescription as string)?.trim() ||
-    "Learn about Trndinn's mission, values, and the team building the future of social content creation.";
+    "Learn about Trndinn's mission to build the agentic growth OS — where AI agents create, schedule, and distribute, and humans keep the brand.";
   return buildMarketingMetadata("/about-us", {
     title,
     description,
@@ -36,5 +39,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutUs() {
   const content = await fetchAboutUsContent();
-  return <AboutUsPage content={content} />;
+  return (
+    <>
+      <MarketingPageJsonLd />
+      <AboutUsPage content={content} />
+    </>
+  );
 }

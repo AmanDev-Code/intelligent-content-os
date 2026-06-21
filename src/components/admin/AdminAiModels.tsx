@@ -34,6 +34,8 @@ import {
   Eye,
   EyeOff,
   ExternalLink,
+  FileText,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/apiClient";
@@ -158,9 +160,35 @@ const CATEGORY_META: Record<
     examples: ["vertex/veo-3.0-generate-001", "openai/sora-2"],
     placeholder: "vertex/veo-3.0-generate-001",
   },
+  seo_generation: {
+    label: "SEO Generation",
+    icon: FileText,
+    blurb:
+      "Used for Content Engine article generation, content creation, and creative tasks. Add powerful models here for high-quality long-form content. Falls back to Text category if no models are configured.",
+    examples: [
+      "bedrock/moonshotai.kimi-k2.5",
+      "openai/gpt-4o",
+      "anthropic/claude-3-5-sonnet-20241022-v2:0",
+      "gemini/gemini-2.5-pro",
+    ],
+    placeholder: "bedrock/moonshotai.kimi-k2.5",
+  },
+  seo_analysis: {
+    label: "SEO Analysis",
+    icon: BarChart3,
+    blurb:
+      "Used for Content Engine scoring, optimization analysis, and evaluation tasks. Add cheaper/faster models here for cost savings — analysis tasks don't need the most powerful models. Falls back to Text category if no models are configured.",
+    examples: [
+      "openai/gpt-4o-mini",
+      "openai/gpt-4.1-mini",
+      "gemini/gemini-2.5-flash",
+      "bedrock/anthropic.claude-3-5-haiku-20241022-v1:0",
+    ],
+    placeholder: "openai/gpt-4o-mini",
+  },
 };
 
-const CATEGORIES: AiModelCategory[] = ["text", "text_formatter", "vision", "image", "image_context", "image_enhance", "video"];
+const CATEGORIES: AiModelCategory[] = ["text", "text_formatter", "vision", "image", "image_context", "image_enhance", "video", "seo_generation", "seo_analysis"];
 
 export function AdminAiModels() {
   const [state, setState] = useState<AiModelsState | null>(null);
@@ -238,6 +266,8 @@ export function AdminAiModels() {
       image_context: [],
       image_enhance: [],
       video: [],
+      seo_generation: [],
+      seo_analysis: [],
     };
     if (!state) return map;
     for (const cat of CATEGORIES) {
@@ -1179,6 +1209,18 @@ export function AdminAiModels() {
                   relevant image. Add directly — you can also type a model slug
                   manually.
                 </>
+              ) : tab === "seo_generation" ? (
+                <>
+                  Showing <strong>text-capable models</strong> from the gateway.
+                  Pick powerful models for high-quality article generation and
+                  content creation. Falls back to Text category if empty.
+                </>
+              ) : tab === "seo_analysis" ? (
+                <>
+                  Showing <strong>text-capable models</strong> from the gateway.
+                  Pick cheaper/faster models for scoring and analysis tasks to
+                  save costs. Falls back to Text category if empty.
+                </>
               ) : (
                 <>
                   Showing models the gateway reports for the{" "}
@@ -1211,6 +1253,9 @@ export function AdminAiModels() {
                         c.category === "text" &&
                         /^openai\/gpt-/i.test(c.id)
                       );
+                    }
+                    if (tab === "seo_generation" || tab === "seo_analysis") {
+                      return c.category === "text";
                     }
                     return c.category === tab;
                   })
@@ -1261,6 +1306,9 @@ export function AdminAiModels() {
                       c.category === "text" &&
                       /^openai\/gpt-/i.test(c.id)
                     );
+                  }
+                  if (tab === "seo_generation" || tab === "seo_analysis") {
+                    return c.category === "text";
                   }
                   return c.category === tab;
                 }).length === 0 && (

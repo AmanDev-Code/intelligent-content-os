@@ -718,8 +718,8 @@ export function AdminMediaBrowser() {
       <p className="text-[11px] text-muted-foreground">
         Public URLs follow <code className="text-[10px]">MINIO_PUBLIC_URL</code> / bucket / key
         (same pattern as the rest of the app). Image uploads use the same credit cost as{" "}
-        <Link href="/admin/blog" className="underline underline-offset-2">
-          blog
+        <Link href="/admin/content-engine?tab=articles" className="underline underline-offset-2">
+          Content Engine
         </Link>{" "}
         uploads (~0.5 credits).
       </p>

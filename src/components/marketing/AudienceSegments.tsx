@@ -9,7 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, Building2, LineChart, Rocket, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Building2, LineChart, Sparkles } from "lucide-react";
 import { Section, SectionHeading } from "@/components/marketing/Section";
 import { Reveal } from "@/components/marketing/Reveal";
 import { cn } from "@/lib/utils";
@@ -31,47 +31,48 @@ type Segment = {
 
 const SEGMENTS: Segment[] = [
   {
-    key: "founders",
-    icon: Rocket,
-    tabLabel: "Founders",
-    teaser: "Solo creators, one brand",
-    title: "Founders and solo creators",
-    body: "Paste your best posts once, generate a week of on-brand drafts, and schedule without living in five tabs.",
-    highlights: ["Brand voice", "Auto drafts", "One-click schedule"],
+    key: "agentic",
+    icon: Bot,
+    tabLabel: "Agentic",
+    teaser: "Agents that act, not just suggest",
+    title: "Agentic creators and automation builders",
+    body: "Tell Trndinn's Agent what to publish — or wire your stack via Public API v1 and signed webhooks. MCP and CLI coming soon for Claude, ChatGPT, and Cursor.",
+    highlights: ["In-app Agent", "API + webhooks", "MCP coming soon"],
     stats: [
-      { value: "7", label: "on-brand drafts a week" },
-      { value: "<5 min", label: "from paste to scheduled" },
+      { value: "1", label: "prompt to scheduled post" },
+      { value: "API", label: "v1 + HMAC webhooks today" },
     ],
-    note: "Paste once and the voice stays consistent across every post.",
-    cta: { label: "Start free", href: "/auth" },
+    note: "Agents draft, schedule, and publish in-product — you set the boundaries.",
+    cta: { label: "See agentic workflows", href: "/features#agentic" },
   },
   {
-    key: "agencies",
+    key: "linkedin",
     icon: Building2,
-    tabLabel: "Agencies",
-    teaser: "Teams with many clients",
-    title: "Agencies and teams",
-    body: "Keep client voices distinct with Brand Kits built from the examples each client provides, then publish from the accounts they connect.",
-    highlights: ["Brand Kits", "Distinct voices", "Connected accounts"],
+    tabLabel: "LinkedIn-first",
+    teaser: "B2B depth, not breadth theater",
+    title: "LinkedIn-first teams",
+    body: "Personal profiles and Company Pages, posting identity picker, and Brand Voice built from your examples — not scraped from feeds.",
+    highlights: ["Company Pages", "Brand Voice", "No scraping"],
     stats: [
-      { value: "1:1", label: "Brand Kit per client" },
-      { value: "0", label: "voice mix-ups" },
+      { value: "Live", label: "LinkedIn publishing today" },
+      { value: "0", label: "feed scraping" },
     ],
-    note: "Every client keeps their own voice, with no manual switching.",
+    note: "Best agentic LinkedIn workflow today — more channels on the roadmap.",
   },
   {
-    key: "growth",
+    key: "content-engine",
     icon: LineChart,
-    tabLabel: "Growth leads",
-    teaser: "Plan, automate, measure",
-    title: "Growth and content leads",
-    body: "Plan on a visual calendar, automate recurring cadences, and see what resonates, all from one command center.",
-    highlights: ["Visual calendar", "Recurring cadences", "What resonates"],
+    tabLabel: "Content Engine",
+    teaser: "SEO → publish → distribute",
+    title: "Growth and SEO leads",
+    body: "Turn keywords into articles, distribute to 31 platforms, interlink, score SEO/AEO/GEO, and email your list — one agentic loop.",
+    highlights: ["SEO articles", "31-platform distribution", "Newsletter"],
     stats: [
-      { value: "1", label: "calendar, fully automated" },
-      { value: "Weekly", label: "what-resonates insights" },
+      { value: "31", label: "distribution platforms" },
+      { value: "1", label: "keyword-to-newsletter loop" },
     ],
-    note: "See what lands and double down, without leaving the dashboard.",
+    note: "Social fed by search growth — not just calendar prompts.",
+    cta: { label: "Explore features", href: "/features" },
   },
 ];
 
@@ -484,9 +485,9 @@ function GrowthVisual() {
 }
 
 const VISUALS: Record<string, () => ReactNode> = {
-  founders: FoundersVisual,
-  agencies: AgencyVisual,
-  growth: GrowthVisual,
+  agentic: FoundersVisual,
+  linkedin: AgencyVisual,
+  "content-engine": GrowthVisual,
 };
 
 function ActivePanel({ segment }: { segment: Segment }) {
@@ -707,8 +708,8 @@ export function AudienceSegments() {
     <Section id="who-its-for">
       <SectionHeading
         eyebrow="WHO IT'S FOR"
-        title="Built for how you actually work"
-        subtitle="Whether you run one brand or many, Trndinn keeps publishing calm: your examples, your accounts, your consent."
+        title="Who is Trndinn for?"
+        subtitle="Agentic creators, LinkedIn-first teams, and growth leads who want one platform — not five tabs."
       />
 
       <Reveal className="mt-8 min-w-0 md:mt-10">

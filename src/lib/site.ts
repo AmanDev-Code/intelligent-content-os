@@ -1,7 +1,7 @@
 export const siteName = "Trndinn";
 
 /** Site tagline - used in SEO and marketing copy */
-export const siteTagline = "AI Growth Operating System for Modern Brands";
+export const siteTagline = "All-in-One Agentic Social Media Platform";
 
 export function getSiteUrl(): string {
   return (
@@ -13,10 +13,14 @@ export function getSiteUrl(): string {
 
 /** Default meta description optimized for SEO with targeted keywords */
 export const defaultDescription =
-  "Trndinn is the AI-powered social content platform. Create on-brand posts with AI, schedule to LinkedIn and beyond, and analyze performance — all in one workspace. Free trial with 150 credits.";
+  "Trndinn is the all-in-one agentic platform for creating, scheduling, managing, and growing social media — with AI agents, Brand Voice from your examples, and a Content Engine for SEO and distribution. LinkedIn live today. Start free with 150 credits.";
 
 /** Extended keywords for SEO based on competitor analysis */
 export const siteKeywords = [
+  "agentic social media",
+  "agentic social media scheduling tool",
+  "all-in-one social media tool",
+  "AI social media agent",
   "AI social media tool",
   "LinkedIn scheduling",
   "social media automation",
@@ -25,18 +29,12 @@ export const siteKeywords = [
   "content calendar",
   "social media analytics",
   "post scheduler",
-  "AI marketing tool",
-  "social media manager",
   "content creation platform",
   "LinkedIn automation",
-  "social media strategy",
-  "AI copywriting",
-  "marketing automation",
   "content scheduling",
   "social media AI",
-  "digital marketing tool",
   "content marketing platform",
-  "growth hacking tool",
+  "SEO content distribution",
 ];
 
 /** Twitter/X handle for social sharing */

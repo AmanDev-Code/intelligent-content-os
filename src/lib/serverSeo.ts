@@ -66,7 +66,7 @@ export function mergeStaticSeo(
     : fallback.keywords;
 
   /** Matches root layout `metadata.title.default` — use absolute title so `title.template` does not append `| ${siteName}` again. */
-  const homeHeadlineDefault = `${siteName} — AI social content platform`;
+  const homeHeadlineDefault = `${siteName} — All-in-One Agentic Social Media Platform`;
   const resolvedOgTitle =
     seo?.og_title?.trim() ||
     (resolvedTitle === homeHeadlineDefault ? resolvedTitle : `${resolvedTitle} | ${siteName}`);

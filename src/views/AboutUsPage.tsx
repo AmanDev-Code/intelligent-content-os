@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ArrowLeft, Building2, Heart, ShieldCheck, Sparkles, Target, Users } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -33,6 +34,33 @@ const VALUES_ICONS: Record<string, React.ReactNode> = {
 
 function getValueIcon(title: string) {
   return VALUES_ICONS[title] || <Heart className="h-6 w-6 text-primary" />;
+}
+
+function renderGradientTitle(title: string): ReactNode {
+  const preferred = ["agentic growth OS", "agentic", "agents", "growth OS"];
+  const lower = title.toLowerCase();
+  let match = preferred.find((kw) => lower.includes(kw));
+
+  if (!match) {
+    const words = title.trim().split(/\s+/);
+    match = words[words.length - 1] ?? "";
+  }
+  if (!match) return title;
+
+  const idx = lower.indexOf(match.toLowerCase());
+  if (idx === -1) return title;
+
+  const before = title.slice(0, idx);
+  const hit = title.slice(idx, idx + match.length);
+  const after = title.slice(idx + match.length);
+
+  return (
+    <>
+      {before}
+      <span className="text-gradient-brand motion-safe:animate-gradient-x">{hit}</span>
+      {after}
+    </>
+  );
 }
 
 export default function AboutUsPage({ content }: { content: Record<string, unknown> | null }) {
@@ -115,14 +143,7 @@ export default function AboutUsPage({ content }: { content: Record<string, unkno
 
             <Reveal delay={120}>
               <h1 className="mt-5 font-display text-[2rem] font-black leading-[1.1] tracking-tight text-foreground sm:mt-6 sm:text-5xl sm:leading-[1.05] md:text-6xl">
-                {headline.split("future of").map((part, i, arr) => (
-                  <span key={i}>
-                    {part}
-                    {i < arr.length - 1 && (
-                      <span className="text-gradient-brand animate-gradient-x">future of</span>
-                    )}
-                  </span>
-                ))}
+                {renderGradientTitle(headline)}
               </h1>
             </Reveal>
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function LegacyBlogAdminRedirect() {
-  redirect("/admin/blog");
+  redirect("/admin/content-engine?tab=articles");
 }

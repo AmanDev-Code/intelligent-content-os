@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import PricingPage from "@/views/PricingPage";
 import { siteName } from "@/lib/site";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
-import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
+import { MarketingPageJsonLd } from "@/components/seo/MarketingPageJsonLd";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/pricing", {
-    title: "Pricing",
-    description: `${siteName} pricing plans for creators and teams—AI credits, scheduling, analytics, and scaling. Compare Free, Standard, Pro, and Ultimate.`,
+    title: "Pricing — Agentic Social Media Plans",
+    description: `${siteName} pricing: compare Free, Creator, Team, and Agency plans. Agentic scheduling, AI creation, and Content Engine workflows powered by transparent credits. LinkedIn live; API and webhooks on Team and Agency.`,
     keywords: [
       "Trndinn pricing",
-      "social media scheduling price",
+      "agentic social media pricing",
       "AI content credits",
       "LinkedIn scheduling tool",
-      "content platform pricing",
+      "Creator Team Agency plans",
     ],
   });
 }
@@ -25,7 +25,7 @@ export default async function Page() {
   ]);
   return (
     <>
-      <MarketingStructuredData data={structuredData} />
+      <MarketingPageJsonLd structuredData={structuredData} />
       <PricingPage h1Override={h1Override} />
     </>
   );

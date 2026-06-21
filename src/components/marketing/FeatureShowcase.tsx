@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
   CalendarDays,
   Check,
   CheckCircle2,
+  Globe,
   Images,
   Mic2,
   Palette,
@@ -361,6 +363,56 @@ function BentoCard({
   );
 }
 
+function ContentEngineMock() {
+  const platforms = ["LinkedIn", "Medium", "Dev.to", "Reddit", "Newsletter"];
+  return (
+    <MockShell>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#ff8a1f] to-[#ff3d39] text-white">
+            <Globe className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="leading-tight">
+            <p className="text-sm font-semibold text-foreground">Content Engine</p>
+            <p className="text-xs text-muted-foreground">Keyword → article → distribute</p>
+          </div>
+        </div>
+        <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+          SEO scored
+        </span>
+      </div>
+      <div className="mt-4 space-y-2 rounded-xl bg-muted/50 p-3 dark:bg-white/[0.05]">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Distribution</p>
+        <div className="flex flex-wrap gap-1.5">
+          {platforms.map((p) => (
+            <span
+              key={p}
+              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+            >
+              {p}
+            </span>
+          ))}
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            +26 more
+          </span>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        {[
+          { label: "SEO", value: "92" },
+          { label: "AEO", value: "88" },
+          { label: "GEO", value: "85" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-xl bg-muted/50 p-2 dark:bg-white/[0.05]">
+            <p className="text-[10px] font-medium text-muted-foreground">{s.label}</p>
+            <p className="font-display text-lg font-bold text-foreground">{s.value}</p>
+          </div>
+        ))}
+      </div>
+    </MockShell>
+  );
+}
+
 /* ----------------------------------------------------------------------------
  * Showcase
  * ------------------------------------------------------------------------- */
@@ -379,6 +431,7 @@ export function FeatureShowcase({ sections }: { sections: FeatureSection[] }) {
   const publishing = findSection(rows, "publishing");
   const api = findSection(rows, "api");
   const compliance = findSection(rows, "compliance");
+  const contentEngine = findSection(rows, "content-engine");
 
   return (
     <Section>
@@ -466,6 +519,31 @@ export function FeatureShowcase({ sections }: { sections: FeatureSection[] }) {
             >
               <ComplianceMock />
             </BentoCard>
+          </div>
+        </Reveal>
+
+        {/* Content Engine — growth differentiator */}
+        <Reveal>
+          <div className="grid min-w-0 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <div className="min-w-0 lg:order-2">
+              <FeatureCopy
+                icon={<Globe className="h-3.5 w-3.5" aria-hidden />}
+                tag="Content Engine"
+                title={contentEngine.title}
+                body={contentEngine.body}
+                bullets={contentEngine.bullets}
+              />
+              <Link
+                href="/content-engine"
+                className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+              >
+                Explore Content Engine
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+            <div className="min-w-0 w-full max-w-full lg:order-1">
+              <ContentEngineMock />
+            </div>
           </div>
         </Reveal>
 

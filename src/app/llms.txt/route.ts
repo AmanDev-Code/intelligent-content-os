@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
-import { defaultDescription, getSiteUrl, siteName } from "@/lib/site";
+import { defaultDescription, getSiteUrl, siteName, siteTagline } from "@/lib/site";
 
 export async function GET() {
   const base = getSiteUrl().replace(/\/$/, "");
@@ -18,23 +18,31 @@ function buildLlmsTxt(base: string): string {
   const lines = [
     `# ${siteName}`,
     "",
+    `> ${siteTagline}`,
+    "",
     "## Site",
     `Canonical base URL: ${base}`,
     "",
     "## Summary",
     defaultDescription,
     "",
+    "## What agentic means on Trndinn",
+    "- Agentic: AI that completes multi-step workflows — draft, adapt, schedule, publish, distribute — with minimal UI friction.",
+    "- Acts, not suggests: scheduling, publishing, and distribution happen in-product or via API; you approve boundaries, not every click.",
+    "- Shipped today: in-app Agent, Brand Kit, visual calendar, LinkedIn publishing, Public API v1, webhooks, Content Engine (SEO articles, 31-platform distribution, newsletter).",
+    "- Roadmap (not shipped): MCP server, CLI, multi-channel expansion beyond LinkedIn, autonomous campaign proposals.",
+    "",
     "## Primary audience",
-    "Marketing teams, creators, and operators who want to plan, generate, schedule, and analyze social content with AI assistance—especially on LinkedIn first, with more networks over time.",
+    "Marketing teams, founders, and growth leads who want an all-in-one agentic platform for LinkedIn-first social, brand-safe AI, and SEO-driven content distribution.",
     "",
     `## What ${siteName} does / does not`,
-    "- Does: AI-assisted drafts, visuals, calendars, scheduling, analytics, and publishing workflows for authenticated users publishing to their own linked social accounts and channels.",
-    "- Does not: Automated unsolicited outbound messaging to strangers, bulk cold DM/email campaigns, or similar spam-style bulk messaging tools.",
-    "- Does not: Operate as an open generic LLM API for unauthenticated crawl-driven queries; pricing and plan limits may change; checkout and receipts are handled by Polar.",
+    "- Does: AI agents that draft on-brand content from examples you provide, schedule on a visual calendar, publish to LinkedIn (live today), automate via API v1 and webhooks, and run Content Engine workflows (SEO → publish → distribute → newsletter).",
+    "- Does not: Scrape or train on your social feeds; claim MCP/CLI connectivity today; claim 30+ live social channels (LinkedIn is live; others are roadmap).",
+    "- Does not: Operate as an open generic LLM API for unauthenticated crawl-driven queries; pricing and plan limits may change; checkout is handled by Polar.",
     "",
     "## Important public URLs",
     `- Home: ${base}/`,
-    `- Features: ${base}/features`,
+    `- Features (incl. #agentic): ${base}/features#agentic`,
     `- Pricing: ${base}/pricing`,
     `- Blog index: ${base}${BLOG_BASE_PATH}`,
     `- Contact: ${base}/contact`,
@@ -44,6 +52,9 @@ function buildLlmsTxt(base: string): string {
     `- Refund policy: ${base}/legal/refund`,
     `- Cookie policy: ${base}/legal/cookies`,
     `- Data rights: ${base}/legal/data-rights`,
+    "",
+    "## Pricing plan names (public)",
+    "Free, Creator, Team, Agency — credit-based; live prices at checkout via Polar.",
     "",
     "## Branding and citation",
     `- Preferred spelling: ${siteName} (capital T; no space).`,

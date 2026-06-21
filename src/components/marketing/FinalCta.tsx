@@ -20,8 +20,8 @@ export function FinalCta({
   subtitle = "Bring your examples, connect your accounts, and let Trndinn handle the rest, with your consent and full ownership of your data.",
   primaryLabel = "Start free",
   primaryHref = "/auth",
-  secondaryLabel = "View pricing",
-  secondaryHref = "/pricing",
+  secondaryLabel = "See agentic workflows",
+  secondaryHref = "/features#agentic",
 }: FinalCtaProps) {
   return (
     <Section>

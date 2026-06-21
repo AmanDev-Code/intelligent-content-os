@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   CheckCircle2,
+  Globe,
   Mic2,
   Send,
   ShieldCheck,
@@ -28,6 +29,7 @@ const ICONS: Record<string, LucideIcon> = {
   publishing: Send,
   api: Webhook,
   compliance: ShieldCheck,
+  "content-engine": Globe,
 };
 
 /** Short category labels for the eyebrow pill (distinct from each row's title). */
@@ -38,6 +40,7 @@ const EYEBROWS: Record<string, string> = {
   publishing: "Delivery",
   api: "Automation",
   compliance: "Trust",
+  "content-engine": "Growth",
 };
 
 /**
@@ -96,6 +99,16 @@ export const FALLBACK_FEATURE_SECTIONS: FeatureSection[] = [
       "No scraping, no AI training on platform data",
       "Retention caps honored per platform",
       "GDPR, CCPA, and DPDP aligned",
+    ],
+  },
+  {
+    key: "content-engine",
+    title: "Content Engine",
+    body: "From keyword to published article to 31-platform distribution and newsletter. SEO, AEO, and GEO scoring built in.",
+    bullets: [
+      "SEO article generation with quality scoring",
+      "Content clusters and internal linking",
+      "31-platform distribution and newsletter campaigns",
     ],
   },
 ];

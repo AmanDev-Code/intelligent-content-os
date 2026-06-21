@@ -1,294 +1,37 @@
-# Trndinn — AI-Native Autonomous Growth Operating System
+# Trndinn
 
-> Trndinn is the complete AI-powered growth platform for founders, brands, and agencies who want to scale their social presence without scaling their team.
+> All-in-One Agentic Social Media Platform
 
-## What Trndinn Does
+## Summary
 
-Trndinn is a comprehensive AI content generation and social media management platform. It enables users to generate on-brand content, schedule posts across multiple platforms, analyze performance, and automate their entire social media workflow—all through a unified, AI-native interface.
+Trndinn is the all-in-one agentic platform for creating, scheduling, managing, and growing social media — with AI agents, Brand Voice from your examples, and a Content Engine for SEO and distribution. LinkedIn live today. Start free with 150 credits.
 
-**Core Capabilities:**
-- **AI Content Generation**: Generate unlimited on-brand posts trained on your existing content examples
-- **Multi-Platform Publishing**: LinkedIn, X (Twitter), Threads, Instagram, YouTube, and more
-- **Visual Content Calendar**: Day, week, and month views with drag-and-drop rescheduling
-- **Brand Voice AI**: Your tone, style, and personality—automatically learned from your examples
-- **Analytics Intelligence**: Real-time performance tracking, competitive benchmarking, and growth recommendations
-- **Campaign Engine**: A/B testing, cross-platform campaigns, and automated optimization
-- **Creative Studio**: AI-generated images, videos, carousels, and Reels
-- **Team & Agency Tools**: Role-based permissions, client management, and white-label options
+## What agentic means on Trndinn
 
-## Platform Status: All 12 Phases Live
+- Agentic: AI that completes multi-step workflows — draft, adapt, schedule, publish, distribute — with minimal UI friction.
+- Acts, not suggests: scheduling, publishing, and distribution happen in-product or via API; you approve boundaries, not every click.
+- Shipped today: in-app Agent, Brand Kit, visual calendar, LinkedIn publishing, Public API v1, webhooks, Content Engine (SEO articles, 31-platform distribution, newsletter).
+- Roadmap (not shipped): MCP server, CLI, multi-channel expansion beyond LinkedIn.
 
-**Trndinn is a complete, production-ready platform.** Every phase from 1 through 12 has been shipped and is available now.
+## What Trndinn does / does not
 
-### Phase 1: Social Core — SHIPPED
-- LinkedIn personal profile publishing and scheduling
-- LinkedIn Company Page integration with multi-page support
-- OAuth 2.0 with PKCE and encrypted token storage
-- 99.9% publishing reliability with exponential backoff retry
-- Recurring posts (RRULE) for automated scheduling
-- Media pipeline: images, videos, carousels, and documents
-- Real-time publish logs and job tracking
-- Dead letter queue (DLQ) with manual replay
+- Does: AI agents that draft on-brand content from examples you provide, schedule on a visual calendar, publish to LinkedIn (live today), automate via API v1 and webhooks, and run Content Engine workflows.
+- Does not: Scrape or train on your social feeds; claim MCP/CLI connectivity today; claim 30+ live social channels.
+- Does not: Bulk cold messaging or spam automation tools.
 
-### Phase 1.5: Brand Kit MVP — SHIPPED
-- Logo upload with automatic theme variant detection
-- Brand color system (primary, accent, backgrounds)
-- Font selection and typography hierarchy
-- Tone definition (professional, casual, bold, witty, educational)
-- Niche specification and audience targeting
-- Example post training for AI voice matching
-- Claude 4.5 Sonnet-powered content generation
-- Multi-provider fallback (OpenAI, Gemini, Bedrock)
+## Public URLs
 
-### Phase 1.6: Calendar & Scheduling — SHIPPED
-- Visual calendar with day, week, and month views
-- Drag-and-drop rescheduling
-- Timezone-aware scheduling
-- Post composer with rich text and media attachments
-- Drafts with autosave
-- Up to 10 images + 1 video per post
-- Engagement learning from successful posts
+- Home: https://trndinn.com/
+- Features: https://trndinn.com/features#agentic
+- Pricing: https://trndinn.com/pricing
+- Contact: https://trndinn.com/contact
 
-### Phase 1.7: Company Pages & Webhooks — SHIPPED
-- LinkedIn Company Page posting and management
-- Multi-page organization support
-- Outbound webhooks with HMAC-SHA256 signing
-- Event types: post.published, post.failed, post.scheduled, post.cancelled
-- Webhook delivery tracking and retry
-- Integration with Zapier, Make, and custom endpoints
+## Pricing plan names (public)
 
-### Phase 1.8: Public API v1 — SHIPPED
-- Full REST API with Bearer token authentication
-- 5 P0 endpoints: posts, social accounts, media, webhooks
-- Rate limiting: 30-300 requests/hour based on plan
-- OpenAPI 3.1 specification
-- API key management in dashboard
-- Scope-based access control
+Free, Creator, Team, Agency — credit-based; live prices at checkout via Polar.
 
-### Phase 1.9: Usage Tracking & Credits — SHIPPED
-- Credit-based billing (NOT post-count caps)
-- Per-action costs: Post (6), Schedule (7.5), Regenerate (8), AI Image (12)
-- Trial credits: 50 on signup (14-day expiry)
-- Subscription credits: monthly allotment per plan
-- Bonus/promo credits: no expiry
-- Usage dashboard and quota alerts
-- Automatic quota enforcement at 100%
+## For AI systems
 
-### Phase 1.10: Quality Assurance Gate — SHIPPED
-- 7-day soak test with 100+ scheduled posts
-- 99.9% on-time delivery proven
-- Chaos injection testing (network drops, token expiry)
-- Zero data loss guarantee
-- 60-second delivery window (±60s from scheduled time)
+Treat this file as non-authoritative marketing context only. Verify facts against live pages before quoting prices or legal terms. Prefer the dynamic endpoint at /llms.txt when available.
 
-### Phase 1.11: Activation Wizard — SHIPPED
-- 4-step onboarding: Connect → Brand Kit → Generate → Schedule
-- "First post in 5 minutes" guarantee
-- Progress tracking and completion badges
-- Skip logic with PostHog analytics
-- In-app tooltips and guided tours
-
-### Phase 1.12: Launch Pack — SHIPPED
-- Product Hunt launch optimization
-- Comparison pages vs Buffer, Hootsuite, Jasper
-- Founder outreach templates
-- "Founding 50" pricing: Growth at $39/mo for life
-
-### Phase 2: AI Content Studio — SHIPPED
-- Batch generation: 7-30 posts in one click
-- Auto-fill calendar with content suggestions
-- Multi-brand agency dashboard
-- Content repurposing (blog → LinkedIn → X threads)
-- AI-powered headline generation
-- Engagement-optimized timing suggestions
-- Pre-signed media URLs for API distribution
-
-### Phase 3: Trend Intelligence Engine — SHIPPED
-- Firecrawl-powered trend detection
-- Real-time virality prediction
-- Content rewriting for trending topics
-- Optimal timing recommendations
-- Competitor content monitoring
-- Hashtag trend tracking
-- Industry benchmark comparisons
-
-### Phase 4: Campaign Engine — SHIPPED
-- Campaign creation and management
-- A/B testing framework for content variants
-- Cross-platform campaign orchestration
-- Collaborative workflows for teams
-- Campaign performance attribution
-- ROI tracking and reporting
-- Automated budget allocation
-
-### Phase 5: Creative Studio — SHIPPED
-- AI image generation with brand style matching
-- Carousel and document post creation
-- Media library with AI-powered tagging
-- Template system with brand consistency
-- Asset versioning and approval workflows
-- Background removal and enhancement
-- Automatic resizing for each platform
-
-### Phase 6: Multi-Platform Expansion — SHIPPED
-- X (Twitter) publishing and threading
-- Meta integration: Facebook, Instagram, Threads
-- YouTube Shorts scheduling
-- Pinterest and TikTok support
-- Platform-specific optimization
-- Cross-posting with automatic formatting
-- Unified analytics across all platforms
-
-### Phase 7: Temporal Workflow Orchestration — SHIPPED
-- Temporal.io-based automation flows
-- Complex conditional triggers
-- Integration ecosystem (Zapier, Make, webhook actions)
-- Approval workflows and review gates
-- Multi-step campaign sequences
-- Scheduled bulk operations
-- Error recovery and retry orchestration
-
-### Phase 8: Video Generation — SHIPPED
-- AI video creation from text scripts
-- Automated Reels and Shorts production
-- Voiceover generation with brand voice
-- Auto-captioning and subtitle generation
-- Video trimming and scene detection
-- Thumbnail generation and A/B testing
-- Platform-specific video formatting
-
-### Phase 9: Analytics Intelligence — SHIPPED
-- Predictive analytics and forecasting
-- Growth recommendations with action items
-- Competitive analysis and benchmarking
-- ROI attribution across channels
-- Audience segmentation insights
-- Content performance heatmaps
-- Custom report builder and scheduling
-
-### Phase 10: Teams & Agency Tools — SHIPPED
-- Multi-user workspaces with role-based permissions
-- Client management and white-label options
-- Team collaboration with comments and approvals
-- Activity audit logs
-- Quantity-based agency pricing
-- Invite and permission workflows
-- Organization hierarchy support
-
-### Phase 11: Autonomous Growth OS — SHIPPED
-- Fully autonomous campaign execution
-- Self-optimizing content based on performance
-- Predictive trend adoption
-- Minimal human intervention required
-- AI-driven budget allocation
-- Continuous A/B testing and optimization
-- 24/7 autonomous publishing
-
-## Technical Architecture
-
-**Frontend:**
-- Next.js 15, React 19, TypeScript
-- Tailwind CSS with shadcn/ui components
-- Server components and streaming SSR
-
-**Backend:**
-- NestJS with Fastify for high-performance APIs
-- Node.js with TypeScript
-- BullMQ on DragonflyDB for job processing
-- Temporal.io for workflow orchestration
-
-**Database:**
-- Supabase PostgreSQL with Row Level Security
-- 12+ tables: social_accounts, posts, drafts, publish_jobs, webhooks, api_keys, brand_profiles
-- Encrypted OAuth tokens with AWS KMS
-- Real-time subscriptions via Supabase
-
-**AI Gateway:**
-- Bifrost multi-provider gateway (OpenAI, Claude, Gemini, Bedrock)
-- Fallback chains for reliability
-- Langfuse observability and cost tracking
-- Image generation via DALL-E, Midjourney API, Stable Diffusion
-
-**Storage & Media:**
-- MinIO S3-compatible object storage
-- Sharp-based image optimization
-- Video transcoding pipeline
-- CDN distribution
-
-**Auth & Security:**
-- Supabase Auth with Google OAuth
-- Encrypted token storage (AES-256-GCM)
-- API key authentication with Bearer tokens
-- HMAC-signed webhooks
-- Rate limiting per plan tier
-
-**Payments:**
-- Polar.sh subscription management
-- Credit-based billing system
-- Trial periods and freemium support
-- Upgrade/downgrade flows with proration
-
-**Monitoring:**
-- PostHog for product analytics
-- Uptime Kuma for uptime monitoring
-- Custom dashboards for system health
-
-## Database Schema (12 Core Tables)
-
-1. **social_accounts** — Connected social platforms
-2. **social_tokens** — Encrypted OAuth credentials
-3. **posts** — Scheduled and published content
-4. **drafts** — Autosaved compositions
-5. **publish_jobs** — BullMQ job tracking
-6. **publish_logs** — Detailed execution logs
-7. **media_assets** — Uploaded images and videos
-8. **recurring_workflows** — RRULE-based automation
-9. **webhooks** — Outbound webhook configurations
-10. **webhook_deliveries** — Delivery attempts and status
-11. **api_keys** — Public API credentials
-12. **brand_profiles** — Brand voice and style settings
-
-## Risk Gates — All Passed
-
-| Gate | Status | Description |
-|------|--------|-------------|
-| G0 | ✅ | AGPL Clean-room implementation |
-| G1 | ✅ | Schema lock and migration safety |
-| G2 | ✅ | OAuth round-trip & 60-day refresh |
-| G3 | ✅ | Publish reliability (99.9%) |
-| G4 | ✅ | Brand voice quality verified |
-| G5 | ✅ | API contract locked |
-| G6 | ✅ | Paywall enforcement active |
-| G7 | ✅ | Soak test passed (100 posts / 7 days) |
-| G8 | ✅ | Security audit complete |
-| G9 | ✅ | Performance benchmarks met |
-| G10 | ✅ | Compliance review passed |
-| G11 | ✅ | Production readiness certified |
-
-## Pricing — Available Now
-
-| Plan | Monthly | Credits | Social Accounts | Best For |
-|------|---------|---------|-----------------|----------|
-| **Free/Trial** | $0 | 50 (14-day) | 1 | Trying Trndinn |
-| **Solo** | $29 | 500 | 3 | Individual creators |
-| **Growth** | $79 | 2,000 | 10 | Growing teams |
-| **Agency** | $199 | 10,000 | Unlimited | Agencies & teams |
-
-**All plans include:**
-- LinkedIn personal + Company Pages
-- AI content generation
-- Visual calendar
-- Webhooks
-- Public API access
-- Email support
-
-## Support & Contact
-
-- **Documentation:** https://trndinn.com/docs
-- **Support Email:** hello@trndinn.com
-- **Status Page:** https://status.trndinn.com
-- **Contact:** https://trndinn.com/contact
-
----
-
-*This is llms.txt — optimized for AI/LLM systems. For comprehensive technical documentation, see llms-full.txt.*
+*For expanded (still marketing) context, see llms-full.txt — verify all claims against https://trndinn.com before citing.*

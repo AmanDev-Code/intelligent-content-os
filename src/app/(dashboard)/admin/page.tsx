@@ -11,7 +11,7 @@ import {
 import {
   Users,
   MessageSquareText,
-  BookOpen,
+  Sparkles,
   Briefcase,
   LayoutDashboard,
   Activity,
@@ -184,7 +184,9 @@ export default function AdminOverviewPage() {
     void run();
     return () => {
       cancelled = true;
-      ac.abort();
+      if (!ac.signal.aborted) {
+        ac.abort();
+      }
     };
   }, [accessLoading, showStaffMetrics, sections.feedback]);
 
@@ -206,10 +208,10 @@ export default function AdminOverviewPage() {
           show: sections.feedback,
         },
         {
-          href: "/admin/blog",
-          title: "Blog & CMS",
-          description: "Posts, editors, and SEO pages.",
-          icon: BookOpen,
+          href: "/admin/content-engine?tab=articles",
+          title: "Content Engine",
+          description: "Generate, edit, score, and distribute SEO content.",
+          icon: Sparkles,
           show: sections.blog,
         },
         {

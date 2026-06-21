@@ -10,6 +10,7 @@ import { BlogAuthorCard } from "@/components/blog/BlogAuthorCard";
 import { BlogRelatedPosts, type RelatedPost } from "@/components/blog/BlogRelatedPosts";
 import { BlogPostShareAndSummarize } from "@/components/blog/BlogPostShareAndSummarize";
 import { BlogFaqSection, BlogFaqJsonLd } from "@/components/blog/BlogFaqSection";
+import { NewsletterSignup } from "@/components/NewsletterSignup";
 import { blogCategoryPillClass, displayCategoryLabel } from "@/lib/blogContentCategory";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl } from "@/lib/site";
@@ -203,6 +204,15 @@ export default function BlogPostView({
               linkedinUrl={post.author_linkedin_url}
             />
           ) : null}
+
+          <section className="mt-12 border-t border-border/40 pt-8">
+            <NewsletterSignup
+              variant="card"
+              title="Enjoyed this article?"
+              description="Get more like this in your inbox."
+              source="blog-post"
+            />
+          </section>
 
           <BlogRelatedPosts posts={relatedPosts} />
 
