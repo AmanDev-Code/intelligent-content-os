@@ -331,7 +331,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
     return (
       <div
         key={platform.id}
-        className="flex flex-col gap-2 p-3 rounded-lg border border-border/50 hover:border-border transition-colors bg-card"
+        className="flex flex-col gap-2 p-3 rounded-xl border border-border/50 hover:border-border/80 hover:shadow-sm transition-all duration-200 bg-card self-start"
       >
         {/* Cover Image Preview */}
         {hasCoverImage && (
@@ -428,7 +428,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
           </a>
         )}
 
-        <div className="flex flex-wrap gap-1.5 mt-auto">
+        <div className="flex flex-wrap gap-1.5">
           {!dist || dist.status === "failed" ? (
             <Button
               variant="outline"
@@ -574,7 +574,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="p-4 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="p-4 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
               {platforms.map((platform) => renderPlatformCard(platform, tier))}
             </div>
           </CollapsibleContent>
