@@ -17,7 +17,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings, Image, Link2, RefreshCw, BarChart3 } from "lucide-react";
+import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings, Image, Link2, RefreshCw, BarChart3, Zap } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { PlatformIcon } from "./PlatformIcon";
@@ -116,6 +116,51 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
   });
 
   const [copiedImageUrl, setCopiedImageUrl] = useState<string | null>(null);
+  const [generatingProgress, setGeneratingProgress] = useState<Record<string, number>>({});
+  const [generatingLabel, setGeneratingLabel] = useState<Record<string, string>>({});
+
+  // Long-form platforms that will use batched generation (takes longer)
+  const LONG_FORM_PLATFORMS = new Set([
+    "devto", "medium", "hashnode", "beehiiv", "ghost", "blogger",
+    "telegraph", "hackernoon", "linkedin_article", "newsletter", "substack",
+  ]);
+
+  // Simulate progress steps for long-form platform generation
+  const simulateProgress = (platform: string) => {
+    const isLongForm = LONG_FORM_PLATFORMS.has(platform);
+    const steps = isLongForm
+      ? [
+          { pct: 10, label: "Analysing article..." },
+          { pct: 25, label: "Splitting into sections..." },
+          { pct: 40, label: "Generating section 1..." },
+          { pct: 60, label: "Generating section 2..." },
+          { pct: 75, label: "Generating section 3..." },
+          { pct: 88, label: "Merging content..." },
+          { pct: 95, label: "Finalising..." },
+        ]
+      : [
+          { pct: 20, label: "Adapting content..." },
+          { pct: 60, label: "Generating..." },
+          { pct: 90, label: "Finalising..." },
+        ];
+
+    let stepIndex = 0;
+    // Interval per step: long-form ~8s per step, short-form ~3s per step
+    const interval = isLongForm ? 8000 : 3000;
+
+    const timer = setInterval(() => {
+      if (stepIndex >= steps.length) {
+        clearInterval(timer);
+        return;
+      }
+      const step = steps[stepIndex];
+      setGeneratingProgress((prev) => ({ ...prev, [platform]: step.pct }));
+      setGeneratingLabel((prev) => ({ ...prev, [platform]: step.label }));
+      stepIndex++;
+    }, interval);
+
+    return () => clearInterval(timer);
+  };
 
   const handleCopyImageUrl = async (platform: string, url: string) => {
     try {
@@ -155,14 +200,24 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
 
   const handleGenerate = async (platform: string) => {
     setGenerating(platform);
+    setGeneratingProgress((prev) => ({ ...prev, [platform]: 5 }));
+    setGeneratingLabel((prev) => ({ ...prev, [platform]: "Starting..." }));
+    const stopProgress = simulateProgress(platform);
     try {
       await apiClient.post(`/admin/content-engine/distributions/${postId}/${platform}/generate`);
+      setGeneratingProgress((prev) => ({ ...prev, [platform]: 100 }));
+      setGeneratingLabel((prev) => ({ ...prev, [platform]: "Done!" }));
       toast({ title: `Generated ${platformLabel(platform)} content` });
       load();
     } catch {
       toast({ title: "Generation failed", variant: "destructive" });
     } finally {
-      setGenerating(null);
+      stopProgress();
+      setTimeout(() => {
+        setGenerating(null);
+        setGeneratingProgress((prev) => { const n = { ...prev }; delete n[platform]; return n; });
+        setGeneratingLabel((prev) => { const n = { ...prev }; delete n[platform]; return n; });
+      }, 600);
     }
   };
 
@@ -312,7 +367,21 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
           )}
         </div>
 
-        {dist && (
+        {isGenerating && (
+          <div className="w-full space-y-1">
+            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+                style={{ width: `${generatingProgress[platform.id] ?? 5}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">
+              {generatingLabel[platform.id] ?? "Generating..."}
+            </p>
+          </div>
+        )}
+
+        {dist && !isGenerating && (
           <div className="flex items-center gap-2 flex-wrap">
             <Badge
               variant="secondary"
