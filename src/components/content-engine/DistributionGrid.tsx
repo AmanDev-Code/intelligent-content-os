@@ -268,7 +268,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
     const isCopied = copied === platform.id;
     const isCopiedImage = copiedImageUrl === platform.id;
     const isConnected = connectedPlatforms.has(platform.id);
-    const hasContent = dist?.adapted_content && dist.status === "ready";
+    const hasContent = dist?.adapted_content && (dist.status === "ready" || dist.status === "published");
     const isPublished = dist?.status === "published";
     const canAutoPublish = tier === "auto" && platform.hasApi !== false;
     const hasCoverImage = !!dist?.cover_image_url;
