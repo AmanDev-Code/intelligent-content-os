@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,37 @@ interface DistributionGridProps {
 
 function platformLabel(p: string) {
   return p.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+const MASONRY_ROW_HEIGHT = 8;
+const MASONRY_GAP = 12;
+
+function MasonryCard({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const recalc = () => {
+      const rowSpan = Math.ceil(
+        (el.scrollHeight + MASONRY_GAP) / (MASONRY_ROW_HEIGHT + MASONRY_GAP)
+      );
+      el.style.gridRowEnd = `span ${rowSpan}`;
+    };
+
+    const observer = new ResizeObserver(recalc);
+    observer.observe(el);
+    recalc();
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ alignSelf: "start" }}>
+      {children}
+    </div>
+  );
 }
 
 export function DistributionGrid({ postId }: DistributionGridProps) {
@@ -330,8 +361,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
 
     return (
       <div
-        key={platform.id}
-        className="flex flex-col gap-2 p-3 rounded-xl border border-border/50 hover:border-border/80 hover:shadow-sm transition-all duration-200 bg-card self-start"
+        className="flex flex-col gap-2 p-3 rounded-xl border border-border/50 hover:border-border/80 hover:shadow-sm transition-all duration-200 bg-card h-full"
       >
         {/* Cover Image Preview */}
         {hasCoverImage && (
@@ -574,8 +604,18 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="p-4 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
-              {platforms.map((platform) => renderPlatformCard(platform, tier))}
+            <div
+              className="p-4 pt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              style={{
+                gridAutoRows: `${MASONRY_ROW_HEIGHT}px`,
+                gap: `${MASONRY_GAP}px`,
+              }}
+            >
+              {platforms.map((platform) => (
+                <MasonryCard key={platform.id}>
+                  {renderPlatformCard(platform, tier)}
+                </MasonryCard>
+              ))}
             </div>
           </CollapsibleContent>
         </div>
