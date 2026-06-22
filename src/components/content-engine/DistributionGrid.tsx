@@ -459,7 +459,7 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
         )}
 
         <div className="flex flex-wrap gap-1.5">
-          {!dist || dist.status === "failed" ? (
+          {!dist ? (
             <Button
               variant="outline"
               size="sm"
@@ -471,6 +471,32 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
               Generate
             </Button>
           ) : null}
+
+          {dist?.status === "failed" && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] px-2"
+                onClick={() => handleGenerate(platform.id)}
+                disabled={isGenerating}
+              >
+                {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 mr-0.5" />}
+                Regenerate
+              </Button>
+              {tier === "auto" && platform.hasApi !== false && isConnected && (
+                <Button
+                  size="sm"
+                  className="h-6 text-[10px] px-2 bg-amber-600 text-white hover:bg-amber-700"
+                  onClick={() => handlePublish(platform.id)}
+                  disabled={isPublishing}
+                >
+                  {isPublishing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-0.5" />}
+                  Retry Publish
+                </Button>
+              )}
+            </>
+          )}
 
           {hasContent && (
             <>
