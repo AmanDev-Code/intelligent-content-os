@@ -228,11 +228,47 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
     }
   };
 
+  // Extract inline image URLs from content text (e.g., [Image: description]\nURL)
+  const extractInlineImageUrls = (content: string): string[] => {
+    const regex = /\[Image:[^\]]*\]\s*\n?(https?:\/\/[^\s\n]+)/g;
+    const urls: string[] = [];
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      urls.push(match[1]);
+    }
+    return urls;
+  };
+
+  // Get all image URLs for a distribution (cover + inline from content + inline_images array)
+  const getAllImageUrls = (dist: Distribution): { url: string; alt: string }[] => {
+    const images: { url: string; alt: string }[] = [];
+    
+    // Add cover image if exists
+    if (dist.cover_image_url) {
+      images.push({ url: dist.cover_image_url, alt: "Cover" });
+    }
+    
+    // Add inline images from the inline_images array
+    if (dist.inline_images && dist.inline_images.length > 0) {
+      images.push(...dist.inline_images.map((img) => ({ url: img.url, alt: img.alt })));
+    }
+    
+    // Extract inline images from content text
+    if (dist.adapted_content) {
+      const contentUrls = extractInlineImageUrls(dist.adapted_content);
+      contentUrls.forEach((url, index) => {
+        // Avoid duplicates (check if URL already exists)
+        if (!images.some((img) => img.url === url)) {
+          images.push({ url, alt: `Inline ${index + 1}` });
+        }
+      });
+    }
+    
+    return images;
+  };
+
   const handleDownloadAllImages = async (platform: string, dist: Distribution) => {
-    const allImages = [
-      ...(dist.cover_image_url ? [{ url: dist.cover_image_url, alt: "Cover" }] : []),
-      ...(dist.inline_images || []).map((img) => ({ url: img.url, alt: img.alt })),
-    ];
+    const allImages = getAllImageUrls(dist);
 
     if (allImages.length === 0) {
       toast({ title: "No images to download", variant: "destructive" });
@@ -596,28 +632,32 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
                 <MonitorPlay className="h-3 w-3 mr-0.5" /> Preview
               </Button>
 
-              {(dist.cover_image_url || (dist.inline_images && dist.inline_images.length > 0)) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-[10px] px-2"
-                  onClick={() => handleDownloadAllImages(platform.id, dist)}
-                  disabled={downloadingImages === platform.id}
-                  title="Download all images"
-                >
-                  {downloadingImages === platform.id ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin mr-0.5" />
-                      {downloadProgress}%
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-3 w-3 mr-0.5" />
-                      Images
-                    </>
-                  )}
-                </Button>
-              )}
+              {(() => {
+                const allImages = getAllImageUrls(dist);
+                if (allImages.length === 0) return null;
+                return (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-[10px] px-2"
+                    onClick={() => handleDownloadAllImages(platform.id, dist)}
+                    disabled={downloadingImages === platform.id}
+                    title={`Download ${allImages.length} image${allImages.length > 1 ? "s" : ""}`}
+                  >
+                    {downloadingImages === platform.id ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin mr-0.5" />
+                        {downloadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-3 w-3 mr-0.5" />
+                        {allImages.length} Image{allImages.length > 1 ? "s" : ""}
+                      </>
+                    )}
+                  </Button>
+                );
+              })()}
 
               <Button
                 variant="outline"
