@@ -17,11 +17,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings, Image, Link2, RefreshCw, BarChart3, Zap } from "lucide-react";
+import { Loader2, Copy, Check, Eye, Send, CheckCircle, Sparkles, ChevronDown, Rocket, FileEdit, MessageSquare, Settings, Image, Link2, RefreshCw, BarChart3, Zap, Download, MonitorPlay } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { PlatformIcon } from "./PlatformIcon";
 import { DistributionContentModal } from "./DistributionContentModal";
+import { DistributionPreviewModal } from "./DistributionPreviewModal";
 
 // Platform tier definitions
 const PLATFORM_TIERS = {
@@ -149,6 +150,9 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
   const [copiedImageUrl, setCopiedImageUrl] = useState<string | null>(null);
   const [generatingProgress, setGeneratingProgress] = useState<Record<string, number>>({});
   const [generatingLabel, setGeneratingLabel] = useState<Record<string, string>>({});
+  const [previewingPlatform, setPreviewingPlatform] = useState<string | null>(null);
+  const [downloadingImages, setDownloadingImages] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   // Long-form platforms that will use batched generation (takes longer)
   const LONG_FORM_PLATFORMS = new Set([
@@ -201,6 +205,69 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
       setTimeout(() => setCopiedImageUrl(null), 2000);
     } catch {
       toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
+
+  const downloadSingleImage = async (url: string, filename: string): Promise<boolean> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch image");
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      return true;
+    } catch (error) {
+      console.error(`Failed to download ${filename}:`, error);
+      return false;
+    }
+  };
+
+  const handleDownloadAllImages = async (platform: string, dist: Distribution) => {
+    const allImages = [
+      ...(dist.cover_image_url ? [{ url: dist.cover_image_url, alt: "Cover" }] : []),
+      ...(dist.inline_images || []).map((img) => ({ url: img.url, alt: img.alt })),
+    ];
+
+    if (allImages.length === 0) {
+      toast({ title: "No images to download", variant: "destructive" });
+      return;
+    }
+
+    setDownloadingImages(platform);
+    setDownloadProgress(0);
+
+    let successCount = 0;
+    for (let i = 0; i < allImages.length; i++) {
+      const img = allImages[i];
+      const ext = img.url.split(".").pop()?.split("?")[0] || "png";
+      const filename = `${platform}-image-${i + 1}.${ext}`;
+      
+      const success = await downloadSingleImage(img.url, filename);
+      if (success) successCount++;
+      
+      setDownloadProgress(Math.round(((i + 1) / allImages.length) * 100));
+      
+      if (i < allImages.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
+    setDownloadingImages(null);
+    setDownloadProgress(0);
+
+    if (successCount === allImages.length) {
+      toast({ title: `Downloaded ${successCount} image${successCount > 1 ? "s" : ""}` });
+    } else {
+      toast({
+        title: `Downloaded ${successCount}/${allImages.length} images`,
+        variant: successCount === 0 ? "destructive" : "default",
+      });
     }
   };
 
@@ -522,6 +589,39 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
               <Button
                 variant="outline"
                 size="sm"
+                className="h-6 text-[10px] px-2 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 border-indigo-500/30"
+                onClick={() => setPreviewingPlatform(platform.id)}
+                title="Preview how content will look on platform"
+              >
+                <MonitorPlay className="h-3 w-3 mr-0.5" /> Preview
+              </Button>
+
+              {(dist.cover_image_url || (dist.inline_images && dist.inline_images.length > 0)) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => handleDownloadAllImages(platform.id, dist)}
+                  disabled={downloadingImages === platform.id}
+                  title="Download all images"
+                >
+                  {downloadingImages === platform.id ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin mr-0.5" />
+                      {downloadProgress}%
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3 w-3 mr-0.5" />
+                      Images
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-6 text-[10px] px-2"
                 onClick={() => handleGenerate(platform.id)}
                 disabled={isGenerating}
@@ -746,6 +846,19 @@ export function DistributionGrid({ postId }: DistributionGridProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {previewingPlatform && distMap[previewingPlatform] && (
+        <DistributionPreviewModal
+          open={!!previewingPlatform}
+          onOpenChange={(open) => { if (!open) setPreviewingPlatform(null); }}
+          platform={previewingPlatform}
+          content={distMap[previewingPlatform].adapted_content ?? ""}
+          coverImageUrl={distMap[previewingPlatform].cover_image_url ?? undefined}
+          inlineImages={distMap[previewingPlatform].inline_images}
+          hashtags={distMap[previewingPlatform].hashtags}
+          platformTitle={distMap[previewingPlatform].platform_title}
+        />
+      )}
     </>
   );
 }
