@@ -54,8 +54,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
-  ACCEPT_IMAGE,
-  isAllowedImageFile,
+  ACCEPT_ALL_FILES,
+  isAllowedAdminFile,
+  isOptimizableImage,
   readFileAsDataURL,
 } from "@/components/media/uploadImageFile";
 
@@ -295,20 +296,23 @@ export function AdminMediaBrowser() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (!isAllowedImageFile(file)) {
+        if (!isAllowedAdminFile(file)) {
           toast({
             title: "Skipped",
-            description: `${file.name} is not a supported image type.`,
+            description: `${file.name} is not allowed.`,
             variant: "destructive",
           });
           continue;
         }
-        const image = await readFileAsDataURL(file);
+        const dataUrl = await readFileAsDataURL(file);
+        const isImage = isOptimizableImage(file);
         await api.admin.mediaUpload({
-          image,
-          filename: file.name || "upload.jpg",
+          image: dataUrl,
+          filename: file.name || "upload",
           path: data?.listingPrefix || undefined,
           fullPath: true,
+          skipOptimization: !isImage,
+          contentType: file.type || undefined,
         });
       }
       toast({ title: "Upload complete" });
@@ -406,7 +410,7 @@ export function AdminMediaBrowser() {
           <input
             ref={uploadInputRef}
             type="file"
-            accept={ACCEPT_IMAGE}
+            accept={ACCEPT_ALL_FILES}
             multiple
             className="sr-only"
             onChange={(e) => void processUploadFiles(e.target.files)}
@@ -492,7 +496,7 @@ export function AdminMediaBrowser() {
           </div>
         ) : combinedRows.length === 0 ? (
           <div className="p-12 text-center text-sm text-muted-foreground">
-            This folder is empty. Upload images or create a folder.
+            This folder is empty. Upload files or create a folder.
           </div>
         ) : (
           <Table className="w-full">

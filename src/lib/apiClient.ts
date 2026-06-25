@@ -800,12 +800,18 @@ export const api = {
           ...(opts?.scope === 'cms' ? { scope: 'cms' } : {}),
         },
       }),
-    mediaCreateFolder: (payload: { path?: string; name: string }) =>
+    mediaCreateFolder: (payload: { path?: string; name: string; fullPath?: boolean }) =>
       apiClient.post("/admin/media/folder", payload),
     mediaDeleteObject: (key: string) =>
       apiClient.delete("/admin/media/object", { key }),
-    mediaUpload: (payload: { image: string; filename: string; path?: string }) =>
-      apiClient.post("/admin/media/upload", payload),
+    mediaUpload: (payload: {
+      image: string;
+      filename: string;
+      path?: string;
+      fullPath?: boolean;
+      skipOptimization?: boolean;
+      contentType?: string;
+    }) => apiClient.post("/admin/media/upload", payload),
 
     /** Subscription plan copy + per-currency display amounts (admin). */
     subscriptionPlansList: (): Promise<SubscriptionPlanPayload[]> =>

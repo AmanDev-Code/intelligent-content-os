@@ -3,7 +3,23 @@ import { apiClient } from "@/lib/apiClient";
 /** Raster types handled by `/media/upload` image pipeline (optimized to JPEG server-side). */
 export const ACCEPT_IMAGE = "image/jpeg,image/png,image/gif,image/webp";
 
+/** Accept all file types for admin uploads. */
+export const ACCEPT_ALL_FILES = "*/*";
+
 export function isAllowedImageFile(file: File): boolean {
+  const t = file.type.toLowerCase();
+  if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(t)) return true;
+  const lower = file.name.toLowerCase();
+  return /\.(jpe?g|png|gif|webp)$/i.test(lower);
+}
+
+/** Admin can upload any file type. */
+export function isAllowedAdminFile(_file: File): boolean {
+  return true;
+}
+
+/** Check if a file is an optimizable image type (for backend processing). */
+export function isOptimizableImage(file: File): boolean {
   const t = file.type.toLowerCase();
   if (["image/jpeg", "image/png", "image/gif", "image/webp"].includes(t)) return true;
   const lower = file.name.toLowerCase();
