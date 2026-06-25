@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageSourceInput } from "@/components/media/ImageSourceInput";
+import { ImageFocalPointPicker } from "@/components/media/ImageFocalPointPicker";
 import {
   BLOG_CATEGORY_SELECT_CUSTOM,
   BLOG_CATEGORY_SELECT_NONE,
@@ -606,34 +607,16 @@ function BlogPostEditorForm({
           uploadCmsPath={isAdmin ? "blog" : undefined}
           onChange={(url) => setForm((f) => ({ ...f, featured_image_url: url }))}
         />
-        <div className="mt-3 space-y-1">
-          <Label className="text-muted-foreground">Featured image focal point</Label>
-          <Select
-            value={
-              ["left", "center", "right", "top", "bottom"].includes(form.featured_image_object_position)
-                ? form.featured_image_object_position
-                : "__auto__"
-            }
-            onValueChange={(v) =>
-              setForm((f) => ({
-                ...f,
-                featured_image_object_position: v === "__auto__" ? "" : v,
-              }))
-            }
-          >
-            <SelectTrigger className="h-9 max-w-xs">
-              <SelectValue placeholder="Default (auto)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__auto__">Default (auto)</SelectItem>
-              <SelectItem value="left">Left</SelectItem>
-              <SelectItem value="center">Center</SelectItem>
-              <SelectItem value="right">Right</SelectItem>
-              <SelectItem value="top">Top</SelectItem>
-              <SelectItem value="bottom">Bottom</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {form.featured_image_url && (
+          <div className="mt-3">
+            <ImageFocalPointPicker
+              imageUrl={form.featured_image_url}
+              value={form.featured_image_object_position}
+              onChange={(pos) => setForm((f) => ({ ...f, featured_image_object_position: pos }))}
+              label="Featured image focal point"
+            />
+          </div>
+        )}
       </div>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-2">

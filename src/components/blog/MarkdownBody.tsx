@@ -8,21 +8,21 @@ const markdownComponents: Components = {
   img({ src, alt, title }) {
     if (!src) return null;
     return (
-      <>
+      <figure className="my-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={alt ?? ""}
           title={title}
           loading="lazy"
-          className="my-8 w-full rounded-xl border border-border/40 shadow-md object-cover"
+          className="w-full max-w-none rounded-xl border border-border/40 shadow-lg"
         />
         {title ? (
-          <span className="block -mt-6 mb-8 text-center text-sm text-muted-foreground italic">
+          <figcaption className="mt-3 text-center text-sm text-muted-foreground italic">
             {title}
-          </span>
+          </figcaption>
         ) : null}
-      </>
+      </figure>
     );
   },
   p({ children, ...props }) {
@@ -61,7 +61,8 @@ export function MarkdownBody({ markdown }: { markdown: string }) {
           "prose-headings:font-heading prose-headings:tracking-tight",
           "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
           "prose-code:text-foreground prose-pre:bg-muted/60 prose-pre:border prose-pre:border-border/60",
-          "prose-img:rounded-xl prose-img:shadow-md",
+          "prose-img:max-w-none prose-img:w-full prose-img:rounded-xl prose-img:shadow-lg prose-img:my-10",
+          "prose-figure:my-10 prose-figcaption:text-center prose-figcaption:text-muted-foreground",
         ].join(" ")}
         dangerouslySetInnerHTML={{ __html: markdown }}
       />
@@ -75,7 +76,8 @@ export function MarkdownBody({ markdown }: { markdown: string }) {
         "prose-headings:font-heading prose-headings:tracking-tight",
         "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
         "prose-code:text-foreground prose-pre:bg-muted/60 prose-pre:border prose-pre:border-border/60",
-        "prose-img:rounded-xl prose-img:shadow-md",
+        "prose-img:max-w-none prose-img:w-full prose-img:rounded-xl prose-img:shadow-lg",
+        "prose-figure:my-10 prose-figcaption:text-center prose-figcaption:text-muted-foreground",
       ].join(" ")}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>

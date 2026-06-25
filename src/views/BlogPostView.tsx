@@ -149,7 +149,7 @@ export default function BlogPostView({
           {post.featured_image_url ? (
             <div
               className="mt-6 overflow-hidden rounded-2xl border border-border/50 bg-muted"
-              style={{ position: "relative", aspectRatio: "16/7" }}
+              style={{ position: "relative", aspectRatio: "16/9" }}
             >
               <Image
                 src={post.featured_image_url}
