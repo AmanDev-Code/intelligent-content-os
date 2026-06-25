@@ -78,20 +78,6 @@ type BrowseResult = {
   objects: BrowseObject[];
 };
 
-function isCmsWritableListingPrefix(listingPrefix: string): boolean {
-  return listingPrefix === "media/cms/" || listingPrefix.startsWith("media/cms/");
-}
-
-/** Path segments under `media/cms/` for upload/folder APIs; null if not inside that tree. */
-function cmsMutationRelativePath(listingPrefix: string): string | null {
-  if (!isCmsWritableListingPrefix(listingPrefix)) return null;
-  const stripped = listingPrefix.replace(/\/+$/, "");
-  const root = "media/cms";
-  if (stripped === root) return "";
-  if (stripped.startsWith(`${root}/`)) return stripped.slice(root.length + 1);
-  return null;
-}
-
 /** Map folder `prefix` from the API to the browse `path` query for the current scope. */
 function folderPrefixToBrowsePath(
   scope: "bucket" | "cms",
@@ -263,13 +249,6 @@ export function AdminMediaBrowser() {
     return crumbs;
   }, [relativePath, rootCrumbLabel]);
 
-  const cmsMutationPath = useMemo(
-    () => (data?.listingPrefix != null ? cmsMutationRelativePath(data.listingPrefix) : null),
-    [data?.listingPrefix],
-  );
-
-  const canWriteCms = cmsMutationPath !== null;
-
   const copyUrl = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
@@ -312,14 +291,6 @@ export function AdminMediaBrowser() {
 
   const processUploadFiles = async (files: FileList | null) => {
     if (!files?.length) return;
-    if (cmsMutationPath === null) {
-      toast({
-        title: "Wrong folder",
-        description: "Open media/cms (or use CMS only) to upload.",
-        variant: "destructive",
-      });
-      return;
-    }
     setUploading(true);
     try {
       for (let i = 0; i < files.length; i++) {
@@ -336,7 +307,8 @@ export function AdminMediaBrowser() {
         await api.admin.mediaUpload({
           image,
           filename: file.name || "upload.jpg",
-          path: cmsMutationPath || undefined,
+          path: data?.listingPrefix || undefined,
+          fullPath: true,
         });
       }
       toast({ title: "Upload complete" });
@@ -358,16 +330,12 @@ export function AdminMediaBrowser() {
       toast({ title: "Folder name required", variant: "destructive" });
       return;
     }
-    if (cmsMutationPath === null) {
-      toast({
-        title: "Wrong folder",
-        description: "Navigate inside media/cms to create folders.",
-        variant: "destructive",
-      });
-      return;
-    }
     try {
-      await api.admin.mediaCreateFolder({ path: cmsMutationPath || undefined, name });
+      await api.admin.mediaCreateFolder({
+        path: data?.listingPrefix || undefined,
+        name,
+        fullPath: true,
+      });
       toast({ title: "Folder created" });
       setFolderOpen(false);
       setFolderName("");
@@ -415,8 +383,7 @@ export function AdminMediaBrowser() {
             <h1 className="text-xl font-semibold tracking-tight">Media</h1>
             <p className="text-sm text-muted-foreground">
               Browse the whole MinIO bucket (default) or restrict to{" "}
-              <code className="text-xs">media/cms/</code>. Uploads and new folders only apply under{" "}
-              <code className="text-xs">media/cms/</code>.
+              <code className="text-xs">media/cms/</code>. Admin has full access to upload, create folders, and delete anywhere.
             </p>
           </div>
         <div className="flex flex-wrap gap-2">
@@ -448,12 +415,7 @@ export function AdminMediaBrowser() {
             type="button"
             variant="outline"
             size="sm"
-            disabled={uploading || !canWriteCms}
-            title={
-              canWriteCms
-                ? undefined
-                : "Open media/cms (navigate here or use CMS only) to upload"
-            }
+            disabled={uploading}
             onClick={() => uploadInputRef.current?.click()}
             className="gap-1.5"
           >
@@ -469,12 +431,6 @@ export function AdminMediaBrowser() {
             variant="outline"
             size="sm"
             className="gap-1.5"
-            disabled={!canWriteCms}
-            title={
-              canWriteCms
-                ? undefined
-                : "Open media/cms to create folders there"
-            }
             onClick={() => setFolderOpen(true)}
           >
             <FolderPlus className="h-4 w-4" />
@@ -738,9 +694,8 @@ export function AdminMediaBrowser() {
           <DialogHeader>
             <DialogTitle>New folder</DialogTitle>
             <DialogDescription>
-              Creates an empty prefix <code className="text-xs">name/</code> under{" "}
-              <code className="text-xs">media/cms/</code>
-              {cmsMutationPath ? ` at ${cmsMutationPath}` : " at the CMS root"}.
+              Creates an empty prefix <code className="text-xs">name/</code> in the current directory
+              {data?.listingPrefix ? ` (${data.listingPrefix})` : " (bucket root)"}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
