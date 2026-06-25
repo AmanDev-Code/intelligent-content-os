@@ -206,29 +206,38 @@ export function AdminMediaBrowser() {
   );
   const [previewObject, setPreviewObject] = useState<BrowseObject | null>(null);
 
-  useEffect(() => {
-    setRelativePath("");
-  }, [browseScope]);
+  const loadIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const currentLoadId = ++loadIdRef.current;
     setLoading(true);
     try {
       const res = (await api.admin.mediaBrowse({
         path: relativePath || undefined,
         ...(browseScope === "cms" ? { scope: "cms" } : {}),
       })) as BrowseResult;
-      setData(res);
+      if (loadIdRef.current === currentLoadId) {
+        setData(res);
+      }
     } catch (e: unknown) {
-      toast({
-        title: "Could not load media",
-        description: e instanceof Error ? e.message : "Request failed",
-        variant: "destructive",
-      });
-      setData(null);
+      if (loadIdRef.current === currentLoadId) {
+        toast({
+          title: "Could not load media",
+          description: e instanceof Error ? e.message : "Request failed",
+          variant: "destructive",
+        });
+        setData(null);
+      }
     } finally {
-      setLoading(false);
+      if (loadIdRef.current === currentLoadId) {
+        setLoading(false);
+      }
     }
   }, [relativePath, browseScope, toast]);
+
+  useEffect(() => {
+    setRelativePath("");
+  }, [browseScope]);
 
   useEffect(() => {
     void load();
