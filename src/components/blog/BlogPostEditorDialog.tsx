@@ -73,7 +73,14 @@ export function BlogPostEditorDialog({
   const [saving, setSaving] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
   const [savingAuthorProfile, setSavingAuthorProfile] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState<Record<string, boolean>>({});
+  const [aiGenerating, setAiGenerating] = useState<Record<string, boolean>>({
+    title: false,
+    excerpt: false,
+    body: false,
+    faq: false,
+    seo: false,
+    featureImage: false,
+  });
   const pendingAuthorHydrate = useRef(false);
   const bodyTextareaRef = useRef<HTMLTextAreaElement>(null);
   const didLoadPostRef = useRef<string | null>(null);
@@ -281,6 +288,34 @@ export function BlogPostEditorDialog({
     toast({ title: `Reading time: ${minutes} min` });
   }
 
+  async function handleRegenerateFeatureImage() {
+    if (!editingId || !form.slug) {
+      toast({ title: "Save the post first to generate a feature image", variant: "destructive" });
+      return;
+    }
+    
+    setAiGenerating((prev) => ({ ...prev, featureImage: true }));
+    try {
+      const response = await apiClient.post(`/admin/content-engine/blog/${form.slug}/regenerate-image`);
+      if (response.success) {
+        setForm((f) => ({ ...f, featured_image_url: response.image_url }));
+        toast({ title: "Feature image regenerated successfully" });
+      } else {
+        throw new Error(response.error || "Failed to regenerate image");
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Error regenerating image";
+      console.error(`Regeneration failed: ${errorMsg}`);
+      toast({
+        title: "Regeneration failed", 
+        description: errorMsg,
+        variant: "destructive"
+      });
+    } finally {
+      setAiGenerating((prev) => ({ ...prev, featureImage: false }));
+    }
+  }
+
   async function savePost() {
     if (!form.title.trim() || !form.slug.trim()) {
       toast({ title: "Title and slug are required", variant: "destructive" });
@@ -389,6 +424,7 @@ export function BlogPostEditorDialog({
             onGenerateFAQ={() => void handleGenerateFAQ()}
             onGenerateSEO={() => void handleGenerateSEO()}
             onAutoReadingTime={handleAutoReadingTime}
+            onRegenerateFeatureImage={() => void handleRegenerateFeatureImage()}
           />
         )}
         <DialogFooter className="gap-2 sm:justify-end">
@@ -422,6 +458,7 @@ type BlogPostEditorFormProps = {
   onGenerateFAQ: () => void;
   onGenerateSEO: () => void;
   onAutoReadingTime: () => void;
+  onRegenerateFeatureImage: () => void;
 };
 
 function BlogPostEditorForm({
@@ -442,6 +479,7 @@ function BlogPostEditorForm({
   onGenerateFAQ,
   onGenerateSEO,
   onAutoReadingTime,
+  onRegenerateFeatureImage,
 }: BlogPostEditorFormProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -663,6 +701,21 @@ function BlogPostEditorForm({
           </div>
         </div>
       </div>
+
+      {/* Auto-fill featured image if it's empty but we have an ID (existing post) */}
+      {editingId && !form.featured_image_url && !aiGenerating.featureImage && (
+        <div className="space-y-1 sm:col-span-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50"
+            onClick={() => void onRegenerateFeatureImage()}
+          >
+            ✨ Generate Feature Image
+          </Button>
+        </div>
+      )}
       <div className="space-y-1">
         <Label>Author display name</Label>
         <Input
@@ -780,6 +833,46 @@ function BlogPostEditorForm({
           uploadCmsPath={isAdmin ? "blog" : undefined}
           onChange={(url) => setForm((f) => ({ ...f, og_image_url: url }))}
         />
+      </div>
+
+      {/* Feature Image Section with Regeneration */}
+      <div className="space-y-1 sm:col-span-2 border rounded-lg p-4 bg-card">
+        <div className="flex items-center justify-between">
+          <Label className="text-primary font-semibold">Feature Image (AI-Generated)</Label>
+          {form.featured_image_url && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 border-orange-300 text-orange-700 hover:bg-orange-50"
+              onClick={() => void onRegenerateFeatureImage()}
+              disabled={aiGenerating.featureImage}
+            >
+              {aiGenerating.featureImage ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                "♻️ Regenerate Image"
+              )}
+            </Button>
+          )}
+        </div>
+        
+        {form.featured_image_url ? (
+          <div className="mt-2 border rounded-lg overflow-hidden">
+            <img
+              src={form.featured_image_url}
+              alt="Featured image preview"
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-2 bg-muted text-xs text-muted-foreground truncate">
+              {form.featured_image_url}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-2">
+            Feature image will be automatically generated when the article is created or saved.
+          </p>
+        )}
       </div>
       <div className="space-y-1">
         <Label>Twitter card</Label>
