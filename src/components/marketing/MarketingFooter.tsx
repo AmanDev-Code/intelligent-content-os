@@ -45,7 +45,7 @@ export function MarketingFooter() {
         ) : null}
 
         <div className="grid gap-10 py-8 lg:grid-cols-12 lg:gap-8">
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-3">
             <TrndinnLogo variant="wordmark" className="opacity-95" />
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               One calm command center for your social presence. Create with AI, schedule with confidence, and
@@ -53,7 +53,7 @@ export function MarketingFooter() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-10 md:grid-cols-3 lg:col-span-8">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:col-span-9 lg:grid-cols-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Product</p>
               <ul className="mt-3 space-y-2 text-sm">
@@ -80,6 +80,36 @@ export function MarketingFooter() {
               </ul>
             </div>
             <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Compare</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/vs/buffer" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    vs Buffer
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vs/hootsuite" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    vs Hootsuite
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vs/predis" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    vs Predis.ai
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vs/postiz" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    vs Postiz
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vs/taplio" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    vs Taplio
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Company</p>
               <ul className="mt-3 space-y-2 text-sm">
                 <li>
@@ -100,6 +130,31 @@ export function MarketingFooter() {
                 <li>
                   <Link href="/legal/refund" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
                     Refunds
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Guides</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/guides/ai-social-media-marketing" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    AI Social Media Marketing
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/guides/linkedin-automation" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    LinkedIn Automation
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/guides/content-repurposing" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    Content Repurposing
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/guides/social-media-scheduling" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    Social Media Scheduling
                   </Link>
                 </li>
               </ul>
