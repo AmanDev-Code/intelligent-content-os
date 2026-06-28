@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, Check, Minus, Scale, Sparkles, X, ExternalLink } from "lucide-react";
+import { ArrowRight, Check, Minus, Scale, Sparkles, X, ExternalLink, BookOpen } from "lucide-react";
 import { FinalCta } from "@/components/marketing/FinalCta";
 import { LandingFaq } from "@/components/marketing/LandingFaq";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Reveal } from "@/components/marketing/Reveal";
 import { Section, SectionHeading } from "@/components/marketing/Section";
 import { Button } from "@/components/ui/button";
+import { ComparisonBreadcrumb } from "@/components/internal-linking/BreadcrumbNav";
+import { getGuidesForComparison, type ComparisonKey } from "@/lib/internalLinking";
 import { siteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -391,6 +393,66 @@ function RelatedComparisonsSection({
   );
 }
 
+// Related Guides Section - internal linking for comparison pages
+function RelatedGuidesSection({ competitorKey }: { competitorKey: string }) {
+  const guides = getGuidesForComparison(competitorKey as ComparisonKey);
+
+  if (guides.length === 0) return null;
+
+  return (
+    <Section className="border-t border-border/40 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent">
+      <SectionHeading
+        eyebrow="Learn More"
+        title={`Master ${competitorKey === "taplio" ? "LinkedIn" : "these features"}`}
+        subtitle="Deep-dive guides to help you get the most from these capabilities."
+      />
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 md:mt-10">
+        {guides.map((guide, index) => (
+          <Reveal key={guide.key} delay={index * 40}>
+            <Link
+              href={guide.href}
+              className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-md transition-all hover:border-primary/30 hover:bg-primary/5 hover:-translate-y-0.5 dark:bg-white/[0.04] dark:hover:bg-primary/10"
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white"
+                  style={{ backgroundColor: guide.color }}
+                >
+                  <BookOpen className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-display font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                    {guide.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                    {guide.excerpt}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-1 text-sm font-semibold text-primary">
+                <span>Read guide</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </div>
+              {/* SEO keywords */}
+              <div className="mt-3 flex flex-wrap gap-1">
+                {guide.keywords.slice(0, 2).map((kw) => (
+                  <span
+                    key={kw}
+                    className="inline-flex rounded-full bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground"
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </Link>
+          </Reveal>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 // Main component
 export default function CompareVsPage({
   config,
@@ -404,6 +466,11 @@ export default function CompareVsPage({
   return (
     <MarketingShell>
       <main>
+        {/* Breadcrumb Navigation */}
+        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+          <ComparisonBreadcrumb competitorName={config.competitorName} />
+        </div>
+
         {/* Hero Section */}
         <section className="relative isolate overflow-hidden">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,hsl(var(--primary)/0.12),transparent_55%)] dark:bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,rgba(255,138,31,0.26),transparent_55%)]" />
@@ -587,6 +654,9 @@ export default function CompareVsPage({
           secondaryLabel={config.cta.secondaryLabel}
           secondaryHref="/pricing"
         />
+
+        {/* Related Guides - Internal Linking */}
+        <RelatedGuidesSection competitorKey={config.slug} />
 
         {/* Related Comparisons */}
         <RelatedComparisonsSection comparisons={config.relatedComparisons} currentSlug={config.slug} />

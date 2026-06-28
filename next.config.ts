@@ -89,6 +89,8 @@ const nextConfig: NextConfig = {
       { source: "/privacy-policy", destination: "/legal/privacy", permanent: true },
       { source: "/terms-of-use", destination: "/legal/terms", permanent: true },
       { source: "/refund-policy", destination: "/legal/refund", permanent: true },
+      { source: "/compare/trndinn/buffer", destination: "/vs/buffer", permanent: true },
+      { source: "/compare/trndinn/postiz", destination: "/vs/postiz", permanent: true },
     ];
   },
 };

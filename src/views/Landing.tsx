@@ -8,6 +8,8 @@ import { BentoFeatures } from "@/components/marketing/BentoFeatures";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { AudienceSegments } from "@/components/marketing/AudienceSegments";
 import { ComparisonBand } from "@/components/marketing/ComparisonBand";
+import { CompareSection } from "@/components/marketing/CompareSection";
+import { GuidesSection } from "@/components/internal-linking/GuidesSection";
 import { SecondaryFeatures } from "@/components/marketing/SecondaryFeatures";
 import { StatBand } from "@/components/marketing/StatBand";
 import { TrustBand } from "@/components/marketing/TrustBand";
@@ -71,6 +73,20 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
           manualLabel={comparison?.manualLabel}
           trndinnLabel={comparison?.trndinnLabel}
           rows={comparison?.rows ?? DEFAULT_MARKETING_CONTENT.landing_comparison.rows}
+        />
+
+        <CompareSection />
+
+        <GuidesSection
+          eyebrow="Expert Resources"
+          title="Master social media with our guides"
+          subtitle="Step-by-step tutorials on AI content generation, LinkedIn automation, content repurposing, and scheduling workflows."
+          guideOrder={[
+            "ai-social-media-marketing",
+            "linkedin-automation",
+            "content-repurposing",
+            "social-media-scheduling",
+          ]}
         />
 
         <StatBand

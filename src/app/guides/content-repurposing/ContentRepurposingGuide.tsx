@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import {
   RefreshCw,
@@ -136,8 +137,31 @@ export function ContentRepurposingGuide() {
                 { label: "Content Repurposing", href: "/guides/content-repurposing" },
               ]}
             />
+            {/* Hero Image Section */}
+            <div className="relative mb-8 overflow-hidden rounded-2xl border border-border/50">
+              <div className="relative h-64 sm:h-80 lg:h-96">
+                {/* Light mode image */}
+                <Image
+                  src="/images/guides/content-repurposing.jpg"
+                  alt="Content Repurposing Guide"
+                  fill
+                  className="object-cover dark:hidden"
+                  priority
+                />
+                {/* Dark mode image */}
+                <Image
+                  src="/images/guides/content-repurposing-dark.jpg"
+                  alt="Content Repurposing Guide"
+                  fill
+                  className="object-cover hidden dark:block"
+                  priority
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+              </div>
+            </div>
             <header className="mb-12">
-              <div   >
+              <div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
                   <RefreshCw className="h-3.5 w-3.5" />
                   Blogger's Guide

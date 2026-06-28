@@ -22,7 +22,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   // Marketing pages - High priority
   { path: "/features",      changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
   { path: "/pricing",       changeFrequency: "weekly",  priority: 0.9, lastModified: new Date("2026-06-12") },
-  { path: "/compare/trndinn/postiz", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-20") },
+  { path: "/vs/postiz",     changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
   { path: "/mcp",           changeFrequency: "monthly", priority: 0.85, lastModified: new Date("2026-06-20") },
   { path: "/ai-agent",      changeFrequency: "monthly", priority: 0.85, lastModified: new Date("2026-06-20") },
   { path: "/content-engine", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-06-20") },
@@ -32,8 +32,18 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
   { path: "/careers",       changeFrequency: "monthly", priority: 0.6, lastModified: new Date("2026-04-01") },
 
-  // Comparison pages — programmatic SEO
-  { path: "/compare/trndinn/buffer", changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-06-20") },
+  // Comparison pages — programmatic SEO (vs/ routes)
+  { path: "/vs/buffer", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+  { path: "/vs/hootsuite", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+  { path: "/vs/predis", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+  { path: "/vs/postiz", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+  { path: "/vs/taplio", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+
+  // Pillar guide pages
+  { path: "/guides/ai-social-media-marketing", changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-06-28") },
+  { path: "/guides/linkedin-automation", changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-06-28") },
+  { path: "/guides/content-repurposing", changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-06-28") },
+  { path: "/guides/social-media-scheduling", changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-06-28") },
 
   // Additional public pages
   { path: "/about-us",      changeFrequency: "monthly", priority: 0.6, lastModified: new Date("2026-04-01") },

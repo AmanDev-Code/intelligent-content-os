@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Sparkles,
@@ -206,6 +207,29 @@ export function AISocialMediaMarketingGuide() {
                 { label: "AI Social Media Marketing", href: "/guides/ai-social-media-marketing" },
               ]}
             />
+            {/* Hero Image Section */}
+            <div className="relative mb-8 overflow-hidden rounded-2xl border border-border/50">
+              <div className="relative h-64 sm:h-80 lg:h-96">
+                {/* Light mode image */}
+                <Image
+                  src="/images/guides/ai-social-media-marketing.jpg"
+                  alt="AI Social Media Marketing Guide"
+                  fill
+                  className="object-cover dark:hidden"
+                  priority
+                />
+                {/* Dark mode image */}
+                <Image
+                  src="/images/guides/ai-social-media-marketing-dark.jpg"
+                  alt="AI Social Media Marketing Guide"
+                  fill
+                  className="object-cover hidden dark:block"
+                  priority
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+              </div>
+            </div>
             {/* Hero Section */}
             <header className="mb-12">
               <div

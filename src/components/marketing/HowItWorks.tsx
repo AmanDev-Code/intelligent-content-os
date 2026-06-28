@@ -54,33 +54,38 @@ export function HowItWorks({
           aria-hidden
         />
 
-        <ol className="grid gap-8 lg:grid-cols-4 lg:gap-6">
+        <ol className="grid auto-rows-fr gap-8 lg:grid-cols-4 lg:gap-6">
           {items.map((step, index) => {
             const Icon = ICONS[step.key ?? ""] ?? ICON_FALLBACKS[index % ICON_FALLBACKS.length];
             return (
-              <Reveal key={step.key ?? index} delay={index * 110} as="li">
-                <div className="flex gap-5 lg:flex-col lg:gap-0">
+              <Reveal key={step.key ?? index} delay={index * 110} as="li" className="h-full">
+                <div className="flex h-full flex-col gap-5 lg:flex-col lg:gap-0">
                   {/* Milestone node */}
                   <div className="relative shrink-0 lg:flex lg:justify-center">
-                    <span className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary dark:bg-[#0b1120]">
-                      <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/15 to-transparent dark:from-primary/25" />
+                    <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary dark:bg-[#0b1120]">
+                      {/* Inner glow with overflow containment */}
+                      <span className="absolute inset-0 overflow-hidden rounded-2xl">
+                        <span className="absolute inset-[-2px] rounded-2xl bg-gradient-to-br from-primary/20 to-transparent dark:from-primary/30" />
+                      </span>
+                      <span className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-primary/10" />
                       <Icon className="relative h-6 w-6 text-primary" aria-hidden />
-                      <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#ff8a1f] to-[#ff3d39] text-[11px] font-black text-white">
+                      {/* Number badge - positioned to not overflow */}
+                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-[#ff8a1f] to-[#ff3d39] text-[10px] font-black text-white shadow-md">
                         {index + 1}
                       </span>
                     </span>
                   </div>
 
-                  {/* Step content */}
+                  {/* Step content - equal height cards */}
                   <div
                     className={cn(
-                      "min-w-0 flex-1 rounded-2xl bg-card/70 p-5 backdrop-blur-md",
+                      "flex min-w-0 flex-1 flex-col rounded-2xl border border-border/30 bg-card/70 p-5 backdrop-blur-md",
                       "transition-transform duration-300 hover:-translate-y-0.5",
-                      "dark:bg-white/[0.04] lg:mt-6 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none lg:hover:translate-y-0",
+                      "dark:bg-white/[0.04] lg:mt-6 lg:border-border/20 lg:bg-card/40 lg:p-5 lg:shadow-sm lg:hover:-translate-y-1",
                     )}
                   >
                     <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
                   </div>
                 </div>
               </Reveal>

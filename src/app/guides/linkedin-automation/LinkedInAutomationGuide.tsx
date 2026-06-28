@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Linkedin,
@@ -12,10 +13,8 @@ import {
   Calendar,
   Zap,
   Star,
-  Image as ImageIcon,
   BarChart3,
   MessageSquare,
-  Loader2,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
@@ -26,64 +25,50 @@ import { GuideBreadcrumb } from "@/components/guides/GuideBreadcrumb";
 import { siteName, getSiteUrl } from "@/lib/site";
 const tocItems = [
   { id: "overview", text: "Why Automate LinkedIn Posts?", level: 2 },
-  { id: "setup", text: "Step 1: Set Up Your LinkedIn Profile", level: 2 },
-  { id: "choose-tool", text: "Step 2: Choose Your Automation Tool", level: 2 },
-  { id: "connect", text: "Step 3: Connect LinkedIn Account", level: 2 },
-  { id: "content-strategy", text: "Step 4: Develop Content Strategy", level: 2 },
-  { id: "ai-content", text: "Step 5: Generate AI Content", level: 2 },
-  { id: "schedule", text: "Step 6: Schedule and Automate", level: 2 },
-  { id: "monitor", text: "Step 7: Monitor and Engage", level: 2 },
+  { id: "connect", text: "Step 1: Connect LinkedIn", level: 2 },
+  { id: "brand-kit", text: "Step 2: Set Up Brand Kit", level: 2 },
+  { id: "ai-content", text: "Step 3: Generate AI Content", level: 2 },
+  { id: "schedule", text: "Step 4: Schedule & Publish", level: 2 },
+  { id: "calendar", text: "Step 5: Content Calendar", level: 2 },
+  { id: "analytics", text: "Step 6: Monitor Analytics", level: 2 },
   { id: "best-times", text: "Best Times to Post on LinkedIn", level: 2 },
   { id: "mistakes", text: "Common Mistakes to Avoid", level: 2 },
 ];
 const steps = [
   {
     number: "01",
-    title: "Optimize Your LinkedIn Profile",
-    description: "Before automating posts, ensure your profile is complete and professional. Add a banner, professional headshot, compelling headline, and detailed About section.",
-    screenshot: "<!-- TODO: Screenshot - LinkedIn profile optimization checklist -->",
+    title: "Sign Up & Connect LinkedIn",
+    description: `Create a free ${siteName} account, then click "Connect LinkedIn" on the Dashboard. You'll authorize via LinkedIn's secure OAuth — no password sharing. Once connected, your profile name, follower count, and engagement stats appear in the Social Channels panel.`,
   },
   {
     number: "02",
-    title: "Choose an AI-Powered Scheduling Tool",
-    description: `Select a tool that supports LinkedIn automation with AI features. ${siteName} offers brand voice learning, optimal timing prediction, and one-click scheduling.`,
-    screenshot: "<!-- TODO: Screenshot - Comparing automation tools dashboard -->",
+    title: "Set Up Your Brand Kit",
+    description: `Navigate to Brand Kit in the sidebar. Add your logo, brand colors (primary, secondary, accent), define your tone of voice, target audience, and paste up to 5 example posts so the AI learns your unique writing style. You can also use Smart Import to auto-extract your brand identity from a URL.`,
   },
   {
     number: "03",
-    title: "Connect Your LinkedIn Account",
-    description: "Authorize the tool to access your LinkedIn profile. Use official API integrations for security. Most tools use OAuth for secure connection.",
-    screenshot: "<!-- TODO: Screenshot - LinkedIn OAuth connection flow -->",
+    title: "Generate AI Content with the Agent",
+    description: `Open the AI Agent (Content Engine) from the sidebar. Describe your topic, pick a content type — thought leadership, story, educational tip, or question — and hit Generate. The AI drafts a ready-to-post LinkedIn update in your brand voice, complete with hashtags and an AI quality score.`,
   },
   {
     number: "04",
-    title: "Define Your Content Pillars",
-    description: "Identify 3-5 content themes that align with your personal brand. Common pillars include industry insights, personal stories, educational content, and community engagement.",
-    screenshot: "<!-- TODO: Screenshot - Content pillar planning template -->",
+    title: "Edit & Preview Your Post",
+    description: `Review the generated draft in the rich-text editor. Adjust formatting (bold, italic), tweak hashtags, add an image or carousel from the Media library, and watch the live LinkedIn-style preview update in real time. Personalize with anecdotes before moving to scheduling.`,
   },
   {
     number: "05",
-    title: "Train AI on Your Voice",
-    description: "Upload examples of your best LinkedIn posts to teach the AI your writing style. Include different post types: thought leadership, stories, tips, and questions.",
-    screenshot: "<!-- TODO: Screenshot - AI training interface in ${siteName} -->",
+    title: "Schedule or Publish Instantly",
+    description: `Click "Schedule" to pick a date and time from the calendar, or hit "Post Now" to publish immediately. The Schedule modal shows AI-recommended optimal times based on when your audience is most active. All scheduled posts appear on your Dashboard calendar.`,
   },
   {
     number: "06",
-    title: "Generate and Edit AI Content",
-    description: "Use AI to generate post drafts based on your content pillars. Always review and personalize before scheduling. Add personal anecdotes and insights.",
-    screenshot: "<!-- TODO: Screenshot - AI content generation with edit options -->",
+    title: "Manage Your Content Calendar",
+    description: `The Dashboard displays a full month calendar view of all scheduled and published posts. Drag and drop to reschedule, click any post to preview or edit, and filter by status (scheduled, published, failed). Use the Scheduled Posts page for a list-based view with search and pagination.`,
   },
   {
     number: "07",
-    title: "Set Up Recurring Schedule",
-    description: "Create a consistent posting schedule. Start with 3-5 posts per week and adjust based on engagement. Use AI recommendations for optimal timing.",
-    screenshot: "<!-- TODO: Screenshot - Calendar view with scheduled posts -->",
-  },
-  {
-    number: "08",
-    title: "Enable Engagement Notifications",
-    description: "Turn on notifications for comments and reactions. Automation handles posting, but you must engage authentically with your audience.",
-    screenshot: "<!-- TODO: Screenshot - Notification settings configuration -->",
+    title: "Monitor Analytics & Engagement",
+    description: `Visit the Analytics page to see total reach, engagement rate, clicks, and top-performing posts pulled directly from LinkedIn. Use these AI-powered insights to refine your content pillars and posting frequency over time.`,
   },
 ];
 const bestTimes = [
@@ -196,11 +181,31 @@ export function LinkedInAutomationGuide() {
                 { label: "LinkedIn Automation", href: "/guides/linkedin-automation" },
               ]}
             />
+            {/* Hero Image Section */}
+            <div className="relative mb-8 overflow-hidden rounded-2xl border border-border/50">
+              <div className="relative h-64 sm:h-80 lg:h-96">
+                {/* Light mode image */}
+                <Image
+                  src="/images/guides/linkedin-automation.jpg"
+                  alt="LinkedIn Automation Guide"
+                  fill
+                  className="object-cover dark:hidden"
+                  priority
+                />
+                {/* Dark mode image */}
+                <Image
+                  src="/images/guides/linkedin-automation-dark.jpg"
+                  alt="LinkedIn Automation Guide"
+                  fill
+                  className="object-cover hidden dark:block"
+                  priority
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent" />
+              </div>
+            </div>
             <header className="mb-12">
               <div
-                
-                
-                
               >
                 <span className="inline-flex items-center gap-2 rounded-full bg-[#0A66C2]/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#0A66C2]">
                   <Linkedin className="h-3.5 w-3.5" />
@@ -443,11 +448,6 @@ export function LinkedInAutomationGuide() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-foreground text-lg">{step.title}</h3>
                         <p className="mt-2 text-muted-foreground">{step.description}</p>
-                        {/* Screenshot placeholder */}
-                        <div className="mt-4 rounded-lg border-2 border-dashed border-border/60 bg-muted/30 p-8 text-center">
-                          <ImageIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                          <p className="text-sm text-muted-foreground">{step.screenshot}</p>
-                        </div>
                       </div>
                     </div>
                   </div>
