@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import { OnboardingWizard, type OnboardingAnswers } from "./OnboardingWizard";
 import { OnboardingActivationFlow } from "./OnboardingActivationFlow";
@@ -21,6 +22,7 @@ interface OnboardingGateProps {
 }
 
 export function OnboardingGate({ children }: OnboardingGateProps) {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [showActivation, setShowActivation] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -81,6 +83,19 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   useEffect(() => {
     refreshStatus();
   }, [refreshStatus]);
+
+  // Re-fetch status when LinkedIn connection completes (OAuth return)
+  // This ensures the activation flow updates to show step 2 after connecting
+  const linkedinParam = searchParams.get("linkedin");
+  useEffect(() => {
+    if (linkedinParam === "connected") {
+      // Small delay to let the LinkedIn handler process first
+      const timer = setTimeout(() => {
+        refreshStatus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [linkedinParam, refreshStatus]);
 
   const handleCompleteActivation = async () => {
     await apiClient.post("/onboarding/activation-complete", {});
