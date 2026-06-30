@@ -232,7 +232,8 @@ export function ArticleGeneratorWizard({ onArticleSaved }: ArticleGeneratorWizar
     let result = body;
     
     // 1. Hero image at top
-    const heroUrl = `https://source.unsplash.com/1200x600/?${encodeURIComponent(keyword)}`;
+    const slug = keyword.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const heroUrl = `https://picsum.photos/seed/${slug}/1200/600`;
     result = `![${keyword}](${heroUrl} "${keyword} overview")\n\n${result}`;
     
     // 2. Detect visual content patterns and insert images intelligently
@@ -293,7 +294,8 @@ export function ArticleGeneratorWizard({ onArticleSaved }: ArticleGeneratorWizar
         
         // Build image prompt with type-specific keywords
         const imageKeyword = `${headingWords} ${keywords[Math.floor(Math.random() * keywords.length)]}`;
-        const imageUrl = `https://source.unsplash.com/800x500/?${encodeURIComponent(imageKeyword)}`;
+        const headingSlug = headingWords.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const imageUrl = `https://picsum.photos/seed/${headingSlug}/800/500`;
         
         // Create caption that describes the visual type
         const visualTypeLabel = type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -323,7 +325,8 @@ export function ArticleGeneratorWizard({ onArticleSaved }: ArticleGeneratorWizar
       // Skip the first H2 (usually intro) and add images to subsequent ones at intervals
       if (i > 0 && i % 3 === 0) {
         const imageKeyword = heading.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(' ').slice(0, 3).join(' ');
-        const imageUrl = `https://source.unsplash.com/800x400/?${encodeURIComponent(imageKeyword)}`;
+        const headingSlug = imageKeyword.replace(/\s+/g, '-');
+        const imageUrl = `https://picsum.photos/seed/${headingSlug}/800/400`;
         const imageMarkdown = `\n\n![${heading}](${imageUrl})\n\n`;
         result = result.slice(0, position) + imageMarkdown + result.slice(position);
         insertedPositions.push(position);
