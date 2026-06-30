@@ -757,7 +757,7 @@ export function ArticleGeneratorWizard({ onArticleSaved }: ArticleGeneratorWizar
                   { label: "GEO", value: article.geo_score },
                   { label: "E-E-A-T", value: article.eeat_score },
                   { label: "Readability", value: article.readability_score },
-                  { label: "Overall", value: article.quality_score },
+                  { label: "Overall", value: article.quality_score || Math.round((article.seo_score + article.aeo_score + article.geo_score + article.eeat_score + article.readability_score) / 5) },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 rounded-lg bg-muted/50">
                     <p className="text-2xl font-semibold">{s.value}</p>

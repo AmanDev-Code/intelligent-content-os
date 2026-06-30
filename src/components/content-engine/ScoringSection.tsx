@@ -194,7 +194,12 @@ export function ScoringSection() {
                         eeat: post.eeat_score ?? 0,
                         readability: post.readability_score ?? 0,
                       }}
-                      overall={post.quality_score ?? 0}
+                      overall={
+                        post.quality_score ||
+                        Math.round(
+                          ((post.seo_score ?? 0) + (post.aeo_score ?? 0) + (post.geo_score ?? 0) + (post.eeat_score ?? 0) + (post.readability_score ?? 0)) / 5
+                        )
+                      }
                     />
                   ) : (
                     <p className="text-xs text-muted-foreground italic">
