@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Russo+One&display=swap');
+
 @layer base {
   /* Light canvas: aligns with marketing blog parchment (#f9f7f2 → hsl ~43 37% 96%) */
   :root {
