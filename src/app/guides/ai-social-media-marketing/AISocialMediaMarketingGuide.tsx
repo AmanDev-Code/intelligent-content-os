@@ -200,7 +200,7 @@ export function AISocialMediaMarketingGuide() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_280px] lg:gap-12">
           {/* Main Content */}
-          <article className="prose prose-lg max-w-none dark:prose-invert">
+          <article className="prose prose-sm sm:prose-lg max-w-none dark:prose-invert overflow-hidden">
             <GuideBreadcrumb
               items={[
                 { label: "Guides", href: "/guides" },
@@ -232,19 +232,18 @@ export function AISocialMediaMarketingGuide() {
             </div>
             {/* Hero Section */}
             <header className="mb-12">
-              <div
-              >
+              <div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
                   <Zap className="h-3.5 w-3.5" />
                   Complete Guide 2026
                 </span>
-                <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-5xl">
+                <h1 className="mt-4 font-display text-2xl font-bold leading-tight text-foreground sm:text-3xl lg:text-5xl">
                   The Complete Guide to AI-Powered Social Media Marketing (2026)
                 </h1>
-                <p className="mt-4 text-xl leading-relaxed text-muted-foreground">
+                <p className="mt-4 text-base sm:text-xl leading-relaxed text-muted-foreground">
                   Discover how artificial intelligence is revolutionizing social media marketing. Learn to choose the best AI tools, implement automation strategies, and grow your brand with intelligent content creation.
                 </p>
-                <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-6 flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4" />
                     15 min read
@@ -265,7 +264,7 @@ export function AISocialMediaMarketingGuide() {
               id="what-is"
               className="mb-12"
             >
-              <h2 className="mb-4 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-4 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 What is AI Social Media Marketing?
               </h2>
               <p className="text-muted-foreground leading-relaxed">
@@ -309,7 +308,7 @@ export function AISocialMediaMarketingGuide() {
               id="benefits"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 Benefits of AI-Powered Social Media Marketing
               </h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">
@@ -345,7 +344,7 @@ export function AISocialMediaMarketingGuide() {
               id="features"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 Key Features to Look For in AI Social Media Tools
               </h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">
@@ -383,13 +382,40 @@ export function AISocialMediaMarketingGuide() {
               id="comparison"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 Best AI Social Media Tools Comparison (2026)
               </h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">
                 Here is how the leading AI social media platforms compare across key features:
               </p>
-              <div className="overflow-x-auto rounded-xl border border-border/60">
+              {/* Mobile Card View */}
+              <div className="space-y-4 sm:hidden">
+                {comparisonData.map((row) => (
+                  <div key={row.feature} className="rounded-xl border border-border/60 bg-card/50 p-4">
+                    <h4 className="font-semibold text-foreground mb-3">{row.feature}</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-primary font-medium">{siteName}</span>
+                        <span className="text-primary text-right">{row.trndinn}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Buffer</span>
+                        <span className="text-muted-foreground text-right">{row.buffer}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Hootsuite</span>
+                        <span className="text-muted-foreground text-right">{row.hootsuite}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Sprout Social</span>
+                        <span className="text-muted-foreground text-right">{row.sprout}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop Table View */}
+              <div className="hidden sm:block overflow-x-auto rounded-xl border border-border/60">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -428,7 +454,7 @@ export function AISocialMediaMarketingGuide() {
               id="how-to-start"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 How to Get Started with AI Social Media Marketing
               </h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">
@@ -455,10 +481,10 @@ export function AISocialMediaMarketingGuide() {
             </section>
             {/* CTA Section */}
             <section
-              className="mb-12 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-[#ff3d39]/5 p-8 text-center dark:from-primary/10 dark:to-[#ff3d39]/10"
+              className="mb-12 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-[#ff3d39]/5 p-6 sm:p-8 text-center dark:from-primary/10 dark:to-[#ff3d39]/10"
             >
-              <Sparkles className="mx-auto mb-4 h-10 w-10 text-primary" />
-              <h3 className="font-display text-2xl font-bold text-foreground">
+              <Sparkles className="mx-auto mb-4 h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              <h3 className="font-display text-xl sm:text-2xl font-bold text-foreground">
                 Ready to Transform Your Social Media with AI?
               </h3>
               <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
@@ -493,7 +519,7 @@ export function AISocialMediaMarketingGuide() {
               id="best-practices"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 Best Practices for AI Social Media Marketing
               </h2>
               <p className="mb-6 text-muted-foreground leading-relaxed">
@@ -517,7 +543,7 @@ export function AISocialMediaMarketingGuide() {
               id="faq"
               className="mb-12"
             >
-              <h2 className="mb-6 font-display text-2xl font-bold text-foreground sm:text-3xl">
+              <h2 className="mb-6 font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl">
                 Frequently Asked Questions
               </h2>
               <div className="space-y-4">
