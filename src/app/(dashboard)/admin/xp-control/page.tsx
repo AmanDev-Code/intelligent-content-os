@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { api } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -168,6 +168,65 @@ export default function XPControlPage() {
     genre: "",
   });
 
+  // Auto-save refs
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const configRef = useRef<CampaignConfig | null>(null);
+
+  // Keep configRef in sync
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  // Auto-save campaign config with debounce
+  const autoSaveConfig = useCallback(async () => {
+    if (!configRef.current) return;
+    setSaving(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("xp_campaign_config")
+        .update({
+          upi_id: configRef.current.upi_id,
+          upi_name: configRef.current.upi_name,
+          qr_code_url: configRef.current.qr_code_url,
+          goal_amount: configRef.current.goal_amount,
+          raised_amount: configRef.current.raised_amount,
+          campaign_title: configRef.current.campaign_title,
+          campaign_description: configRef.current.campaign_description,
+          is_active: configRef.current.is_active,
+          countdown_target_date: configRef.current.countdown_target_date,
+          countdown_title: configRef.current.countdown_title,
+          countdown_subtitle: configRef.current.countdown_subtitle,
+          gaming_stats: configRef.current.gaming_stats,
+        })
+        .eq("id", configRef.current.id);
+
+      if (error) throw error;
+      toast.success("Saved!", { duration: 1500 });
+    } catch (error) {
+      toast.error("Failed to save");
+    }
+    setSaving(false);
+  }, []);
+
+  // Trigger auto-save when config changes (debounced)
+  useEffect(() => {
+    if (!config || loading) return;
+    
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSaveConfig();
+    }, 1500); // 1.5 second debounce
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [config, loading, autoSaveConfig]);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -281,6 +340,16 @@ export default function XPControlPage() {
       if (error) throw error;
       setSocials(socials.map((s) => (s.id === id ? { ...s, ...updates } : s)));
       toast.success("Updated!");
+    } catch (error) {
+      toast.error("Failed to update");
+    }
+  };
+
+  const toggleSocialActive = async (id: string, active: boolean) => {
+    try {
+      const { error } = await (supabase as any).from("xp_social_links").update({ is_active: active }).eq("id", id);
+      if (error) throw error;
+      setSocials(socials.map((s) => (s.id === id ? { ...s, is_active: active } : s)));
     } catch (error) {
       toast.error("Failed to update");
     }
@@ -519,73 +588,97 @@ export default function XPControlPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 pb-20">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">XP Campaign Control</h1>
-          <p className="text-muted-foreground">Manage DreamXP Gaming campaign settings</p>
+          <h1 className="text-xl sm:text-2xl font-bold">XP Campaign Control</h1>
+          <p className="text-sm text-muted-foreground">Manage DreamXP Gaming campaign settings</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+          <Button variant="outline" size="sm" onClick={loadData} className="flex-1 sm:flex-none">
+            <RefreshCw className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild className="flex-1 sm:flex-none">
             <a href="/dreamxpgaming" target="_blank">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Page
+              <ExternalLink className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">View Page</span>
             </a>
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="campaign" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="campaign">Campaign Settings</TabsTrigger>
-          <TabsTrigger value="library">Gaming Library ({gamingLibrary.length})</TabsTrigger>
-          <TabsTrigger value="socials">Social Links</TabsTrigger>
-          <TabsTrigger value="messages">Community Messages ({messages.length})</TabsTrigger>
+        {/* Scrollable Tabs for Mobile */}
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1 bg-muted/50">
+          <TabsTrigger value="campaign" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+            Campaign
+          </TabsTrigger>
+          <TabsTrigger value="library" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+            Library ({gamingLibrary.length})
+          </TabsTrigger>
+          <TabsTrigger value="socials" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+            Socials
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+            Messages ({messages.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Campaign Settings Tab */}
         <TabsContent value="campaign" className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-2">
+          {/* Auto-save indicator */}
+          {saving && (
+            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Saving...</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
             {/* UPI Settings */}
             <Card>
-              <CardHeader>
-                <CardTitle>UPI Payment Settings</CardTitle>
-                <CardDescription>Configure UPI ID and payment details</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">UPI Payment Settings</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Configure UPI ID and payment details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>UPI ID</Label>
-                  <Input
-                    value={config?.upi_id || ""}
-                    onChange={(e) => config && setConfig({ ...config, upi_id: e.target.value })}
-                    placeholder="example@upi"
-                  />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">UPI ID</Label>
+                    <Input
+                      value={config?.upi_id || ""}
+                      onChange={(e) => config && setConfig({ ...config, upi_id: e.target.value })}
+                      placeholder="example@upi"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Display Name</Label>
+                    <Input
+                      value={config?.upi_name || ""}
+                      onChange={(e) => config && setConfig({ ...config, upi_name: e.target.value })}
+                      placeholder="DreamPS"
+                      className="h-9 text-sm"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Display Name</Label>
-                  <Input
-                    value={config?.upi_name || ""}
-                    onChange={(e) => config && setConfig({ ...config, upi_name: e.target.value })}
-                    placeholder="DreamPS"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Campaign Title</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm">Campaign Title</Label>
                   <Input
                     value={config?.campaign_title || ""}
                     onChange={(e) => config && setConfig({ ...config, campaign_title: e.target.value })}
+                    className="h-9 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Description (optional)</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm">Description (optional)</Label>
                   <Textarea
                     value={config?.campaign_description || ""}
                     onChange={(e) => config && setConfig({ ...config, campaign_description: e.target.value })}
-                    rows={3}
+                    rows={2}
+                    className="text-sm resize-none"
                   />
                 </div>
               </CardContent>
@@ -593,100 +686,103 @@ export default function XPControlPage() {
 
             {/* QR Code */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="w-5 h-5" />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <QrCode className="w-4 h-4" />
                   QR Code
                 </CardTitle>
-                <CardDescription>Upload custom QR code or use auto-generated</CardDescription>
+                <CardDescription className="text-xs sm:text-sm">Upload custom QR code or use auto-generated</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {config?.qr_code_url ? (
-                  <div className="text-center">
-                    <img
-                      src={config.qr_code_url}
-                      alt="QR Code"
-                      className="w-48 h-48 mx-auto rounded-lg border"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => config && setConfig({ ...config, qr_code_url: null })}
-                    >
-                      Remove custom QR
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                    <QrCode className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Using auto-generated QR from UPI ID
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <Label htmlFor="qr-upload" className="cursor-pointer">
-                    <div className="flex items-center justify-center gap-2 p-3 border rounded-lg hover:bg-muted transition-colors">
-                      {uploadingQR ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Upload className="w-4 h-4" />
-                      )}
-                      {uploadingQR ? "Uploading..." : "Upload Custom QR Code"}
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-4">
+                  {config?.qr_code_url ? (
+                    <div className="relative">
+                      <img
+                        src={config.qr_code_url}
+                        alt="QR Code"
+                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg border object-cover"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full"
+                        onClick={() => config && setConfig({ ...config, qr_code_url: null })}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
                     </div>
-                  </Label>
-                  <input
-                    id="qr-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleQRUpload}
-                    disabled={uploadingQR}
-                  />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/30">
+                      <QrCode className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Label htmlFor="qr-upload" className="cursor-pointer">
+                      <div className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg hover:bg-muted/50 transition-colors">
+                        {uploadingQR ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                        <span className="text-sm">{uploadingQR ? "Uploading..." : "Upload QR"}</span>
+                      </div>
+                    </Label>
+                    <input
+                      id="qr-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleQRUpload}
+                      disabled={uploadingQR}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Goal Settings */}
             <Card>
-              <CardHeader>
-                <CardTitle>Funding Progress</CardTitle>
-                <CardDescription>Set goal and track raised amount</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Funding Progress</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Set goal and track raised amount</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Goal Amount (₹)</Label>
-                  <Input
-                    type="number"
-                    value={config?.goal_amount || 0}
-                    onChange={(e) =>
-                      config && setConfig({ ...config, goal_amount: parseInt(e.target.value) || 0 })
-                    }
-                  />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Goal (₹)</Label>
+                    <Input
+                      type="number"
+                      value={config?.goal_amount || 0}
+                      onChange={(e) =>
+                        config && setConfig({ ...config, goal_amount: parseInt(e.target.value) || 0 })
+                      }
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Raised (₹)</Label>
+                    <Input
+                      type="number"
+                      value={config?.raised_amount || 0}
+                      onChange={(e) =>
+                        config && setConfig({ ...config, raised_amount: parseInt(e.target.value) || 0 })
+                      }
+                      className="h-9 text-sm"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Raised Amount (₹)</Label>
-                  <Input
-                    type="number"
-                    value={config?.raised_amount || 0}
-                    onChange={(e) =>
-                      config && setConfig({ ...config, raised_amount: parseInt(e.target.value) || 0 })
-                    }
-                  />
-                </div>
-                <div className="pt-2">
-                  <div className="flex justify-between text-sm mb-1">
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
                     <span>Progress</span>
-                    <span>
+                    <span className="font-medium">
                       {config ? Math.round((config.raised_amount / config.goal_amount) * 100) : 0}%
                     </span>
                   </div>
-                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all"
                       style={{
-                        width: `${config ? (config.raised_amount / config.goal_amount) * 100 : 0}%`,
+                        width: `${config ? Math.min((config.raised_amount / config.goal_amount) * 100, 100) : 0}%`,
                       }}
                     />
                   </div>
@@ -696,16 +792,15 @@ export default function XPControlPage() {
 
             {/* Status */}
             <Card>
-              <CardHeader>
-                <CardTitle>Campaign Status</CardTitle>
-                <CardDescription>Enable or disable the campaign</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Campaign Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Campaign Active</p>
-                    <p className="text-sm text-muted-foreground">
-                      {config?.is_active ? "Campaign is live" : "Campaign is paused"}
+                    <p className="text-sm font-medium">Campaign Active</p>
+                    <p className="text-xs text-muted-foreground">
+                      {config?.is_active ? "Live" : "Paused"}
                     </p>
                   </div>
                   <Switch
@@ -718,260 +813,223 @@ export default function XPControlPage() {
 
             {/* Countdown Settings */}
             <Card>
-              <CardHeader>
-                <CardTitle>Countdown Timer</CardTitle>
-                <CardDescription>Configure the countdown section</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Countdown Timer</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Target Date</Label>
+              <CardContent className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs sm:text-sm">Target Date</Label>
                   <Input
                     type="datetime-local"
                     value={config?.countdown_target_date ? new Date(config.countdown_target_date).toISOString().slice(0, 16) : ""}
                     onChange={(e) => config && setConfig({ ...config, countdown_target_date: new Date(e.target.value).toISOString() })}
+                    className="h-9 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={config?.countdown_title || ""}
-                    onChange={(e) => config && setConfig({ ...config, countdown_title: e.target.value })}
-                    placeholder="Countdown to PS5"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Subtitle</Label>
-                  <Input
-                    value={config?.countdown_subtitle || ""}
-                    onChange={(e) => config && setConfig({ ...config, countdown_subtitle: e.target.value })}
-                    placeholder="The dream gets closer every second"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Gaming Stats */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle>Gaming Stats Ticker</CardTitle>
-                <CardDescription>Configure the scrolling stats displayed on the page</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {(config?.gaming_stats || []).map((stat, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                    <div className="flex-1 grid grid-cols-3 gap-3">
-                      <Input
-                        value={stat.label}
-                        onChange={(e) => {
-                          if (!config) return;
-                          const newStats = [...(config.gaming_stats || [])];
-                          newStats[index] = { ...newStats[index], label: e.target.value };
-                          setConfig({ ...config, gaming_stats: newStats });
-                        }}
-                        placeholder="Label (e.g., PS5 Sold)"
-                      />
-                      <Input
-                        value={stat.value}
-                        onChange={(e) => {
-                          if (!config) return;
-                          const newStats = [...(config.gaming_stats || [])];
-                          newStats[index] = { ...newStats[index], value: e.target.value };
-                          setConfig({ ...config, gaming_stats: newStats });
-                        }}
-                        placeholder="Value (e.g., 60M+)"
-                      />
-                      <Select
-                        value={stat.icon}
-                        onValueChange={(value) => {
-                          if (!config) return;
-                          const newStats = [...(config.gaming_stats || [])];
-                          newStats[index] = { ...newStats[index], icon: value };
-                          setConfig({ ...config, gaming_stats: newStats });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Icon" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Trophy">Trophy</SelectItem>
-                          <SelectItem value="Gamepad2">Gamepad</SelectItem>
-                          <SelectItem value="Play">Play</SelectItem>
-                          <SelectItem value="Users">Users</SelectItem>
-                          <SelectItem value="Star">Star</SelectItem>
-                          <SelectItem value="Heart">Heart</SelectItem>
-                          <SelectItem value="Zap">Zap</SelectItem>
-                          <SelectItem value="Award">Award</SelectItem>
-                          <SelectItem value="Crown">Crown</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (!config) return;
-                        const newStats = (config.gaming_stats || []).filter((_, i) => i !== index);
-                        setConfig({ ...config, gaming_stats: newStats });
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Title</Label>
+                    <Input
+                      value={config?.countdown_title || ""}
+                      onChange={(e) => config && setConfig({ ...config, countdown_title: e.target.value })}
+                      placeholder="Countdown to PS5"
+                      className="h-9 text-sm"
+                    />
                   </div>
-                ))}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (!config) return;
-                    const newStats = [...(config.gaming_stats || []), { label: "", value: "", icon: "Trophy" }];
-                    setConfig({ ...config, gaming_stats: newStats });
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Stat
-                </Button>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs sm:text-sm">Subtitle</Label>
+                    <Input
+                      value={config?.countdown_subtitle || ""}
+                      onChange={(e) => config && setConfig({ ...config, countdown_subtitle: e.target.value })}
+                      placeholder="The dream gets closer"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={saveConfig} disabled={saving}>
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
+          {/* Save Button - Fixed at bottom on mobile */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t sm:relative sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
+            <div className="flex items-center justify-between sm:justify-end gap-3">
+              <span className="text-xs text-muted-foreground flex items-center gap-2">
+                {saving ? (
+                  <>
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Auto-saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3 h-3" />
+                    Changes auto-saved
+                  </>
+                )}
+              </span>
+              <Button onClick={autoSaveConfig} disabled={saving} size="sm" variant="outline">
+                {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                <span className="ml-2 hidden sm:inline">Save Now</span>
+              </Button>
+            </div>
           </div>
         </TabsContent>
 
         {/* Gaming Library Tab */}
         <TabsContent value="library" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3">
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Gamepad2 className="w-5 h-5" />
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <Gamepad2 className="w-4 h-4" />
                   Gaming Library
                 </CardTitle>
-                <CardDescription>
-                  Manage games in the Bento Grid. Enable blog for each game to create detailed posts.
+                <CardDescription className="text-xs sm:text-sm">
+                  Manage games in the Bento Grid. Enable blog for each game.
                 </CardDescription>
               </div>
-              <Button onClick={openNewGame}>
+              <Button onClick={openNewGame} size="sm" className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Game
               </Button>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Cover</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Grid Size</TableHead>
-                    <TableHead>Blog</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {gamingLibrary.map((game) => (
-                    <TableRow key={game.id}>
-                      <TableCell>
-                        {game.cover_image_url ? (
-                          <img
-                            src={game.cover_image_url}
-                            alt={game.title}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                            <Image className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{game.title}</p>
-                          <p className="text-xs text-muted-foreground">/{game.slug}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
+            <CardContent className="p-0 sm:p-6">
+              {/* Mobile Card View */}
+              <div className="sm:hidden divide-y">
+                {gamingLibrary.map((game) => (
+                  <div key={game.id} className="p-4 flex items-center gap-3">
+                    {game.cover_image_url ? (
+                      <img
+                        src={game.cover_image_url}
+                        alt={game.title}
+                        className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Image className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{game.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">/{game.slug}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-[10px] capitalize px-1.5 py-0">
                           {game.grid_size}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {game.is_blog_enabled ? (
-                          <Badge className="bg-green-500/20 text-green-500">
-                            <FileText className="w-3 h-3 mr-1" />
-                            Enabled
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">Disabled</Badge>
+                        {game.is_blog_enabled && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Blog</Badge>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {game.is_featured && (
-                            <Badge className="bg-purple-500/20 text-purple-500">Featured</Badge>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="flex-shrink-0"
+                      onClick={() => {
+                        setEditingGame(game);
+                        setGameDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                {gamingLibrary.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground text-sm">
+                    No games added yet. Click "Add Game" to get started.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Cover</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Grid Size</TableHead>
+                      <TableHead>Blog</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {gamingLibrary.map((game) => (
+                      <TableRow key={game.id}>
+                        <TableCell>
+                          {game.cover_image_url ? (
+                            <img
+                              src={game.cover_image_url}
+                              alt={game.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                              <Image className="w-5 h-5 text-muted-foreground" />
+                            </div>
                           )}
-                          <Badge variant={game.is_visible ? "default" : "secondary"}>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{game.title}</p>
+                            <p className="text-xs text-muted-foreground">/{game.slug}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {game.grid_size}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={game.is_blog_enabled ? "default" : "secondary"}>
+                            {game.is_blog_enabled ? "Enabled" : "Disabled"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={game.is_visible ? "default" : "outline"}>
                             {game.is_visible ? "Visible" : "Hidden"}
                           </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditGame(game)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleGameVisibility(game.id, !game.is_visible)}
-                          >
-                            {game.is_visible ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {game.title}?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently remove this game from the library.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteGameItem(game.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {gamingLibrary.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        No games added yet. Click "Add Game" to get started.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingGame(game);
+                                setGameDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Game</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{game.title}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteGameItem(game.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -979,30 +1037,30 @@ export default function XPControlPage() {
         {/* Social Links Tab */}
         <TabsContent value="socials" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Add Social Link</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Add Social Link</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <Input
-                  placeholder="Platform (instagram, youtube, twitter...)"
+                  placeholder="Platform"
                   value={newSocial.platform}
                   onChange={(e) => setNewSocial({ ...newSocial, platform: e.target.value })}
-                  className="flex-1"
+                  className="h-9 text-sm"
                 />
                 <Input
                   placeholder="Username"
                   value={newSocial.username}
                   onChange={(e) => setNewSocial({ ...newSocial, username: e.target.value })}
-                  className="flex-1"
+                  className="h-9 text-sm"
                 />
                 <Input
                   placeholder="Full URL"
                   value={newSocial.url}
                   onChange={(e) => setNewSocial({ ...newSocial, url: e.target.value })}
-                  className="flex-[2]"
+                  className="h-9 text-sm sm:col-span-1"
                 />
-                <Button onClick={addSocialLink}>
+                <Button onClick={addSocialLink} size="sm" className="h-9">
                   <Plus className="w-4 h-4 mr-2" />
                   Add
                 </Button>
@@ -1011,71 +1069,98 @@ export default function XPControlPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Social Links</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Social Links</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Platform</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {socials.map((social) => {
-                    const Icon = PLATFORM_ICONS[social.platform] || Globe;
-                    return (
-                      <TableRow key={social.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4" />
-                            <span className="capitalize">{social.platform}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>@{social.username}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <a href={social.url} target="_blank" className="text-blue-500 hover:underline">
-                            {social.url}
-                          </a>
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={social.is_active}
-                            onCheckedChange={(checked) => updateSocialLink(social.id, { is_active: checked })}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete social link?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will remove the {social.platform} link from the campaign page.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteSocialLink(social.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <CardContent className="p-0 sm:p-6">
+              {/* Mobile Card View */}
+              <div className="sm:hidden divide-y">
+                {socials.map((social) => {
+                  const Icon = PLATFORM_ICONS[social.platform] || Globe;
+                  return (
+                    <div key={social.id} className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm capitalize">{social.platform}</p>
+                        <p className="text-xs text-muted-foreground truncate">{social.url}</p>
+                      </div>
+                      <Switch
+                        checked={social.is_active}
+                        onCheckedChange={(checked) => toggleSocialActive(social.id, checked)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="flex-shrink-0"
+                        onClick={() => deleteSocialLink(social.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  );
+                })}
+                {socials.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground text-sm">
+                    No social links added yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>URL</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {socials.map((social) => {
+                      const Icon = PLATFORM_ICONS[social.platform] || Globe;
+                      return (
+                        <TableRow key={social.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Icon className="w-4 h-4" />
+                              <span className="capitalize">{social.platform}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            <a
+                              href={social.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:underline"
+                            >
+                              {social.url}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={social.is_active}
+                              onCheckedChange={(checked) => toggleSocialActive(social.id, checked)}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deleteSocialLink(social.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1083,114 +1168,115 @@ export default function XPControlPage() {
         {/* Messages Tab */}
         <TabsContent value="messages" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Community Messages</CardTitle>
-              <CardDescription>Manage messages left by supporters</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Community Messages</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Manage messages left by supporters</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Visible</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {messages.map((msg) => (
-                    <TableRow key={msg.id}>
-                      <TableCell className="font-medium">{msg.name}</TableCell>
-                      <TableCell className="max-w-[300px]">{msg.message}</TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(msg.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={msg.is_visible ? "default" : "secondary"}>
-                          {msg.is_visible ? "Visible" : "Hidden"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+            <CardContent className="p-0 sm:p-6">
+              {/* Mobile Card View */}
+              <div className="sm:hidden divide-y">
+                {messages.map((msg) => (
+                  <div key={msg.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{msg.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(msg.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm mt-2 line-clamp-2">{msg.message}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Switch
+                          checked={msg.is_visible}
+                          onCheckedChange={(checked) => toggleMessageVisibility(msg.id, checked)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteMessage(msg.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {messages.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground text-sm">
+                    No messages yet.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Visible</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {messages.map((msg) => (
+                      <TableRow key={msg.id}>
+                        <TableCell className="font-medium">{msg.name}</TableCell>
+                        <TableCell className="max-w-[300px]">{msg.message}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(msg.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={msg.is_visible}
+                            onCheckedChange={(checked) => toggleMessageVisibility(msg.id, checked)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => toggleMessageVisibility(msg.id, !msg.is_visible)}
+                            onClick={() => deleteMessage(msg.id)}
                           >
-                            {msg.is_visible ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
+                            <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete message?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete the message from {msg.name}.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMessage(msg.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {messages.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                        No messages yet
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Game Editor Dialog */}
+      {/* Game Editor Dialog - Mobile Optimized */}
       <Dialog open={gameDialogOpen} onOpenChange={setGameDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="pb-4 border-b border-border/50">
+        <DialogContent className="max-w-lg sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30">
-                <Gamepad2 className="w-5 h-5 text-purple-400" />
+              <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <Gamepad2 className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-semibold">
+                <DialogTitle className="text-base sm:text-lg">
                   {editingGame ? "Edit Game" : "Add New Game"}
                 </DialogTitle>
-                <DialogDescription className="text-sm mt-0.5">
-                  {editingGame
-                    ? "Update game details and blog settings"
-                    : "Add a new game to your gaming library"}
+                <DialogDescription className="text-xs sm:text-sm">
+                  {editingGame ? "Update game details and blog settings" : "Add a new game to your library"}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="grid gap-6 py-6 max-h-[65vh] overflow-y-auto pr-2">
-            {/* Title & Slug Row */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-1.5">
-                  Title <span className="text-red-400">*</span>
-                </Label>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {/* Title & Slug */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Title <span className="text-red-400">*</span></Label>
                 <Input
                   value={editingGame?.title || newGame.title || ""}
                   onChange={(e) => {
@@ -1203,13 +1289,11 @@ export default function XPControlPage() {
                     }
                   }}
                   placeholder="GTA 6"
-                  className="h-11 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
+                  className="h-9 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-1.5">
-                  Slug <span className="text-red-400">*</span>
-                </Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Slug <span className="text-red-400">*</span></Label>
                 <Input
                   value={editingGame?.slug || newGame.slug || ""}
                   onChange={(e) => {
@@ -1220,56 +1304,51 @@ export default function XPControlPage() {
                     }
                   }}
                   placeholder="gta-6"
-                  className="h-11 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors font-mono text-sm"
+                  className="h-9 text-sm font-mono"
                 />
               </div>
             </div>
 
-            {/* Cover Image - Enhanced */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Cover Image</Label>
-              <div className="flex items-start gap-5">
-                <div className="relative group">
-                  {(editingGame?.cover_image_url || newGame.cover_image_url) ? (
-                    <>
-                      <img
-                        src={editingGame?.cover_image_url || newGame.cover_image_url || ""}
-                        alt="Cover"
-                        className="w-28 h-36 object-cover rounded-xl border-2 border-border/60 shadow-lg"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => {
-                          if (editingGame) {
-                            setEditingGame({ ...editingGame, cover_image_url: null });
-                          } else {
-                            setNewGame({ ...newGame, cover_image_url: undefined });
-                          }
-                        }}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="w-28 h-36 border-2 border-dashed border-border/60 rounded-xl flex flex-col items-center justify-center bg-muted/30 gap-2">
-                      <Image className="w-7 h-7 text-muted-foreground/60" />
-                      <span className="text-[10px] text-muted-foreground/60 font-medium">No Image</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 space-y-3">
-                  <Label htmlFor="cover-upload" className="cursor-pointer block">
-                    <div className="flex items-center justify-center gap-2.5 py-3.5 px-4 border-2 border-dashed border-purple-500/30 rounded-xl hover:bg-purple-500/5 hover:border-purple-500/50 transition-all duration-200 group">
+            {/* Cover Image */}
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm">Cover Image</Label>
+              <div className="flex items-center gap-4">
+                {(editingGame?.cover_image_url || newGame.cover_image_url) ? (
+                  <div className="relative">
+                    <img
+                      src={editingGame?.cover_image_url || newGame.cover_image_url || ""}
+                      alt="Cover"
+                      className="w-20 h-24 sm:w-24 sm:h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full"
+                      onClick={() => {
+                        if (editingGame) {
+                          setEditingGame({ ...editingGame, cover_image_url: null });
+                        } else {
+                          setNewGame({ ...newGame, cover_image_url: undefined });
+                        }
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-24 sm:w-24 sm:h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/30">
+                    <Image className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Label htmlFor="cover-upload" className="cursor-pointer">
+                    <div className="flex items-center justify-center gap-2 p-3 border-2 border-dashed rounded-lg hover:bg-muted/50 transition-colors">
                       {uploadingCover ? (
-                        <RefreshCw className="w-5 h-5 animate-spin text-purple-400" />
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
-                        <Upload className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
+                        <Upload className="w-4 h-4" />
                       )}
-                      <span className="font-medium text-sm text-purple-400">
-                        {uploadingCover ? "Uploading..." : "Upload Cover Image"}
-                      </span>
+                      <span className="text-sm">{uploadingCover ? "Uploading..." : "Upload Cover"}</span>
                     </div>
                   </Label>
                   <input
@@ -1280,198 +1359,79 @@ export default function XPControlPage() {
                     onChange={(e) => handleCoverUpload(e, !!editingGame)}
                     disabled={uploadingCover}
                   />
-                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground/50" />
-                    Recommended: 400x500px or similar portrait ratio
-                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">Recommended: 400x500px</p>
                 </div>
               </div>
             </div>
 
-            {/* Description & Grid Size - Enhanced Layout */}
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Description</Label>
-                <Textarea
-                  value={editingGame?.description || newGame.description || ""}
-                  onChange={(e) => {
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm">Description</Label>
+              <Textarea
+                value={editingGame?.description || newGame.description || ""}
+                onChange={(e) => {
+                  if (editingGame) {
+                    setEditingGame({ ...editingGame, description: e.target.value });
+                  } else {
+                    setNewGame({ ...newGame, description: e.target.value });
+                  }
+                }}
+                placeholder="Brief description of the game..."
+                rows={2}
+                className="text-sm resize-none"
+              />
+            </div>
+
+            {/* Grid Size & Visibility */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Grid Size</Label>
+                <Select
+                  value={editingGame?.grid_size || newGame.grid_size || "medium"}
+                  onValueChange={(value: "large" | "wide" | "tall" | "medium" | "small") => {
                     if (editingGame) {
-                      setEditingGame({ ...editingGame, description: e.target.value });
+                      setEditingGame({ ...editingGame, grid_size: value });
                     } else {
-                      setNewGame({ ...newGame, description: e.target.value });
+                      setNewGame({ ...newGame, grid_size: value });
                     }
                   }}
-                  placeholder="Brief description of the game..."
-                  rows={4}
-                  className="bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors resize-none"
-                />
+                >
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="large">Large (2x2)</SelectItem>
+                    <SelectItem value="wide">Wide (2x1)</SelectItem>
+                    <SelectItem value="tall">Tall (1x2)</SelectItem>
+                    <SelectItem value="medium">Medium (1x1)</SelectItem>
+                    <SelectItem value="small">Small</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Grid Size</Label>
-                  <Select
-                    value={editingGame?.grid_size || newGame.grid_size || "medium"}
-                    onValueChange={(value: "large" | "wide" | "tall" | "medium" | "small") => {
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Visibility</Label>
+                <div className="flex items-center gap-3 h-9 px-3 border rounded-md bg-background">
+                  <Switch
+                    checked={editingGame?.is_visible ?? newGame.is_visible ?? true}
+                    onCheckedChange={(checked) => {
                       if (editingGame) {
-                        setEditingGame({ ...editingGame, grid_size: value });
+                        setEditingGame({ ...editingGame, is_visible: checked });
                       } else {
-                        setNewGame({ ...newGame, grid_size: value });
+                        setNewGame({ ...newGame, is_visible: checked });
                       }
                     }}
-                  >
-                    <SelectTrigger className="h-11 bg-background/50 border-border/60">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="large">
-                        <span className="flex items-center gap-2">
-                          <span className="w-4 h-4 rounded bg-purple-500/30 border border-purple-500/50" />
-                          Large (2x2)
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="wide">
-                        <span className="flex items-center gap-2">
-                          <span className="w-5 h-3 rounded bg-blue-500/30 border border-blue-500/50" />
-                          Wide (2x1)
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="tall">
-                        <span className="flex items-center gap-2">
-                          <span className="w-3 h-5 rounded bg-green-500/30 border border-green-500/50" />
-                          Tall (1x2)
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="medium">
-                        <span className="flex items-center gap-2">
-                          <span className="w-3.5 h-3.5 rounded bg-orange-500/30 border border-orange-500/50" />
-                          Medium (1x1)
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="small">
-                        <span className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded bg-gray-500/30 border border-gray-500/50" />
-                          Small (1x1)
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Platform</Label>
-                    <Input
-                      value={editingGame?.platform || newGame.platform || ""}
-                      onChange={(e) => {
-                        if (editingGame) {
-                          setEditingGame({ ...editingGame, platform: e.target.value });
-                        } else {
-                          setNewGame({ ...newGame, platform: e.target.value });
-                        }
-                      }}
-                      placeholder="PS5, PC..."
-                      className="h-11 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Genre</Label>
-                    <Input
-                      value={editingGame?.genre || newGame.genre || ""}
-                      onChange={(e) => {
-                        if (editingGame) {
-                          setEditingGame({ ...editingGame, genre: e.target.value });
-                        } else {
-                          setNewGame({ ...newGame, genre: e.target.value });
-                        }
-                      }}
-                      placeholder="Action, RPG..."
-                      className="h-11 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
-                    />
-                  </div>
+                  />
+                  <span className="text-sm">{(editingGame?.is_visible ?? newGame.is_visible ?? true) ? "Visible" : "Hidden"}</span>
                 </div>
               </div>
             </div>
 
-            {/* Status Toggles - Enhanced Cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <div 
-                className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  (editingGame?.is_visible ?? newGame.is_visible ?? true)
-                    ? 'border-green-500/50 bg-green-500/10'
-                    : 'border-border/60 bg-muted/20 hover:border-border'
-                }`}
-                onClick={() => {
-                  const newVal = !(editingGame?.is_visible ?? newGame.is_visible ?? true);
-                  if (editingGame) {
-                    setEditingGame({ ...editingGame, is_visible: newVal });
-                  } else {
-                    setNewGame({ ...newGame, is_visible: newVal });
-                  }
-                }}
-              >
+            {/* Blog Settings */}
+            <div className="space-y-3 p-3 rounded-lg bg-muted/30 border">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs sm:text-sm font-medium">Enable Blog</Label>
                 <Switch
-                  checked={editingGame?.is_visible ?? newGame.is_visible ?? true}
-                  onCheckedChange={(checked) => {
-                    if (editingGame) {
-                      setEditingGame({ ...editingGame, is_visible: checked });
-                    } else {
-                      setNewGame({ ...newGame, is_visible: checked });
-                    }
-                  }}
-                  className="data-[state=checked]:bg-green-500"
-                />
-                <div>
-                  <Label className="text-sm font-medium cursor-pointer">Visible</Label>
-                  <p className="text-[10px] text-muted-foreground">Show on page</p>
-                </div>
-              </div>
-              <div 
-                className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  (editingGame?.is_featured ?? newGame.is_featured ?? false)
-                    ? 'border-orange-500/50 bg-orange-500/10'
-                    : 'border-border/60 bg-muted/20 hover:border-border'
-                }`}
-                onClick={() => {
-                  const newVal = !(editingGame?.is_featured ?? newGame.is_featured ?? false);
-                  if (editingGame) {
-                    setEditingGame({ ...editingGame, is_featured: newVal });
-                  } else {
-                    setNewGame({ ...newGame, is_featured: newVal });
-                  }
-                }}
-              >
-                <Switch
-                  checked={editingGame?.is_featured ?? newGame.is_featured ?? false}
-                  onCheckedChange={(checked) => {
-                    if (editingGame) {
-                      setEditingGame({ ...editingGame, is_featured: checked });
-                    } else {
-                      setNewGame({ ...newGame, is_featured: checked });
-                    }
-                  }}
-                  className="data-[state=checked]:bg-orange-500"
-                />
-                <div>
-                  <Label className="text-sm font-medium cursor-pointer">Featured</Label>
-                  <p className="text-[10px] text-muted-foreground">Highlight game</p>
-                </div>
-              </div>
-              <div 
-                className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  (editingGame?.is_blog_enabled ?? newGame.is_blog_enabled ?? false)
-                    ? 'border-purple-500/50 bg-purple-500/10'
-                    : 'border-border/60 bg-muted/20 hover:border-border'
-                }`}
-                onClick={() => {
-                  const newVal = !(editingGame?.is_blog_enabled ?? newGame.is_blog_enabled ?? false);
-                  if (editingGame) {
-                    setEditingGame({ ...editingGame, is_blog_enabled: newVal });
-                  } else {
-                    setNewGame({ ...newGame, is_blog_enabled: newVal });
-                  }
-                }}
-              >
-                <Switch
-                  checked={editingGame?.is_blog_enabled ?? newGame.is_blog_enabled ?? false}
+                  checked={editingGame?.is_blog_enabled || newGame.is_blog_enabled || false}
                   onCheckedChange={(checked) => {
                     if (editingGame) {
                       setEditingGame({ ...editingGame, is_blog_enabled: checked });
@@ -1479,69 +1439,46 @@ export default function XPControlPage() {
                       setNewGame({ ...newGame, is_blog_enabled: checked });
                     }
                   }}
-                  className="data-[state=checked]:bg-purple-500"
                 />
-                <div>
-                  <Label className="text-sm font-medium cursor-pointer">Blog</Label>
-                  <p className="text-[10px] text-muted-foreground">Enable article</p>
-                </div>
               </div>
-            </div>
-
-            {/* Blog Settings (shown when blog is enabled) */}
-            {(editingGame?.is_blog_enabled || newGame.is_blog_enabled) && (
-              <div className="space-y-5 p-5 border-2 border-purple-500/30 rounded-xl bg-gradient-to-br from-purple-500/5 to-blue-500/5">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-purple-500/20">
-                    <FileText className="w-4 h-4 text-purple-400" />
+              
+              {(editingGame?.is_blog_enabled || newGame.is_blog_enabled) && (
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Blog Excerpt</Label>
+                    <Textarea
+                      value={editingGame?.blog_excerpt || newGame.blog_excerpt || ""}
+                      onChange={(e) => {
+                        if (editingGame) {
+                          setEditingGame({ ...editingGame, blog_excerpt: e.target.value });
+                        } else {
+                          setNewGame({ ...newGame, blog_excerpt: e.target.value });
+                        }
+                      }}
+                      placeholder="Short excerpt for previews..."
+                      rows={2}
+                      className="text-sm resize-none"
+                    />
                   </div>
-                  <h4 className="font-semibold text-sm">Blog Settings</h4>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Blog Excerpt</Label>
-                  <Textarea
-                    value={editingGame?.blog_excerpt || newGame.blog_excerpt || ""}
-                    onChange={(e) => {
-                      if (editingGame) {
-                        setEditingGame({ ...editingGame, blog_excerpt: e.target.value });
-                      } else {
-                        setNewGame({ ...newGame, blog_excerpt: e.target.value });
-                      }
-                    }}
-                    placeholder="Short preview text for the blog card..."
-                    rows={2}
-                    className="bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors resize-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Blog Content (Markdown/HTML)</Label>
-                  <Textarea
-                    value={editingGame?.blog_content || newGame.blog_content || ""}
-                    onChange={(e) => {
-                      if (editingGame) {
-                        setEditingGame({ ...editingGame, blog_content: e.target.value });
-                      } else {
-                        setNewGame({ ...newGame, blog_content: e.target.value });
-                      }
-                    }}
-                    placeholder="Full blog content..."
-                    rows={6}
-                    className="font-mono text-sm bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
-                  />
-                </div>
-
-                {/* SEO Fields */}
-                <div className="space-y-4 pt-4 border-t border-border/40">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SEO Settings</span>
-                    <div className="flex-1 h-px bg-border/40" />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Blog Content</Label>
+                    <Textarea
+                      value={editingGame?.blog_content || newGame.blog_content || ""}
+                      onChange={(e) => {
+                        if (editingGame) {
+                          setEditingGame({ ...editingGame, blog_content: e.target.value });
+                        } else {
+                          setNewGame({ ...newGame, blog_content: e.target.value });
+                        }
+                      }}
+                      placeholder="Full blog content..."
+                      rows={4}
+                      className="text-sm resize-none"
+                    />
                   </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">SEO Title</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">SEO Title</Label>
                       <Input
                         value={editingGame?.seo_title || newGame.seo_title || ""}
                         onChange={(e) => {
@@ -1551,84 +1488,38 @@ export default function XPControlPage() {
                             setNewGame({ ...newGame, seo_title: e.target.value });
                           }
                         }}
-                        placeholder="Custom title for search engines"
-                        className="h-10 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
+                        placeholder="SEO optimized title"
+                        className="h-9 text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">SEO Keywords</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">SEO Description</Label>
                       <Input
-                        value={(editingGame?.seo_keywords || newGame.seo_keywords || []).join(", ")}
+                        value={editingGame?.seo_description || newGame.seo_description || ""}
                         onChange={(e) => {
-                          const keywords = e.target.value.split(",").map((k) => k.trim()).filter(Boolean);
                           if (editingGame) {
-                            setEditingGame({ ...editingGame, seo_keywords: keywords });
+                            setEditingGame({ ...editingGame, seo_description: e.target.value });
                           } else {
-                            setNewGame({ ...newGame, seo_keywords: keywords });
+                            setNewGame({ ...newGame, seo_description: e.target.value });
                           }
                         }}
-                        placeholder="gaming, ps5, review..."
-                        className="h-10 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
+                        placeholder="Meta description"
+                        className="h-9 text-sm"
                       />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">SEO Description</Label>
-                    <Textarea
-                      value={editingGame?.seo_description || newGame.seo_description || ""}
-                      onChange={(e) => {
-                        if (editingGame) {
-                          setEditingGame({ ...editingGame, seo_description: e.target.value });
-                        } else {
-                          setNewGame({ ...newGame, seo_description: e.target.value });
-                        }
-                      }}
-                      placeholder="Meta description for search engines (150-160 chars)"
-                      rows={2}
-                      className="bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors resize-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">OG Image URL (optional)</Label>
-                    <Input
-                      value={editingGame?.og_image_url || newGame.og_image_url || ""}
-                      onChange={(e) => {
-                        if (editingGame) {
-                          setEditingGame({ ...editingGame, og_image_url: e.target.value });
-                        } else {
-                          setNewGame({ ...newGame, og_image_url: e.target.value });
-                        }
-                      }}
-                      placeholder="https://... (defaults to cover image)"
-                      className="h-10 bg-background/50 border-border/60 focus:border-purple-500/50 transition-colors"
-                    />
-                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <DialogFooter className="pt-4 border-t border-border/50 gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setGameDialogOpen(false)}
-              className="px-5"
-            >
+          <DialogFooter className="p-4 sm:p-6 pt-3 sm:pt-4 border-t flex-shrink-0 gap-2">
+            <Button variant="outline" onClick={() => setGameDialogOpen(false)} className="flex-1 sm:flex-none">
               Cancel
             </Button>
-            <Button 
-              onClick={saveGameItem} 
-              disabled={saving}
-              className="px-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
-            >
-              {saving ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              {saving ? "Saving..." : editingGame ? "Update Game" : "Add Game"}
+            <Button onClick={saveGameItem} disabled={saving} className="flex-1 sm:flex-none">
+              {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {editingGame ? "Update Game" : "Add Game"}
             </Button>
           </DialogFooter>
         </DialogContent>
