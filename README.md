@@ -7,6 +7,7 @@ npm install
 cp .env.example .env.local   # set NEXT_PUBLIC_* (same values as old VITE_*)
 npm run dev                  # http://localhost:8080
 ```
+aman
 
 - **Env:** use `NEXT_PUBLIC_*` for client-side config (not `VITE_*`).
 - **Supabase migrations** still live under `../frontend/supabase` or `../docs/sql-migrations/supabase` per monorepo layout.
