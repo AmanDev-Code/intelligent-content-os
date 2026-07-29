@@ -31,6 +31,9 @@ export interface VideoPlayerProps {
   maxWidthClassName?: string;
   /** Enable CORS — leave false for Instagram/TikTok CDN URLs */
   crossOrigin?: boolean;
+  /** Called when the underlying <video> element fails to load its source.
+   *  Useful for auto-retrying with a fresh CDN URL when the current one expires. */
+  onError?: () => void;
 }
 
 const ASPECT_CLASS: Record<NonNullable<VideoPlayerProps["aspectRatio"]>, string> = {
@@ -56,6 +59,7 @@ export function VideoPlayer({
   className,
   maxWidthClassName = "max-w-[320px]",
   crossOrigin = false,
+  onError,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -153,6 +157,7 @@ export function VideoPlayer({
         crossOrigin={crossOrigin ? "anonymous" : undefined}
         className="absolute inset-0 h-full w-full object-cover"
         onClick={togglePlay}
+        onError={onError}
         aria-label={title}
       />
 

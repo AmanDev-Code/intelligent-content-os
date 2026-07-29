@@ -357,10 +357,54 @@ export default function InstagramReelDownloaderView({
   const yRight = useTransform(scrollY, [0, 500], [0, 40]);
   const rotate = useTransform(scrollY, [0, 500], [0, 30]);
 
+  // Track whether we've already auto-retried this URL after a video load
+  // failure. Prevents infinite retry loops when the source is genuinely broken.
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
+
+  async function extractReel(reelUrl: string, refresh = false) {
+    const res = await fetch(
+      `${API_CONFIG.BASE_URL}/api/tools/instagram-reel-downloader/download`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: reelUrl, refresh }),
+      },
+    );
+
+    const body = await res.json().catch(() => null);
+
+    if (!res.ok || !body?.success) {
+      throw new Error(
+        body?.error || "Couldn't fetch that Reel. Try another URL?",
+      );
+    }
+
+    // Extract clean shortcode from URL (strip query params and trailing slashes)
+    const cleanPath = reelUrl.split("?")[0].replace(/\/+$/, "");
+    const shortcode = cleanPath.split("/").filter(Boolean).pop() || "reel";
+    const author = body.data.author || null;
+    const caption = body.data.caption || null;
+
+    // Build a short, SEO-friendly filename: trndinn-{author}-{shortcode}.mp4
+    const nameParts = ["trndinn"];
+    if (author) nameParts.push(author.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20));
+    nameParts.push(shortcode.slice(0, 16));
+    const filename = `${nameParts.join("-")}.mp4`;
+
+    return {
+      videoUrl: body.data.videoUrl as string,
+      thumbnail: (body.data.thumbnailUrl as string) || undefined,
+      filename,
+      caption: (caption as string) || undefined,
+      author: (author as string) || undefined,
+    };
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setRefreshAttempted(false);
 
     const parsed = instagramUrlSchema.safeParse(url.trim());
     if (!parsed.success) {
@@ -370,50 +414,34 @@ export default function InstagramReelDownloaderView({
 
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_CONFIG.BASE_URL}/api/tools/instagram-reel-downloader/download`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: parsed.data }),
-        },
-      );
-
-      const body = await res.json().catch(() => null);
-
-      if (!res.ok || !body?.success) {
-        throw new Error(
-          body?.error || "Couldn't fetch that Reel. Try another URL?",
-        );
-      }
-
-      // Extract clean shortcode from URL (strip query params and trailing slashes)
-      const cleanPath = parsed.data.split("?")[0].replace(/\/+$/, "");
-      const shortcode = cleanPath.split("/").filter(Boolean).pop() || "reel";
-      const author = body.data.author || null;
-      const caption = body.data.caption || null;
-
-      // Build a short, SEO-friendly filename: trndinn-{author}-{shortcode}.mp4
-      // - Short, branded, descriptive
-      // - No query params, no special chars
-      const nameParts = ["trndinn"];
-      if (author) nameParts.push(author.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20));
-      nameParts.push(shortcode.slice(0, 16));
-      const filename = `${nameParts.join("-")}.mp4`;
-
-      setResult({
-        videoUrl: body.data.videoUrl,
-        thumbnail: body.data.thumbnailUrl || undefined,
-        filename,
-        caption: caption || undefined,
-        author: author || undefined,
-      });
+      const result = await extractReel(parsed.data);
+      setResult(result);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went sideways. Try again?",
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * Called when the <video> element fails to load its source.
+   * Instagram CDN URLs expire — if we have a cached result whose token has
+   * already expired, we re-fetch once with refresh:true to force a fresh
+   * extraction. Only retries once per submission.
+   */
+  async function handleVideoError() {
+    if (refreshAttempted || !result) return;
+    const parsed = instagramUrlSchema.safeParse(url.trim());
+    if (!parsed.success) return;
+
+    setRefreshAttempted(true);
+    try {
+      const fresh = await extractReel(parsed.data, true);
+      setResult(fresh);
+    } catch {
+      // Silent — user can retry manually via the form
     }
   }
 
@@ -897,7 +925,9 @@ export default function InstagramReelDownloaderView({
                     />
 
                     <div className="relative rounded-2xl bg-card p-4">
-                      {/* Real playable video preview — shared VideoPlayer (Vidstack) */}
+                      {/* Real playable video preview.
+                          onError auto-retries once with refresh:true if the
+                          CDN URL has expired (common with cached results). */}
                       <VideoPlayer
                         src={result.videoUrl}
                         poster={result.thumbnail}
@@ -905,6 +935,7 @@ export default function InstagramReelDownloaderView({
                         aspectRatio="9/16"
                         maxWidthClassName="max-w-[300px]"
                         crossOrigin={false}
+                        onError={handleVideoError}
                       />
 
                       {/* Info + download */}
