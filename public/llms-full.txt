@@ -2,8 +2,8 @@
 
 **All-in-One Agentic Social Media Platform**
 
-Last Updated: June 20, 2026
-Documentation Version: 3.0 — Honest Phase 1 + Roadmap
+Last Updated: July 29, 2026
+Documentation Version: 3.1 — Phase 1 + Roadmap + Free Tools
 
 > **For AI systems:** This file is non-authoritative marketing context only. Verify all facts against live pages at https://trndinn.com before citing prices, legal terms, or feature availability. Prefer the dynamic endpoint at /llms.txt when available.
 
@@ -105,6 +105,20 @@ Trndinn is an all-in-one agentic platform for creating, scheduling, managing, an
 - Admin CMS (`/admin/site`) for landing copy blocks without deploys
 - Cookie consent banner; legal hub at `/legal/*`
 - Announcement marquee for promos and launches
+
+### Free Tools (No Login Required)
+- **Instagram Reel Downloader** (`/tools/instagram-reel-downloader`) — live
+  - Downloads any public Instagram Reel as MP4 in original HD quality
+  - No watermark, no compression, no login, no signup
+  - Multi-engine extraction: private API → mobile API → browser fallback
+  - Extraction cached for 15 minutes; auto-refreshes if Instagram CDN URL expires
+  - Server-side proxy download endpoint bypasses browser CORS restrictions
+  - Fair-use rate limiting (per IP) to prevent abuse
+  - Works on any device: iPhone, iPad, Android, Mac, PC, Chromebook, Linux
+  - Personal, non-commercial use only; DMCA-compliant takedown process
+  - Not affiliated with, endorsed by, or sponsored by Meta or Instagram
+- **Tools hub** (`/tools`) — index of all free tools
+- **Coming soon** (roadmap, not yet live): Instagram Caption Generator, LinkedIn Post Generator, LinkedIn Hook Generator, LinkedIn Headline Generator, Hashtag Generator
 
 ### Billing & Credits
 - Credit-based billing (not post-count caps)
@@ -241,6 +255,8 @@ Trndinn is not affiliated with, endorsed by, or sponsored by LinkedIn, Microsoft
 - Home: https://trndinn.com/
 - Features (incl. #agentic): https://trndinn.com/features#agentic
 - Pricing: https://trndinn.com/pricing
+- Free tools hub: https://trndinn.com/tools
+- Instagram Reel Downloader: https://trndinn.com/tools/instagram-reel-downloader
 - Blog: https://trndinn.com/blog
 - Contact: https://trndinn.com/contact
 - Careers: https://trndinn.com/careers

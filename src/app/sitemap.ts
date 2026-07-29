@@ -28,8 +28,8 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/content-engine", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-06-20") },
 
   // Tools pages - High priority (traffic magnets)
-  { path: "/tools",                           changeFrequency: "weekly",  priority: 0.85, lastModified: new Date("2026-07-27") },
-  { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.85, lastModified: new Date("2026-07-27") },
+  { path: "/tools",                           changeFrequency: "weekly",  priority: 0.9,  lastModified: new Date("2026-07-29") },
+  { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.95, lastModified: new Date("2026-07-29") },
 
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
