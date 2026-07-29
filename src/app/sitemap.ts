@@ -27,6 +27,10 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/ai-agent",      changeFrequency: "monthly", priority: 0.85, lastModified: new Date("2026-06-20") },
   { path: "/content-engine", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-06-20") },
 
+  // Tools pages - High priority (traffic magnets)
+  { path: "/tools",                           changeFrequency: "weekly",  priority: 0.85, lastModified: new Date("2026-07-27") },
+  { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.85, lastModified: new Date("2026-07-27") },
+
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },

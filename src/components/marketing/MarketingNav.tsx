@@ -19,6 +19,7 @@ function blogNavActive(pathname: string): boolean {
 const links = [
   { href: "/features", label: "Features" },
   { href: "/features#agentic", label: "Agentic" },
+  { href: "/tools", label: "Tools" },
   { href: "/pricing", label: "Pricing" },
   { href: BLOG_BASE_PATH, label: "Blog" },
   { href: "/careers", label: "Careers" },

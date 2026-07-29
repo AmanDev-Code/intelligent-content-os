@@ -21,6 +21,7 @@ import {
   Megaphone,
   Gamepad2,
   FlaskConical,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -58,6 +59,7 @@ function SidebarContent({
     { to: "/admin/user-feedback", icon: MessageSquarePlus, label: "User Feedback", show: sections.feedback },
     { to: "/admin/content-engine", icon: Sparkles, label: "Content Engine", show: sections.blog },
     { to: "/admin/media", icon: FolderOpen, label: "Media", show: sections.media },
+    { to: "/admin/media-engine", icon: Activity, label: "Media Engine", show: sections.media },
     { to: "/admin/careers", icon: Briefcase, label: "Careers", show: sections.careers },
     { to: "/admin/xp-control", icon: Gamepad2, label: "XP Control", show: true },
     { to: "/admin/soak-test", icon: FlaskConical, label: "Soak Test", show: true },
@@ -136,7 +138,9 @@ function SidebarContent({
           .filter((i) => i.show)
           .map((item) => {
             const isActive =
-              item.to === "/admin" ? pathname === "/admin" : pathname.startsWith(item.to);
+              item.to === "/admin"
+                ? pathname === "/admin"
+                : pathname === item.to || pathname.startsWith(item.to + "/");
             return (
               <NavLink
                 key={item.to}

@@ -21,6 +21,8 @@ import {
   PlayCircle,
   Trash2,
   KeyRound,
+  Link,
+  RotateCw,
 } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { toast } from "sonner";
@@ -120,6 +122,8 @@ const AdminScraperDebug: React.FC = () => {
   const [clearLi, setClearLi] = useState(false);
   const [clearLiApiVersion, setClearLiApiVersion] = useState(false);
   const [postSaveHealth, setPostSaveHealth] = useState<HealthRow[] | null>(null);
+  const [connectLoading, setConnectLoading] = useState(false);
+  const [extractNowLoading, setExtractNowLoading] = useState(false);
 
   const loadCredentials = async () => {
     setCredLoading(true);
@@ -135,7 +139,7 @@ const AdminScraperDebug: React.FC = () => {
 
   const saveCredentials = async () => {
     setSaveLoading(true);
-    setPostSaveHealth(null);
+    // Don't reset postSaveHealth if already showing — avoids flicker during re-render
     try {
       const clearFields: string[] = [];
       if (clearIgSession && !igSession.trim()) clearFields.push("instagramSession");
@@ -164,14 +168,8 @@ const AdminScraperDebug: React.FC = () => {
         setPostSaveHealth(d.health as HealthRow[]);
         setHealth(d.health as HealthRow[]);
       }
-      setIgSession("");
-      setIgCsrf("");
-      setIgDsUser("");
-      setIgDid("");
-      setIgMid("");
-      setXToken("");
-      setLiCookie("");
-      setLiApiVersion("");
+      // Keep field values visible after save (don't clear them)
+      // Only reset the "clear override" checkboxes
       setClearIgSession(false);
       setClearIgCsrf(false);
       setClearIgDs(false);
@@ -182,6 +180,8 @@ const AdminScraperDebug: React.FC = () => {
       setClearLiApiVersion(false);
       toast.success("Credentials saved. Session probes refreshed below.");
       loadEvents();
+      // Reload credential preview to show updated masked values
+      loadCredentials();
     } catch (e: any) {
       toast.error(e?.message || "Save failed");
     } finally {
@@ -321,6 +321,44 @@ const AdminScraperDebug: React.FC = () => {
     }
   };
 
+  const connectInstagram = async () => {
+    setConnectLoading(true);
+    try {
+      const res = await apiClient.post("/admin/scraper/instagram-connect", {});
+      const d = res?.data;
+      if (d?.success) {
+        toast.success("Session extracted! Reloading credentials...");
+        await loadCredentials();
+        await loadHealth();
+      } else {
+        toast.error(d?.error || "Connection failed");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Instagram connect failed");
+    } finally {
+      setConnectLoading(false);
+    }
+  };
+
+  const extractNow = async () => {
+    setExtractNowLoading(true);
+    try {
+      const res = await apiClient.post("/admin/scraper/instagram-extract-now", {});
+      const d = res?.data;
+      if (d?.success) {
+        toast.success("Session refreshed successfully");
+        await loadCredentials();
+        await loadHealth();
+      } else {
+        toast.error(d?.error || "Extract failed");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Extract failed");
+    } finally {
+      setExtractNowLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadCredentials();
     loadHealth();
@@ -356,31 +394,75 @@ const AdminScraperDebug: React.FC = () => {
           <div className="rounded-md border p-3 mb-4 text-xs space-y-2 bg-muted/20">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               <div>
-                <span className="text-muted-foreground">Instagram sessionid</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Instagram sessionid</span>
+                  {credView.instagram.sessionId.source === "override" && (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  )}
+                </div>
                 <div className="font-mono mt-0.5">{credView.instagram.sessionId.preview}</div>
-                <Badge variant="outline" className="mt-1 text-[10px]">
-                  {credView.instagram.sessionId.source}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "mt-1 text-[10px]",
+                    credView.instagram.sessionId.source === "override" && "border-green-500/50 text-green-600"
+                  )}
+                >
+                  {credView.instagram.sessionId.source === "override" ? "✓ Saved" : credView.instagram.sessionId.source}
                 </Badge>
               </div>
               <div>
-                <span className="text-muted-foreground">X auth_token</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">X auth_token</span>
+                  {credView.twitter.authToken.source === "override" && (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  )}
+                </div>
                 <div className="font-mono mt-0.5">{credView.twitter.authToken.preview}</div>
-                <Badge variant="outline" className="mt-1 text-[10px]">
-                  {credView.twitter.authToken.source}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "mt-1 text-[10px]",
+                    credView.twitter.authToken.source === "override" && "border-green-500/50 text-green-600"
+                  )}
+                >
+                  {credView.twitter.authToken.source === "override" ? "✓ Saved" : credView.twitter.authToken.source}
                 </Badge>
               </div>
               <div>
-                <span className="text-muted-foreground">LinkedIn li_at</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">LinkedIn li_at</span>
+                  {credView.linkedin.liAt.source === "override" && (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  )}
+                </div>
                 <div className="font-mono mt-0.5">{credView.linkedin.liAt.preview}</div>
-                <Badge variant="outline" className="mt-1 text-[10px]">
-                  {credView.linkedin.liAt.source}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "mt-1 text-[10px]",
+                    credView.linkedin.liAt.source === "override" && "border-green-500/50 text-green-600"
+                  )}
+                >
+                  {credView.linkedin.liAt.source === "override" ? "✓ Saved" : credView.linkedin.liAt.source}
                 </Badge>
               </div>
               <div>
-                <span className="text-muted-foreground">LinkedIn API version</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">LinkedIn API version</span>
+                  {credView.linkedin.apiVersion.source === "override" && (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  )}
+                </div>
                 <div className="font-mono mt-0.5">{credView.linkedin.apiVersion.preview}</div>
-                <Badge variant="outline" className="mt-1 text-[10px]">
-                  {credView.linkedin.apiVersion.source}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "mt-1 text-[10px]",
+                    credView.linkedin.apiVersion.source === "override" && "border-green-500/50 text-green-600"
+                  )}
+                >
+                  {credView.linkedin.apiVersion.source === "override" ? "✓ Saved" : credView.linkedin.apiVersion.source}
                 </Badge>
               </div>
               {credView.updatedAt && (
@@ -393,6 +475,52 @@ const AdminScraperDebug: React.FC = () => {
         )}
 
         <div className="space-y-4 text-sm">
+          {/* Quick Connect section */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <Label className="text-xs font-semibold">Quick Connect</Label>
+            <p className="text-xs text-muted-foreground">
+              Auto-extract Instagram session from a browser or refresh an existing session.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={connectInstagram}
+                disabled={connectLoading}
+              >
+                {connectLoading ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Opening browser…
+                  </>
+                ) : (
+                  <>
+                    <Link className="h-3.5 w-3.5 mr-1.5" />
+                    Connect Instagram (Browser)
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={extractNow}
+                disabled={extractNowLoading}
+              >
+                {extractNowLoading ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Refreshing…
+                  </>
+                ) : (
+                  <>
+                    <RotateCw className="h-3.5 w-3.5 mr-1.5" />
+                    Refresh Session
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Instagram sessionid (sessionid cookie)</Label>
             <Textarea

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Trndinn — Instagram Session Extractor",
+  "version": "2.0.0",
+  "description": "Multi-account Instagram session extraction for Trndinn's media engine. Run in multiple browser profiles to build a session pool.",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": ["https://*.instagram.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Extract Instagram Session"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

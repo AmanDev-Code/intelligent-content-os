@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trndinn · IG Session Pool</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 380px;
+      min-height: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1729;
+      color: #e2e8f0;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+
+    .account-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 14px;
+      width: 100%;
+    }
+
+    .account-badge .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #f97316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .account-badge .info {
+      flex: 1;
+    }
+
+    .account-badge .username {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .account-badge .account-id {
+      font-size: 10px;
+      color: #64748b;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .account-badge .no-session {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .section {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus {
+      border-color: #f97316;
+    }
+
+    input::placeholder {
+      color: #475569;
+    }
+
+    .cookie-summary {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+
+    .cookie-summary h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cookie-summary .stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .cookie-summary .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cookie-summary .stat .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot-green { background: #22c55e; }
+    .dot-yellow { background: #eab308; }
+    .dot-red { background: #ef4444; }
+
+    button {
+      width: 100%;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #f97316;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:hover {
+      background: #ea580c;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .help-text {
+      margin-top: 10px;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .result {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .result.success {
+      background: #052e16;
+      border: 1px solid #166534;
+      color: #86efac;
+    }
+
+    .result.error {
+      background: #2d0a0a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+    }
+
+    .saved-indicator {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Trndinn · Session Pool</h1>
+  <p class="subtitle">Extracts ALL cookies from this browser's Instagram session and adds to the media engine pool</p>
+
+  <div class="account-badge" id="account-badge">
+    <div class="no-session">Checking Instagram session…</div>
+  </div>
+
+  <div class="cookie-summary" id="cookie-summary" style="display:none;">
+    <h3>Cookies Detected</h3>
+    <div class="stats" id="cookie-stats"></div>
+  </div>
+
+  <div class="section">
+    <label for="backend-url">Backend URL</label>
+    <input type="url" id="backend-url" placeholder="http://localhost:3000" />
+    <p class="saved-indicator" id="backend-saved"></p>
+  </div>
+
+  <div class="section">
+    <label for="admin-token">Admin Token</label>
+    <input type="password" id="admin-token" placeholder="Your admin JWT token" />
+    <p class="saved-indicator" id="token-saved"></p>
+  </div>
+
+  <button id="extract-btn" disabled>Extract & Add to Pool</button>
+
+  <p class="help-text">
+    Run this extension in multiple Chrome profiles (each logged into a different Instagram account) to build a multi-account session pool.
+  </p>
+
+  <div id="result" class="result" style="display: none;"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -53,7 +53,7 @@ export function MarketingFooter() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:col-span-9 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:col-span-9 lg:grid-cols-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Product</p>
               <ul className="mt-3 space-y-2 text-sm">
@@ -75,6 +75,33 @@ export function MarketingFooter() {
                 <li>
                   <Link href="/auth" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
                     Sign in
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/65">Free Tools</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li>
+                  <Link href="/tools" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    All free tools
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools/instagram-reel-downloader" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    Instagram Reel Downloader
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools" className="cursor-pointer text-muted-foreground/70 transition-colors hover:text-primary">
+                    Instagram Caption Generator
+                    <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground/50">soon</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/tools" className="cursor-pointer text-muted-foreground/70 transition-colors hover:text-primary">
+                    LinkedIn Post Generator
+                    <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground/50">soon</span>
                   </Link>
                 </li>
               </ul>

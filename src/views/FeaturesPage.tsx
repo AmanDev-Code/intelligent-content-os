@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AgenticSection } from "@/components/marketing/AgenticSection";
+import { FreeToolsStrip } from "@/components/internal-linking/FreeToolsStrip";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Reveal } from "@/components/marketing/Reveal";
 import { type FeatureSection } from "@/components/marketing/FeatureRows";
@@ -122,6 +123,8 @@ export default function FeaturesPage({ h1Override }: { h1Override?: string | nul
           subtitle={integrations?.subtitle}
           channels={integrations?.channels ?? DEFAULT_MARKETING_CONTENT.landing_integrations.channels}
         />
+
+        <FreeToolsStrip />
 
         <FinalCta
           title="One agentic platform for your whole social presence"

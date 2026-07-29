@@ -10,6 +10,7 @@ import { AudienceSegments } from "@/components/marketing/AudienceSegments";
 import { ComparisonBand } from "@/components/marketing/ComparisonBand";
 import { CompareSection } from "@/components/marketing/CompareSection";
 import { GuidesSection } from "@/components/internal-linking/GuidesSection";
+import { FreeToolsStrip } from "@/components/internal-linking/FreeToolsStrip";
 import { SecondaryFeatures } from "@/components/marketing/SecondaryFeatures";
 import { StatBand } from "@/components/marketing/StatBand";
 import { TrustBand } from "@/components/marketing/TrustBand";
@@ -88,6 +89,8 @@ export default function Landing({ h1Override }: { h1Override?: string | null }) 
             "social-media-scheduling",
           ]}
         />
+
+        <FreeToolsStrip />
 
         <StatBand
           title={stats?.title}
