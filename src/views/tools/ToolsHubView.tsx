@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -257,6 +257,46 @@ const FloatingOrb = ({
 };
 
 // ---------------------------------------------------------------------------
+// Flip Word — cycles through SEO-friendly synonyms for "slap"
+// ---------------------------------------------------------------------------
+
+const FLIP_WORDS = ["slap", "deliver", "work"];
+const FLIP_INTERVAL_MS = 2500; // 2.5s per word — fast enough to notice, slow enough to read
+
+function FlipWord() {
+  const [index, setIndex] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % FLIP_WORDS.length);
+    }, FLIP_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (shouldReduceMotion) {
+    return <span className="gradient-text">{FLIP_WORDS[index]}</span>;
+  }
+
+  return (
+    <span className="relative inline-block overflow-hidden align-bottom" style={{ width: "4.5ch" }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={FLIP_WORDS[index]}
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "-100%", opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="gradient-text inline-block"
+        >
+          {FLIP_WORDS[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
@@ -337,7 +377,7 @@ export default function ToolsHubView() {
               Free tools that
               <br />
               actually{" "}
-              <span className="gradient-text">slap</span>.
+              <FlipWord />.
             </motion.h1>
 
             <motion.p

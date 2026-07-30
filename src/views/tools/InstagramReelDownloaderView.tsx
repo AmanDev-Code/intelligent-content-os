@@ -542,7 +542,7 @@ export default function InstagramReelDownloaderView({
         ================================================================== */}
         <section
           ref={heroRef}
-          className="relative flex min-h-[92vh] items-center justify-center px-4 py-20 sm:py-24"
+          className="relative flex min-h-[75vh] items-center justify-center px-4 py-14 sm:py-16"
         >
           {/* Background orbs — Instagram gradient palette */}
           <FloatingOrb
@@ -1057,7 +1057,7 @@ export default function InstagramReelDownloaderView({
         {/* Desktop-only "Paste → Poof → Save" conveyor-belt strip.
             The mobile version lives directly above the hero input, so we
             hide this section entirely on mobile to save vertical space. */}
-        <section className="relative hidden px-4 py-14 sm:block sm:py-20">
+        <section className="relative hidden px-4 py-6 sm:block sm:py-10">
           <div className="mx-auto max-w-5xl">
             <motion.div
               initial={{ opacity: 0 }}
@@ -1150,7 +1150,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             HOW TO DOWNLOAD INSTAGRAM REELS — prose steps for SEO indexing
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-3xl">
             <motion.h2
               initial={{ opacity: 0, y: 12 }}
@@ -1266,7 +1266,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             FEATURES — checkmark grid (trust + SEO keyword density)
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-4xl">
             <motion.h2
               initial={{ opacity: 0, y: 12 }}
@@ -1330,7 +1330,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             EDITORIAL SEO CONTENT — flowing, magazine-style, no boxes
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-4xl">
             {/* Section pill */}
             <motion.div
@@ -1507,7 +1507,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             FAQ — editorial accordion
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -1550,7 +1550,7 @@ export default function InstagramReelDownloaderView({
             WHAT IS AN INSTAGRAM REEL DOWNLOADER — AEO definition block
             (targets featured snippets / AI answer engines)
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-3xl">
             <motion.h2
               initial={{ opacity: 0, y: 12 }}
@@ -1597,7 +1597,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             USAGE NOTES & DISCLAIMERS
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-3xl space-y-12">
             {/* Rate limiting note */}
             <motion.div
@@ -1706,7 +1706,7 @@ export default function InstagramReelDownloaderView({
         {/* ==================================================================
             RELATED TOOLS — floating cards with parallax hover
         ================================================================== */}
-        <section className="relative px-4 py-14 sm:py-20">
+        <section className="relative px-4 py-8 sm:py-12">
           <div className="mx-auto max-w-6xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
