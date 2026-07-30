@@ -88,9 +88,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (slug === REEL_DOWNLOADER_PRIMARY_SLUG) {
     return buildMarketingMetadata(`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`, {
-      title: "Trndinn Instagram Reel Downloader — HD MP4, No Watermark",
+      title: "Free Instagram Reel Downloader — HD MP4, No Watermark | Trndinn",
       description:
-        "Free Trndinn Instagram Reel Downloader: save any public Reel as MP4 in HD, no watermark, no login. Works on iPhone, Android, Mac & PC. Try it instantly.",
+        "Download any public Instagram Reel as HD MP4 for free — no watermark, no login, no app install. Works on iPhone, Android, Mac & PC. Paste a link and save in 3 seconds.",
       keywords: [
         "instagram reel downloader",
         "instagram reels downloader",

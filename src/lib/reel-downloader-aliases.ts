@@ -39,9 +39,9 @@ export interface ReelDownloaderAlias {
 const ALIASES: ReelDownloaderAlias[] = [
   {
     slug: "instagram-video-downloader",
-    seoTitle: "Trndinn Instagram Video Downloader — HD MP4, No Watermark",
+    seoTitle: "Instagram Video Downloader — Free HD MP4, No Watermark | Trndinn",
     seoDescription:
-      "Free Trndinn Instagram video downloader: save any public Instagram video, Reel, or IGTV clip as HD MP4. No watermark, no login, no signup. Try it now.",
+      "Download any Instagram video, Reel, or IGTV clip as HD MP4 for free. No watermark, no login, no signup. Works on all devices. Paste URL and save instantly.",
     keywords: [
       "instagram video downloader",
       "download instagram video",
@@ -102,9 +102,9 @@ const ALIASES: ReelDownloaderAlias[] = [
   },
   {
     slug: "instagram-reel-saver",
-    seoTitle: "Instagram Reel Saver — Free Trndinn Reel Downloader Online",
+    seoTitle: "Instagram Reel Saver Online — Free HD Download, No Login | Trndinn",
     seoDescription:
-      "Instagram Reel Saver by Trndinn: paste any public Reel link and save as HD MP4 to your device. Free, no login, no watermark, no signup. Works on any device.",
+      "Save any public Instagram Reel as HD MP4 to your device. Free online Reel saver — no login, no watermark, no signup. Works on iPhone, Android, Mac, Windows.",
     keywords: [
       "instagram reel saver",
       "reel saver",
