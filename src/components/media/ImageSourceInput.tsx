@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ImageIcon, Link2, Loader2, Upload, ClipboardPaste } from "lucide-react";
+import { ImageIcon, Link2, Loader2, Upload, ClipboardPaste, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/apiClient";
 import {
   ACCEPT_IMAGE,
   uploadImageFile,
@@ -74,12 +75,15 @@ export function ImageSourceInput({
   const pasteRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"upload" | "url" | "clipboard">("upload");
+  const [tab, setTab] = useState<"upload" | "url" | "clipboard" | "browse">("upload");
 
   const [urlDraft, setUrlDraft] = useState("");
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [browseFiles, setBrowseFiles] = useState<Array<{ key: string; name: string; url: string; size?: number }>>([]);
+  const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseFetched, setBrowseFetched] = useState(false);
 
   const resetDialogState = useCallback(() => {
     setUrlDraft("");
@@ -87,6 +91,8 @@ export function ImageSourceInput({
     setUploading(false);
     setDragOver(false);
     setTab("upload");
+    setBrowseFiles([]);
+    setBrowseFetched(false);
   }, []);
 
   const handleOpenChange = (next: boolean) => {
@@ -171,6 +177,27 @@ export function ImageSourceInput({
     setSelectedUrl(raw);
   };
 
+  const fetchBrowseFiles = useCallback(async () => {
+    if (!uploadCmsPath || browseFetched) return;
+    setBrowseLoading(true);
+    try {
+      const res = await apiClient.get("/admin/media/browse", {
+        params: { path: uploadCmsPath, scope: "cms" },
+      });
+      const objects = (res.objects || []) as Array<{ key: string; name: string; url: string; size?: number }>;
+      // Filter to image files only
+      const images = objects.filter((o) =>
+        /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(o.name),
+      );
+      setBrowseFiles(images);
+    } catch {
+      toast({ title: "Could not load existing images", variant: "destructive" });
+    } finally {
+      setBrowseLoading(false);
+      setBrowseFetched(true);
+    }
+  }, [uploadCmsPath, browseFetched, toast]);
+
   const confirm = () => {
     const url = selectedUrl?.trim();
     if (!url) {
@@ -253,7 +280,7 @@ export function ImageSourceInput({
           </DialogHeader>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={cn("grid w-full", uploadCmsPath ? "grid-cols-4" : "grid-cols-3")}>
               <TabsTrigger value="upload" className="gap-1 text-xs sm:text-sm">
                 <Upload className="h-3.5 w-3.5" />
                 Upload
@@ -266,6 +293,16 @@ export function ImageSourceInput({
                 <ClipboardPaste className="h-3.5 w-3.5" />
                 Clipboard
               </TabsTrigger>
+              {uploadCmsPath && (
+                <TabsTrigger
+                  value="browse"
+                  className="gap-1 text-xs sm:text-sm"
+                  onClick={() => { if (!browseFetched) void fetchBrowseFiles(); }}
+                >
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  Browse
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="upload" className="space-y-3 pt-2">
@@ -367,6 +404,57 @@ export function ImageSourceInput({
                 )}
               </div>
             </TabsContent>
+
+            {uploadCmsPath && (
+              <TabsContent value="browse" className="space-y-3 pt-2">
+                {browseLoading ? (
+                  <div className="flex min-h-[140px] items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : browseFiles.length === 0 ? (
+                  <div className="flex min-h-[140px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-4 py-8 text-center">
+                    <FolderOpen className="mb-2 h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm font-medium">No images found</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Upload images first — they will appear here for reuse.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid max-h-[280px] grid-cols-3 gap-2 overflow-y-auto rounded-lg border border-border/40 p-2 sm:grid-cols-4">
+                    {browseFiles.map((file) => (
+                      <button
+                        key={file.key}
+                        type="button"
+                        className={cn(
+                          "group relative aspect-square overflow-hidden rounded-md border-2 transition-all",
+                          selectedUrl === file.url
+                            ? "border-primary ring-2 ring-primary/20"
+                            : "border-transparent hover:border-primary/40",
+                        )}
+                        onClick={() => setSelectedUrl(file.url)}
+                        title={file.name}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1 pb-1 pt-4 opacity-0 transition-opacity group-hover:opacity-100">
+                          <p className="truncate text-[9px] text-white">{file.name}</p>
+                        </div>
+                        {selectedUrl === file.url && (
+                          <div className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            )}
           </Tabs>
 
           {selectedUrl ? (
