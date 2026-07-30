@@ -22,7 +22,7 @@ export function SiteJsonLd() {
           "https://www.linkedin.com/company/trndinn",
         ],
         description:
-          "All-in-one agentic social media platform for creating, scheduling, managing, and growing — with AI agents, Brand Voice from your examples, and Content Engine for SEO and distribution.",
+          "Trndinn is an AI-native social media platform offering free creator tools (Instagram Reel Downloader, LinkedIn Post Generator, Caption Generator), plus a full agentic scheduling and content engine for growth teams.",
         foundingDate: "2026",
         areaServed: "Global",
       },
@@ -56,6 +56,8 @@ export function SiteJsonLd() {
           description: "Free trial with 150 credits",
         },
         featureList: [
+          "Free Instagram Reel Downloader (no login, no watermark, HD MP4)",
+          "Free social media tools (no signup required)",
           "Agentic in-app AI Agent",
           "Brand Voice from your examples",
           "LinkedIn scheduling and publishing",

@@ -1,7 +1,7 @@
 export const siteName = "Trndinn";
 
 /** Site tagline - used in SEO and marketing copy */
-export const siteTagline = "All-in-One Agentic Social Media Platform";
+export const siteTagline = "AI-Native Social Media Platform & Free Creator Tools";
 
 export function getSiteUrl(): string {
   return (
@@ -14,10 +14,13 @@ export function getSiteUrl(): string {
 /** Default meta description optimized for SEO with targeted keywords.
  * Kept under 160 chars so Google doesn't truncate it in the SERP snippet. */
 export const defaultDescription =
-  "Trndinn is the all-in-one agentic social media platform: AI agents, Brand Voice, visual calendar, and Content Engine. LinkedIn live. Start free — 150 credits.";
+  "Trndinn: free Instagram Reel downloader, AI social media tools, Brand Voice, visual calendar, and Content Engine. No signup for free tools. Start free today.";
 
 /** Extended keywords for SEO based on competitor analysis */
 export const siteKeywords = [
+  "free instagram reel downloader",
+  "free social media tools",
+  "instagram video downloader no watermark",
   "agentic social media",
   "agentic social media scheduling tool",
   "all-in-one social media tool",
