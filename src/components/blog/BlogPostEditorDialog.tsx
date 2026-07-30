@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageSourceInput } from "@/components/media/ImageSourceInput";
-import { ImageFocalPointPicker } from "@/components/media/ImageFocalPointPicker";
+import { ImageCropPositioner } from "@/components/media/ImageCropPositioner";
 import {
   BLOG_CATEGORY_SELECT_CUSTOM,
   BLOG_CATEGORY_SELECT_NONE,
@@ -40,6 +40,7 @@ import {
   emptyBlogPostForm,
   type BlogPostFormState,
 } from "@/lib/blogPostForm";
+import { extractAllFromBody } from "@/lib/blogContentExtractor";
 import {
   generateTitleFromKeyword,
   generateExcerptFromBody,
@@ -330,6 +331,15 @@ export function BlogPostEditorDialog({
         return;
       }
     }
+    let parsedTocJson: Array<{ label: string; anchor: string }> | null = null;
+    if (form.toc_json.trim()) {
+      try {
+        parsedTocJson = JSON.parse(form.toc_json) as Array<{ label: string; anchor: string }>;
+      } catch {
+        toast({ title: "TOC JSON is invalid — fix the JSON or clear the field", variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     try {
       const tags = form.tags
@@ -370,6 +380,9 @@ export function BlogPostEditorDialog({
         locale: form.locale.trim() || "en",
         custom_css: form.custom_css.trim() || null,
         faq_json: parsedFaqJson,
+        listing_image_url: form.listing_image_url.trim() || null,
+        listing_image_object_position: form.listing_image_object_position.trim() || null,
+        toc_json: parsedTocJson,
       };
 
       let savedId = editingId;
@@ -481,6 +494,7 @@ function BlogPostEditorForm({
   onAutoReadingTime,
   onRegenerateFeatureImage,
 }: BlogPostEditorFormProps) {
+  const { toast } = useToast();
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="space-y-1 sm:col-span-2">
@@ -638,22 +652,51 @@ function BlogPostEditorForm({
       <div className="space-y-1 sm:col-span-2">
         <ImageSourceInput
           mode="field"
-          label="Featured image"
+          label="Featured image (Detail hero — 1200×675px, 16:9)"
           value={form.featured_image_url}
           dialogTitle="Featured image"
+          dialogDescription="Upload the hero image for the blog post detail page. Recommended: 1200×675px (16:9 aspect ratio)."
           confirmLabel="Use image"
           uploadCmsPath={isAdmin ? "blog" : undefined}
           onChange={(url) => setForm((f) => ({ ...f, featured_image_url: url }))}
         />
         {form.featured_image_url && (
           <div className="mt-3">
-            <ImageFocalPointPicker
+            <ImageCropPositioner
               imageUrl={form.featured_image_url}
               value={form.featured_image_object_position}
               onChange={(pos) => setForm((f) => ({ ...f, featured_image_object_position: pos }))}
-              label="Featured image focal point"
+              label="Hero image crop"
             />
           </div>
+        )}
+      </div>
+      <div className="space-y-1 sm:col-span-2">
+        <ImageSourceInput
+          mode="field"
+          label="Listing image (Index cards — 1200×750px, 16:10)"
+          value={form.listing_image_url}
+          dialogTitle="Listing image"
+          dialogDescription="Upload an image optimized for blog index cards. Recommended: 1200×750px (16:10 aspect ratio). Falls back to featured image if empty."
+          confirmLabel="Use image"
+          uploadCmsPath={isAdmin ? "blog" : undefined}
+          onChange={(url) => setForm((f) => ({ ...f, listing_image_url: url }))}
+        />
+        {form.listing_image_url && (
+          <div className="mt-3">
+            <ImageCropPositioner
+              imageUrl={form.listing_image_url}
+              value={form.listing_image_object_position}
+              onChange={(pos) => setForm((f) => ({ ...f, listing_image_object_position: pos }))}
+              label="Listing image crop"
+              contexts={[{ label: "Index cards (16:10)", aspectRatio: "16/10" }]}
+            />
+          </div>
+        )}
+        {!form.listing_image_url && form.featured_image_url && (
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Will fall back to the featured image on listing pages.
+          </p>
         )}
       </div>
       <div className="space-y-1">
@@ -927,6 +970,69 @@ function BlogPostEditorForm({
           onChange={(e) => setForm((f) => ({ ...f, faq_json: e.target.value }))}
           className="font-mono text-xs"
           placeholder={`[\n  {"question": "What is Trndinn?", "answer": "..."}\n]`}
+        />
+      </div>
+      <div className="space-y-1 sm:col-span-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-primary font-semibold">Table of Contents (JSON)</Label>
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={() => {
+                const { toc } = extractAllFromBody(form.body);
+                if (toc.length === 0) {
+                  toast({ title: "No H2 headings found in body to extract" });
+                  return;
+                }
+                setForm((f) => ({ ...f, toc_json: JSON.stringify(toc, null, 2) }));
+                toast({ title: `Extracted ${toc.length} TOC items from body headings` });
+              }}
+              disabled={!form.body.trim()}
+            >
+              Extract from body
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50"
+              onClick={() => {
+                const result = extractAllFromBody(form.body);
+                const updates: Partial<BlogPostFormState> = {};
+                if (result.toc.length > 0) {
+                  updates.toc_json = JSON.stringify(result.toc, null, 2);
+                }
+                if (result.faq.length > 0) {
+                  updates.faq_json = JSON.stringify(result.faq, null, 2);
+                }
+                if (result.cleanedBody !== form.body) {
+                  updates.body = result.cleanedBody;
+                }
+                if (Object.keys(updates).length === 0) {
+                  toast({ title: "Nothing to extract — no TOC list or FAQ section found" });
+                  return;
+                }
+                setForm((f) => ({ ...f, ...updates }));
+                toast({
+                  title: "Auto-extracted",
+                  description: `${result.toc.length} TOC items, ${result.faq.length} FAQ entries`,
+                });
+              }}
+              disabled={!form.body.trim()}
+            >
+              ✨ Auto-extract TOC & FAQ
+            </Button>
+          </div>
+        </div>
+        <Textarea
+          rows={4}
+          value={form.toc_json}
+          onChange={(e) => setForm((f) => ({ ...f, toc_json: e.target.value }))}
+          className="font-mono text-xs"
+          placeholder={`[\n  {"label": "Getting Started", "anchor": "getting-started"}\n]`}
         />
       </div>
     </div>

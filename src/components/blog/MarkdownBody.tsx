@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
 import type { Components } from "react-markdown";
 
 const markdownComponents: Components = {
@@ -80,7 +81,7 @@ export function MarkdownBody({ markdown }: { markdown: string }) {
         "prose-figure:my-10 prose-figcaption:text-center prose-figcaption:text-muted-foreground",
       ].join(" ")}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={markdownComponents}>
         {markdown || "_No body yet._"}
       </ReactMarkdown>
     </div>

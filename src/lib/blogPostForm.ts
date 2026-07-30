@@ -37,6 +37,9 @@ export type BlogPostFormState = {
   locale: string;
   custom_css: string;
   faq_json: string;
+  listing_image_url: string;
+  listing_image_object_position: string;
+  toc_json: string;
 };
 
 export const emptyBlogPostForm = (): BlogPostFormState => ({
@@ -72,6 +75,9 @@ export const emptyBlogPostForm = (): BlogPostFormState => ({
   locale: "en",
   custom_css: "",
   faq_json: "",
+  listing_image_url: "",
+  listing_image_object_position: "",
+  toc_json: "",
 });
 
 function trimAuth(v: unknown): string {
@@ -182,5 +188,8 @@ export function blogPostFormFromRecord(p: Record<string, unknown>): BlogPostForm
     locale: String(p.locale || "en"),
     custom_css: String(p.custom_css || ""),
     faq_json: Array.isArray(p.faq_json) ? JSON.stringify(p.faq_json, null, 2) : "",
+    listing_image_url: String(p.listing_image_url || ""),
+    listing_image_object_position: String(p.listing_image_object_position || "").toLowerCase(),
+    toc_json: Array.isArray(p.toc_json) ? JSON.stringify(p.toc_json, null, 2) : "",
   };
 }

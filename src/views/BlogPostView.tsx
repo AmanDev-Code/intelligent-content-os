@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ChevronRight } from "lucide-react";
@@ -11,6 +12,7 @@ import { BlogRelatedPosts, type RelatedPost } from "@/components/blog/BlogRelate
 import { BlogPostShareAndSummarize } from "@/components/blog/BlogPostShareAndSummarize";
 import { BlogFaqSection, BlogFaqJsonLd } from "@/components/blog/BlogFaqSection";
 import { NewsletterSignup } from "@/components/NewsletterSignup";
+import { TableOfContents, type TocItem } from "@/components/guides/TableOfContents";
 import { blogCategoryPillClass, displayCategoryLabel } from "@/lib/blogContentCategory";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { getSiteUrl } from "@/lib/site";
@@ -39,6 +41,7 @@ type BlogPost = {
   tags?: string[] | null;
   custom_css?: string | null;
   faq_json?: Array<{ question: string; answer: string }> | null;
+  toc_json?: Array<{ label: string; anchor: string }> | null;
 };
 
 export default function BlogPostView({
@@ -83,11 +86,25 @@ export default function BlogPostView({
   const subtitleText = post.subtitle?.trim() || "";
   const excerptText = post.excerpt?.trim() || "";
 
+  // Compute TOC items from structured toc_json field (if available)
+  const tocItems: TocItem[] | undefined = useMemo(() => {
+    if (Array.isArray(post.toc_json) && post.toc_json.length > 0) {
+      return post.toc_json.map((item) => ({
+        id: item.anchor,
+        text: item.label,
+        level: 2,
+      }));
+    }
+    return undefined; // Let TableOfContents auto-detect from DOM headings
+  }, [post.toc_json]);
+
   return (
     <MarketingShell>
       {post.custom_css ? <style dangerouslySetInnerHTML={{ __html: post.custom_css }} /> : null}
-      <main className="pb-24">
-        <article className="mx-auto max-w-3xl px-4 pt-8 sm:px-6 sm:pt-12 lg:max-w-4xl">
+      <main className="pb-24 scroll-smooth">
+        <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12">
+          <div className="grid gap-8 xl:grid-cols-[1fr_240px] xl:gap-12">
+            <article className="mx-auto w-full max-w-3xl lg:max-w-4xl xl:mx-0">
           <Link
             href={BLOG_BASE_PATH}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
@@ -222,6 +239,11 @@ export default function BlogPostView({
             </Link>
           </footer>
         </article>
+            <aside className="hidden xl:block">
+              <TableOfContents items={tocItems} />
+            </aside>
+          </div>
+        </div>
       </main>
     </MarketingShell>
   );

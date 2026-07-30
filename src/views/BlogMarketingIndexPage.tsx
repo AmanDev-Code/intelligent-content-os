@@ -29,6 +29,8 @@ export type MarketingPostCard = {
   published_at?: string | null;
   featured_image_url?: string | null;
   featured_image_object_position?: string | null;
+  listing_image_url?: string | null;
+  listing_image_object_position?: string | null;
   author_display_name?: string | null;
   /** Dedicated editorial bucket (distinct from structural post_kind). */
   content_category?: string | null;
@@ -153,15 +155,17 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                 className="group grid gap-6 overflow-hidden rounded-3xl border border-border/50 bg-card/80 p-4 shadow-sm ring-1 ring-black/[0.03] transition-all hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 dark:bg-card/60 dark:ring-white/[0.06] sm:grid-cols-2 sm:gap-0 sm:p-0"
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:aspect-auto sm:min-h-[280px] sm:rounded-l-3xl sm:rounded-r-none">
-                  {featured.featured_image_url ? (
+                  {(featured.listing_image_url || featured.featured_image_url) ? (
                     <Image
-                      src={featured.featured_image_url}
+                      src={(featured.listing_image_url || featured.featured_image_url)!}
                       alt=""
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       style={{
                         objectPosition: cssObjectPositionForFeaturedImage(
-                          featured.featured_image_object_position,
+                          featured.listing_image_url
+                            ? featured.listing_image_object_position
+                            : featured.featured_image_object_position,
                           "listing",
                         ),
                       }}
@@ -204,15 +208,17 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                         )}
                       >
                         <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl">
-                          {p.featured_image_url ? (
+                          {(p.listing_image_url || p.featured_image_url) ? (
                             <Image
-                              src={p.featured_image_url}
+                              src={(p.listing_image_url || p.featured_image_url)!}
                               alt=""
                               fill
                               className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                               style={{
                                 objectPosition: cssObjectPositionForFeaturedImage(
-                                  p.featured_image_object_position,
+                                  p.listing_image_url
+                                    ? p.listing_image_object_position
+                                    : p.featured_image_object_position,
                                   "listing",
                                 ),
                               }}
