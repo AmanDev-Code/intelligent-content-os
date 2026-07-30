@@ -275,11 +275,11 @@ function FlipWord() {
   }, []);
 
   if (shouldReduceMotion) {
-    return <span className="gradient-text">{FLIP_WORDS[index]}</span>;
+    return <span className="gradient-text">{FLIP_WORDS[index]}.</span>;
   }
 
   return (
-    <span className="relative inline-block overflow-hidden align-bottom" style={{ width: "4.5ch" }}>
+    <span className="inline-flex overflow-hidden align-bottom">
       <AnimatePresence mode="wait">
         <motion.span
           key={FLIP_WORDS[index]}
@@ -289,7 +289,7 @@ function FlipWord() {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="gradient-text inline-block"
         >
-          {FLIP_WORDS[index]}
+          {FLIP_WORDS[index]}.
         </motion.span>
       </AnimatePresence>
     </span>
@@ -377,7 +377,7 @@ export default function ToolsHubView() {
               Free tools that
               <br />
               actually{" "}
-              <FlipWord />.
+              <FlipWord />
             </motion.h1>
 
             <motion.p
