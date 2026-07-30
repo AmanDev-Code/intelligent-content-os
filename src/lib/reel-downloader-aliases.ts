@@ -60,9 +60,9 @@ const ALIASES: ReelDownloaderAlias[] = [
   },
   {
     slug: "save-instagram-reels",
-    seoTitle: "Save Instagram Reels Free — Trndinn Reel Saver Online",
+    seoTitle: "Save Instagram Reels Free — HD MP4, No Login | Trndinn",
     seoDescription:
-      "Save Instagram Reels to your phone or PC as HD MP4 with Trndinn's free Reel saver. Works on iPhone, Android, Mac, Windows. No login, no watermark. Save in seconds.",
+      "Save Instagram Reels to your phone or PC as HD MP4 for free. No login, no watermark, no app install. Works on iPhone, Android, Mac, Windows. Save in seconds.",
     keywords: [
       "save instagram reels",
       "save instagram reel",
@@ -81,9 +81,9 @@ const ALIASES: ReelDownloaderAlias[] = [
   },
   {
     slug: "download-instagram-reel-mp4",
-    seoTitle: "Download Instagram Reel MP4 Free — Trndinn HD Downloader",
+    seoTitle: "Download Instagram Reel as MP4 Free — HD Quality, No Watermark | Trndinn",
     seoDescription:
-      "Download any Instagram Reel as MP4 in HD with Trndinn's free MP4 downloader. Original quality, no watermark, no compression, no login. Paste URL & download.",
+      "Download any Instagram Reel as MP4 in HD for free. Original quality, no watermark, no compression, no login. Paste the URL and download instantly.",
     keywords: [
       "download instagram reel mp4",
       "instagram reel mp4 download",
