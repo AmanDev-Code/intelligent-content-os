@@ -154,7 +154,7 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                 href={`${BLOG_BASE_PATH}/${featured.path}`}
                 className="group grid gap-6 overflow-hidden rounded-3xl border border-border/50 bg-card/80 p-4 shadow-sm ring-1 ring-black/[0.03] transition-all hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 dark:bg-card/60 dark:ring-white/[0.06] sm:grid-cols-2 sm:gap-0 sm:p-0"
               >
-                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:aspect-auto sm:min-h-[280px] sm:rounded-l-3xl sm:rounded-r-none">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:rounded-l-3xl sm:rounded-r-none">
                   {(featured.listing_image_url || featured.featured_image_url) ? (
                     <Image
                       src={(featured.listing_image_url || featured.featured_image_url)!}
