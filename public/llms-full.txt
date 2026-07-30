@@ -107,7 +107,7 @@ Trndinn is an all-in-one agentic platform for creating, scheduling, managing, an
 - Announcement marquee for promos and launches
 
 ### Free Tools (No Login Required)
-- **Instagram Reel Downloader** (`/tools/instagram-reel-downloader`) — live
+- **Instagram Reel Downloader** (`/tools/instagram-reel-downloader`) — live, primary canonical URL
   - Downloads any public Instagram Reel as MP4 in original HD quality
   - No watermark, no compression, no login, no signup
   - Multi-engine extraction: private API → mobile API → browser fallback
@@ -117,6 +117,11 @@ Trndinn is an all-in-one agentic platform for creating, scheduling, managing, an
   - Works on any device: iPhone, iPad, Android, Mac, PC, Chromebook, Linux
   - Personal, non-commercial use only; DMCA-compliant takedown process
   - Not affiliated with, endorsed by, or sponsored by Meta or Instagram
+- **Alias URLs** (same tool, different keyword targets — all `rel="canonical"` back to the primary URL above):
+  - `/tools/instagram-video-downloader` — targets "instagram video downloader" search intent
+  - `/tools/save-instagram-reels` — targets "save instagram reels" search intent
+  - `/tools/download-instagram-reel-mp4` — targets "download instagram reel mp4" search intent
+  - `/tools/instagram-reel-saver` — targets "instagram reel saver" search intent
 - **Tools hub** (`/tools`) — index of all free tools
 - **Coming soon** (roadmap, not yet live): Instagram Caption Generator, LinkedIn Post Generator, LinkedIn Hook Generator, LinkedIn Headline Generator, Hashtag Generator
 

@@ -5,15 +5,15 @@ import { buildMarketingMetadata, fetchMarketingH1Override } from "@/lib/serverSe
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/contact", {
-    title: "Contact",
-    description: `Contact ${siteName} for product questions, partnerships, and support. We read every message.`,
+    title: "Contact Trndinn — Sales, Support & Partnerships",
+    description: `Get in touch with ${siteName}: product questions, sales inquiries, partnership requests, and customer support. We read every message and reply within one business day.`,
     keywords: [
-      "contact Trndinn",
-      "support",
-      "sales",
-      `${siteName} contact`,
+      "contact trndinn",
+      "trndinn support",
+      "trndinn sales",
+      "partnership inquiry",
       "customer service",
-      "partnerships",
+      "trndinn contact form",
     ],
   });
 }

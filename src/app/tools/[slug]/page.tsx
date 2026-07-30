@@ -7,6 +7,12 @@ import { WebApplicationSchema } from "@/components/seo/WebApplicationSchema";
 import { getToolBySlug, TOOLS } from "@/lib/tools-data";
 import { getSiteUrl } from "@/lib/site";
 import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderView";
+import {
+  REEL_DOWNLOADER_PRIMARY_SLUG,
+  REEL_DOWNLOADER_ALIAS_SLUGS,
+  getReelDownloaderAlias,
+  isReelDownloaderSlug,
+} from "@/lib/reel-downloader-aliases";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -57,14 +63,34 @@ const INSTAGRAM_REEL_FAQS = [
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+
+  // Alias branch — a keyword-variant URL that renders the reel downloader.
+  // Metadata is unique per alias, but the canonical points at the primary URL
+  // so Google consolidates ranking signals without penalising duplicate content.
+  const alias = getReelDownloaderAlias(slug);
+  if (alias) {
+    const meta = await buildMarketingMetadata(`/tools/${alias.slug}`, {
+      title: alias.seoTitle,
+      description: alias.seoDescription,
+      keywords: alias.keywords,
+    });
+    return {
+      ...meta,
+      alternates: {
+        ...(meta.alternates ?? {}),
+        canonical: `/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`,
+      },
+    };
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
-  if (slug === "instagram-reel-downloader") {
-    return buildMarketingMetadata("/tools/instagram-reel-downloader", {
-      title: "Free Instagram Reel Downloader — Download Instagram Reels HD MP4",
+  if (slug === REEL_DOWNLOADER_PRIMARY_SLUG) {
+    return buildMarketingMetadata(`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`, {
+      title: "Trndinn Instagram Reel Downloader — HD MP4, No Watermark",
       description:
-        "Free Instagram Reel Downloader — download any public Instagram Reel as MP4 in HD quality without watermark. No login required. Save Instagram Reels instantly online with Trndinn.",
+        "Free Trndinn Instagram Reel Downloader: save any public Reel as MP4 in HD, no watermark, no login. Works on iPhone, Android, Mac & PC. Try it instantly.",
       keywords: [
         "instagram reel downloader",
         "instagram reels downloader",
@@ -82,41 +108,60 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // Generic fallback for any tool without dedicated SEO. Keeps positioning
+  // consistent (brand-led, benefit-led, CTA) and ensures every tool page has
+  // a proper meta description sized for SERPs.
+  const generic = tool.description || "A free tool by Trndinn.";
+  const description = `${generic} Free, no login, no signup. Part of Trndinn's free tools for creators and marketers.`;
   return buildMarketingMetadata(`/tools/${slug}`, {
-    title: `${tool.name} — Free Tool`,
-    description: tool.description,
+    title: `${tool.name} — Free Tool by Trndinn`,
+    description: description.length > 160 ? description.slice(0, 157) + "…" : description,
+    keywords: [
+      tool.name.toLowerCase(),
+      `free ${tool.name.toLowerCase()}`,
+      `${tool.name.toLowerCase()} online`,
+      `${tool.platform.toLowerCase()} tools`,
+      "trndinn tools",
+      "free social media tools",
+    ],
   });
 }
 
 export function generateStaticParams() {
-  return TOOLS.filter((t) => t.live).map((t) => ({ slug: t.slug }));
+  return [
+    ...TOOLS.filter((t) => t.live).map((t) => ({ slug: t.slug })),
+    // Also pre-render every alias slug so Next can statically export them.
+    ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({ slug })),
+  ];
 }
 
 export default async function ToolPage({ params }: PageProps) {
   const { slug } = await params;
-  const tool = getToolBySlug(slug);
-  if (!tool || !tool.live) notFound();
-
   const base = getSiteUrl().replace(/\/$/, "");
 
-  if (slug === "instagram-reel-downloader") {
+  // Any reel-downloader slug (primary OR alias) renders the reel view.
+  // Aliases pass down variant hero copy so the H1/eyebrow/subline differ
+  // per URL for keyword targeting, while the tool functionality is identical.
+  if (isReelDownloaderSlug(slug)) {
+    const alias = getReelDownloaderAlias(slug);
+    const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "Instagram Reel Downloader";
     return (
       <>
         <BreadcrumbSchema
           items={[
             { name: "Home", path: "/" },
             { name: "Tools", path: "/tools" },
-            { name: "Instagram Reel Downloader", path: "/tools/instagram-reel-downloader" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
           ]}
         />
         <FAQPageSchema
           faqs={INSTAGRAM_REEL_FAQS}
-          pageUrl={`${base}/tools/instagram-reel-downloader`}
+          pageUrl={`${base}/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`}
         />
         <WebApplicationSchema
-          name="Free Instagram Reel Downloader"
+          name={alias?.seoTitle.split(" — ")[0] ?? "Free Instagram Reel Downloader"}
           description="Download any public Instagram Reel as MP4 in original HD quality. No login required, no watermark added."
-          url="/tools/instagram-reel-downloader"
+          url={`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`}
           applicationCategory="UtilityApplication"
           featureList={[
             "Download Instagram Reels as MP4",
@@ -127,10 +172,26 @@ export default async function ToolPage({ params }: PageProps) {
             "Works on mobile and desktop",
           ]}
         />
-        <InstagramReelDownloaderView faqs={INSTAGRAM_REEL_FAQS} />
+        <InstagramReelDownloaderView
+          faqs={INSTAGRAM_REEL_FAQS}
+          heroVariant={
+            alias
+              ? {
+                  h1Prefix: alias.h1Prefix,
+                  h1Highlight: alias.h1Highlight,
+                  h1Suffix: alias.h1Suffix,
+                  eyebrow: alias.eyebrow,
+                  subline: alias.heroSubline,
+                }
+              : undefined
+          }
+        />
       </>
     );
   }
+
+  const tool = getToolBySlug(slug);
+  if (!tool || !tool.live) notFound();
 
   // Generic tool placeholder for future tools
   notFound();

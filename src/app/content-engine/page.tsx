@@ -6,17 +6,16 @@ import { MarketingStructuredData } from "@/components/seo/MarketingStructuredDat
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/content-engine", {
-    title: "Content Engine — Agentic SEO & Distribution",
-    description: `Turn keywords into articles, distribute to 31 platforms, interlink, score SEO/AEO/GEO, and email your list — one agentic loop. Available in ${siteName} Team and Agency workspaces.`,
+    title: "Trndinn Content Engine — Agentic SEO & Distribution",
+    description: `Turn keywords into ranked articles, distribute to 31 platforms, interlink, score SEO/AEO/GEO, and email your list — one agentic loop in ${siteName} Team & Agency.`,
     keywords: [
-      "agentic content engine social media",
-      "SEO social media distribution",
-      "social media newsletter automation",
-      "Content Engine",
-      "SEO article generation",
+      "agentic content engine",
+      "SEO article generator",
+      "social media distribution",
       "content clusters",
-      "rank tracking",
-      "Trndinn Content Engine",
+      "SEO rank tracking",
+      "newsletter automation",
+      "trndinn content engine",
     ],
   });
 }

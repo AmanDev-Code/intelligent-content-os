@@ -11,16 +11,16 @@ const PAGE_CONFIG = {
   competitorName: "Taplio",
   route: ROUTE,
   seo: {
-    title: "Trndinn vs Taplio (2025) — Best Taplio Alternative & LinkedIn Growth Tool",
+    title: "Trndinn vs Taplio — Best AI Taplio Alternative for LinkedIn",
     description:
-      "Looking for a Taplio alternative? Compare Trndinn vs Taplio for LinkedIn growth: AI content creation, Brand Voice, and Content Engine vs basic scheduling. Start free with 150 credits.",
+      "Compare Trndinn vs Taplio for LinkedIn growth: AI content, Brand Voice, and Content Engine vs Taplio scheduling. Start free with 150 credits — no card required.",
     keywords: [
       "taplio alternative",
-      "taplio alternative 2025",
+      "taplio alternative 2026",
+      "AI taplio alternative",
+      "trndinn vs taplio",
       "linkedin growth tool",
-      "linkedin ai tool",
-      "ai linkedin content creator",
-      "linkedin automation tool",
+      "AI linkedin content creator",
       "trndinn vs taplio",
       "taplio competitor",
       "best linkedin scheduling tool",

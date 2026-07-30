@@ -11,14 +11,14 @@ const PAGE_CONFIG = {
   competitorName: "Buffer",
   route: ROUTE,
   seo: {
-    title: "Trndinn vs Buffer (2025) — Best Buffer Alternative & AI Social Media Tool",
+    title: "Trndinn vs Buffer — Best AI Buffer Alternative for 2026",
     description:
-      "Looking for the best Buffer alternative? Compare Trndinn vs Buffer: AI-powered content creation, Brand Voice from your examples, and Content Engine vs traditional scheduling. Start free with 150 credits.",
+      "Compare Trndinn vs Buffer: agentic AI content, Brand Voice from your examples, and a Content Engine vs classic scheduling. Start free with 150 credits — no card.",
     keywords: [
       "best buffer alternative",
-      "buffer vs ai social media tool",
-      "buffer alternative 2025",
-      "ai social media manager vs buffer",
+      "buffer vs trndinn",
+      "buffer alternative 2026",
+      "AI buffer alternative",
       "trndinn vs buffer",
       "buffer competitor",
       "buffer pricing alternative",

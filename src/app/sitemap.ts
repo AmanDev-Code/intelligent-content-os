@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { fetchAllBlogPathsForSitemap } from "@/lib/serverBlog";
 import { getSiteUrl } from "@/lib/site";
+import { REEL_DOWNLOADER_ALIAS_SLUGS } from "@/lib/reel-downloader-aliases";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -28,8 +29,18 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/content-engine", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-06-20") },
 
   // Tools pages - High priority (traffic magnets)
-  { path: "/tools",                           changeFrequency: "weekly",  priority: 0.9,  lastModified: new Date("2026-07-29") },
-  { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.95, lastModified: new Date("2026-07-29") },
+  { path: "/tools",                           changeFrequency: "weekly",  priority: 0.9,  lastModified: new Date("2026-07-30") },
+  { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.95, lastModified: new Date("2026-07-30") },
+  // Reel downloader alias URLs — programmatic SEO variants targeting different
+  // search intents. All carry rel="canonical" back to the primary URL so
+  // Google consolidates ranking signals without a duplicate-content penalty.
+  // Lower priority (0.7) than the primary (0.95) reflects that.
+  ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-07-30"),
+  })),
 
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },

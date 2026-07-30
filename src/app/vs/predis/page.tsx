@@ -11,16 +11,16 @@ const PAGE_CONFIG = {
   competitorName: "Predis",
   route: ROUTE,
   seo: {
-    title: "Trndinn vs Predis (2025) — Best Predis Alternative & AI Content Generator",
+    title: "Trndinn vs Predis.ai — Best AI Predis Alternative in 2026",
     description:
-      "Comparing Trndinn vs Predis? Both use AI for social media, but Trndinn's Brand Voice training, Content Engine, and agentic workflows set it apart. See which AI platform wins for your growth. Start free.",
+      "Compare Trndinn vs Predis.ai: Brand Voice from your examples, Content Engine, and agentic workflows vs generic AI post generation. See which AI platform wins. Start free.",
     keywords: [
       "predis alternative",
-      "predis alternative 2025",
-      "best ai content generator",
+      "predis.ai alternative 2026",
+      "AI predis alternative",
       "trndinn vs predis",
-      "ai social media tool comparison",
-      "ai content creator tools",
+      "AI content generator",
+      "AI social media tool",
       "brand voice ai",
       "ai content scheduler",
       "ai social media manager",

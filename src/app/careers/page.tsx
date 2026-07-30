@@ -5,8 +5,16 @@ import { buildMarketingMetadata, fetchMarketingH1Override } from "@/lib/serverSe
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/careers", {
-    title: "Careers",
-    description: `Open roles at ${siteName}. Join the team building AI-assisted social workflows.`,
+    title: "Careers at Trndinn — Build the Agentic Social Media OS",
+    description: `Join ${siteName} and help build the agentic social media platform. Open roles in engineering, design, growth, and marketing. Remote-friendly. See open positions.`,
+    keywords: [
+      "trndinn careers",
+      "trndinn jobs",
+      "AI startup jobs",
+      "social media startup careers",
+      "remote engineering jobs",
+      "SaaS startup careers",
+    ],
   });
 }
 

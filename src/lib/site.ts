@@ -11,9 +11,10 @@ export function getSiteUrl(): string {
   );
 }
 
-/** Default meta description optimized for SEO with targeted keywords */
+/** Default meta description optimized for SEO with targeted keywords.
+ * Kept under 160 chars so Google doesn't truncate it in the SERP snippet. */
 export const defaultDescription =
-  "Trndinn is the all-in-one agentic platform for creating, scheduling, managing, and growing social media — with AI agents, Brand Voice from your examples, and a Content Engine for SEO and distribution. LinkedIn live today. Start free with 150 credits.";
+  "Trndinn is the all-in-one agentic social media platform: AI agents, Brand Voice, visual calendar, and Content Engine. LinkedIn live. Start free — 150 credits.";
 
 /** Extended keywords for SEO based on competitor analysis */
 export const siteKeywords = [

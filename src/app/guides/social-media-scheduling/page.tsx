@@ -4,8 +4,8 @@ import { getSiteUrl, siteName } from "@/lib/site";
 const ROUTE = "/guides/social-media-scheduling";
 const TARGET_KEYWORD = "ai social media scheduler";
 export const metadata: Metadata = {
-  title: "AI Social Media Scheduling: The Complete Beginner's Guide (2026)",
-  description: `Learn how to use AI social media schedulers in 2026. Platform-specific tips for LinkedIn, Twitter, Instagram. Best times to post data and scheduling workflows.`,
+  title: "AI Social Media Scheduling Guide 2026 — Trndinn Handbook",
+  description: `Trndinn's beginner-friendly handbook to AI social media scheduling in 2026: platform-specific tips, best times to post, and scheduling workflows for LinkedIn, X, and IG.`,
   alternates: { canonical: `${getSiteUrl()}${ROUTE}` },
   keywords: [
     TARGET_KEYWORD,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     "marketing schedule",
   ],
   openGraph: {
-    title: "AI Social Media Scheduling: The Complete Beginner's Guide (2026)",
+    title: "AI Social Media Scheduling Guide 2026 — Trndinn Handbook",
     description: "Complete guide to AI-powered social media scheduling. Platform tips, best times, and scheduling workflows.",
     url: ROUTE,
     type: "article",
@@ -33,7 +33,7 @@ const baseUrl = getSiteUrl().replace(/\/$/, "");
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "AI Social Media Scheduling: The Complete Beginner's Guide",
+  headline: "AI Social Media Scheduling Guide 2026 — Trndinn Handbook",
   description: "Beginner-friendly guide to AI social media scheduling with platform-specific tips and best times to post.",
   image: `${baseUrl}/og/default.png`,
   author: { "@type": "Organization", name: siteName, url: baseUrl },

@@ -26,10 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const content = await fetchAboutUsContent();
   const title =
     (content?.seoTitle as string)?.trim() ||
-    "About Trndinn — Building the Agentic Growth OS for Modern Brands";
+    "About Trndinn — The Agentic Growth OS for Modern Brands";
   const description =
     (content?.seoDescription as string)?.trim() ||
-    "Learn about Trndinn's mission to build the agentic growth OS — where AI agents create, schedule, and distribute, and humans keep the brand.";
+    "Meet the Trndinn team building the agentic growth OS: AI agents create, schedule, and distribute — you keep brand control. LinkedIn live today. Our mission inside.";
   return buildMarketingMetadata("/about-us", {
     title,
     description,

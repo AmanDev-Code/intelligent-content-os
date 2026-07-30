@@ -5,17 +5,18 @@ import ToolsHubView from "@/views/tools/ToolsHubView";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/tools", {
-    title: "Free Social Media Tools — Grow Faster",
+    title: "Free Social Media Tools by Trndinn — No Login, No Signup",
     description:
-      "Free tools to grow your social media: Instagram Reel downloader, LinkedIn post generator, hook generator, hashtag finder, and more. No signup required.",
+      "Trndinn free tools: Instagram Reel Downloader, LinkedIn post generator, hook generator, hashtag finder & more. HD quality, no watermark, no signup. Try now.",
     keywords: [
       "free social media tools",
       "instagram reel downloader",
       "linkedin post generator",
+      "linkedin hook generator",
+      "hashtag generator",
       "social media growth tools",
       "free marketing tools",
-      "content creation tools",
-      "hashtag generator",
+      "trndinn tools",
     ],
   });
 }

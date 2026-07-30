@@ -11,16 +11,16 @@ const PAGE_CONFIG = {
   competitorName: "Hootsuite",
   route: ROUTE,
   seo: {
-    title: "Trndinn vs Hootsuite (2025) — Best Hootsuite Alternative & Modern AI Platform",
+    title: "Trndinn vs Hootsuite — Modern AI Hootsuite Alternative",
     description:
-      "Looking for a Hootsuite alternative? Compare Trndinn vs Hootsuite: Modern AI-powered social media management vs legacy enterprise tools. Better pricing, true AI, and faster ROI. Start free with 150 credits.",
+      "Compare Trndinn vs Hootsuite: modern AI-powered social media management vs legacy enterprise scheduling. Better pricing, true AI, faster ROI. Start free — no card.",
     keywords: [
       "hootsuite alternative",
-      "hootsuite alternative 2025",
-      "ai social media manager vs hootsuite",
-      "best hootsuite replacement",
+      "hootsuite alternative 2026",
+      "AI hootsuite replacement",
       "trndinn vs hootsuite",
       "hootsuite competitor",
+      "modern social media tool",
       "hootsuite pricing alternative",
       "modern social media management",
       "ai-powered social media tool",

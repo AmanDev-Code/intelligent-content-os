@@ -11,16 +11,16 @@ const PAGE_CONFIG = {
   competitorName: "Postiz",
   route: ROUTE,
   seo: {
-    title: "Trndinn vs Postiz (2025) — Best Postiz Alternative & AI Social Media Scheduler",
+    title: "Trndinn vs Postiz — Best AI Postiz Alternative for 2026",
     description:
-      "Searching for a Postiz alternative? Compare Trndinn vs Postiz: Agentic AI content creation + Brand Voice vs 30+ channel scheduling. See which open-source scheduler wins for your growth. Start free.",
+      "Compare Trndinn vs Postiz: agentic AI content + Brand Voice vs open-source multi-channel scheduling. See which social media platform wins for your growth. Start free.",
     keywords: [
       "postiz alternative",
-      "ai social media scheduler",
+      "postiz alternative 2026",
+      "AI postiz alternative",
       "trndinn vs postiz",
-      "open source social media scheduler",
-      "postiz vs competitors",
-      "ai content scheduler",
+      "open source scheduler",
+      "AI social media scheduler",
       "social media management comparison",
       "buffer vs postiz vs trndinn",
       "linkedin scheduling tool",

@@ -4,8 +4,8 @@ import { getSiteUrl, siteName } from "@/lib/site";
 const ROUTE = "/guides/linkedin-automation";
 const TARGET_KEYWORD = "how to automate linkedin posts with ai";
 export const metadata: Metadata = {
-  title: "How to Automate LinkedIn Posts with AI: A Complete Step-by-Step Tutorial",
-  description: `Learn how to automate LinkedIn posts with AI in 2026. Step-by-step tutorial covering setup, scheduling, content creation, and best practices using ${siteName} and other top tools.`,
+  title: "Automate LinkedIn Posts with AI 2026 — Trndinn Tutorial",
+  description: `Step-by-step ${siteName} tutorial on automating LinkedIn posts with AI in 2026: setup, scheduling, on-brand content creation, and best practices with real screenshots.`,
   alternates: { canonical: `${getSiteUrl()}${ROUTE}` },
   keywords: [
     TARGET_KEYWORD,
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     "linkedin scheduler free",
   ],
   openGraph: {
-    title: "How to Automate LinkedIn Posts with AI: A Complete Step-by-Step Tutorial",
-    description: `Learn how to automate LinkedIn posts with AI in 2026. Complete tutorial with screenshots, tool recommendations, and best practices.`,
+    title: "Automate LinkedIn Posts with AI 2026 — Trndinn Tutorial",
+    description: `Step-by-step ${siteName} tutorial on automating LinkedIn posts with AI in 2026: setup, scheduling, on-brand content creation, and best practices.`,
     url: ROUTE,
     type: "article",
     authors: [siteName],
@@ -34,7 +34,7 @@ const baseUrl = getSiteUrl().replace(/\/$/, "");
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "TechArticle",
-  headline: "How to Automate LinkedIn Posts with AI: A Complete Step-by-Step Tutorial",
+  headline: "Automate LinkedIn Posts with AI 2026 — Trndinn Tutorial",
   description: "A comprehensive tutorial on automating LinkedIn posts using AI tools in 2026.",
   image: `${baseUrl}/og/default.png`,
   author: {

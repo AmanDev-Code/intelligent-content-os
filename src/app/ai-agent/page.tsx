@@ -6,16 +6,16 @@ import { MarketingStructuredData } from "@/components/seo/MarketingStructuredDat
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/ai-agent", {
-    title: "AI Social Media Agent — Draft, Schedule & Publish",
-    description: `${siteName}'s in-app AI social media agent: describe a post, get on-brand LinkedIn drafts, images, and carousels, then schedule or publish. Brand Voice from your examples. Start free with 150 credits.`,
+    title: "Trndinn AI Social Media Agent — Draft, Schedule, Publish",
+    description: `${siteName}'s in-app AI agent drafts on-brand LinkedIn posts, images, and carousels from your Brand Voice, then schedules or publishes. Start free with 150 credits.`,
     keywords: [
       "AI social media agent",
       "agentic social media scheduling",
       "LinkedIn AI agent",
       "AI post generator",
+      "brand voice AI",
       "social media automation agent",
-      "Brand Voice AI",
-      "Trndinn Agent",
+      "trndinn agent",
     ],
   });
 }

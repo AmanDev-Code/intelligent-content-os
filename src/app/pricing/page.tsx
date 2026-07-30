@@ -6,14 +6,15 @@ import { MarketingPageJsonLd } from "@/components/seo/MarketingPageJsonLd";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/pricing", {
-    title: "Pricing — Agentic Social Media Plans",
-    description: `${siteName} pricing: compare Free, Creator, Team, and Agency plans. Agentic scheduling, AI creation, and Content Engine workflows powered by transparent credits. LinkedIn live; API and webhooks on Team and Agency.`,
+    title: "Trndinn Pricing — Agentic Social Media Plans from Free",
+    description: `Compare ${siteName} plans: Free, Creator, Team, Agency. Transparent credits, agentic scheduling, AI content, and Content Engine. LinkedIn live. Start free — 150 credits.`,
     keywords: [
-      "Trndinn pricing",
-      "agentic social media pricing",
+      "trndinn pricing",
+      "social media scheduler pricing",
       "AI content credits",
-      "LinkedIn scheduling tool",
-      "Creator Team Agency plans",
+      "LinkedIn scheduling tool pricing",
+      "Buffer alternative pricing",
+      "agentic social media plans",
     ],
   });
 }

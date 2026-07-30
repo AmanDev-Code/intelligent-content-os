@@ -31,6 +31,7 @@ import { InstaHowToVisual } from "@/components/tools/InstaHowToVisual";
 import { TOOLS } from "@/lib/tools-data";
 import { API_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useExperiment, trackExperimentConversion } from "@/hooks/useExperiment";
 
 // ---------------------------------------------------------------------------
 // Types & Validation
@@ -336,11 +337,37 @@ function FaqItem({
 // Component
 // ---------------------------------------------------------------------------
 
+/**
+ * Optional hero variant used by programmatic-SEO alias URLs.
+ * Each alias URL (/tools/instagram-video-downloader, etc.) passes a variant so
+ * the H1, eyebrow, and subline match its target search intent, while the tool
+ * functionality below the fold stays identical.
+ */
+export interface HeroVariant {
+  h1Prefix: string;
+  h1Highlight: string;
+  h1Suffix: string;
+  eyebrow: string;
+  subline: string;
+}
+
 export default function InstagramReelDownloaderView({
   faqs,
+  heroVariant,
 }: {
   faqs: FAQItem[];
+  heroVariant?: HeroVariant;
 }) {
+  // Default hero copy — used when this component is rendered on the primary
+  // /tools/instagram-reel-downloader URL (no variant passed).
+  const hero: HeroVariant = heroVariant ?? {
+    h1Prefix: "Download any",
+    h1Highlight: "Instagram Reel",
+    h1Suffix: "in HD.",
+    eyebrow: "Free Instagram Reel Downloader — no login, no watermark",
+    subline:
+      "Paste a Reel URL. Get the MP4. That's it — no signup, no watermark, no shady popups.",
+  };
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -350,6 +377,22 @@ export default function InstagramReelDownloaderView({
   const shouldReduceMotion = useReducedMotion();
 
   const placeholder = useCyclingPlaceholder(PLACEHOLDER_EXAMPLES);
+
+  // ─── A/B test: CTA button copy ────────────────────────────────────────────
+  // Reads from PostHog feature flag "reel-cta-copy" (set up in PostHog UI).
+  // Add ?experiment_reel-cta-copy=save-mp4 to preview a variant locally.
+  const ctaVariant = useExperiment("reel-cta-copy", [
+    "yank-it",       // control — playful, on-brand
+    "save-mp4",      // variant A — direct, action-verb
+    "download-free", // variant B — free emphasis
+  ] as const);
+
+  const ctaCopy =
+    ctaVariant === "save-mp4"
+      ? "Save MP4"
+      : ctaVariant === "download-free"
+        ? "Download free"
+        : "Yank it";
 
   // Parallax scroll effect for hero decorations
   const { scrollY } = useScroll();
@@ -413,9 +456,19 @@ export default function InstagramReelDownloaderView({
     }
 
     setLoading(true);
+    // Track CTA click as the experiment's conversion goal. PostHog auto-attaches
+    // the feature-flag variant so we can compare click-through rates by variant.
+    trackExperimentConversion("reel-cta-copy", "reel_cta_clicked", {
+      url_provided: true,
+    });
     try {
       const result = await extractReel(parsed.data);
       setResult(result);
+      // Track a successful extraction as a secondary goal — more valuable
+      // than a raw click because failed extractions don't count.
+      trackExperimentConversion("reel-cta-copy", "reel_extracted", {
+        engine_used: "unknown", // backend doesn't expose this in the client response
+      });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went sideways. Try again?",
@@ -597,7 +650,7 @@ export default function InstagramReelDownloaderView({
               transition={{ duration: 0.6, delay: 0.1 }}
               className="font-display text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[1.05] tracking-tight text-foreground"
             >
-              Download any{" "}
+              {hero.h1Prefix}{" "}
               <span className="relative inline-block">
                 <span
                   className="bg-clip-text text-transparent"
@@ -606,7 +659,7 @@ export default function InstagramReelDownloaderView({
                       "linear-gradient(90deg, #833AB4, #C13584, #E1306C, #F77737)",
                   }}
                 >
-                  Instagram Reel
+                  {hero.h1Highlight}
                 </span>
                 {/* Underline scribble */}
                 <motion.svg
@@ -640,7 +693,7 @@ export default function InstagramReelDownloaderView({
                 </motion.svg>
               </span>
               <br />
-              in HD.
+              {hero.h1Suffix}
             </motion.h1>
 
             <motion.p
@@ -649,7 +702,7 @@ export default function InstagramReelDownloaderView({
               transition={{ duration: 0.5, delay: 0.25 }}
               className="mt-4 text-sm font-medium uppercase tracking-widest text-primary/80"
             >
-              Free Instagram Reel Downloader — no login, no watermark
+              {hero.eyebrow}
             </motion.p>
 
             <motion.p
@@ -658,8 +711,7 @@ export default function InstagramReelDownloaderView({
               transition={{ duration: 0.5, delay: 0.3 }}
               className="mt-4 max-w-xl text-lg leading-relaxed text-muted-foreground"
             >
-              Paste a Reel URL. Get the MP4. That&apos;s it — no signup, no
-              watermark, no shady popups.
+              {hero.subline}
             </motion.p>
 
             {/* Mobile-only quick-flow chip strip — sits just above the input.
@@ -793,7 +845,7 @@ export default function InstagramReelDownloaderView({
                       ) : (
                         <>
                           <Download className="mr-2 h-5 w-5 text-white" />
-                          <span>Yank it</span>
+                          <span>{ctaCopy}</span>
                         </>
                       )}
                     </Button>

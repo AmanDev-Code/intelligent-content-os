@@ -6,13 +6,13 @@ import { MarketingPageJsonLd } from "@/components/seo/MarketingPageJsonLd";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/features", {
-    title: "Features — Agentic Social Scheduling, AI Creation & Content Engine",
-    description: `${siteName}: explore agentic workflows — in-app AI Agent, Brand Voice, visual calendar, reliable publishing, Public API, webhooks, and Content Engine for SEO and 31-platform distribution. LinkedIn live today.`,
+    title: "Trndinn Features — AI Agent, Calendar & Content Engine",
+    description: `${siteName} features: in-app AI Agent, Brand Voice, visual calendar, LinkedIn publishing, Public API, webhooks, and Content Engine for SEO & 31-platform distribution.`,
     keywords: [
       "agentic social media",
       "AI social media agent",
       "content scheduling",
-      "LinkedIn tool",
+      "LinkedIn scheduler",
       "Content Engine",
       "social media API",
       "Trndinn features",

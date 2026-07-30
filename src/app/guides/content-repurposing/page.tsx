@@ -4,8 +4,8 @@ import { getSiteUrl, siteName } from "@/lib/site";
 const ROUTE = "/guides/content-repurposing";
 const TARGET_KEYWORD = "ai content repurposing tool for bloggers";
 export const metadata: Metadata = {
-  title: "AI Content Repurposing for Bloggers: Turn One Post into 10+ Pieces",
-  description: `Discover the best AI content repurposing tools for bloggers in 2026. Learn workflows to transform blog posts into social media content, videos, newsletters, and more.`,
+  title: "AI Content Repurposing Guide 2026 — Trndinn Playbook",
+  description: `Trndinn's guide to AI content repurposing for bloggers in 2026: workflows to turn one blog post into 10+ social posts, videos, and newsletters. Free templates inside.`,
   alternates: { canonical: `${getSiteUrl()}${ROUTE}` },
   keywords: [
     TARGET_KEYWORD,
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     "content repurposing workflow",
   ],
   openGraph: {
-    title: "AI Content Repurposing for Bloggers: Turn One Post into 10+ Pieces",
-    description: "Complete guide to AI-powered content repurposing for bloggers. Transform one blog post into multiple content formats.",
+    title: "AI Content Repurposing Guide 2026 — Trndinn Playbook",
+    description: `Trndinn's playbook to turn one blog post into 10+ social posts, videos, and newsletters using AI. Real workflows, real templates.`,
     url: ROUTE,
     type: "article",
     authors: [siteName],
@@ -33,7 +33,7 @@ const baseUrl = getSiteUrl().replace(/\/$/, "");
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "AI Content Repurposing for Bloggers: The Complete Guide",
+  headline: "AI Content Repurposing Guide 2026 — Trndinn Playbook",
   description: "Learn how to use AI to repurpose blog content into social media posts, videos, newsletters, and more.",
   image: `${baseUrl}/og/default.png`,
   author: { "@type": "Organization", name: siteName, url: baseUrl },

@@ -6,17 +6,16 @@ import { MarketingStructuredData } from "@/components/seo/MarketingStructuredDat
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/mcp", {
-    title: "Social Media MCP Server — Coming Soon",
-    description: `${siteName} MCP server roadmap: connect Claude, ChatGPT, and Cursor to schedule and publish LinkedIn content with Brand Voice. Use Public API v1 and webhooks today while MCP ships.`,
+    title: "Trndinn MCP Server — Claude, ChatGPT & Cursor for Social",
+    description: `${siteName} MCP roadmap: connect Claude, ChatGPT & Cursor to schedule LinkedIn posts with Brand Voice. Public API v1 & webhooks live today. Join the MCP waitlist.`,
     keywords: [
       "social media MCP server",
-      "MCP server social media",
-      "Claude social media MCP",
-      "ChatGPT social media scheduling",
-      "Cursor MCP social media",
-      "Model Context Protocol scheduling",
-      "Trndinn MCP",
-      "agentic social media",
+      "Claude MCP social media",
+      "ChatGPT MCP scheduler",
+      "Cursor MCP integration",
+      "Model Context Protocol social",
+      "trndinn MCP",
+      "AI social media API",
     ],
   });
 }

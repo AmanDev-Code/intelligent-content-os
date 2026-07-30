@@ -4,8 +4,8 @@ import { getSiteUrl, siteName } from "@/lib/site";
 const ROUTE = "/guides/ai-social-media-marketing";
 const TARGET_KEYWORD = "best ai tool for social media marketing 2026";
 export const metadata: Metadata = {
-  title: "The Complete Guide to AI-Powered Social Media Marketing (2026)",
-  description: `Discover the best AI tools for social media marketing in 2026. Learn how AI automates content creation, scheduling, and analytics. Compare top platforms including ${siteName}.`,
+  title: "AI Social Media Marketing Guide 2026 — Trndinn Playbook",
+  description: `The complete ${siteName} guide to AI social media marketing in 2026: best tools, automated content workflows, scheduling, and analytics — with real examples.`,
   alternates: { canonical: `${getSiteUrl()}${ROUTE}` },
   keywords: [
     TARGET_KEYWORD,
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     "AI marketing tools 2026",
   ],
   openGraph: {
-    title: "The Complete Guide to AI-Powered Social Media Marketing (2026)",
-    description: `Discover the best AI tools for social media marketing in 2026. Learn how AI automates content creation, scheduling, and analytics.`,
+    title: "AI Social Media Marketing Guide 2026 — Trndinn Playbook",
+    description: `The complete ${siteName} guide to AI social media marketing in 2026: best tools, automated content workflows, scheduling, and analytics.`,
     url: ROUTE,
     type: "article",
     authors: [siteName],
@@ -104,7 +104,7 @@ const baseUrl = getSiteUrl().replace(/\/$/, "");
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "Article",
-  headline: "The Complete Guide to AI-Powered Social Media Marketing (2026)",
+  headline: "AI Social Media Marketing Guide 2026 — Trndinn Playbook",
   description: `A comprehensive guide to choosing and using the best AI tools for social media marketing in 2026.`,
   image: `${baseUrl}/og/default.png`,
   author: {

@@ -8,12 +8,20 @@ const url = getSiteUrl();
 const blogPath = `${url.replace(/\/$/, "")}${BLOG_BASE_PATH}`;
 
 export const metadata: Metadata = {
-  title: "Blog",
-  description: `Product updates, guides, and notes from the ${siteName} team.`,
+  title: "Trndinn Blog — AI, Social Media & Growth Playbooks",
+  description: `AI social media strategy, LinkedIn growth playbooks, content repurposing tactics, and product updates from the ${siteName} team. New guides every week.`,
+  keywords: [
+    "trndinn blog",
+    "AI social media blog",
+    "LinkedIn growth blog",
+    "content marketing playbooks",
+    "social media strategy blog",
+    "AI content creation",
+  ],
   alternates: { canonical: blogPath },
   openGraph: {
-    title: `Blog | ${siteName}`,
-    description: "Stories on building the AI social workspace, growth, and what's shipping next.",
+    title: `Trndinn Blog — AI, Social Media & Growth Playbooks`,
+    description: `AI social media strategy, LinkedIn growth playbooks, and product updates from the ${siteName} team.`,
     url: BLOG_BASE_PATH,
     type: "website",
     siteName,

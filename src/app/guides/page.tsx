@@ -2,30 +2,30 @@ import type { Metadata } from "next";
 import { GuidesHub } from "./GuidesHub";
 
 export const metadata: Metadata = {
-  title: "Expert Guides & Resources | Trndinn",
+  title: "Trndinn Guides — AI, LinkedIn & Content Marketing Playbooks",
   description:
-    "Master social media marketing with our comprehensive guides. Learn AI-powered content creation, LinkedIn automation, content repurposing strategies, and social media scheduling best practices.",
+    "Free Trndinn guides on AI social media, LinkedIn automation, content repurposing, and scheduling workflows. Step-by-step playbooks written by growth practitioners.",
   keywords: [
-    "social media marketing guides",
-    "AI content marketing",
+    "trndinn guides",
+    "AI social media guide",
     "LinkedIn automation guide",
-    "content repurposing strategies",
-    "social media scheduling",
-    "marketing tutorials",
-    "social media tips",
+    "content repurposing playbook",
+    "social media scheduling tutorial",
+    "content marketing tutorials",
+    "social media marketing tips",
   ],
   openGraph: {
-    title: "Expert Guides & Resources | Trndinn",
+    title: "Trndinn Guides — AI, LinkedIn & Content Marketing Playbooks",
     description:
-      "Master social media marketing with our comprehensive guides covering AI content creation, LinkedIn automation, and more.",
+      "Free step-by-step guides on AI social media, LinkedIn automation, content repurposing, and scheduling — from the Trndinn team.",
     type: "website",
     url: "/guides",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Expert Guides & Resources | Trndinn",
+    title: "Trndinn Guides — AI, LinkedIn & Content Marketing Playbooks",
     description:
-      "Master social media marketing with our comprehensive guides.",
+      "Free step-by-step guides on AI social media, LinkedIn automation, and content repurposing.",
   },
   alternates: {
     canonical: "/guides",
