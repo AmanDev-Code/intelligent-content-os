@@ -176,13 +176,13 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                     <PostImagePlaceholder className="h-full w-full" />
                   )}
                 </div>
-                <div className="flex flex-col justify-center gap-4 px-2 py-2 sm:px-10 sm:py-10">
+                <div className="flex flex-col justify-center gap-3 px-2 py-2 sm:px-8 sm:py-6">
                   <CategoryPill category={featured.content_category} post_kind={featured.post_kind} />
-                  <h2 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-[1.875rem] sm:leading-snug md:text-[2rem]">
+                  <h2 className="font-serif text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-[1.75rem] sm:leading-snug md:text-[1.875rem]">
                     {featured.title}
                   </h2>
                   {featured.excerpt ? (
-                    <p className="line-clamp-3 text-base leading-relaxed text-muted-foreground">{featured.excerpt}</p>
+                    <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground sm:text-base">{featured.excerpt}</p>
                   ) : null}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     {featured.published_at ? (
@@ -235,22 +235,22 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                             />
                           </div>
                         </div>
-                        <div className="flex flex-1 flex-col gap-2 p-5">
+                        <div className="flex flex-1 flex-col gap-1.5 p-4">
                           {p.published_at ? (
                             <time
-                              className="text-[12px] font-medium uppercase tracking-wider text-muted-foreground"
+                              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
                               dateTime={p.published_at}
                             >
                               {formatDate(p.published_at)}
                             </time>
                           ) : null}
-                          <h3 className="font-serif text-xl font-semibold leading-snug tracking-tight text-foreground">
+                          <h3 className="font-serif text-lg font-semibold leading-snug tracking-tight text-foreground">
                             {p.title}
                           </h3>
                           {p.excerpt ? (
-                            <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">{p.excerpt}</p>
+                            <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{p.excerpt}</p>
                           ) : null}
-                          <span className="mt-auto pt-3 text-sm font-semibold text-primary group-hover:underline">
+                          <span className="mt-auto pt-2 text-sm font-semibold text-primary group-hover:underline">
                             Read more →
                           </span>
                         </div>
