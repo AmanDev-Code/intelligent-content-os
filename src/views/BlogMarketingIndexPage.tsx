@@ -154,24 +154,28 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                 href={`${BLOG_BASE_PATH}/${featured.path}`}
                 className="group grid gap-6 overflow-hidden rounded-3xl border border-border/50 bg-card/80 p-4 shadow-sm ring-1 ring-black/[0.03] transition-all hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 dark:bg-card/60 dark:ring-white/[0.06] sm:grid-cols-2 sm:gap-0 sm:p-0"
               >
-                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl sm:rounded-l-3xl sm:rounded-r-none">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted/50 sm:rounded-l-3xl sm:rounded-r-none">
                   {(featured.listing_image_url || featured.featured_image_url) ? (
-                    <Image
-                      src={(featured.listing_image_url || featured.featured_image_url)!}
-                      alt=""
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                      style={{
-                        objectPosition: cssObjectPositionForFeaturedImage(
-                          featured.listing_image_url
-                            ? featured.listing_image_object_position
-                            : featured.featured_image_object_position,
-                          "listing",
-                        ),
-                      }}
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      priority
-                    />
+                    <>
+                      {/* Blurred background fill */}
+                      <Image
+                        src={(featured.listing_image_url || featured.featured_image_url)!}
+                        alt=""
+                        fill
+                        className="object-cover blur-2xl scale-110 opacity-40"
+                        sizes="50px"
+                        aria-hidden
+                      />
+                      {/* Actual image — fully visible, no crop */}
+                      <Image
+                        src={(featured.listing_image_url || featured.featured_image_url)!}
+                        alt=""
+                        fill
+                        className="object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        priority
+                      />
+                    </>
                   ) : (
                     <PostImagePlaceholder className="h-full w-full" />
                   )}
@@ -207,23 +211,27 @@ export default function BlogMarketingIndexPage({ h1Override }: { h1Override?: st
                           "transition-all hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 dark:bg-card/60 dark:ring-white/[0.06]",
                         )}
                       >
-                        <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl">
+                        <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl bg-muted/50">
                           {(p.listing_image_url || p.featured_image_url) ? (
-                            <Image
-                              src={(p.listing_image_url || p.featured_image_url)!}
-                              alt=""
-                              fill
-                              className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                              style={{
-                                objectPosition: cssObjectPositionForFeaturedImage(
-                                  p.listing_image_url
-                                    ? p.listing_image_object_position
-                                    : p.featured_image_object_position,
-                                  "listing",
-                                ),
-                              }}
-                              sizes="(max-width: 768px) 100vw, 33vw"
-                            />
+                            <>
+                              {/* Blurred background fill */}
+                              <Image
+                                src={(p.listing_image_url || p.featured_image_url)!}
+                                alt=""
+                                fill
+                                className="object-cover blur-2xl scale-110 opacity-40"
+                                sizes="50px"
+                                aria-hidden
+                              />
+                              {/* Actual image — fully visible, no crop */}
+                              <Image
+                                src={(p.listing_image_url || p.featured_image_url)!}
+                                alt=""
+                                fill
+                                className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                              />
+                            </>
                           ) : (
                             <PostImagePlaceholder className="h-full w-full" />
                           )}
