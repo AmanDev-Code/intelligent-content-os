@@ -294,7 +294,7 @@ export function BlogPostEditorDialog({
       toast({ title: "Save the post first to generate a feature image", variant: "destructive" });
       return;
     }
-    
+
     setAiGenerating((prev) => ({ ...prev, featureImage: true }));
     try {
       const response = await apiClient.post(`/admin/content-engine/blog/${form.slug}/regenerate-image`);
@@ -308,12 +308,44 @@ export function BlogPostEditorDialog({
       const errorMsg = error instanceof Error ? error.message : "Error regenerating image";
       console.error(`Regeneration failed: ${errorMsg}`);
       toast({
-        title: "Regeneration failed", 
+        title: "Regeneration failed",
         description: errorMsg,
         variant: "destructive"
       });
     } finally {
       setAiGenerating((prev) => ({ ...prev, featureImage: false }));
+    }
+  }
+
+  async function handleGenerateListingImage() {
+    if (!editingId || !form.slug) {
+      toast({ title: "Save the post first to generate a listing image", variant: "destructive" });
+      return;
+    }
+    if (!form.featured_image_url) {
+      toast({ title: "Set a featured image first", variant: "destructive" });
+      return;
+    }
+    setAiGenerating((prev) => ({ ...prev, listingImage: true }));
+    try {
+      const response = await apiClient.post(
+        `/admin/content-engine/blog/${form.slug}/generate-listing-image`,
+      );
+      if (response.success && response.listing_image_url) {
+        setForm((f) => ({ ...f, listing_image_url: response.listing_image_url }));
+        toast({ title: "Listing image generated — fits perfectly at 16:10" });
+      } else {
+        throw new Error(response.error || "Failed to generate listing image");
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Error generating listing image";
+      toast({
+        title: "Listing image generation failed",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating((prev) => ({ ...prev, listingImage: false }));
     }
   }
 
@@ -438,6 +470,7 @@ export function BlogPostEditorDialog({
             onGenerateSEO={() => void handleGenerateSEO()}
             onAutoReadingTime={handleAutoReadingTime}
             onRegenerateFeatureImage={() => void handleRegenerateFeatureImage()}
+            onGenerateListingImage={() => void handleGenerateListingImage()}
           />
         )}
         <DialogFooter className="gap-2 sm:justify-end">
@@ -472,6 +505,7 @@ type BlogPostEditorFormProps = {
   onGenerateSEO: () => void;
   onAutoReadingTime: () => void;
   onRegenerateFeatureImage: () => void;
+  onGenerateListingImage: () => void;
 };
 
 function BlogPostEditorForm({
@@ -493,6 +527,7 @@ function BlogPostEditorForm({
   onGenerateSEO,
   onAutoReadingTime,
   onRegenerateFeatureImage,
+  onGenerateListingImage,
 }: BlogPostEditorFormProps) {
   const { toast } = useToast();
   return (
@@ -682,6 +717,30 @@ function BlogPostEditorForm({
           uploadCmsPath={isAdmin ? "blog" : undefined}
           onChange={(url) => setForm((f) => ({ ...f, listing_image_url: url }))}
         />
+        {editingId && form.featured_image_url && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs border-purple-300 text-purple-700 hover:bg-purple-50"
+              onClick={onGenerateListingImage}
+              disabled={aiGenerating.listingImage}
+            >
+              {aiGenerating.listingImage ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Extending image…
+                </>
+              ) : (
+                <>✨ AI Extend to 16:10</>
+              )}
+            </Button>
+            <span className="text-[10px] text-muted-foreground">
+              Uses AI outpainting to extend the featured image without cropping.
+            </span>
+          </div>
+        )}
         {form.listing_image_url && (
           <div className="mt-3">
             <ImageCropPositioner
