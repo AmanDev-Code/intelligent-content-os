@@ -16,12 +16,17 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
   Zap,
   Film,
   Wand2,
   Infinity as InfinityIcon,
   ChevronDown,
+  ShieldCheck,
+  Video,
+  Music,
+  Image,
+  Camera,
+  Link2,
 } from "lucide-react";
 import { z } from "zod";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
@@ -32,6 +37,7 @@ import { TOOLS } from "@/lib/tools-data";
 import { API_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useExperiment, trackExperimentConversion } from "@/hooks/useExperiment";
+import analytics from "@/services/analytics";
 
 // ---------------------------------------------------------------------------
 // Types & Validation
@@ -361,12 +367,12 @@ export default function InstagramReelDownloaderView({
   // Default hero copy — used when this component is rendered on the primary
   // /tools/instagram-reel-downloader URL (no variant passed).
   const hero: HeroVariant = heroVariant ?? {
-    h1Prefix: "Download any",
-    h1Highlight: "Instagram Reel",
-    h1Suffix: "in HD.",
+    h1Prefix: "Instagram Reel Downloader —",
+    h1Highlight: "Free HD,",
+    h1Suffix: "No Watermark, No Login",
     eyebrow: "Free Instagram Reel Downloader — no login, no watermark",
     subline:
-      "Paste a Reel URL. Get the MP4. That's it — no signup, no watermark, no shady popups.",
+      "Download any public Instagram Reel as an HD MP4 in seconds. Free, no watermark, no login, no app. Paste a link and save.",
   };
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -393,6 +399,11 @@ export default function InstagramReelDownloaderView({
       : ctaVariant === "download-free"
         ? "Download free"
         : "Yank it";
+
+  // ─── Analytics: page viewed ───────────────────────────────────────────────
+  useEffect(() => {
+    analytics.reelDownloaderPageViewed(heroVariant ? "alias" : "primary");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Parallax scroll effect for hero decorations
   const { scrollY } = useScroll();
@@ -461,18 +472,21 @@ export default function InstagramReelDownloaderView({
     trackExperimentConversion("reel-cta-copy", "reel_cta_clicked", {
       url_provided: true,
     });
+    analytics.reelDownloaderDownloadStarted();
+    const startTime = Date.now();
     try {
       const result = await extractReel(parsed.data);
       setResult(result);
+      analytics.reelDownloaderDownloadCompleted({ duration_ms: Date.now() - startTime, quality: "hd" });
       // Track a successful extraction as a secondary goal — more valuable
       // than a raw click because failed extractions don't count.
       trackExperimentConversion("reel-cta-copy", "reel_extracted", {
         engine_used: "unknown", // backend doesn't expose this in the client response
       });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Something went sideways. Try again?",
-      );
+      const msg = err instanceof Error ? err.message : "Something went sideways. Try again?";
+      setError(msg);
+      analytics.reelDownloaderDownloadFailed({ error_type: "extraction_error", message: msg });
     } finally {
       setLoading(false);
     }
@@ -812,6 +826,12 @@ export default function InstagramReelDownloaderView({
                         setUrl(e.target.value);
                         if (error) setError(null);
                       }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData.getData("text");
+                        if (pasted && pasted.length > 5) {
+                          analytics.reelDownloaderUrlPasted(pasted);
+                        }
+                      }}
                       placeholder={placeholder}
                       className={cn(
                         "h-14 w-full bg-transparent px-2 text-base text-foreground placeholder:text-muted-foreground/50 focus:outline-none sm:text-lg",
@@ -870,6 +890,29 @@ export default function InstagramReelDownloaderView({
                 )}
               </AnimatePresence>
             </motion.form>
+
+            {/* Trust block — counters ad/malware reputation of SnapInsta/SaveFrom */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.65 }}
+              className="mt-6 flex flex-wrap items-center justify-center gap-3"
+              aria-label="Trust signals"
+            >
+              {[
+                { icon: ShieldCheck, label: "No login" },
+                { icon: ShieldCheck, label: "No ads" },
+                { icon: ShieldCheck, label: "We don’t store your videos" },
+              ].map((item) => (
+                <span
+                  key={item.label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-medium text-foreground/80 backdrop-blur-sm"
+                >
+                  <item.icon className="h-3.5 w-3.5 text-emerald-500" />
+                  {item.label}
+                </span>
+              ))}
+            </motion.div>
 
             {/* Helper text under input */}
             <motion.p
@@ -1042,6 +1085,18 @@ export default function InstagramReelDownloaderView({
                             <span>Save MP4</span>
                           </Button>
                         </motion.div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl"
+                          onClick={() => {
+                            navigator.clipboard.writeText(result.videoUrl);
+                            analytics.reelDownloaderCopyLinkClicked();
+                          }}
+                        >
+                          <Link2 className="mr-2 h-4 w-4" />
+                          Copy link
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -1704,6 +1759,171 @@ export default function InstagramReelDownloaderView({
         </section>
 
         {/* ==================================================================
+            INSTAGRAM TOOLBOX — adjacent-tool strip (topical cluster)
+        ================================================================== */}
+        <section className="relative px-4 py-8 sm:py-12">
+          <div className="mx-auto max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="mb-8"
+            >
+              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                Instagram Toolbox
+              </p>
+              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                More Instagram Download Tools
+              </h2>
+            </motion.div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  icon: Video,
+                  title: "Video Downloader",
+                  desc: "Download any Instagram video, IGTV, or post as HD MP4.",
+                  href: "/tools/instagram-video-downloader",
+                  live: true,
+                },
+                {
+                  icon: Camera,
+                  title: "Story Downloader",
+                  desc: "Save Instagram Stories before they disappear.",
+                  href: "/tools/instagram-story-downloader",
+                  live: false,
+                },
+                {
+                  icon: Music,
+                  title: "Reel to MP3",
+                  desc: "Extract audio from Reels as MP3 — save trending sounds.",
+                  href: "/tools/instagram-reel-to-mp3",
+                  live: false,
+                },
+                {
+                  icon: Image,
+                  title: "Photo Downloader",
+                  desc: "Download Instagram photos in original resolution.",
+                  href: "/tools/instagram-photo-downloader",
+                  live: false,
+                },
+              ].map((tool, i) => {
+                const Icon = tool.icon;
+                return (
+                  <motion.div
+                    key={tool.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.4, delay: i * 0.06 }}
+                  >
+                    {tool.live ? (
+                      <Link
+                        href={tool.href}
+                        className="group relative flex h-full flex-col rounded-lg border border-border/60 bg-card/60 p-4 transition-colors hover:bg-card hover:border-primary/30"
+                      >
+                        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <h3 className="font-display text-sm font-semibold text-foreground">
+                          {tool.title}
+                        </h3>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {tool.desc}
+                        </p>
+                        <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-medium text-primary">
+                          Try it <ArrowRight className="h-3 w-3" />
+                        </span>
+                      </Link>
+                    ) : (
+                      <div
+                        className="relative flex h-full flex-col rounded-lg border border-border/40 bg-card/40 p-4 opacity-70"
+                        aria-disabled="true"
+                      >
+                        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <h3 className="font-display text-sm font-semibold text-foreground">
+                          {tool.title}
+                        </h3>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {tool.desc}
+                        </p>
+                        <span className="mt-auto inline-flex items-center gap-1 pt-3 text-xs font-medium text-muted-foreground">
+                          Coming soon
+                        </span>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ==================================================================
+            INTERNAL LINKS — organic contextual links for SEO juice
+        ================================================================== */}
+        <section className="relative px-4 py-6 sm:py-8">
+          <div className="mx-auto max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="rounded-lg border border-border/40 bg-card/40 p-6"
+            >
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                Compare &amp; Learn More
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                See how Trndinn stacks up against ad-heavy downloader alternatives, or read our
+                in-depth guide on saving Reels without watermark.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li>
+                  <Link
+                    href="/compare/trndinn-vs-snapinsta"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn vs SnapInsta — ad-free, no watermark comparison
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/compare/trndinn-vs-sssinstagram"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn vs SSSInstagram — speed, safety, and UX
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/blog/how-to-download-instagram-reels-without-watermark"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    How to Download Instagram Reels Without Watermark (2026 Guide)
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn Pricing — schedule your next 30 posts with AI
+                  </Link>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ==================================================================
             RELATED TOOLS — floating cards with parallax hover
         ================================================================== */}
         <section className="relative px-4 py-8 sm:py-12">
@@ -1817,13 +2037,19 @@ export default function InstagramReelDownloaderView({
               transition={{ duration: 0.6 }}
             >
               <p className="mb-4 text-xs font-medium uppercase tracking-widest text-primary">
-                Ready for the upgrade?
+                Downloaded your Reel?
               </p>
               <h2 className="font-display text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-6xl">
-                Download.{" "}
-                <span className="italic text-primary">Remix.</span>{" "}
-                <br />
-                Schedule. All at once.
+                Schedule your next 30 with{" "}
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, #833AB4, #E1306C, #F77737)",
+                  }}
+                >
+                  Trndinn AI.
+                </span>
               </h2>
               <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                 Trndinn is what you upgrade to when yanking Reels stops being
@@ -1845,7 +2071,7 @@ export default function InstagramReelDownloaderView({
                         "linear-gradient(90deg, #833AB4, #E1306C, #F77737)",
                     }}
                   >
-                    <Link href="/auth">
+                    <Link href="/auth" onClick={() => analytics.reelDownloaderCtaClicked("/auth")}>
                       Start free
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
@@ -1857,7 +2083,7 @@ export default function InstagramReelDownloaderView({
                   size="lg"
                   className="rounded-xl px-8 py-6 text-base font-medium"
                 >
-                  <Link href="/pricing">See pricing</Link>
+                  <Link href="/pricing" onClick={() => analytics.reelDownloaderCtaClicked("/pricing")}>See pricing</Link>
                 </Button>
               </div>
             </motion.div>

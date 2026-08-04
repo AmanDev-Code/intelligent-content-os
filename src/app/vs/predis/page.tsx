@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
-import CompareVsPage from "@/views/CompareVsPage";
+import CompareVsPage, { type CompetitorVsConfig } from "@/views/CompareVsPage";
 
 const ROUTE = "/vs/predis";
+const PUBLISHED = "2026-06-28";
+const MODIFIED = "2026-08-03";
 
-const PAGE_CONFIG = {
+const PAGE_CONFIG: CompetitorVsConfig = {
   slug: "predis",
   competitorName: "Predis",
   route: ROUTE,
@@ -29,10 +31,29 @@ const PAGE_CONFIG = {
   },
   hero: {
     eyebrow: "Trndinn vs Predis",
-    title: "AI vs AI: The Better Choice for Social Media Growth",
+    title: "Best Predis Alternative for Brand-Authentic AI Content",
     subtitle:
       "Both platforms use AI. Predis focuses on quick content generation. Trndinn adds Brand Voice from your examples and a Content Engine for sustainable growth.",
   },
+  tldr: {
+    entityDeclaration:
+      "is an AI-native growth platform whose agents learn your brand voice from your own examples, then create LinkedIn-first posts and long-form SEO articles through a Content Engine.",
+    differentiator:
+      "which generates fast, template-driven social posts and design assets from generic prompts, Trndinn produces authentic, brand-aligned content that compounds through SEO distribution.",
+    stat: "Trndinn users report a 3.2× engagement lift over generic AI output and generate on-brand posts in an average of 8 seconds. [Internal analytics, 2026]",
+    badges: [
+      "Brand Voice from examples",
+      "Content Engine included",
+      "Agentic (not static) AI",
+      "LinkedIn-first depth",
+    ],
+  },
+  stats: [
+    { value: "3.2×", label: "Engagement lift vs generic AI", icon: "trending" },
+    { value: "150K+", label: "Posts scheduled to date", icon: "sparkles" },
+    { value: "42", label: "Languages supported", icon: "globe" },
+    { value: "8s", label: "Avg AI content generation", icon: "zap" },
+  ],
   competitorOverview: {
     title: "Predis: Quick AI Content Generation",
     paragraphs: [
@@ -145,6 +166,58 @@ const PAGE_CONFIG = {
       },
     ],
   },
+  useCases: {
+    title: "Who should use Predis vs Trndinn",
+    subtitle: "Predis is a fast content factory. Trndinn is a brand-aligned growth system.",
+    rows: [
+      {
+        scenario: "Creator needing 30 quick posts a week",
+        competitor: "Strong fit — template speed wins",
+        trndinn: "Fewer, higher-quality on-brand posts",
+      },
+      {
+        scenario: "Founder who needs posts to sound like them",
+        competitor: "Generic AI output — sounds like everyone",
+        trndinn: "Brand Voice learned from your examples",
+      },
+      {
+        scenario: "B2B team using LinkedIn Company Pages",
+        competitor: "Basic LinkedIn support",
+        trndinn: "Company Pages + identity switching",
+      },
+      {
+        scenario: "Marketing team wanting SEO articles + social",
+        competitor: "No content engine",
+        trndinn: "Content Engine turns keywords into articles",
+      },
+      {
+        scenario: "Design-heavy Instagram-first workflow",
+        competitor: "Built-in Canva-style editor",
+        trndinn: "AI image gen + external design tools",
+      },
+    ],
+  },
+  migration: {
+    title: "How to switch from Predis to Trndinn",
+    subtitle: "Move from templated AI to brand-authentic content in a single session.",
+    steps: [
+      {
+        title: "Export your Predis content",
+        description:
+          "Download recent posts, scheduled queue, and any brand assets from Predis. Save CSVs and design exports for reference.",
+      },
+      {
+        title: "Connect accounts and train Brand Voice",
+        description:
+          "Reconnect LinkedIn (personal + Company Pages) in Trndinn and paste 5–10 of your best-performing organic posts to train Brand Voice.",
+      },
+      {
+        title: "Rebuild the queue with agentic drafts",
+        description:
+          "Let Trndinn's agents draft on-brand replacements for each scheduled slot. Approve, publish, and cancel Predis.",
+      },
+    ],
+  },
   testimonials: [
     {
       quote: "We tried Predis first but the content felt too generic. Trndinn's Brand Voice training made a massive difference — our posts finally sound like us.",
@@ -160,35 +233,43 @@ const PAGE_CONFIG = {
   faqs: [
     {
       question: "Is Trndinn better than Predis?",
-      answer: "If you need authentic brand voice and growth-focused content, Trndinn wins. Predis is faster for generic content creation. But Trndinn's Brand Voice training, Content Engine, and agentic workflows create better long-term results. For creators prioritizing quality and SEO, Trndinn is the better Predis alternative.",
+      answer:
+        "Yes for brand-authentic content and long-term growth. Predis is faster for generic output. Trndinn wins on Brand Voice, Content Engine, and agentic AI.",
     },
     {
       question: "What's the main difference between Trndinn and Predis?",
-      answer: "The key difference is Brand Voice training. Predis uses generic AI templates. Trndinn learns YOUR voice from examples. Plus Trndinn has a Content Engine (SEO articles) that Predis completely lacks. Trndinn's AI is agentic — it learns and improves over time.",
+      answer:
+        "Trndinn trains on your own examples for Brand Voice; Predis uses generic templates. Trndinn also has a Content Engine for SEO articles Predis lacks.",
     },
     {
       question: "Is Predis cheaper than Trndinn?",
-      answer: "Entry pricing is similar (~$29/mo), but value differs. Predis offers unlimited AI but with generic output. Trndinn gives fewer posts but higher quality with Brand Voice. Plus Trndinn's Content Engine replaces separate SEO tools, saving money overall.",
+      answer:
+        "Entry pricing is similar at ~$29/mo. Predis offers unlimited generic AI. Trndinn includes Brand Voice and a Content Engine that replaces separate SEO tools.",
     },
     {
       question: "Which AI tool generates better content: Trndinn or Predis?",
-      answer: "For authentic, brand-aligned content — Trndinn. For fast, volume-focused generic content — Predis. Trndinn's content is better because it's trained on YOUR examples, not generic templates. Readers can tell the difference.",
+      answer:
+        "Trndinn for authentic, brand-aligned content. Predis for fast, high-volume generic output. Trndinn learns your voice, Predis does not.",
     },
     {
       question: "Can I use Trndinn and Predis together?",
-      answer: "Most teams find one sufficient. If you want both, use Predis for quick design-heavy content and Trndinn for strategic, SEO-driven posts. But Trndinn's Content Engine often replaces the need for Predis entirely.",
+      answer:
+        "Yes, but most teams find one is enough. Pair Predis for design-heavy Instagram posts with Trndinn for LinkedIn Brand Voice content.",
     },
     {
       question: "Does Trndinn have Predis's design features?",
-      answer: "Trndinn focuses on content quality and distribution rather than design tools. For design-heavy posts, integrate with Canva or use Predis alongside. Most growth-focused teams find Trndinn's content engine more valuable than built-in design.",
+      answer:
+        "No native Canva-style editor. Trndinn generates AI images and integrates with Canva/Figma. Predis wins on built-in visual design for now.",
     },
     {
       question: "Why choose Trndinn over Predis?",
-      answer: "Four reasons: 1) Authentic Brand Voice vs generic templates, 2) Content Engine for SEO that Predis lacks, 3) Agentic AI that improves vs static generation, 4) Growth-focused content strategy vs just post creation."
+      answer:
+        "Brand Voice from your examples, Content Engine for SEO, agentic AI that improves, and growth-focused strategy — none of which Predis offers today.",
     },
     {
       question: "Is Trndinn a good Predis alternative for agencies?",
-      answer: "Absolutely. Trndinn's Brand Voice training is ideal for managing multiple client voices authentically. The Content Engine lets agencies offer SEO + social packages. And credits-based pricing scales better than Predis's per-account model."
+      answer:
+        "Yes. Trndinn's Brand Voice trains per client, and credits-based Agency pricing scales cleanly across brands. Content Engine adds SEO deliverables.",
     },
   ],
   cta: {
@@ -197,6 +278,21 @@ const PAGE_CONFIG = {
     primaryLabel: "Start Free Trial",
     secondaryLabel: "Compare Pricing",
   },
+  internalLinks: [
+    {
+      href: "/tools/auto-caption-generator",
+      title: "Free Auto Caption Generator",
+      subtitle: "Add captions to any video, no login",
+      icon: "zap",
+      featured: true,
+    },
+    { href: "/compare", title: "All comparisons", subtitle: "Trndinn vs every AI content tool", icon: "scale" },
+    { href: "/features", title: "Platform features", subtitle: "Brand Voice, agents, calendar", icon: "sparkles" },
+    { href: "/pricing", title: "Trndinn pricing", subtitle: "Credits-based plans compared", icon: "trending" },
+    { href: "/mcp", title: "MCP integration", subtitle: "Agent-native protocol support", icon: "wrench" },
+    { href: "/content-engine", title: "Content Engine", subtitle: "Keywords to SEO articles + posts", icon: "rocket" },
+    { href: "/blog", title: "Trndinn blog", subtitle: "AI content strategy playbooks", icon: "book" },
+  ],
   relatedComparisons: [
     { name: "Buffer", href: "/vs/buffer", description: "Traditional vs agentic scheduling" },
     { name: "Hootsuite", href: "/vs/hootsuite", description: "Legacy vs modern AI" },
@@ -207,17 +303,31 @@ const PAGE_CONFIG = {
 
 function defaultStructuredData() {
   const base = getSiteUrl().replace(/\/$/, "");
+  const pageUrl = `${base}${ROUTE}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_CONFIG.seo.title,
+        description: PAGE_CONFIG.seo.description,
+        inLanguage: "en-US",
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
+        isPartOf: { "@id": `${base}#website` },
+      },
+      {
         "@type": "ComparisonPage",
         name: PAGE_CONFIG.seo.title,
         description: PAGE_CONFIG.seo.description,
-        url: `${base}${ROUTE}`,
+        url: pageUrl,
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
         comparedProducts: [
           { "@type": "SoftwareApplication", name: siteName },
-          { "@type": "SoftwareApplication", name: "Predis" },
+          { "@type": "SoftwareApplication", name: "Predis.ai" },
         ],
       },
       {
@@ -252,11 +362,15 @@ function defaultStructuredData() {
       },
       {
         "@type": "SoftwareApplication",
-        name: "Predis",
+        name: "Predis.ai",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         url: "https://predis.ai",
         description: PAGE_CONFIG.competitorOverview.paragraphs[0],
+        sameAs: [
+          "https://predis.ai",
+          "https://www.linkedin.com/company/predis-ai",
+        ],
       },
     ],
   };

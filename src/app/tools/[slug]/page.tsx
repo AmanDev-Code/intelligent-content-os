@@ -4,15 +4,23 @@ import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
 import { FAQPageSchema } from "@/components/seo/FAQPageSchema";
 import { WebApplicationSchema } from "@/components/seo/WebApplicationSchema";
+import { HowToSchema } from "@/components/seo/HowToSchema";
 import { getToolBySlug, TOOLS } from "@/lib/tools-data";
 import { getSiteUrl } from "@/lib/site";
 import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderView";
+import AutoCaptionGeneratorView from "@/views/tools/AutoCaptionGeneratorView";
 import {
   REEL_DOWNLOADER_PRIMARY_SLUG,
   REEL_DOWNLOADER_ALIAS_SLUGS,
   getReelDownloaderAlias,
   isReelDownloaderSlug,
 } from "@/lib/reel-downloader-aliases";
+import {
+  AUTO_CAPTION_PRIMARY_SLUG,
+  AUTO_CAPTION_ALIAS_SLUGS,
+  getAutoCaptionAlias,
+  isAutoCaptionSlug,
+} from "@/lib/auto-caption-aliases";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -20,59 +28,105 @@ interface PageProps {
 
 const INSTAGRAM_REEL_FAQS = [
   {
+    question: "How do I download an Instagram Reel without watermark?",
+    answer:
+      "Copy the Reel's link from Instagram (tap Share > Copy Link), paste it into Trndinn's Instagram Reel Downloader, and tap Download. You get a clean HD MP4 with no watermark and no login.",
+  },
+  {
     question: "Is it free to download Instagram Reels?",
     answer:
-      "Yes, the Trndinn Instagram Reel Downloader is completely free. No signup, no login, no hidden costs. Paste a public Reel URL to download Instagram Reels and save Reels to your device as MP4 instantly.",
+      "Yes. Trndinn's Instagram Reel downloader is completely free with no signup, no watermark, and no download limit for public Reels. There is nothing to install.",
   },
   {
-    question: "Do I need to log in to Instagram to use this tool?",
+    question: "Is it safe/legal to download Instagram Reels?",
     answer:
-      "No. This free Instagram Reel Downloader saves public Instagram Reels without requiring any Instagram login or authentication. Simply paste the Reel URL and hit download.",
+      "Downloading public Reels for personal offline use is generally safe with a browser-based tool that requires no login. Always respect the original creator's rights and Instagram's terms before reusing content publicly.",
   },
   {
-    question: "What video quality can I download?",
+    question: "What is the best Instagram Reel downloader in 2026?",
     answer:
-      "Instagram Reels are downloaded in their original high quality — typically 720p or 1080p HD MP4. Our Instagram video downloader does not compress or re-encode the video, so you get the same original quality Instagram stores.",
+      "The best Instagram Reel downloaders in 2026 include Trndinn, SnapInsta, SSSInstagram, and Indown — ranked on speed, ad load, HD quality, and whether they add a watermark. Trndinn leads on a clean, ad-free, no-login experience.",
   },
   {
-    question: "Is it legal to download Instagram Reels?",
+    question: "Can I download Instagram Reels on iPhone?",
     answer:
-      "Downloading public content for personal use is generally permitted. However, re-uploading or redistributing someone else's content without permission may violate copyright laws and Instagram's Terms of Service. Always credit the original creator if you share their work.",
+      "Yes. Open the Reel, tap Share > Copy Link, open Trndinn in Safari, paste the link, and tap Download — the HD MP4 saves to your Files or Photos. No app needed.",
   },
   {
-    question: "Does the downloaded video have a watermark?",
+    question: "How do I save just the audio from a Reel?",
     answer:
-      "No. The Trndinn Instagram Reel Downloader saves the original MP4 file without watermark — no logo, no branding, no overlay. Download Instagram Reels the way they were uploaded.",
+      "Paste the Reel link into Trndinn's Reel-to-MP3 tool to extract the original audio as an MP3 file — useful for saving trending sounds without the video.",
   },
   {
-    question: "Can I download Reels from private accounts?",
+    question: "Do I need an app or account to download Reels?",
     answer:
-      "No. This Instagram Reels downloader only works with publicly accessible Reels. If an account is private, you will not be able to download their content.",
+      "No. Trndinn works entirely in your browser on any device — no app install, no Instagram login, and no account signup required to download public Reels.",
   },
   {
-    question: "How many Instagram Reels can I download?",
+    question: "Why do downloaded Reels sometimes have a watermark?",
     answer:
-      "There is no daily cap — you can download unlimited Reels with the Trndinn Instagram Reel Downloader. Fair-use rate limiting is applied to prevent abuse, but normal usage is never restricted.",
+      "Reels saved with Instagram's in-app option or with clip-first apps carry a watermark. A dedicated downloader like Trndinn fetches the original source file, so the MP4 has no watermark.",
   },
   {
-    question: "Does this Instagram Reel Downloader work on mobile?",
+    question: "Can I download private Reels?",
     answer:
-      "Yes. Trndinn's Instagram Reels downloader works on any device with a browser — iPhone, iPad, Android phone or tablet, Mac, Windows PC, Chromebook. Save Instagram Reels directly to your phone gallery or Downloads folder.",
+      "No. Trndinn only downloads public Reels. Private Reels require the account owner's login and are not accessible to any public downloader tool. Respect creator privacy.",
+  },
+  {
+    question: "How do I download Instagram Reels on Android?",
+    answer:
+      "Open the Reel in the Instagram app, tap Share > Copy Link, switch to Chrome, open Trndinn's Instagram Reel Downloader, paste the link, and tap Download. The HD MP4 saves to your Downloads folder.",
+  },
+];
+
+const AUTO_CAPTION_FAQS = [
+  {
+    question: "How do I add captions to a video for free?",
+    answer:
+      "Upload your video to the Trndinn Auto Caption Generator, pick a caption style, and click Generate. AI transcribes audio, syncs word-by-word, and returns a captioned MP4. No login, no software install, no signup — free for videos up to 1.5 minutes.",
+  },
+  {
+    question: "What video formats are supported?",
+    answer:
+      "MP4, MOV, and WebM up to 100 MB and 1.5 minutes. Output is always MP4 (H.264 + AAC) at your original resolution up to 1080p.",
+  },
+  {
+    question: "How accurate are the AI-generated captions?",
+    answer:
+      "Trndinn uses faster-whisper (24,700+ GitHub stars, 4x faster than OpenAI Whisper) as the primary engine with word-level timestamps and 99+ language auto-detection. Accuracy is 95%+ for clear speech in English.",
+  },
+  {
+    question: "Can I edit the captions before burning them in?",
+    answer:
+      "Not on the free tier — captions are generated and burned in one pass for speed. Inline transcript editing is available on the paid Creator plan.",
+  },
+  {
+    question: "What caption styles are available?",
+    answer:
+      "Six presets: Hormozi (bold word-by-word yellow), MrBeast (chunky highlight), Minimal (clean sans-serif), Karaoke (full-line with active word colored), Typewriter (letter-by-letter), and Gradient Pop (bounce with gradient fill).",
+  },
+  {
+    question: "What languages are supported?",
+    answer:
+      "99+ languages via faster-whisper auto-detect, including English, Hindi, Spanish, Portuguese, French, German, Japanese, Korean, Arabic, and Mandarin Chinese.",
+  },
+  {
+    question: "Are my videos stored?",
+    answer:
+      "No. Uploads and captioned outputs are auto-deleted after 1 hour. Trndinn never trains AI on user videos and never shares content with third parties.",
   },
 ];
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  // Alias branch — a keyword-variant URL that renders the reel downloader.
-  // Metadata is unique per alias, but the canonical points at the primary URL
-  // so Google consolidates ranking signals without penalising duplicate content.
-  const alias = getReelDownloaderAlias(slug);
-  if (alias) {
-    const meta = await buildMarketingMetadata(`/tools/${alias.slug}`, {
-      title: alias.seoTitle,
-      description: alias.seoDescription,
-      keywords: alias.keywords,
+  // ─── Reel Downloader Aliases ──────────────────────────────────────────
+  const reelAlias = getReelDownloaderAlias(slug);
+  if (reelAlias) {
+    const meta = await buildMarketingMetadata(`/tools/${reelAlias.slug}`, {
+      title: reelAlias.seoTitle,
+      description: reelAlias.seoDescription,
+      keywords: reelAlias.keywords,
     });
     return {
       ...meta,
@@ -83,34 +137,74 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  // ─── Auto Caption Aliases ─────────────────────────────────────────────
+  const captionAlias = getAutoCaptionAlias(slug);
+  if (captionAlias) {
+    const meta = await buildMarketingMetadata(`/tools/${captionAlias.slug}`, {
+      title: captionAlias.seoTitle,
+      description: captionAlias.seoDescription,
+      keywords: captionAlias.keywords,
+    });
+    return {
+      ...meta,
+      alternates: {
+        ...(meta.alternates ?? {}),
+        canonical: `/tools/${AUTO_CAPTION_PRIMARY_SLUG}`,
+      },
+    };
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
+  // ─── Primary: Instagram Reel Downloader ───────────────────────────────
   if (slug === REEL_DOWNLOADER_PRIMARY_SLUG) {
     return buildMarketingMetadata(`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`, {
-      title: "Free Instagram Reel Downloader — HD MP4, No Watermark | Trndinn",
+      title: "Instagram Reel Downloader — Free, HD, No Watermark | Trndinn",
       description:
-        "Download any public Instagram Reel as HD MP4 for free — no watermark, no login, no app install. Works on iPhone, Android, Mac & PC. Paste a link and save in 3 seconds.",
+        "Download any public Instagram Reel as an HD MP4 in seconds. Free, no watermark, no login, no app. Paste a link and save. Try Trndinn's Reel downloader.",
       keywords: [
         "instagram reel downloader",
         "instagram reels downloader",
-        "download instagram reel",
         "download instagram reels",
+        "download instagram reel",
         "reel downloader online",
         "instagram video downloader",
         "download reels mp4",
         "instagram reel download hd",
         "save instagram reels",
         "reels downloader",
-        "instagram reels saver",
-        "instagram video download",
+        "instagram reel downloader no watermark",
+        "instagram reel downloader free",
+        "instagram reel downloader online",
       ],
     });
   }
 
-  // Generic fallback for any tool without dedicated SEO. Keeps positioning
-  // consistent (brand-led, benefit-led, CTA) and ensures every tool page has
-  // a proper meta description sized for SERPs.
+  // ─── Primary: Auto Caption Generator ──────────────────────────────────
+  if (slug === AUTO_CAPTION_PRIMARY_SLUG) {
+    return buildMarketingMetadata(`/tools/${AUTO_CAPTION_PRIMARY_SLUG}`, {
+      title: "Free Auto Caption Generator — Add Captions to Video | Trndinn",
+      description:
+        "Add auto-synced captions to any video for free. AI transcribes, syncs word-by-word, and burns styled subtitles onto your Reels, Shorts, and TikToks.",
+      keywords: [
+        "auto caption generator",
+        "auto caption generator for video",
+        "add captions to video free",
+        "subtitle generator online",
+        "auto subtitles for reels",
+        "video caption maker",
+        "burn subtitles into video",
+        "ai subtitle generator",
+        "free caption generator",
+        "video to text captions",
+        "reels caption tool",
+        "shorts caption generator",
+      ],
+    });
+  }
+
+  // ─── Generic fallback ─────────────────────────────────────────────────
   const generic = tool.description || "A free tool by Trndinn.";
   const description = `${generic} Free, no login, no signup. Part of Trndinn's free tools for creators and marketers.`;
   return buildMarketingMetadata(`/tools/${slug}`, {
@@ -130,8 +224,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export function generateStaticParams() {
   return [
     ...TOOLS.filter((t) => t.live).map((t) => ({ slug: t.slug })),
-    // Also pre-render every alias slug so Next can statically export them.
     ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({ slug })),
+    ...AUTO_CAPTION_ALIAS_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -139,9 +233,7 @@ export default async function ToolPage({ params }: PageProps) {
   const { slug } = await params;
   const base = getSiteUrl().replace(/\/$/, "");
 
-  // Any reel-downloader slug (primary OR alias) renders the reel view.
-  // Aliases pass down variant hero copy so the H1/eyebrow/subline differ
-  // per URL for keyword targeting, while the tool functionality is identical.
+  // ─── Instagram Reel Downloader (primary + aliases) ────────────────────
   if (isReelDownloaderSlug(slug)) {
     const alias = getReelDownloaderAlias(slug);
     const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "Instagram Reel Downloader";
@@ -159,10 +251,10 @@ export default async function ToolPage({ params }: PageProps) {
           pageUrl={`${base}/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`}
         />
         <WebApplicationSchema
-          name={alias?.seoTitle.split(" — ")[0] ?? "Free Instagram Reel Downloader"}
-          description="Download any public Instagram Reel as MP4 in original HD quality. No login required, no watermark added."
+          name={alias?.seoTitle.split(" — ")[0] ?? "Trndinn Instagram Reel Downloader"}
+          description="Download any public Instagram Reel as an HD MP4 in seconds. Free, no watermark, no login, no app."
           url={`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`}
-          applicationCategory="UtilityApplication"
+          applicationCategory="MultimediaApplication"
           featureList={[
             "Download Instagram Reels as MP4",
             "Original HD quality (720p/1080p)",
@@ -172,8 +264,78 @@ export default async function ToolPage({ params }: PageProps) {
             "Works on mobile and desktop",
           ]}
         />
+        <HowToSchema
+          name="How to Download Instagram Reels Without Watermark"
+          description="Download any public Instagram Reel as HD MP4 in 3 steps using Trndinn's free online tool. No login, no watermark, no app install."
+          pageUrl={`${base}/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`}
+          totalTime="PT30S"
+          steps={[
+            {
+              name: "Copy the Reel link",
+              text: "Open the Instagram app or website, find a public Reel, tap the Share icon, and select Copy Link.",
+            },
+            {
+              name: "Paste it here",
+              text: "Come back to Trndinn's Instagram Reel Downloader and paste the URL into the input field above.",
+            },
+            {
+              name: "Tap Download — HD MP4, no watermark",
+              text: "Click the Download button. The Reel saves to your device as an HD MP4 file with no watermark.",
+            },
+          ]}
+        />
         <InstagramReelDownloaderView
           faqs={INSTAGRAM_REEL_FAQS}
+          heroVariant={
+            alias
+              ? {
+                  h1Prefix: alias.h1Prefix,
+                  h1Highlight: alias.h1Highlight,
+                  h1Suffix: alias.h1Suffix,
+                  eyebrow: alias.eyebrow,
+                  subline: alias.heroSubline,
+                }
+              : undefined
+          }
+        />
+      </>
+    );
+  }
+
+  // ─── Auto Caption Generator (primary + aliases) ───────────────────────
+  if (isAutoCaptionSlug(slug)) {
+    const alias = getAutoCaptionAlias(slug);
+    const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "Auto Caption Generator";
+    return (
+      <>
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Tools", path: "/tools" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
+          ]}
+        />
+        <FAQPageSchema
+          faqs={AUTO_CAPTION_FAQS}
+          pageUrl={`${base}/tools/${AUTO_CAPTION_PRIMARY_SLUG}`}
+        />
+        <WebApplicationSchema
+          name={alias?.seoTitle.split(" — ")[0] ?? "Free Auto Caption Generator"}
+          description="Add auto-synced captions to any video with AI transcription and 6 trending caption styles. No login required."
+          url={`/tools/${AUTO_CAPTION_PRIMARY_SLUG}`}
+          applicationCategory="MultimediaApplication"
+          featureList={[
+            "Auto-synced captions with AI",
+            "6 caption styles (Hormozi, MrBeast, Minimal, Karaoke, Typewriter, Gradient Pop)",
+            "Word-level timing accuracy",
+            "99+ languages supported",
+            "No login required",
+            "MP4 output with burned-in captions",
+            "SRT/VTT subtitle file download",
+          ]}
+        />
+        <AutoCaptionGeneratorView
+          faqs={AUTO_CAPTION_FAQS}
           heroVariant={
             alias
               ? {

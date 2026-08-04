@@ -106,6 +106,78 @@ function InstagramReelArtwork() {
   );
 }
 
+// Auto Caption Generator artwork — vibrant teal/blue gradient with caption line mockup
+function AutoCaptionArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#0EA5E9] via-[#6366F1] to-[#A855F7] p-6">
+      {/* Video frame mockup */}
+      <div className="relative z-10 flex h-32 w-20 flex-col items-end justify-end rounded-xl bg-black/40 ring-2 ring-white/20 backdrop-blur-md p-2">
+        {/* Status bar */}
+        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-white/30" />
+        {/* Video content placeholder */}
+        <div className="absolute inset-2 top-4 rounded-lg bg-white/5" />
+        {/* Caption line at bottom */}
+        <motion.div
+          className="relative z-10 w-full rounded bg-black/60 px-1.5 py-1"
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="flex items-center gap-0.5">
+            <div className="h-1 w-3 rounded-full bg-yellow-400" />
+            <div className="h-1 w-4 rounded-full bg-white/60" />
+            <div className="h-1 w-2.5 rounded-full bg-white/60" />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Floating caption style cards */}
+      <motion.div
+        className="absolute left-3 top-5 rounded-md bg-white/15 px-2 py-1 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0], rotate: [-2, 2, -2] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-[9px] font-bold text-yellow-300">Aa</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute right-4 top-4 rounded-md bg-white/15 px-2 py-1 backdrop-blur-sm"
+        animate={{ y: [0, 4, 0], rotate: [2, -1, 2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        <span className="text-[9px] font-bold text-emerald-300" style={{ fontFamily: "monospace" }}>T_</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-5 left-5 rounded-md bg-white/15 px-2 py-1 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+      >
+        <span className="text-[9px] font-black uppercase bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">POP</span>
+      </motion.div>
+
+      {/* Waveform indicator */}
+      <motion.div
+        className="absolute bottom-4 right-4 flex items-end gap-[2px]"
+        animate={{ opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      >
+        {[3, 6, 4, 8, 5, 7, 3].map((h, i) => (
+          <motion.div
+            key={i}
+            className="w-[2px] rounded-full bg-white/70"
+            animate={{ height: [`${h}px`, `${h + 3}px`, `${h}px`] }}
+            transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.1 }}
+          />
+        ))}
+      </motion.div>
+
+      {/* Scattered dots */}
+      <div className="absolute top-3 left-10 h-1 w-1 rounded-full bg-white/40" />
+      <div className="absolute bottom-8 right-10 h-1.5 w-1.5 rounded-full bg-white/30" />
+    </div>
+  );
+}
+
 // Placeholder artwork for coming-soon tools (subtle, muted)
 function ComingSoonArtwork({ category }: { category: ToolCategory }) {
   const Icon = CATEGORY_ICONS[category];
@@ -133,6 +205,8 @@ function getToolArtwork(tool: ToolEntry) {
   switch (tool.slug) {
     case "instagram-reel-downloader":
       return <InstagramReelArtwork />;
+    case "auto-caption-generator":
+      return <AutoCaptionArtwork />;
     default:
       return <ComingSoonArtwork category={tool.category} />;
   }

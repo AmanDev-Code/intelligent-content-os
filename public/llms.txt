@@ -11,12 +11,29 @@ Trndinn is the all-in-one agentic platform for creating, scheduling, managing, a
 - Agentic: AI that completes multi-step workflows — draft, adapt, schedule, publish, distribute — with minimal UI friction.
 - Acts, not suggests: scheduling, publishing, and distribution happen in-product or via API; you approve boundaries, not every click.
 - Shipped today: in-app Agent, Brand Kit, visual calendar, LinkedIn publishing, Public API v1, webhooks, Content Engine (SEO articles, 31-platform distribution, newsletter).
-- Roadmap (not shipped): MCP server, CLI, multi-channel expansion beyond LinkedIn.
+- Roadmap (not shipped): CLI, multi-channel expansion beyond LinkedIn.
+
+## MCP server (live)
+
+Trndinn exposes a full Model Context Protocol server at https://trndinn.com/mcp for Claude Code, Cursor, and ChatGPT. Currently platform-admin-only. 67 tools across 10 capability packs:
+
+- Blog: create, publish, schedule, update, delete posts
+- AI writing: generate titles, excerpts, FAQ, full articles
+- Optimization: AEO + GEO scoring and application
+- Images: DALL-E generation, approval workflow, insertion
+- Links: internal linking suggestions and application
+- Keywords: CRUD + bulk import + assignments
+- Page SEO: static route metadata with AI-fill
+- Distributions: cross-platform post generation
+- Rankings + backlinks: tracking and opportunity management
+- Author profiles: save blog author metadata
+
+Auth: Bearer trnd_* API keys with scoped access (blog:read, blog:write, content-engine:read, content-engine:write, seo:read, seo:write, media:write). Rate limits: 30/hr Free, 100/hr Team, 300/hr Agency.
 
 ## What Trndinn does / does not
 
 - Does: AI agents that draft on-brand content from examples you provide, schedule on a visual calendar, publish to LinkedIn (live today), automate via API v1 and webhooks, and run Content Engine workflows.
-- Does not: Scrape or train on your social feeds; claim MCP/CLI connectivity today; claim 30+ live social channels.
+- Does not: Scrape or train on your social feeds; claim CLI connectivity today; claim 30+ live social channels.
 - Does not: Bulk cold messaging or spam automation tools.
 
 ## Public URLs

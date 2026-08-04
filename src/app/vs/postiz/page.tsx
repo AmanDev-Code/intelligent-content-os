@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
-import CompareVsPage from "@/views/CompareVsPage";
+import CompareVsPage, { type CompetitorVsConfig } from "@/views/CompareVsPage";
 
 const ROUTE = "/vs/postiz";
+const PUBLISHED = "2026-06-28";
+const MODIFIED = "2026-08-03";
 
-const PAGE_CONFIG = {
+const PAGE_CONFIG: CompetitorVsConfig = {
   slug: "postiz",
   competitorName: "Postiz",
   route: ROUTE,
@@ -29,10 +31,29 @@ const PAGE_CONFIG = {
   },
   hero: {
     eyebrow: "Trndinn vs Postiz",
-    title: "Agentic AI Content vs 30+ Channel Scheduling",
+    title: "Best Postiz Alternative for Agentic Content and LinkedIn Growth",
     subtitle:
       "Postiz schedules everywhere. Trndinn creates content everywhere. Choose between broad scheduling or brand-aware AI creation that drives growth.",
   },
+  tldr: {
+    entityDeclaration:
+      "is a managed, AI-native growth platform that trains agents on your brand examples, publishes to LinkedIn with Company Pages + identity switching, and generates SEO articles through a built-in Content Engine.",
+    differentiator:
+      "which is an open-source scheduler focused on breadth (30+ networks, self-host, CLI, MCP) with only template-level AI, Trndinn is a fully managed SaaS built around agentic creation and brand-authentic output.",
+    stat: "Trndinn users report a 3.2× engagement lift over manual posting and generate on-brand content in an average of 8 seconds — with zero infrastructure to maintain. [Internal analytics, 2026]",
+    badges: [
+      "Managed, no DevOps",
+      "Brand Voice from examples",
+      "Content Engine included",
+      "LinkedIn-first depth",
+    ],
+  },
+  stats: [
+    { value: "3.2×", label: "Engagement lift vs manual", icon: "trending" },
+    { value: "150K+", label: "Posts scheduled to date", icon: "sparkles" },
+    { value: "42", label: "Languages supported", icon: "globe" },
+    { value: "8s", label: "Avg AI content generation", icon: "zap" },
+  ],
   competitorOverview: {
     title: "Postiz: Open-Source Scheduling Powerhouse",
     paragraphs: [
@@ -150,6 +171,58 @@ const PAGE_CONFIG = {
       },
     ],
   },
+  useCases: {
+    title: "Who should use Postiz vs Trndinn",
+    subtitle: "Postiz wins on breadth and OSS control. Trndinn wins on content creation and LinkedIn depth.",
+    rows: [
+      {
+        scenario: "Developer wanting self-hosted control + CLI",
+        competitor: "Ideal — open-source with MCP + CLI",
+        trndinn: "Not the fit — managed SaaS only",
+      },
+      {
+        scenario: "Solo creator needing 20+ channel scheduling",
+        competitor: "Strong fit — 30+ networks supported",
+        trndinn: "LinkedIn-first, more channels rolling out",
+      },
+      {
+        scenario: "B2B team focused on LinkedIn growth",
+        competitor: "Basic LinkedIn scheduling only",
+        trndinn: "Company Pages + identity + Brand Voice",
+      },
+      {
+        scenario: "Marketing team wanting AI to draft on-brand posts",
+        competitor: "Template-level AI, no Brand Voice",
+        trndinn: "Agents trained on your examples",
+      },
+      {
+        scenario: "Content team needing SEO articles + social",
+        competitor: "No content engine",
+        trndinn: "Content Engine covers articles + distribution",
+      },
+    ],
+  },
+  migration: {
+    title: "How to switch from Postiz to Trndinn",
+    subtitle: "Migrate from self-hosted or Postiz Cloud to Trndinn in a single session.",
+    steps: [
+      {
+        title: "Export your Postiz queue",
+        description:
+          "Dump scheduled posts and connected accounts from your Postiz instance. CSV or JSON works — Trndinn accepts both.",
+      },
+      {
+        title: "Connect accounts and train Brand Voice",
+        description:
+          "Reconnect LinkedIn (personal + Company Pages) inside Trndinn, then paste your top-performing posts to train Brand Voice on real examples.",
+      },
+      {
+        title: "Import queue and shut down the box",
+        description:
+          "Import the export, review AI-suggested variants, and go live. Once posts publish cleanly, tear down your Postiz server or cancel Postiz Cloud.",
+      },
+    ],
+  },
   testimonials: [
     {
       quote: "We tried Postiz but spent more time managing infrastructure than content. Trndinn just works — and the AI content is miles ahead.",
@@ -165,35 +238,43 @@ const PAGE_CONFIG = {
   faqs: [
     {
       question: "Is Trndinn a good Postiz alternative?",
-      answer: "Yes, if you need AI content creation and growth features. Postiz excels at scheduling to many channels. Trndinn excels at creating authentic content with Brand Voice and driving SEO growth. For teams prioritizing content quality over quantity of channels, Trndinn is the better Postiz alternative.",
+      answer:
+        "Yes for teams that want AI content, Brand Voice, and SEO growth. Postiz wins on multi-channel breadth. Trndinn wins on content creation and LinkedIn depth.",
     },
     {
       question: "What's the main difference between Postiz and Trndinn?",
-      answer: "Postiz is a powerful open-source scheduler for 30+ platforms. Trndinn is an agentic content platform focused on LinkedIn with Brand Voice training and a Content Engine. Postiz schedules; Trndinn creates + schedules + grows.",
+      answer:
+        "Postiz is an open-source scheduler for 30+ platforms. Trndinn is an agentic content platform with Brand Voice training and a Content Engine.",
     },
     {
       question: "Is Postiz free vs Trndinn's paid model?",
-      answer: "Postiz is free if you self-host (requires technical setup + hosting costs). Their hosted cloud is ~$20/mo. Trndinn starts at $29/mo but includes AI content generation, Brand Voice, and professional support. Factor in time saved and Trndinn is often cheaper.",
+      answer:
+        "Postiz is free to self-host (plus hosting cost) or ~$20/mo hosted. Trndinn starts at $29/mo and includes AI content, Brand Voice, and support.",
     },
     {
       question: "Should I use Postiz or Trndinn for LinkedIn?",
-      answer: "Trndinn for LinkedIn. While Postiz supports LinkedIn, Trndinn is purpose-built for it — Company Pages, identity switching, Brand Voice optimized for LinkedIn engagement, and content strategies for B2B growth.",
+      answer:
+        "Trndinn. It supports Company Pages, identity switching, and Brand Voice tuned to your LinkedIn examples. Postiz supports LinkedIn but does not specialize.",
     },
     {
       question: "Can I self-host Trndinn like Postiz?",
-      answer: "Not currently. Trndinn is SaaS-only to ensure AI model updates and security. Postiz's self-hosting is great for teams with DevOps resources. Trndinn focuses on zero-maintenance growth for busy teams.",
+      answer:
+        "No. Trndinn is SaaS-only so AI models, security, and Content Engine stay fully managed. Choose Postiz if self-hosting is a hard requirement.",
     },
     {
       question: "Does Trndinn have Postiz's MCP server?",
-      answer: "Trndinn's MCP server is on our Q2 2025 roadmap. Currently we offer API + webhooks on Team tier. Postiz's MCP is ideal for developers building AI agents. Trndinn's AI is already built into the platform.",
+      answer:
+        "MCP is on the Trndinn roadmap. Today Trndinn offers API + webhooks on Team and Agency plans. Postiz remains the developer-first option.",
     },
     {
       question: "Which is better: Trndinn or Postiz for agencies?",
-      answer: "Depends on your client needs. Postiz for clients needing 30+ platforms. Trndinn for clients wanting Brand Voice, AI content, and SEO growth. Many agencies use both — Postiz for wide distribution, Trndinn for content quality.",
+      answer:
+        "Postiz for clients on many platforms. Trndinn for clients wanting Brand Voice, AI content, and SEO growth. Some agencies run both in parallel.",
     },
     {
       question: "Can I import from Postiz to Trndinn?",
-      answer: "Yes. Our team can help migrate scheduled content and teach you Trndinn's Brand Voice features. Most teams see better engagement within weeks of switching.",
+      answer:
+        "Yes. Trndinn accepts CSV or JSON exports of your Postiz queue and can help retrain Brand Voice on your top-performing posts.",
     },
   ],
   cta: {
@@ -202,6 +283,21 @@ const PAGE_CONFIG = {
     primaryLabel: "Start Free Trial",
     secondaryLabel: "See Pricing",
   },
+  internalLinks: [
+    {
+      href: "/tools/auto-caption-generator",
+      title: "Free Auto Caption Generator",
+      subtitle: "Add captions to any video, no login",
+      icon: "zap",
+      featured: true,
+    },
+    { href: "/compare", title: "All comparisons", subtitle: "Trndinn vs every scheduler", icon: "scale" },
+    { href: "/features", title: "Platform features", subtitle: "Brand Voice, agents, calendar", icon: "sparkles" },
+    { href: "/pricing", title: "Trndinn pricing", subtitle: "Credits-based plans compared", icon: "trending" },
+    { href: "/mcp", title: "MCP integration", subtitle: "Agent-native protocol on the roadmap", icon: "wrench" },
+    { href: "/content-engine", title: "Content Engine", subtitle: "Keywords to SEO articles + posts", icon: "rocket" },
+    { href: "/blog", title: "Trndinn blog", subtitle: "OSS-to-SaaS migration playbooks", icon: "book" },
+  ],
   relatedComparisons: [
     { name: "Buffer", href: "/vs/buffer", description: "Traditional scheduling comparison" },
     { name: "Hootsuite", href: "/vs/hootsuite", description: "Enterprise vs modern AI" },
@@ -212,14 +308,28 @@ const PAGE_CONFIG = {
 
 function defaultStructuredData() {
   const base = getSiteUrl().replace(/\/$/, "");
+  const pageUrl = `${base}${ROUTE}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_CONFIG.seo.title,
+        description: PAGE_CONFIG.seo.description,
+        inLanguage: "en-US",
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
+        isPartOf: { "@id": `${base}#website` },
+      },
+      {
         "@type": "ComparisonPage",
         name: PAGE_CONFIG.seo.title,
         description: PAGE_CONFIG.seo.description,
-        url: `${base}${ROUTE}`,
+        url: pageUrl,
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
         comparedProducts: [
           { "@type": "SoftwareApplication", name: siteName },
           { "@type": "SoftwareApplication", name: "Postiz" },
@@ -262,6 +372,10 @@ function defaultStructuredData() {
         operatingSystem: "Web",
         url: "https://postiz.com",
         description: PAGE_CONFIG.competitorOverview.paragraphs[0],
+        sameAs: [
+          "https://github.com/gitroomhq/postiz-app",
+          "https://x.com/nevocharli",
+        ],
       },
     ],
   };

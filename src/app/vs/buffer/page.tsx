@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
-import CompareVsPage from "@/views/CompareVsPage";
+import CompareVsPage, { type CompetitorVsConfig } from "@/views/CompareVsPage";
 
 const ROUTE = "/vs/buffer";
+const PUBLISHED = "2026-06-28";
+const MODIFIED = "2026-08-03";
 
-const PAGE_CONFIG = {
+const PAGE_CONFIG: CompetitorVsConfig = {
   slug: "buffer",
   competitorName: "Buffer",
   route: ROUTE,
@@ -29,10 +31,29 @@ const PAGE_CONFIG = {
   },
   hero: {
     eyebrow: "Trndinn vs Buffer",
-    title: "The Best Buffer Alternative for AI-Powered Social Media Growth",
+    title: "Best Buffer Alternative for AI-Powered Social Media Growth",
     subtitle:
       "Buffer pioneered social scheduling. Trndinn adds agentic AI that learns your brand voice, creates content, and grows your audience — not just schedules posts.",
   },
+  tldr: {
+    entityDeclaration:
+      "is an AI-native growth platform that trains agents on your brand examples to create, schedule, and distribute LinkedIn-first content — plus SEO articles through a Content Engine.",
+    differentiator:
+      "which stops at queue-based scheduling and a light AI writing assistant, Trndinn owns the entire create-to-distribute workflow with true Brand Voice training and multi-format output.",
+    stat: "Users report a 3.2× engagement lift over manual posting and generate content in an average of 8 seconds. [Internal analytics, 2026]",
+    badges: [
+      "Agentic AI",
+      "Brand Voice from examples",
+      "Content Engine included",
+      "Credits-based pricing",
+    ],
+  },
+  stats: [
+    { value: "3.2×", label: "Engagement lift vs manual", icon: "trending" },
+    { value: "150K+", label: "Posts scheduled to date", icon: "sparkles" },
+    { value: "42", label: "Languages supported", icon: "globe" },
+    { value: "8s", label: "Avg AI content generation", icon: "zap" },
+  ],
   competitorOverview: {
     title: "Buffer: The Scheduling Pioneer",
     paragraphs: [
@@ -141,6 +162,58 @@ const PAGE_CONFIG = {
       },
     ],
   },
+  useCases: {
+    title: "Who should use Buffer vs Trndinn",
+    subtitle: "Match your workflow to the right tool — Buffer for pure scheduling, Trndinn for content growth.",
+    rows: [
+      {
+        scenario: "Solo creator posting to 3+ networks",
+        competitor: "Good fit — clean queue, low price at small scale",
+        trndinn: "Better fit if you want AI to write posts for you",
+      },
+      {
+        scenario: "B2B team building LinkedIn thought leadership",
+        competitor: "Basic LinkedIn scheduling only",
+        trndinn: "Brand Voice + Company Pages + identity switching",
+      },
+      {
+        scenario: "Marketing team needing SEO content + social",
+        competitor: "No content engine — buy a separate tool",
+        trndinn: "Content Engine turns keywords into articles + posts",
+      },
+      {
+        scenario: "Agency managing 10+ client accounts",
+        competitor: "Per-channel pricing scales expensively",
+        trndinn: "Credits-based Agency plan absorbs volume",
+      },
+      {
+        scenario: "Founder needing 5–10 posts a week fast",
+        competitor: "Manual writing, light AI polish",
+        trndinn: "Agents draft on-brand posts in ~8 seconds",
+      },
+    ],
+  },
+  migration: {
+    title: "How to switch from Buffer to Trndinn",
+    subtitle: "Most teams migrate in under 30 minutes and are publishing on Trndinn the same day.",
+    steps: [
+      {
+        title: "Export your Buffer schedule",
+        description:
+          "Download your Buffer queue and connected-account list from Buffer's export tools. Bring your CSV of scheduled posts.",
+      },
+      {
+        title: "Connect accounts and train Brand Voice",
+        description:
+          "Reconnect LinkedIn (personal + Company Pages) inside Trndinn, then paste 5–10 of your best-performing posts to train Brand Voice.",
+      },
+      {
+        title: "Import the queue and go live",
+        description:
+          "Upload the CSV, review AI-generated variants for each slot, and hit publish. Trndinn handles scheduling and analytics from there.",
+      },
+    ],
+  },
   testimonials: [
     {
       quote: "We switched from Buffer to Trndinn and 3x'd our content output without hiring. The AI actually sounds like our brand.",
@@ -156,27 +229,33 @@ const PAGE_CONFIG = {
   faqs: [
     {
       question: "Is Trndinn really a Buffer alternative?",
-      answer: "Yes. Trndinn replaces Buffer's core scheduling functionality while adding AI content creation, Brand Voice, and Content Engine features that Buffer doesn't offer. If you're looking for a Buffer alternative that does more than just schedule, Trndinn is purpose-built for growth.",
+      answer:
+        "Yes. Trndinn replaces Buffer's scheduling and adds AI content creation, Brand Voice training, and a Content Engine that Buffer doesn't offer.",
     },
     {
-      question: "What's the best Buffer alternative in 2025?",
-      answer: "For teams wanting AI-powered content creation and growth features, Trndinn is the best Buffer alternative. Unlike Buffer's per-channel pricing, Trndinn uses credits-based pricing that's more transparent for AI-heavy workflows. Plus you get Brand Voice training and SEO content generation.",
+      question: "What's the best Buffer alternative in 2026?",
+      answer:
+        "Trndinn is the best Buffer alternative for teams that want AI content creation, Brand Voice training, and SEO article generation in one platform.",
     },
     {
       question: "Can I import my Buffer schedule into Trndinn?",
-      answer: "Trndinn's import tools let you bring over your content calendar and upcoming posts. Our onboarding team can help migrate your Buffer workflow to take advantage of Trndinn's AI features.",
+      answer:
+        "Yes. Export your Buffer queue as CSV, then use Trndinn's import tool. Onboarding usually finishes in under 30 minutes.",
     },
     {
       question: "Does Trndinn cost more than Buffer?",
-      answer: "Not necessarily. Buffer's per-channel pricing ($5-10/channel) can exceed Trndinn's credits-based plans for multi-channel creators. With Trndinn, you get AI content generation included — no extra fees for the AI writer.",
+      answer:
+        "No for most teams. Buffer's per-channel fees add up fast. Trndinn's credits-based plans include AI content generation with no per-channel charge.",
     },
     {
       question: "Buffer vs Trndinn: Which is better for LinkedIn?",
-      answer: "Trndinn is specifically optimized for LinkedIn with deeper Company Page support, identity switching, and AI trained to write engaging LinkedIn content. Buffer supports LinkedIn but doesn't have LinkedIn-specific features.",
+      answer:
+        "Trndinn wins for LinkedIn. It supports personal profiles, Company Pages, identity switching, and AI trained on your LinkedIn examples.",
     },
     {
       question: "Will switching from Buffer be difficult?",
-      answer: "Trndinn's onboarding includes guided setup and import tools. Most teams are creating content with their Brand Voice within 30 minutes of signing up. Our support team is available to answer questions.",
+      answer:
+        "No. Guided onboarding and CSV import mean most teams are publishing on Trndinn within 30 minutes of signup.",
     },
   ],
   cta: {
@@ -185,6 +264,21 @@ const PAGE_CONFIG = {
     primaryLabel: "Start Free Trial",
     secondaryLabel: "Compare Pricing",
   },
+  internalLinks: [
+    {
+      href: "/tools/auto-caption-generator",
+      title: "Free Auto Caption Generator",
+      subtitle: "Add captions to any video, no login",
+      icon: "zap",
+      featured: true,
+    },
+    { href: "/compare", title: "All comparisons", subtitle: "See Trndinn vs every scheduler", icon: "scale" },
+    { href: "/features", title: "Platform features", subtitle: "Brand Voice, agents, calendar", icon: "sparkles" },
+    { href: "/pricing", title: "Trndinn pricing", subtitle: "Credits-based plans compared", icon: "trending" },
+    { href: "/mcp", title: "MCP integration", subtitle: "Agent-native protocol support", icon: "wrench" },
+    { href: "/content-engine", title: "Content Engine", subtitle: "Keywords to SEO articles + posts", icon: "rocket" },
+    { href: "/blog", title: "Trndinn blog", subtitle: "Playbooks, guides, teardowns", icon: "book" },
+  ],
   relatedComparisons: [
     { name: "Hootsuite", href: "/vs/hootsuite", description: "Enterprise legacy vs modern AI" },
     { name: "Postiz", href: "/vs/postiz", description: "Open-source vs agentic platform" },
@@ -195,14 +289,28 @@ const PAGE_CONFIG = {
 
 function defaultStructuredData() {
   const base = getSiteUrl().replace(/\/$/, "");
+  const pageUrl = `${base}${ROUTE}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_CONFIG.seo.title,
+        description: PAGE_CONFIG.seo.description,
+        inLanguage: "en-US",
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
+        isPartOf: { "@id": `${base}#website` },
+      },
+      {
         "@type": "ComparisonPage",
         name: PAGE_CONFIG.seo.title,
         description: PAGE_CONFIG.seo.description,
-        url: `${base}${ROUTE}`,
+        url: pageUrl,
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
         comparedProducts: [
           { "@type": "SoftwareApplication", name: siteName },
           { "@type": "SoftwareApplication", name: "Buffer" },
@@ -245,6 +353,11 @@ function defaultStructuredData() {
         operatingSystem: "Web",
         url: "https://buffer.com",
         description: PAGE_CONFIG.competitorOverview.paragraphs[0],
+        sameAs: [
+          "https://en.wikipedia.org/wiki/Buffer_(application)",
+          "https://www.linkedin.com/company/bufferapp",
+          "https://www.crunchbase.com/organization/buffer",
+        ],
       },
     ],
   };

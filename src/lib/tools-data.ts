@@ -32,6 +32,15 @@ export const TOOLS: ToolEntry[] = [
     live: true,
   },
   {
+    slug: "auto-caption-generator",
+    name: "Auto Caption Generator",
+    description: "Add AI-synced captions to any video. 6 styles, word-by-word timing, 99+ languages. Free.",
+    category: "Utility",
+    platform: "Multi-platform",
+    isAI: true,
+    live: true,
+  },
+  {
     slug: "linkedin-post-generator",
     name: "LinkedIn Post Generator",
     description: "Generate scroll-stopping LinkedIn posts with AI trained on viral patterns.",

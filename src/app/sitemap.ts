@@ -3,6 +3,9 @@ import { BLOG_BASE_PATH } from "@/lib/blogPublic";
 import { fetchAllBlogPathsForSitemap } from "@/lib/serverBlog";
 import { getSiteUrl } from "@/lib/site";
 import { REEL_DOWNLOADER_ALIAS_SLUGS } from "@/lib/reel-downloader-aliases";
+import { AUTO_CAPTION_ALIAS_SLUGS } from "@/lib/auto-caption-aliases";
+import { CAPTION_COMPETITOR_SLUGS } from "@/lib/caption-competitors";
+import { REEL_DOWNLOADER_COMPETITOR_SLUGS } from "@/lib/reel-downloader-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -42,6 +45,15 @@ const STATIC_ROUTES: StaticRoute[] = [
     lastModified: new Date("2026-07-30"),
   })),
 
+  // Auto Caption Generator (49K/mo primary + 4 alias URLs)
+  { path: "/tools/auto-caption-generator", changeFrequency: "weekly", priority: 0.95, lastModified: new Date("2026-08-01") },
+  ...AUTO_CAPTION_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-08-01"),
+  })),
+
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
@@ -53,6 +65,40 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/vs/predis", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
   { path: "/vs/postiz", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
   { path: "/vs/taplio", changeFrequency: "monthly", priority: 0.8, lastModified: new Date("2026-06-28") },
+
+  // Auto Caption comparison hub + programmatic pages
+  { path: "/compare", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-08-03") },
+  ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-08-03"),
+  })),
+
+  // Auto Caption alternative hub + programmatic pages
+  { path: "/alternatives", changeFrequency: "weekly", priority: 0.85, lastModified: new Date("2026-08-03") },
+  ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-08-03"),
+  })),
+
+  // Instagram Reel Downloader comparison pages
+  ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-08-04"),
+  })),
+
+  // Instagram Reel Downloader alternative pages
+  ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-08-04"),
+  })),
 
   // Pillar guide pages
   { path: "/guides/ai-social-media-marketing", changeFrequency: "monthly", priority: 0.9, lastModified: new Date("2026-06-28") },

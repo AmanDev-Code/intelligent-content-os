@@ -78,7 +78,7 @@ export function MarketingNav() {
             className="h-9 w-9 rounded-full"
             aria-label="Toggle theme"
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={mounted ? (isDark ? "Switch to light mode" : "Switch to dark mode") : undefined}
             disabled={!mounted}
           >
             {!mounted ? <Sun className="h-4 w-4 opacity-50" /> : isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

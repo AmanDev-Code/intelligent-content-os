@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
-import CompareVsPage from "@/views/CompareVsPage";
+import CompareVsPage, { type CompetitorVsConfig } from "@/views/CompareVsPage";
 
 const ROUTE = "/vs/hootsuite";
+const PUBLISHED = "2026-06-28";
+const MODIFIED = "2026-08-03";
 
-const PAGE_CONFIG = {
+const PAGE_CONFIG: CompetitorVsConfig = {
   slug: "hootsuite",
   competitorName: "Hootsuite",
   route: ROUTE,
@@ -29,10 +31,29 @@ const PAGE_CONFIG = {
   },
   hero: {
     eyebrow: "Trndinn vs Hootsuite",
-    title: "The Modern Alternative to Hootsuite's Legacy Platform",
+    title: "Best Hootsuite Alternative for Modern Marketing Teams",
     subtitle:
       "Hootsuite built the enterprise social media category. Trndinn replaces complexity with AI agents that create, schedule, and grow — without the enterprise price tag.",
   },
+  tldr: {
+    entityDeclaration:
+      "is a modern, AI-native social media platform that trains agents on your brand examples to create LinkedIn-first content, schedule it, and drive SEO growth through a built-in Content Engine.",
+    differentiator:
+      "which charges $99+/mo for a legacy 2008-era interface and a basic AI writing helper, Trndinn starts at $29/mo and includes true agentic content creation plus Brand Voice training.",
+    stat: "Teams that switch from Hootsuite report saving 60–70% on tooling costs and a 3.2× engagement lift over manual posting. [Internal analytics, 2026]",
+    badges: [
+      "70% lower starting price",
+      "Agentic AI content",
+      "Brand Voice training",
+      "Content Engine included",
+    ],
+  },
+  stats: [
+    { value: "70%", label: "Lower starting cost vs Hootsuite", icon: "trending" },
+    { value: "3.2×", label: "Engagement lift over manual", icon: "sparkles" },
+    { value: "8s", label: "Avg AI post generation", icon: "zap" },
+    { value: "42", label: "Languages supported", icon: "globe" },
+  ],
   competitorOverview: {
     title: "Hootsuite: Enterprise Legacy Leader",
     paragraphs: [
@@ -148,6 +169,58 @@ const PAGE_CONFIG = {
       },
     ],
   },
+  useCases: {
+    title: "Who should use Hootsuite vs Trndinn",
+    subtitle: "Hootsuite still fits large enterprise buyers. Trndinn is the better fit for growth-focused modern teams.",
+    rows: [
+      {
+        scenario: "Fortune 500 needing SOC 2 + SSO + SAML today",
+        competitor: "Strong fit — mature enterprise controls",
+        trndinn: "Not the fit yet — SSO on roadmap",
+      },
+      {
+        scenario: "5–50 person marketing team on LinkedIn + X",
+        competitor: "Overpriced for the features actually used",
+        trndinn: "Ideal — Brand Voice + credits pricing",
+      },
+      {
+        scenario: "Team wanting AI to write on-brand posts",
+        competitor: "Basic AI helper only",
+        trndinn: "Agentic AI trained on your examples",
+      },
+      {
+        scenario: "Content marketing team needing SEO articles + social",
+        competitor: "No content engine — buy a second tool",
+        trndinn: "Content Engine covers articles + distribution",
+      },
+      {
+        scenario: "Agency managing 5–20 client brands",
+        competitor: "Enterprise seats scale expensively",
+        trndinn: "Agency plan absorbs credits across clients",
+      },
+    ],
+  },
+  migration: {
+    title: "How to switch from Hootsuite to Trndinn",
+    subtitle: "Most teams migrate off Hootsuite in a single afternoon and cancel the following billing cycle.",
+    steps: [
+      {
+        title: "Export accounts and calendar from Hootsuite",
+        description:
+          "Use Hootsuite's data export to pull scheduled posts, account lists, and analytics. Save the CSVs for migration.",
+      },
+      {
+        title: "Connect accounts and train Brand Voice",
+        description:
+          "Reconnect LinkedIn (personal + Company Pages) and any other networks inside Trndinn, then paste your best posts to train Brand Voice on real examples.",
+      },
+      {
+        title: "Import queue, review AI drafts, publish",
+        description:
+          "Upload the CSV of scheduled posts, let Trndinn suggest AI variants for each slot, approve, and go live. Cancel your Hootsuite seat afterwards.",
+      },
+    ],
+  },
   testimonials: [
     {
       quote: "We left Hootsuite because we were paying $249/month for scheduling when we needed AI content creation. Trndinn delivered that at a third of the cost.",
@@ -163,35 +236,43 @@ const PAGE_CONFIG = {
   faqs: [
     {
       question: "Is Trndinn a good Hootsuite alternative for enterprises?",
-      answer: "Trndinn serves growing teams up to agency size. If you need SSO, SAML, advanced compliance, and social listening today, Hootsuite Enterprise still leads. But for teams under 50 users wanting AI-powered content creation without the enterprise price, Trndinn is the better Hootsuite alternative.",
+      answer:
+        "Trndinn fits teams up to agency size. Hootsuite Enterprise still leads on SSO and compliance today. For teams under 50 users wanting AI content, Trndinn wins.",
     },
     {
       question: "Can Trndinn replace Hootsuite for our team?",
-      answer: "If your primary needs are LinkedIn scheduling, AI content creation, and brand voice training, Trndinn replaces Hootsuite completely. If you need TikTok, Pinterest, or YouTube scheduling, check our roadmap — new channels are added monthly.",
+      answer:
+        "Yes for LinkedIn scheduling, AI content, and Brand Voice. If you need TikTok, Pinterest, or YouTube scheduling today, check the Trndinn roadmap.",
     },
     {
       question: "Is Trndinn cheaper than Hootsuite?",
-      answer: "Yes — significantly. Hootsuite Professional starts at $99/month for basic features. Trndinn Creator is $29/month and includes AI content generation. Teams typically save 60-70% switching from Hootsuite while getting better AI features.",
+      answer:
+        "Yes. Trndinn Creator is $29/mo with AI included. Hootsuite Professional is $99/mo. Most teams save 60–70% after switching.",
     },
     {
-      question: "What's the best Hootsuite alternative in 2025?",
-      answer: "For AI-powered social media management, Trndinn is the leading Hootsuite alternative. Unlike Hootsuite's legacy interface and basic AI, Trndinn offers agentic content creation, Brand Voice training, and a Content Engine at a fraction of the cost.",
+      question: "What's the best Hootsuite alternative in 2026?",
+      answer:
+        "Trndinn. It replaces Hootsuite's scheduling and adds agentic content creation, Brand Voice, and a Content Engine at a fraction of the cost.",
     },
     {
       question: "Does Trndinn have Hootsuite's social listening features?",
-      answer: "Social listening is on our Q2 2025 roadmap. For now, Trndinn excels at content creation, scheduling, and growth — areas where Hootsuite is weaker. Many teams use Trndinn for publishing and a specialized tool for listening.",
+      answer:
+        "Not yet. Social listening is on the Q4 2026 roadmap. Teams often pair Trndinn for publishing with a specialized listening tool today.",
     },
     {
       question: "Can I import my Hootsuite content calendar into Trndinn?",
-      answer: "Yes — our import tools support calendar exports from Hootsuite. The onboarding team can help migrate your scheduled posts and teach you the AI features that will differentiate your content strategy.",
+      answer:
+        "Yes. Trndinn imports Hootsuite CSV exports. Onboarding walks you through account reconnection and Brand Voice training in under an hour.",
     },
     {
       question: "Why should we switch from Hootsuite to Trndinn?",
-      answer: "Three reasons: 1) True AI content creation that learns your voice vs Hootsuite's basic AI helper, 2) 70% lower cost with better features for most teams, 3) Content Engine that generates SEO articles — something Hootsuite simply doesn't have.",
+      answer:
+        "True AI content creation vs a basic helper, 60–70% lower cost, and a Content Engine that turns keywords into SEO articles Hootsuite can't produce.",
     },
     {
       question: "Is Trndinn's AI better than Hootsuite's?",
-      answer: "Trndinn's AI is fundamentally different. Hootsuite uses generic AI writing assistance. Trndinn uses agentic AI trained on YOUR brand examples — it learns your voice, writing style, and content patterns to create authentic posts that sound like you wrote them.",
+      answer:
+        "Yes. Hootsuite uses generic AI writing. Trndinn's agents train on your brand examples so posts sound like your voice, not templated AI.",
     },
   ],
   cta: {
@@ -200,6 +281,21 @@ const PAGE_CONFIG = {
     primaryLabel: "Start Free Trial",
     secondaryLabel: "See Pricing Comparison",
   },
+  internalLinks: [
+    {
+      href: "/tools/auto-caption-generator",
+      title: "Free Auto Caption Generator",
+      subtitle: "Add captions to any video, no login",
+      icon: "zap",
+      featured: true,
+    },
+    { href: "/compare", title: "All comparisons", subtitle: "Trndinn vs every enterprise tool", icon: "scale" },
+    { href: "/features", title: "Platform features", subtitle: "Brand Voice, agents, calendar", icon: "sparkles" },
+    { href: "/pricing", title: "Trndinn pricing", subtitle: "Credits-based plans vs seat pricing", icon: "trending" },
+    { href: "/mcp", title: "MCP integration", subtitle: "Agent-native protocol support", icon: "wrench" },
+    { href: "/content-engine", title: "Content Engine", subtitle: "Keywords to SEO articles + posts", icon: "rocket" },
+    { href: "/blog", title: "Trndinn blog", subtitle: "Enterprise migration playbooks", icon: "book" },
+  ],
   relatedComparisons: [
     { name: "Buffer", href: "/vs/buffer", description: "Simple scheduler vs AI platform" },
     { name: "Postiz", href: "/vs/postiz", description: "Open-source vs agentic" },
@@ -210,14 +306,28 @@ const PAGE_CONFIG = {
 
 function defaultStructuredData() {
   const base = getSiteUrl().replace(/\/$/, "");
+  const pageUrl = `${base}${ROUTE}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_CONFIG.seo.title,
+        description: PAGE_CONFIG.seo.description,
+        inLanguage: "en-US",
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
+        isPartOf: { "@id": `${base}#website` },
+      },
+      {
         "@type": "ComparisonPage",
         name: PAGE_CONFIG.seo.title,
         description: PAGE_CONFIG.seo.description,
-        url: `${base}${ROUTE}`,
+        url: pageUrl,
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
         comparedProducts: [
           { "@type": "SoftwareApplication", name: siteName },
           { "@type": "SoftwareApplication", name: "Hootsuite" },
@@ -245,7 +355,7 @@ function defaultStructuredData() {
           "@type": "Offer",
           price: "29",
           priceCurrency: "USD",
-          priceValidUntil: "2025-12-31",
+          priceValidUntil: "2026-12-31",
           description: "Creator plan with 500 credits",
         },
         aggregateRating: {
@@ -261,6 +371,11 @@ function defaultStructuredData() {
         operatingSystem: "Web",
         url: "https://hootsuite.com",
         description: PAGE_CONFIG.competitorOverview.paragraphs[0],
+        sameAs: [
+          "https://en.wikipedia.org/wiki/Hootsuite",
+          "https://www.linkedin.com/company/hootsuite",
+          "https://www.crunchbase.com/organization/hootsuite",
+        ],
       },
     ],
   };

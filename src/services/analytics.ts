@@ -240,6 +240,74 @@ export const analytics = {
       }
     });
   },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Instagram Reel Downloader Events
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  reelDownloaderPageViewed: (slug: string) => {
+    track("reel_downloader_page_viewed", { slug });
+  },
+
+  reelDownloaderUrlPasted: (url: string) => {
+    track("reel_downloader_url_pasted", { url_length: url.length });
+  },
+
+  reelDownloaderDownloadStarted: () => {
+    track("reel_downloader_download_started");
+  },
+
+  reelDownloaderDownloadCompleted: (props: { duration_ms: number; quality?: string }) => {
+    track("reel_downloader_download_completed", props);
+  },
+
+  reelDownloaderDownloadFailed: (props: { error_type: string; message?: string }) => {
+    track("reel_downloader_download_failed", props);
+  },
+
+  reelDownloaderCopyLinkClicked: () => {
+    track("reel_downloader_copy_link_clicked");
+  },
+
+  reelDownloaderCtaClicked: (destination: string) => {
+    track("reel_downloader_cta_clicked", { destination });
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Auto Caption Generator Events
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  captionPageViewed: () => {
+    track("caption_page_viewed");
+  },
+
+  captionVideoUploaded: (props: { file_size_mb: number; duration_s?: number }) => {
+    track("caption_video_uploaded", props);
+  },
+
+  captionStyleSelected: (style: string) => {
+    track("caption_style_selected", { style });
+  },
+
+  captionGenerationStarted: () => {
+    track("caption_generation_started");
+  },
+
+  captionGenerationCompleted: (props: { duration_ms: number; engine_used?: string; language?: string }) => {
+    track("caption_generation_completed", props);
+  },
+
+  captionGenerationFailed: (props: { error_type: string; message?: string }) => {
+    track("caption_generation_failed", props);
+  },
+
+  captionDownloadClicked: (format?: string) => {
+    track("caption_download_clicked", { format });
+  },
+
+  captionCtaClicked: (destination: string) => {
+    track("caption_cta_clicked", { destination });
+  },
 };
 
 export default analytics;

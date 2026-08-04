@@ -4,12 +4,22 @@ import Link from "next/link";
 import {
   ArrowRight,
   Bot,
-  Clock,
-  Globe,
+  CheckCircle2,
+  Code2,
+  FileText,
+  Image as ImageIcon,
+  Key,
+  Link as LinkIcon,
+  ListChecks,
   MessageSquare,
-  Plug,
+  Pencil,
+  Send,
   Sparkles,
-  Webhook,
+  Target,
+  Terminal,
+  TrendingUp,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { LandingFaq } from "@/components/marketing/LandingFaq";
@@ -19,93 +29,240 @@ import { Reveal } from "@/components/marketing/Reveal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+type ToolPack = {
+  icon: typeof Wrench;
+  name: string;
+  count: number;
+  tools: string[];
+};
+
+const AVAILABLE_TOOLS: ToolPack[] = [
+  {
+    icon: FileText,
+    name: "Blog",
+    count: 17,
+    tools: [
+      "Create draft posts",
+      "Publish and schedule",
+      "Archive and soft-delete",
+      "List, search, and get by slug",
+      "Update post metadata + body",
+    ],
+  },
+  {
+    icon: Pencil,
+    name: "AI Writing",
+    count: 8,
+    tools: [
+      "Generate titles and excerpts",
+      "Author FAQ blocks",
+      "Fill SEO meta title + description",
+      "Draft full articles from a brief",
+      "Outline a content plan",
+    ],
+  },
+  {
+    icon: Sparkles,
+    name: "Optimization",
+    count: 6,
+    tools: [
+      "Score AEO signal quality",
+      "Score GEO structure",
+      "Apply optimization patches",
+      "Generate Article + FAQ schema",
+    ],
+  },
+  {
+    icon: ImageIcon,
+    name: "Images",
+    count: 8,
+    tools: [
+      "Plan hero + inline imagery",
+      "Generate with DALL-E",
+      "Approve or reject drafts",
+      "Insert into post body",
+      "Regenerate with new prompts",
+    ],
+  },
+  {
+    icon: LinkIcon,
+    name: "Internal Links",
+    count: 5,
+    tools: [
+      "Analyze linking opportunities",
+      "Suggest anchor + target pairs",
+      "Accept, reject, or insert",
+    ],
+  },
+  {
+    icon: Target,
+    name: "Keywords",
+    count: 8,
+    tools: [
+      "Create keyword records",
+      "Bulk import from CSV or list",
+      "Assign to posts",
+      "Track primary + secondary intent",
+    ],
+  },
+  {
+    icon: ListChecks,
+    name: "Page SEO",
+    count: 5,
+    tools: [
+      "List route SEO records",
+      "Get and upsert per-route metadata",
+      "AI-fill missing fields",
+    ],
+  },
+  {
+    icon: Send,
+    name: "Distributions",
+    count: 4,
+    tools: [
+      "Generate for platform mixes",
+      "Publish to connected channels",
+      "Mark as published manually",
+    ],
+  },
+  {
+    icon: TrendingUp,
+    name: "Rankings + Authors",
+    count: 6,
+    tools: [
+      "Track keyword rank changes",
+      "Add backlink opportunities",
+      "Save author profile metadata",
+    ],
+  },
+];
+
+const TOTAL_TOOLS = AVAILABLE_TOOLS.reduce((sum, p) => sum + p.count, 0);
+
 const WHY_MCP = [
   {
     icon: MessageSquare,
     title: "Just ask, in plain English",
-    body: "Tell Claude, ChatGPT, or Cursor what to post and when. Your assistant drafts, schedules, and publishes — no copy-pasting between tools.",
+    body: "Tell Claude, ChatGPT, or Cursor what to write and where to publish. Your assistant drafts, optimizes, and ships without copy-paste.",
   },
   {
-    icon: Globe,
-    title: "Brand Voice built in",
-    body: "Trndinn MCP will respect your Brand Kit — tone, examples, and compliance rules — so agents sound like you, not generic AI.",
+    icon: Wrench,
+    title: "67 tools, one server",
+    body: "Full blog CRUD, AEO/GEO scoring, DALL-E images, keyword assignments, page SEO, and distributions — all callable from your AI client.",
   },
   {
-    icon: Clock,
-    title: "Schedule ahead",
-    body: "Plan a week of LinkedIn content in one conversation. Posts land in your Trndinn calendar and publish on time.",
+    icon: Zap,
+    title: "Workflow prompts included",
+    body: "Ship-ready prompts like /write_blog_post and /research_and_write orchestrate multiple tools in one call.",
   },
   {
-    icon: Plug,
-    title: "Connect once",
-    body: "Add a single MCP server URL to your AI tool. No custom integrations — the same open standard Claude and ChatGPT already support.",
+    icon: Key,
+    title: "Scoped API keys",
+    body: "Every action runs through a Bearer trnd_* key with fine-grained scopes: blog, content-engine, seo, media — never more than needed.",
   },
 ];
 
 const ASSISTANTS = [
   {
-    name: "Claude",
-    body: "Desktop app, Claude Code, and Cursor — add Trndinn as an MCP server and schedule posts from your IDE or chat.",
+    name: "Claude Code",
+    body: "Add Trndinn to your Claude Code MCP config and run the full blog + SEO workflow from the terminal or IDE.",
   },
   {
-    name: "ChatGPT",
-    body: "Custom connectors in ChatGPT settings — paste your Trndinn MCP link and ask it to manage your social calendar.",
+    name: "Claude Desktop",
+    body: "Wire the MCP server into Claude Desktop and ask it to research, write, and publish long-form content.",
   },
   {
     name: "Cursor",
-    body: "Wire Trndinn into your dev workflow so coding agents can draft launch posts alongside your ship notes.",
+    body: "Draft launch posts and marketing content next to your code without ever leaving the editor.",
+  },
+  {
+    name: "ChatGPT",
+    body: "Add Trndinn as a custom connector in ChatGPT settings and manage your content pipeline from any device.",
   },
 ];
 
-const PLANNED_TOOLS = [
-  "List connected social accounts",
-  "Generate on-brand post drafts",
-  "Schedule and publish to LinkedIn",
-  "Upload media for posts",
-  "Query Content Engine articles and distribution",
+const EXAMPLE_PROMPTS = [
+  {
+    slug: "/write_blog_post",
+    description: "Draft, optimize with AEO + GEO, add images, and publish in one flow.",
+  },
+  {
+    slug: "/refresh_blog_post",
+    description: "Update an existing post for current accuracy, links, and rankings.",
+  },
+  {
+    slug: "/optimize_blog_post",
+    description: "Run AEO and GEO scoring against a live post and apply the patches.",
+  },
+  {
+    slug: "/bulk_seo_pages",
+    description: "Fill title, description, and canonical for multiple routes at once.",
+  },
+  {
+    slug: "/research_and_write",
+    description: "Keyword research, cluster mapping, and a pillar-page draft end-to-end.",
+  },
 ];
+
+const CONFIG_SNIPPET = `{
+  "mcpServers": {
+    "trndinn": {
+      "url": "https://trndinn.com/mcp",
+      "transport": "http",
+      "headers": {
+        "Authorization": "Bearer trnd_YOUR_KEY_HERE"
+      }
+    }
+  }
+}`;
 
 const FAQ = [
   {
-    q: "What is a social media MCP server?",
-    a: "MCP (Model Context Protocol) is the open standard that lets AI assistants like Claude, ChatGPT, and Cursor connect to apps you use. A Trndinn MCP server will expose scheduling, generation, and publishing actions so your AI can act as a social media agent.",
+    q: "Is Trndinn MCP available today?",
+    a: "Yes. The MCP server is live at https://trndinn.com/mcp with 67 tools across 10 capability packs. It is platform-admin-only during this rollout and will open to Team and Agency plans in a future release.",
   },
   {
-    q: "Is the Trndinn MCP server available today?",
-    a: "Not yet. We are building it now. Today you can use Trndinn's in-app Agent, Public API v1, and signed webhooks on Team and Agency plans. Join the waitlist via our contact form or follow agentic updates on the Features page.",
+    q: "Which AI assistants work with Trndinn MCP?",
+    a: "Any client that speaks Model Context Protocol — Claude Code, Claude Desktop, Cursor, and ChatGPT (via custom connectors). Add the server URL plus a Bearer trnd_* API key and the tools appear in your assistant.",
   },
   {
-    q: "Which AI assistants will work with Trndinn MCP?",
-    a: "Any tool that supports MCP — including Claude, Claude Code, ChatGPT (custom connectors), and Cursor. You will add one server URL with your API key, similar to how other MCP integrations work.",
+    q: "Who can use it right now?",
+    a: "Platform admins only for the current phase. We are validating stability, credit metering, and audit logs before opening to Team and Agency plans.",
   },
   {
-    q: "What can I use instead of MCP today?",
-    a: "Use the in-app Agent at /agent for conversational drafting and scheduling, or wire Public API v1 and webhooks into Zapier, Make, n8n, or your own stack. See /features#agentic for the full agentic workflow story.",
+    q: "What can it do end-to-end?",
+    a: "It runs the full blog and SEO workflow: create draft posts, generate titles and copy, add DALL-E images, score AEO + GEO, apply optimization patches, assign keywords, upsert page SEO, publish distributions, and track rankings.",
   },
   {
-    q: "Will MCP cost extra?",
-    a: "No — MCP access will be included with your Trndinn plan. Actions still use credits the same way as the in-app Agent and API.",
+    q: "Does it cost extra?",
+    a: "No. MCP access is included with your plan. Actions consume credits the same way as the in-app Agent and API — no separate billing.",
   },
 ];
 
 export default function McpMarketingPage({ h1Override }: { h1Override?: string | null }) {
   const title =
-    h1Override ?? "The social media MCP server for Claude, ChatGPT, and Cursor";
+    h1Override ??
+    `Run Trndinn from Claude, ChatGPT, and Cursor — ${TOTAL_TOOLS} MCP tools live now`;
 
   return (
     <MarketingShell>
       <main>
+        {/* Hero */}
         <section className="relative isolate overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,hsl(var(--primary)/0.12),transparent_55%)] dark:bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,rgba(255,138,31,0.26),transparent_55%)]" />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,hsl(var(--primary)/0.12),transparent_55%)]" />
           <div className="pointer-events-none absolute -left-32 top-10 -z-10 h-[420px] w-[420px] rounded-full bg-primary/15 blur-3xl dark:bg-primary/25" />
 
           <div className="mx-auto max-w-3xl px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-16 md:pb-20 md:pt-20">
             <Reveal>
               <Badge
                 variant="secondary"
-                className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary"
+                className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
               >
-                Coming soon
+                <span
+                  className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"
+                  aria-hidden
+                />
+                Live now
               </Badge>
             </Reveal>
             <Reveal delay={60}>
@@ -115,9 +272,13 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
             </Reveal>
             <Reveal delay={120}>
               <p className="mx-auto mt-5 max-w-2xl text-[0.95rem] leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg">
-                Connect Trndinn once — then ask your AI assistant to draft, schedule, and publish
-                LinkedIn content with your Brand Voice. MCP server and CLI are on the roadmap; API
-                and webhooks work today.
+                Trndinn ships a full Model Context Protocol server at{" "}
+                <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
+                  /mcp
+                </code>{" "}
+                so your assistant can run the entire blog, SEO, and content engine — create drafts,
+                score AEO + GEO, generate images, publish distributions. {TOTAL_TOOLS} tools, 5 prompts,
+                one Bearer key.
               </p>
             </Reveal>
             <Reveal delay={180}>
@@ -127,8 +288,8 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
                   className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
                   asChild
                 >
-                  <Link href="/features#agentic">
-                    See agentic workflows
+                  <Link href="/dashboard/api-keys">
+                    Create an API key
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>
@@ -138,23 +299,24 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
                   className="h-12 w-full rounded-full border-border bg-background/40 px-8 font-semibold text-foreground backdrop-blur-md hover:bg-muted hover:text-foreground dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white sm:w-auto"
                   asChild
                 >
-                  <Link href="/contact">Notify me when MCP ships</Link>
+                  <Link href="#tools">Browse all {TOTAL_TOOLS} tools</Link>
                 </Button>
               </div>
             </Reveal>
             <Reveal delay={220}>
               <p className="mt-6 text-sm text-muted-foreground">
-                Please keep a human in the loop — review what your AI publishes.
+                Platform-admin only during rollout. Team + Agency plan access coming soon.
               </p>
             </Reveal>
           </div>
         </section>
 
+        {/* Why MCP */}
         <Section>
           <SectionHeading
             eyebrow="Why MCP"
-            title="Let your AI assistant run social — with guardrails"
-            subtitle="MCP is how Claude, ChatGPT, and Cursor plug into the apps you already use. Trndinn's server will turn those conversations into scheduled posts."
+            title="Your AI assistant, wired into the whole platform"
+            subtitle="MCP is how Claude, ChatGPT, and Cursor plug into the apps you already use. Trndinn's server turns those conversations into shipped content."
           />
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {WHY_MCP.map(({ icon: Icon, title: itemTitle, body }) => (
@@ -163,7 +325,9 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12">
                     <Icon className="h-5 w-5 text-primary" aria-hidden />
                   </span>
-                  <h3 className="mt-4 font-display text-lg font-bold text-foreground">{itemTitle}</h3>
+                  <h3 className="mt-4 font-display text-lg font-bold text-foreground">
+                    {itemTitle}
+                  </h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{body}</p>
                 </div>
               </Reveal>
@@ -171,12 +335,193 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
           </div>
         </Section>
 
+        {/* Quick Start */}
+        <Section className="pt-0">
+          <SectionHeading
+            eyebrow="Quick start"
+            title="Three steps from install to your first post"
+            subtitle="You'll need admin access to your Trndinn workspace and a supported MCP client."
+          />
+          <div className="mx-auto mt-10 max-w-3xl space-y-4">
+            <Reveal>
+              <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:p-6 dark:bg-white/[0.04]">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 font-heading text-sm font-bold text-primary">
+                    1
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="flex items-center gap-2 font-display text-base font-bold text-foreground sm:text-lg">
+                      <Key className="h-4 w-4 text-primary" aria-hidden />
+                      Create an API key
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      Head to{" "}
+                      <Link
+                        href="/dashboard/api-keys"
+                        className="font-medium text-primary hover:underline"
+                      >
+                        /dashboard/api-keys
+                      </Link>{" "}
+                      (admin only) and generate a key with the scopes you need:{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        blog:read
+                      </code>
+                      ,{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        blog:write
+                      </code>
+                      ,{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        content-engine:read
+                      </code>
+                      ,{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        content-engine:write
+                      </code>
+                      ,{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        seo:read
+                      </code>
+                      ,{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        seo:write
+                      </code>
+                      , or{" "}
+                      <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground">
+                        media:write
+                      </code>
+                      .
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={80}>
+              <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:p-6 dark:bg-white/[0.04]">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 font-heading text-sm font-bold text-primary">
+                    2
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="flex items-center gap-2 font-display text-base font-bold text-foreground sm:text-lg">
+                      <Code2 className="h-4 w-4 text-primary" aria-hidden />
+                      Add to your MCP client
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      Paste the block below into your Claude Code, Claude Desktop, or Cursor config.
+                      Restart the client to pick up the new server.
+                    </p>
+                    <pre className="mt-3 overflow-x-auto rounded-lg border border-border/60 bg-muted/40 p-4 text-xs leading-relaxed text-foreground dark:bg-white/[0.03]">
+                      <code className="font-mono">{CONFIG_SNIPPET}</code>
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={160}>
+              <div className="rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:p-6 dark:bg-white/[0.04]">
+                <div className="flex items-start gap-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 font-heading text-sm font-bold text-primary">
+                    3
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="flex items-center gap-2 font-display text-base font-bold text-foreground sm:text-lg">
+                      <Terminal className="h-4 w-4 text-primary" aria-hidden />
+                      Try your first prompt
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      In your assistant, type a workflow prompt like:
+                    </p>
+                    <pre className="mt-3 overflow-x-auto rounded-lg border border-border/60 bg-muted/40 p-4 text-xs leading-relaxed text-foreground dark:bg-white/[0.03]">
+                      <code className="font-mono">
+                        /write_blog_post about AI-native social media
+                      </code>
+                    </pre>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      Your assistant will call the right tools in order — research, draft, optimize,
+                      illustrate, and publish.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </Section>
+
+        {/* Tools grid */}
+        <Section id="tools" className="pt-0">
+          <SectionHeading
+            eyebrow={`${TOTAL_TOOLS} tools`}
+            title="10 capability packs, one MCP server"
+            subtitle="Every tool is scoped, audited, and metered against your plan credits — the same way in-app actions are."
+          />
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {AVAILABLE_TOOLS.map(({ icon: Icon, name, count, tools }) => (
+              <Reveal key={name}>
+                <div className="h-full rounded-2xl border border-border/60 bg-card/60 p-6 backdrop-blur-sm dark:bg-white/[0.04]">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12">
+                      <Icon className="h-5 w-5 text-primary" aria-hidden />
+                    </span>
+                    <Badge
+                      variant="secondary"
+                      className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+                    >
+                      {count} tools
+                    </Badge>
+                  </div>
+                  <h3 className="mt-4 font-display text-lg font-bold text-foreground">{name}</h3>
+                  <ul className="mt-3 space-y-2">
+                    {tools.map((tool) => (
+                      <li
+                        key={tool}
+                        className="flex items-start gap-2 text-sm leading-relaxed text-muted-foreground"
+                      >
+                        <CheckCircle2
+                          className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                          aria-hidden
+                        />
+                        <span>{tool}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+
+        {/* Example prompts */}
+        <Section className="pt-0">
+          <SectionHeading
+            eyebrow="Workflow prompts"
+            title="Five ready-made prompts that orchestrate the tools"
+            subtitle="Prompts chain multiple tool calls into a single, reviewable action — great for repeat workflows."
+          />
+          <div className="mx-auto mt-10 max-w-3xl space-y-3">
+            {EXAMPLE_PROMPTS.map(({ slug, description }) => (
+              <Reveal key={slug}>
+                <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-sm sm:flex-row sm:items-center sm:gap-6 dark:bg-white/[0.04]">
+                  <code className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-muted/60 px-3 py-1.5 font-mono text-sm font-semibold text-primary sm:min-w-[200px]">
+                    <Terminal className="h-3.5 w-3.5" aria-hidden />
+                    {slug}
+                  </code>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+
+        {/* Assistants */}
         <Section className="pt-0">
           <SectionHeading
             eyebrow="Works with"
             title="One MCP link for the assistants you already use"
           />
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {ASSISTANTS.map(({ name, body }) => (
               <Reveal key={name}>
                 <div className="h-full rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 to-card/40 p-6">
@@ -191,80 +536,15 @@ export default function McpMarketingPage({ h1Override }: { h1Override?: string |
           </div>
         </Section>
 
-        <Section>
-          <div className="relative isolate overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 p-6 sm:p-10">
-            <SectionHeading
-              align="left"
-              eyebrow="Available today"
-              title="Don't wait for MCP — integrate now"
-              subtitle="Team and Agency plans include Public API v1 and signed webhooks. Wire Trndinn into your stack while we finish the MCP server."
-            />
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-background/50 p-5 dark:bg-white/[0.04]">
-                <Webhook className="h-5 w-5 text-primary" aria-hidden />
-                <h3 className="mt-3 font-display font-bold text-foreground">Public API v1</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Create, list, and cancel posts programmatically. Authenticate with scoped API keys
-                  from Settings.
-                </p>
-                <Link
-                  href="/features"
-                  className="mt-3 inline-flex items-center text-sm font-semibold text-primary hover:underline"
-                >
-                  Explore features
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
-              </div>
-              <div className="rounded-2xl bg-background/50 p-5 dark:bg-white/[0.04]">
-                <Sparkles className="h-5 w-5 text-primary" aria-hidden />
-                <h3 className="mt-3 font-display font-bold text-foreground">In-app Agent</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Describe a post in plain language — get on-brand drafts, images, and scheduling in
-                  one flow. Live today at{" "}
-                  <Link href="/ai-agent" className="font-medium text-primary hover:underline">
-                    /ai-agent
-                  </Link>
-                  .
-                </p>
-                <Link
-                  href="/auth"
-                  className="mt-3 inline-flex items-center text-sm font-semibold text-primary hover:underline"
-                >
-                  Start free
-                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </Section>
-
-        <Section className="pt-0">
-          <SectionHeading
-            eyebrow="Roadmap"
-            title="Planned MCP tools"
-            subtitle="Surface area will grow with Brand Voice and Content Engine — not just scheduling."
-          />
-          <Reveal delay={80} className="mx-auto mt-8 max-w-2xl">
-            <ul className="space-y-3 rounded-2xl border border-dashed border-primary/25 bg-primary/5 p-6 sm:p-8">
-              {PLANNED_TOOLS.map((tool) => (
-                <li key={tool} className="flex items-start gap-3 text-sm text-muted-foreground sm:text-base">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden />
-                  {tool}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        </Section>
-
-        <LandingFaq title="Social media MCP server FAQ" items={FAQ} />
+        <LandingFaq title="Trndinn MCP server FAQ" items={FAQ} />
 
         <FinalCta
-          title="Want early access to Trndinn MCP?"
-          subtitle="Tell us how you'd use it — or start with the in-app Agent and API today."
-          primaryLabel="Notify me"
-          primaryHref="/contact"
-          secondaryLabel="See agentic workflows"
-          secondaryHref="/features#agentic"
+          title="Ready to run Trndinn from Claude?"
+          subtitle="Generate a scoped API key, drop the config into your assistant, and ship content from any chat window."
+          primaryLabel="Create an API key"
+          primaryHref="/dashboard/api-keys"
+          secondaryLabel={`See all ${TOTAL_TOOLS} tools`}
+          secondaryHref="#tools"
         />
       </main>
     </MarketingShell>

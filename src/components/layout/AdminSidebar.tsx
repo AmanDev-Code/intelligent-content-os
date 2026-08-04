@@ -22,6 +22,7 @@ import {
   Gamepad2,
   FlaskConical,
   Activity,
+  Captions,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -60,6 +61,7 @@ function SidebarContent({
     { to: "/admin/content-engine", icon: Sparkles, label: "Content Engine", show: sections.blog },
     { to: "/admin/media", icon: FolderOpen, label: "Media", show: sections.media },
     { to: "/admin/media-engine", icon: Activity, label: "Media Engine", show: sections.media },
+    { to: "/admin/transcription", icon: Captions, label: "Transcription", show: sections.media },
     { to: "/admin/careers", icon: Briefcase, label: "Careers", show: sections.careers },
     { to: "/admin/xp-control", icon: Gamepad2, label: "XP Control", show: true },
     { to: "/admin/soak-test", icon: FlaskConical, label: "Soak Test", show: true },

@@ -2,17 +2,39 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, Check, Minus, Scale, Sparkles, X, ExternalLink, BookOpen } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Minus,
+  Sparkles,
+  ExternalLink,
+  BookOpen,
+  Zap,
+  Scale,
+  Wrench,
+  Trophy,
+  Video,
+  Globe,
+  ShieldCheck,
+  TrendingUp,
+  FileText,
+  Users,
+  Rocket,
+} from "lucide-react";
 import { FinalCta } from "@/components/marketing/FinalCta";
 import { LandingFaq } from "@/components/marketing/LandingFaq";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Reveal } from "@/components/marketing/Reveal";
 import { Section, SectionHeading } from "@/components/marketing/Section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ComparisonBreadcrumb } from "@/components/internal-linking/BreadcrumbNav";
 import { getGuidesForComparison, type ComparisonKey } from "@/lib/internalLinking";
 import { siteName } from "@/lib/site";
 import { cn } from "@/lib/utils";
+
+/** Compact section padding override — halves default marketing rhythm on comparison pages. */
+const TIGHT = "!py-6 sm:!py-8 md:!py-10";
 
 // Types for the page configuration
 export type FeatureHighlight = {
@@ -80,6 +102,67 @@ export type RelatedComparison = {
   description: string;
 };
 
+/** AEO entity-first TL;DR block. */
+export type TldrBlock = {
+  entityDeclaration: string;
+  differentiator: string;
+  stat: string;
+  badges: string[];
+};
+
+/** Single stat cell in the 4-metric benchmark band. */
+export type StatItem = {
+  value: string;
+  label: string;
+  icon?: StatIconKey;
+};
+
+export type UseCaseRow = {
+  scenario: string;
+  competitor: string;
+  trndinn: string;
+};
+
+export type UseCasesSection = {
+  title: string;
+  subtitle?: string;
+  rows: UseCaseRow[];
+};
+
+export type MigrationStep = {
+  title: string;
+  description: string;
+};
+
+export type MigrationSection = {
+  title: string;
+  subtitle?: string;
+  steps: MigrationStep[];
+};
+
+export type InternalLinkItem = {
+  href: string;
+  title: string;
+  subtitle: string;
+  icon?: InternalIconKey;
+  featured?: boolean;
+};
+
+export type StatIconKey = "zap" | "globe" | "shield" | "sparkles" | "trending" | "trophy";
+export type InternalIconKey =
+  | "zap"
+  | "sparkles"
+  | "scale"
+  | "wrench"
+  | "book"
+  | "trophy"
+  | "video"
+  | "file"
+  | "globe"
+  | "shield"
+  | "trending"
+  | "rocket";
+
 export type CompetitorVsConfig = {
   slug: string;
   competitorName: string;
@@ -94,6 +177,10 @@ export type CompetitorVsConfig = {
     title: string;
     subtitle: string;
   };
+  /** Optional entity-first AEO block rendered near the top. */
+  tldr?: TldrBlock;
+  /** Optional 4-stat benchmark band for GEO citation. */
+  stats?: StatItem[];
   competitorOverview: {
     title: string;
     paragraphs: string[];
@@ -106,11 +193,67 @@ export type CompetitorVsConfig = {
   comparisonTable: ComparisonTable;
   pricing: PricingSection;
   whyTrndinnWins: WhyTrndinnWins;
+  /** Optional "who should use each" table. */
+  useCases?: UseCasesSection;
+  /** Optional 3-step migration guide. */
+  migration?: MigrationSection;
   testimonials: Testimonial[];
   faqs: FAQ[];
   cta: CTASection;
+  /** Optional rich internal-linking block. Falls back to relatedComparisons if absent. */
+  internalLinks?: InternalLinkItem[];
   relatedComparisons: RelatedComparison[];
 };
+
+// ─── Icon resolvers ───
+
+function resolveStatIcon(key: StatIconKey | undefined): ReactNode {
+  switch (key) {
+    case "globe":
+      return <Globe className="h-5 w-5" aria-hidden />;
+    case "shield":
+      return <ShieldCheck className="h-5 w-5" aria-hidden />;
+    case "sparkles":
+      return <Sparkles className="h-5 w-5" aria-hidden />;
+    case "trending":
+      return <TrendingUp className="h-5 w-5" aria-hidden />;
+    case "trophy":
+      return <Trophy className="h-5 w-5" aria-hidden />;
+    case "zap":
+    default:
+      return <Zap className="h-5 w-5" aria-hidden />;
+  }
+}
+
+function resolveInternalIcon(key: InternalIconKey | undefined): ReactNode {
+  switch (key) {
+    case "sparkles":
+      return <Sparkles className="h-4 w-4" aria-hidden />;
+    case "scale":
+      return <Scale className="h-4 w-4" aria-hidden />;
+    case "wrench":
+      return <Wrench className="h-4 w-4" aria-hidden />;
+    case "book":
+      return <BookOpen className="h-4 w-4" aria-hidden />;
+    case "trophy":
+      return <Trophy className="h-4 w-4" aria-hidden />;
+    case "video":
+      return <Video className="h-4 w-4" aria-hidden />;
+    case "file":
+      return <FileText className="h-4 w-4" aria-hidden />;
+    case "globe":
+      return <Globe className="h-4 w-4" aria-hidden />;
+    case "shield":
+      return <ShieldCheck className="h-4 w-4" aria-hidden />;
+    case "trending":
+      return <TrendingUp className="h-4 w-4" aria-hidden />;
+    case "rocket":
+      return <Rocket className="h-4 w-4" aria-hidden />;
+    case "zap":
+    default:
+      return <Zap className="h-4 w-4" aria-hidden />;
+  }
+}
 
 // Utility functions
 function highlightLastWord(title: string): ReactNode {
@@ -124,20 +267,6 @@ function highlightLastWord(title: string): ReactNode {
       {words.join(" ")} <span className="text-gradient-brand animate-gradient-x">{last}</span>
     </>
   );
-}
-
-function getWinnerIcon(winner: string, competitorName: string): ReactNode {
-  const normalized = winner.toLowerCase();
-  if (normalized === "trndinn") {
-    return <Check className="h-5 w-5 text-primary" aria-hidden />;
-  }
-  if (normalized === (competitorName.toLowerCase()) || normalized === "competitor") {
-    return <span className="text-sm font-semibold text-foreground">{competitorName}</span>;
-  }
-  if (normalized === "tie") {
-    return <Minus className="h-5 w-5 text-muted-foreground" aria-hidden />;
-  }
-  return null;
 }
 
 // Components
@@ -178,7 +307,8 @@ function FeatureHighlightCard({
   competitorName: string;
 }) {
   const isTrndinn = highlight.winner === "trndinn";
-  const isCompetitor = highlight.winner === "competitor" || highlight.winner.toLowerCase() === competitorName.toLowerCase();
+  const isCompetitor =
+    highlight.winner === "competitor" || highlight.winner.toLowerCase() === competitorName.toLowerCase();
 
   return (
     <Reveal delay={index * 40}>
@@ -211,7 +341,10 @@ function FeatureHighlightCard({
                 <span>{competitorName} Wins</span>
               </>
             ) : (
-              "Tie"
+              <>
+                <Minus className="h-3.5 w-3.5" />
+                Tie
+              </>
             )}
           </span>
         </div>
@@ -229,16 +362,19 @@ function ComparisonTableSection({
   table: ComparisonTable;
   competitorName: string;
 }) {
-  // Get the competitor column key (could be buffer, hootsuite, etc.)
-  const competitorKey = Object.keys(table.rows[0] || {}).find(
-    (key) => key !== "feature" && key.toLowerCase() !== "trndinn",
-  ) || competitorName.toLowerCase();
+  const competitorKey =
+    Object.keys(table.rows[0] || {}).find(
+      (key) => key !== "feature" && key.toLowerCase() !== "trndinn",
+    ) || competitorName.toLowerCase();
 
   return (
-    <Section>
+    <Section className={TIGHT}>
       <SectionHeading eyebrow="Features" title={table.title} />
 
-      <Reveal delay={80} className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl bg-card/80 backdrop-blur-md dark:bg-white/[0.04] md:mt-10">
+      <Reveal
+        delay={80}
+        className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl bg-card/80 backdrop-blur-md dark:bg-white/[0.04] md:mt-10"
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] border-collapse text-left">
             <thead>
@@ -293,7 +429,7 @@ function WhyTrndinnWinsSection({
   competitorName: string;
 }) {
   return (
-    <Section className="bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent">
+    <Section className={cn(TIGHT, "bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent")}>
       <SectionHeading
         eyebrow="Why Choose Us"
         title={whyTrndinnWins.title}
@@ -325,7 +461,7 @@ function WhyTrndinnWinsSection({
 
 function TestimonialsSection({ testimonials }: { testimonials: Testimonial[] }) {
   return (
-    <Section>
+    <Section className={TIGHT}>
       <SectionHeading
         eyebrow="Testimonials"
         title="What teams are saying"
@@ -364,7 +500,7 @@ function RelatedComparisonsSection({
   currentSlug: string;
 }) {
   return (
-    <Section className="border-t border-border/40">
+    <Section className={cn(TIGHT, "border-t border-border/40")}>
       <SectionHeading
         eyebrow="More Comparisons"
         title="Compare with other tools"
@@ -400,7 +536,7 @@ function RelatedGuidesSection({ competitorKey }: { competitorKey: string }) {
   if (guides.length === 0) return null;
 
   return (
-    <Section className="border-t border-border/40 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent">
+    <Section className={cn(TIGHT, "border-t border-border/40 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent")}>
       <SectionHeading
         eyebrow="Learn More"
         title={`Master ${competitorKey === "taplio" ? "LinkedIn" : "these features"}`}
@@ -453,6 +589,232 @@ function RelatedGuidesSection({ competitorKey }: { competitorKey: string }) {
   );
 }
 
+// ─── New AEO/GEO sub-components ───
+
+function TldrSection({ tldr, competitorName }: { tldr: TldrBlock; competitorName: string }) {
+  return (
+    <Section className={TIGHT}>
+      <Reveal>
+        <div className="mx-auto max-w-3xl rounded-2xl border border-primary/25 bg-primary/5 p-6 sm:p-8">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+            <Zap className="h-4 w-4" aria-hidden />
+            TL;DR
+          </div>
+          <p className="mt-3 text-base leading-relaxed text-foreground sm:text-lg">
+            <strong>{siteName}</strong> {tldr.entityDeclaration} Unlike{" "}
+            <strong>{competitorName}</strong>, {tldr.differentiator} {tldr.stat}
+          </p>
+          {tldr.badges.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tldr.badges.map((badge) => (
+                <Badge key={badge} variant="secondary" className="rounded-full">
+                  {badge}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </Reveal>
+    </Section>
+  );
+}
+
+function StatBandSection({ stats }: { stats: StatItem[] }) {
+  return (
+    <Section className={TIGHT}>
+      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 sm:grid-cols-4">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-border/60 bg-card/60 p-5 text-center backdrop-blur-md dark:bg-white/[0.04]"
+          >
+            <span className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-primary">
+              {resolveStatIcon(stat.icon)}
+            </span>
+            <p className="font-display text-2xl font-bold text-foreground">{stat.value}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function UseCasesSectionBlock({
+  useCases,
+  competitorName,
+}: {
+  useCases: UseCasesSection;
+  competitorName: string;
+}) {
+  return (
+    <Section className={TIGHT}>
+      <SectionHeading
+        eyebrow="Who Should Use Each"
+        title={useCases.title}
+        subtitle={
+          useCases.subtitle ??
+          `Pick the tool that matches your workflow — ${competitorName} or ${siteName}.`
+        }
+      />
+      <Reveal
+        delay={80}
+        className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-2xl bg-card/80 backdrop-blur-md dark:bg-white/[0.04] md:mt-10"
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-left">
+            <thead>
+              <tr className="bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:bg-white/[0.03]">
+                <th scope="col" className="px-5 py-4 sm:px-7">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" aria-hidden />
+                    Scenario
+                  </span>
+                </th>
+                <th scope="col" className="px-5 py-4 sm:px-7">
+                  {competitorName}
+                </th>
+                <th scope="col" className="px-5 py-4 text-primary sm:px-7">
+                  {siteName}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {useCases.rows.map((row, index) => (
+                <tr
+                  key={row.scenario}
+                  className={cn(
+                    "border-t border-border/40",
+                    index % 2 === 1 && "bg-muted/25 dark:bg-white/[0.02]",
+                  )}
+                >
+                  <th
+                    scope="row"
+                    className="px-5 py-4 text-sm font-semibold text-foreground sm:px-7 sm:text-base"
+                  >
+                    {row.scenario}
+                  </th>
+                  <td className="px-5 py-4 text-sm leading-relaxed text-muted-foreground sm:px-7">
+                    {row.competitor}
+                  </td>
+                  <td className="px-5 py-4 text-sm font-semibold text-foreground sm:px-7">
+                    {row.trndinn}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Reveal>
+    </Section>
+  );
+}
+
+function MigrationSectionBlock({
+  migration,
+  competitorName,
+}: {
+  migration: MigrationSection;
+  competitorName: string;
+}) {
+  return (
+    <Section className={TIGHT}>
+      <SectionHeading
+        eyebrow="Migration Guide"
+        title={migration.title}
+        subtitle={
+          migration.subtitle ?? `Move from ${competitorName} to ${siteName} in three steps.`
+        }
+      />
+      <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:mt-10 md:grid-cols-3">
+        {migration.steps.map((step, i) => (
+          <Reveal key={step.title} delay={i * 60}>
+            <div className="relative h-full rounded-2xl border border-border/60 bg-card/60 p-6 backdrop-blur-md dark:bg-white/[0.04] sm:p-7">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 font-display text-sm font-bold text-primary">
+                {i + 1}
+              </span>
+              <h3 className="mt-4 font-display text-lg font-bold text-foreground">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function InternalLinksSection({
+  links,
+  competitorName,
+}: {
+  links: InternalLinkItem[];
+  competitorName: string;
+}) {
+  return (
+    <Section className={cn(TIGHT, "border-t border-border/40")}>
+      <SectionHeading
+        eyebrow="Explore More"
+        title={`Keep exploring the ${siteName} platform`}
+        subtitle={`Everything else you can pair with the ${competitorName} comparison.`}
+      />
+      <div className="mx-auto mt-6 grid max-w-5xl gap-3 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
+        {links.map((link) => (
+          <InternalLink
+            key={link.href}
+            href={link.href}
+            icon={resolveInternalIcon(link.icon)}
+            title={link.title}
+            subtitle={link.subtitle}
+            featured={link.featured}
+          />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function InternalLink({
+  href,
+  icon,
+  title,
+  subtitle,
+  featured,
+}: {
+  href: string;
+  icon: ReactNode;
+  title: string;
+  subtitle: string;
+  featured?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex items-start gap-3 rounded-xl border p-3.5 transition-colors",
+        featured
+          ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+          : "border-border/60 bg-card/50 backdrop-blur-md hover:border-primary/30 hover:bg-primary/5 dark:bg-white/[0.04]",
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          featured ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary",
+        )}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{subtitle}</p>
+      </div>
+      <ArrowRight className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+    </Link>
+  );
+}
+
 // Main component
 export default function CompareVsPage({
   config,
@@ -466,18 +828,14 @@ export default function CompareVsPage({
   return (
     <MarketingShell>
       <main>
-        {/* Breadcrumb Navigation */}
-        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+        {/* Breadcrumb Navigation (transparent — sits on shell canvas) */}
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6 sm:pt-5">
           <ComparisonBreadcrumb competitorName={config.competitorName} />
         </div>
 
-        {/* Hero Section */}
-        <section className="relative isolate overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,hsl(var(--primary)/0.12),transparent_55%)] dark:bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,rgba(255,138,31,0.26),transparent_55%)]" />
-          <div className="pointer-events-none absolute -left-32 top-10 -z-10 h-[420px] w-[420px] rounded-full bg-primary/15 blur-3xl dark:bg-primary/25" />
-          <div className="pointer-events-none absolute -right-24 top-1/3 -z-10 h-[380px] w-[380px] rounded-full bg-[#ff3d39]/10 blur-3xl dark:bg-[#ff3d39]/20" />
-
-          <div className="mx-auto max-w-3xl px-4 pb-10 pt-10 text-center sm:px-6 sm:pb-16 sm:pt-16 md:pb-20 md:pt-20">
+        {/* Hero Section — transparent, no radial backdrop */}
+        <section className="relative">
+          <div className="mx-auto max-w-3xl px-4 pb-6 pt-6 text-center sm:px-6 sm:pb-10 sm:pt-8 md:pb-12 md:pt-10">
             <Reveal>
               <span className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md dark:bg-white/5 dark:text-white/70">
                 <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
@@ -498,7 +856,7 @@ export default function CompareVsPage({
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Button
                   size="lg"
-                  className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff8a1f] to-[#ff3d39] px-8 font-semibold text-white hover:opacity-90 sm:w-auto"
+                  className="h-12 w-full rounded-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--destructive))] px-8 font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
                   asChild
                 >
                   <Link href="/auth">
@@ -519,8 +877,16 @@ export default function CompareVsPage({
           </div>
         </section>
 
+        {/* TL;DR — entity-first AEO block */}
+        {config.tldr ? (
+          <TldrSection tldr={config.tldr} competitorName={config.competitorName} />
+        ) : null}
+
+        {/* Stat band — GEO benchmark metrics */}
+        {config.stats && config.stats.length > 0 ? <StatBandSection stats={config.stats} /> : null}
+
         {/* Platform Overview Section */}
-        <Section>
+        <Section className={TIGHT}>
           <SectionHeading
             eyebrow="Platform Overview"
             title="Two different approaches"
@@ -552,7 +918,7 @@ export default function CompareVsPage({
         </Section>
 
         {/* Feature Highlights Section */}
-        <Section>
+        <Section className={TIGHT}>
           <SectionHeading
             eyebrow="Head-to-Head"
             title="Key differentiators"
@@ -574,8 +940,13 @@ export default function CompareVsPage({
         {/* Comparison Table Section */}
         <ComparisonTableSection table={config.comparisonTable} competitorName={config.competitorName} />
 
+        {/* Who should use each */}
+        {config.useCases ? (
+          <UseCasesSectionBlock useCases={config.useCases} competitorName={config.competitorName} />
+        ) : null}
+
         {/* Pricing Section */}
-        <Section id="pricing">
+        <Section id="pricing" className={TIGHT}>
           <SectionHeading
             eyebrow="Pricing"
             title="Pricing comparison"
@@ -634,11 +1005,16 @@ export default function CompareVsPage({
         {/* Why Trndinn Wins Section */}
         <WhyTrndinnWinsSection whyTrndinnWins={config.whyTrndinnWins} competitorName={config.competitorName} />
 
+        {/* Migration guide */}
+        {config.migration ? (
+          <MigrationSectionBlock migration={config.migration} competitorName={config.competitorName} />
+        ) : null}
+
         {/* Testimonials Section */}
         <TestimonialsSection testimonials={config.testimonials} />
 
         {/* FAQ Section */}
-        <Section>
+        <Section className={TIGHT}>
           <LandingFaq
             title={`${siteName} vs ${config.competitorName}: Common questions`}
             items={config.faqs.map((faq) => ({ q: faq.question, a: faq.answer }))}
@@ -654,6 +1030,11 @@ export default function CompareVsPage({
           secondaryLabel={config.cta.secondaryLabel}
           secondaryHref="/pricing"
         />
+
+        {/* Rich internal linking */}
+        {config.internalLinks && config.internalLinks.length > 0 ? (
+          <InternalLinksSection links={config.internalLinks} competitorName={config.competitorName} />
+        ) : null}
 
         {/* Related Guides - Internal Linking */}
         <RelatedGuidesSection competitorKey={config.slug} />

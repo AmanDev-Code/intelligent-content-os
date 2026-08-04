@@ -44,6 +44,12 @@ const ALL_SCOPES = [
   { id: "accounts:read", label: "Read connected accounts" },
   { id: "accounts:write", label: "Manage / disconnect accounts" },
   { id: "media:write", label: "Upload media" },
+  { id: "blog:read", label: "Blog CMS — read posts", admin: true },
+  { id: "blog:write", label: "Blog CMS — create / edit / delete", admin: true },
+  { id: "content-engine:read", label: "Content Engine — read", admin: true },
+  { id: "content-engine:write", label: "Content Engine — write / AI", admin: true },
+  { id: "seo:read", label: "SEO — read keywords & pages", admin: true },
+  { id: "seo:write", label: "SEO — write / import / AI fill", admin: true },
 ];
 
 export function ApiKeyManager() {

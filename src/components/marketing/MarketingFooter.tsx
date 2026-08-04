@@ -93,6 +93,11 @@ export function MarketingFooter() {
                   </Link>
                 </li>
                 <li>
+                  <Link href="/tools/auto-caption-generator" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    Auto Caption Generator
+                  </Link>
+                </li>
+                <li>
                   <Link href="/tools" className="cursor-pointer text-muted-foreground/70 transition-colors hover:text-primary">
                     Instagram Caption Generator
                     <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground/50">soon</span>

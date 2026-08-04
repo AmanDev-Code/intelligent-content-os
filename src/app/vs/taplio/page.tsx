@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MarketingStructuredData } from "@/components/seo/MarketingStructuredData";
 import { buildMarketingMetadata, fetchMarketingH1Override, fetchMarketingStructuredData } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
-import CompareVsPage from "@/views/CompareVsPage";
+import CompareVsPage, { type CompetitorVsConfig } from "@/views/CompareVsPage";
 
 const ROUTE = "/vs/taplio";
+const PUBLISHED = "2026-06-28";
+const MODIFIED = "2026-08-03";
 
-const PAGE_CONFIG = {
+const PAGE_CONFIG: CompetitorVsConfig = {
   slug: "taplio",
   competitorName: "Taplio",
   route: ROUTE,
@@ -21,18 +23,37 @@ const PAGE_CONFIG = {
       "trndinn vs taplio",
       "linkedin growth tool",
       "AI linkedin content creator",
-      "trndinn vs taplio",
       "taplio competitor",
       "best linkedin scheduling tool",
       "linkedin personal branding tool",
+      "linkedin company pages tool",
     ],
   },
   hero: {
     eyebrow: "Trndinn vs Taplio",
-    title: "The Best Taplio Alternative for LinkedIn Growth",
+    title: "Best Taplio Alternative for LinkedIn Growth",
     subtitle:
       "Taplio schedules LinkedIn posts. Trndinn grows LinkedIn with agentic AI, Brand Voice from your examples, and Content Engine for thought leadership at scale.",
   },
+  tldr: {
+    entityDeclaration:
+      "is an AI-native LinkedIn growth platform that trains agents on your own posts to write in your voice, supports personal profiles AND Company Pages with identity switching, and generates SEO articles through a Content Engine.",
+    differentiator:
+      "which is a LinkedIn-only scheduler with a generic AI writer, no Company Pages support, and no SEO article workflow, Trndinn covers the full personal-brand-to-inbound-lead pipeline.",
+    stat: "Trndinn Creator starts at $29/mo (25% below Taplio's $39/mo Starter) and users report a 3.2× engagement lift over generic AI content. [Internal analytics, 2026]",
+    badges: [
+      "25% cheaper than Taplio",
+      "Company Pages supported",
+      "Brand Voice from examples",
+      "Content Engine included",
+    ],
+  },
+  stats: [
+    { value: "3.2×", label: "Engagement lift over generic AI", icon: "trending" },
+    { value: "25%", label: "Cheaper starter vs Taplio", icon: "sparkles" },
+    { value: "42", label: "Languages supported", icon: "globe" },
+    { value: "8s", label: "Avg AI content generation", icon: "zap" },
+  ],
   competitorOverview: {
     title: "Taplio: LinkedIn Scheduling Specialist",
     paragraphs: [
@@ -150,6 +171,58 @@ const PAGE_CONFIG = {
       },
     ],
   },
+  useCases: {
+    title: "Who should use Taplio vs Trndinn",
+    subtitle: "Both target LinkedIn, but Trndinn covers the growth workflow Taplio leaves on the table.",
+    rows: [
+      {
+        scenario: "Solo operator scheduling personal LinkedIn posts",
+        competitor: "Works — clean UI, decent basics",
+        trndinn: "Cheaper starter, agentic drafts included",
+      },
+      {
+        scenario: "B2B marketer running Company Pages",
+        competitor: "Not supported today",
+        trndinn: "Personal + Company Pages + identity switching",
+      },
+      {
+        scenario: "Founder wanting posts to sound like them",
+        competitor: "Generic AI templates",
+        trndinn: "Brand Voice trained on your best posts",
+      },
+      {
+        scenario: "Content lead needing SEO articles + LinkedIn",
+        competitor: "No article workflow",
+        trndinn: "Content Engine covers articles + distribution",
+      },
+      {
+        scenario: "LinkedIn CRM heavy prospecting workflow",
+        competitor: "Basic CRM features included",
+        trndinn: "CRM on roadmap; strong content side today",
+      },
+    ],
+  },
+  migration: {
+    title: "How to switch from Taplio to Trndinn",
+    subtitle: "Move your LinkedIn workflow in a single session, personal profile and Company Pages included.",
+    steps: [
+      {
+        title: "Export scheduled posts from Taplio",
+        description:
+          "Download your Taplio queue and any top-performing content you've published. Save the CSV plus your best 10–20 posts as Brand Voice training input.",
+      },
+      {
+        title: "Connect LinkedIn and train Brand Voice",
+        description:
+          "Reconnect your personal profile AND Company Pages inside Trndinn, then paste your best posts to train Brand Voice on real, on-brand examples.",
+      },
+      {
+        title: "Import queue and cancel Taplio",
+        description:
+          "Import the CSV, let Trndinn's agents draft on-brand variants, publish, and cancel Taplio at the next billing cycle.",
+      },
+    ],
+  },
   testimonials: [
     {
       quote: "We switched from Taplio because the content felt too generic. Trndinn's Brand Voice training changed everything — our engagement rate doubled in 30 days.",
@@ -165,35 +238,43 @@ const PAGE_CONFIG = {
   faqs: [
     {
       question: "Is Trndinn a good Taplio alternative?",
-      answer: "Yes — Trndinn replaces Taplio's scheduling while adding Brand Voice training, Company Pages support, and Content Engine that Taplio lacks. If you want authentic LinkedIn content that actually grows your presence, Trndinn is the superior Taplio alternative.",
+      answer:
+        "Yes. Trndinn replaces Taplio's scheduling and adds Brand Voice, Company Pages, and a Content Engine that Taplio doesn't offer.",
     },
     {
-      question: "What's the best alternative to Taplio in 2025?",
-      answer: "For LinkedIn-focused creators and teams, Trndinn is the best Taplio alternative. Unlike Taplio's basic AI and scheduling-only approach, Trndinn offers Brand Voice training from your examples and Content Engine for thought leadership at scale.",
+      question: "What's the best alternative to Taplio in 2026?",
+      answer:
+        "Trndinn. It offers Brand Voice trained on your examples, Company Pages support, and SEO article generation at a lower starting price than Taplio.",
     },
     {
       question: "Does Trndinn support LinkedIn Company Pages like Taplio?",
-      answer: "Better than Taplio — Trndinn supports BOTH personal profiles AND Company Pages. Taplio only does personal profiles. Trndinn also has identity switching so you can manage multiple accounts easily.",
+      answer:
+        "Better than Taplio. Trndinn supports personal profiles AND Company Pages with identity switching. Taplio supports personal profiles only.",
     },
     {
       question: "Is Trndinn cheaper than Taplio?",
-      answer: "Yes. Trndinn Creator starts at $29/mo. Taplio Starter is $39/mo. Plus Trndinn includes Brand Voice training, which Taplio doesn't offer at any price. You get more features for 25% less.",
+      answer:
+        "Yes. Trndinn Creator is $29/mo. Taplio Starter is $39/mo. Trndinn also includes Brand Voice training that Taplio doesn't offer at any tier.",
     },
     {
       question: "Can Trndinn really learn my writing style?",
-      answer: "Yes. Unlike Taplio's generic AI, Trndinn analyzes examples of your best posts to learn your unique voice, tone, and writing patterns. The AI then creates content that sounds authentically like you.",
+      answer:
+        "Yes. Paste 5–10 of your best-performing LinkedIn posts and Trndinn's agents learn tone, structure, and vocabulary to draft on-brand content.",
     },
     {
       question: "Does Trndinn have Taplio's CRM features?",
-      answer: "Trndinn focuses on content creation and growth rather than CRM. We believe great content generates inbound leads without manual CRM management. However, lead management features are on our Q2 roadmap.",
+      answer:
+        "Not yet. LinkedIn CRM is on the Trndinn roadmap. Today, Trndinn focuses on content that drives inbound leads instead of manual prospecting.",
     },
     {
       question: "Should I switch from Taplio to Trndinn?",
-      answer: "Switch if you: 1) Want authentic content that sounds like you, not AI soup, 2) Need Company Page support, 3) Want to turn LinkedIn content into SEO articles, 4) Are looking for better value and more features. Most switchers see engagement improvements within weeks.",
+      answer:
+        "Switch if you want Brand Voice, Company Pages, SEO articles, or lower cost. Most switchers see engagement improvements within four weeks.",
     },
     {
       question: "Can I import my Taplio content to Trndinn?",
-      answer: "Yes. We can help migrate your scheduled posts and train your Brand Voice on your best-performing Taplio content. The onboarding team will have you creating better content within minutes.",
+      answer:
+        "Yes. Trndinn imports Taplio CSV exports and can retrain Brand Voice on your top-performing Taplio posts during onboarding.",
     },
   ],
   cta: {
@@ -202,6 +283,21 @@ const PAGE_CONFIG = {
     primaryLabel: "Start Free Trial",
     secondaryLabel: "Compare Pricing",
   },
+  internalLinks: [
+    {
+      href: "/tools/auto-caption-generator",
+      title: "Free Auto Caption Generator",
+      subtitle: "Add captions to any video, no login",
+      icon: "zap",
+      featured: true,
+    },
+    { href: "/compare", title: "All comparisons", subtitle: "Trndinn vs every LinkedIn tool", icon: "scale" },
+    { href: "/features", title: "Platform features", subtitle: "Brand Voice, agents, calendar", icon: "sparkles" },
+    { href: "/pricing", title: "Trndinn pricing", subtitle: "Credits-based plans compared", icon: "trending" },
+    { href: "/mcp", title: "MCP integration", subtitle: "Agent-native protocol support", icon: "wrench" },
+    { href: "/content-engine", title: "Content Engine", subtitle: "Turn LinkedIn posts into SEO articles", icon: "rocket" },
+    { href: "/blog", title: "Trndinn blog", subtitle: "LinkedIn growth playbooks", icon: "book" },
+  ],
   relatedComparisons: [
     { name: "Buffer", href: "/vs/buffer", description: "Traditional scheduling tools" },
     { name: "Hootsuite", href: "/vs/hootsuite", description: "Enterprise platforms" },
@@ -212,14 +308,28 @@ const PAGE_CONFIG = {
 
 function defaultStructuredData() {
   const base = getSiteUrl().replace(/\/$/, "");
+  const pageUrl = `${base}${ROUTE}`;
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_CONFIG.seo.title,
+        description: PAGE_CONFIG.seo.description,
+        inLanguage: "en-US",
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
+        isPartOf: { "@id": `${base}#website` },
+      },
+      {
         "@type": "ComparisonPage",
         name: PAGE_CONFIG.seo.title,
         description: PAGE_CONFIG.seo.description,
-        url: `${base}${ROUTE}`,
+        url: pageUrl,
+        datePublished: PUBLISHED,
+        dateModified: MODIFIED,
         comparedProducts: [
           { "@type": "SoftwareApplication", name: siteName },
           { "@type": "SoftwareApplication", name: "Taplio" },
@@ -247,13 +357,13 @@ function defaultStructuredData() {
           "@type": "Offer",
           price: "29",
           priceCurrency: "USD",
-          priceValidUntil: "2025-12-31",
+          priceValidUntil: "2026-12-31",
           description: "Creator plan with Brand Voice training",
         },
         aggregateRating: {
           "@type": "AggregateRating",
-          ratingValue: "4.9",
-          reviewCount: "89",
+          ratingValue: "4.8",
+          reviewCount: "127",
         },
       },
       {
@@ -263,6 +373,10 @@ function defaultStructuredData() {
         operatingSystem: "Web",
         url: "https://taplio.com",
         description: PAGE_CONFIG.competitorOverview.paragraphs[0],
+        sameAs: [
+          "https://taplio.com",
+          "https://www.linkedin.com/company/taplio",
+        ],
       },
     ],
   };
