@@ -41,9 +41,11 @@ export async function fetchStaticPageSeo(route: string): Promise<StaticPageSeoRo
 /**
  * Build Next.js metadata for a marketing route. Precedence:
  * 1. CMS overrides (`static_page_seo` via Blog Admin → SEO): title, description, canonical, robots, OG image — use these for full control.
- * 2. SEO admin keyword assignment: mark one keyword **Primary** for the route; its text becomes the default document title when (1) is empty,
- *    and description becomes "{phrase} — {siteName}" (one human phrase — never paste your whole keyword list here).
- * 3. Code fallbacks on this page when neither is set.
+ * 2. Code fallbacks on this page — the safety net that always produces sensible, length-safe copy.
+ *
+ * Note: `assignment_primary_keyword` from the SEO admin is used as a keyword signal only (added to `<meta keywords>`).
+ * It is NEVER used as the visible `<title>` or `<meta description>` — that would let one raw keyword replace a well-crafted
+ * title. A mis-assignment on `/features` once made every user see "hootsuite alternative | Trndinn" as the page title.
  */
 export function mergeStaticSeo(
   route: string,
@@ -54,27 +56,52 @@ export function mergeStaticSeo(
   const site = getSiteUrl();
   const canonical =
     seo?.canonical_url?.trim() || `${site.replace(/\/$/, "")}${route.startsWith("/") ? route : `/${route}`}`;
-  const resolvedTitle =
-    seo?.seo_title?.trim() || (primary && primary.length > 0 ? primary : null) || fallback.title;
-  const description =
-    seo?.seo_description?.trim() ||
-    (primary ? `${primary} — ${siteName}` : null) ||
-    fallback.description;
-  const kwFromSeo = seo?.seo_keywords?.trim();
-  const keywords = kwFromSeo
-    ? kwFromSeo.split(",").map((k) => k.trim()).filter(Boolean)
-    : fallback.keywords;
 
-  /** Matches root layout `metadata.title.default` — use absolute title so `title.template` does not append `| ${siteName}` again. */
-  const homeHeadlineDefault = `${siteName} — All-in-One Agentic Social Media Platform`;
-  const resolvedOgTitle =
-    seo?.og_title?.trim() ||
-    (resolvedTitle === homeHeadlineDefault ? resolvedTitle : `${resolvedTitle} | ${siteName}`);
+  // CMS explicit override > code fallback. Keywords never win the title/description slot.
+  const resolvedTitleRaw = seo?.seo_title?.trim() || fallback.title;
+  const description = seo?.seo_description?.trim() || fallback.description;
+
+  // Strip a trailing `| Trndinn` (or ` — Trndinn`) suffix that anyone may have baked into the source string.
+  // Next.js root layout applies `title.template: "%s | Trndinn"` exactly once, so any pre-baked suffix would double up.
+  const suffixPattern = new RegExp(`\\s*[|—-]\\s*${escapeRegex(siteName)}\\s*$`, "i");
+  const resolvedTitle = resolvedTitleRaw.replace(suffixPattern, "").trim() || fallback.title;
+
+  // Merge SEO-admin primary keyword into the keywords list (deduplicated, case-insensitive).
+  const kwFromSeo = seo?.seo_keywords?.trim();
+  const baseKeywords = kwFromSeo
+    ? kwFromSeo.split(",").map((k) => k.trim()).filter(Boolean)
+    : fallback.keywords ?? [];
+  const keywords = primary
+    ? [primary, ...baseKeywords.filter((k) => k.toLowerCase() !== primary.toLowerCase())]
+    : baseKeywords;
+
+  /**
+   * Root layout declares `title.template: "%s | Trndinn"`. If the resolved title already renders the brand
+   * (e.g. the homepage headline "Trndinn — All-in-One …" or a legacy fallback ending in "| Trndinn"), we pass
+   * `{ absolute }` to opt out of the template and avoid a doubled suffix.
+   */
+  const containsBrand = resolvedTitle.toLowerCase().includes(siteName.toLowerCase());
+  const titleForMeta = containsBrand ? { absolute: resolvedTitle } : resolvedTitle;
+
+  // OG/Twitter titles are NOT subject to `title.template`, so we produce the full "Title | Trndinn" form ourselves —
+  // but only when the resolved title doesn't already contain the brand.
+  const ogTitle =
+    seo?.og_title?.trim() || (containsBrand ? resolvedTitle : `${resolvedTitle} | ${siteName}`);
   const resolvedOgDescription = seo?.og_description?.trim() || description;
-  const ogTitle = resolvedOgTitle;
+
+  // Dev-time nudge: too-long titles/descriptions get truncated in SERPs. Never blocks the build.
+  if (process.env.NODE_ENV !== "production") {
+    const finalTitle = containsBrand ? resolvedTitle : `${resolvedTitle} | ${siteName}`;
+    if (finalTitle.length > 60) {
+      console.warn(`[serverSeo] Title over 60 chars on ${route} (${finalTitle.length}): "${finalTitle}"`);
+    }
+    if (description.length > 160) {
+      console.warn(`[serverSeo] Description over 160 chars on ${route} (${description.length})`);
+    }
+  }
 
   const meta: Metadata = {
-    title: resolvedTitle === homeHeadlineDefault ? { absolute: resolvedTitle } : resolvedTitle,
+    title: titleForMeta,
     description,
     alternates: { canonical },
     robots: seo?.robots?.trim() || undefined,
@@ -100,6 +127,11 @@ export function mergeStaticSeo(
   }
 
   return meta;
+}
+
+/** Escape a string for use inside a RegExp literal. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /** Loads public SEO payload and merges with page-level defaults (server-only; ISR-friendly). */

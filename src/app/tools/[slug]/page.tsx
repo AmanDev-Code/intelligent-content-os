@@ -160,7 +160,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // ─── Primary: Instagram Reel Downloader ───────────────────────────────
   if (slug === REEL_DOWNLOADER_PRIMARY_SLUG) {
     return buildMarketingMetadata(`/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`, {
-      title: "Instagram Reel Downloader — Free, HD, No Watermark | Trndinn",
+      // Root layout appends "| Trndinn" via title.template — don't bake it in here or it doubles.
+      title: "Instagram Reel Downloader — Free, HD, No Watermark",
       description:
         "Download any public Instagram Reel as an HD MP4 in seconds. Free, no watermark, no login, no app. Paste a link and save. Try Trndinn's Reel downloader.",
       keywords: [
@@ -184,7 +185,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // ─── Primary: Auto Caption Generator ──────────────────────────────────
   if (slug === AUTO_CAPTION_PRIMARY_SLUG) {
     return buildMarketingMetadata(`/tools/${AUTO_CAPTION_PRIMARY_SLUG}`, {
-      title: "Free Auto Caption Generator — Add Captions to Video | Trndinn",
+      // Root layout appends "| Trndinn" via title.template — don't bake it in here or it doubles.
+      title: "Free Auto Caption Generator — Add Captions to Video",
       description:
         "Add auto-synced captions to any video for free. AI transcribes, syncs word-by-word, and burns styled subtitles onto your Reels, Shorts, and TikToks.",
       keywords: [

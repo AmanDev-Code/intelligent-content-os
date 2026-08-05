@@ -23,6 +23,58 @@ type LegalMeta = {
   seoDescription?: string | null;
 };
 
+/**
+ * Per-slug SEO copy for the /legal/* pages. The API returns bare document names ("Privacy Policy", "Terms of Service"),
+ * which produce short 24-26 char <title>s once the root layout appends "| Trndinn". Search Console flagged these as
+ * "Bad". We enrich here so each legal page renders a length-safe title (~48-58 chars) and a substantive description
+ * (140-155 chars) that Google won't truncate.
+ */
+const LEGAL_SEO: Record<
+  string,
+  { title: string; description: string }
+> = {
+  privacy: {
+    title: "Privacy Policy — Data Collection, Rights, Compliance",
+    description:
+      "How Trndinn collects, uses, and protects your data. Your rights under GDPR, CCPA/CPRA, and India DPDP, plus our platform-compliance commitments.",
+  },
+  terms: {
+    title: "Terms of Service — Trndinn Platform Agreement",
+    description:
+      "Trndinn Terms of Service. Your rights and responsibilities, billing, acceptable use, service commitments, and platform-compliance obligations.",
+  },
+  cookies: {
+    title: "Cookie Policy — How Trndinn Uses Cookies & Trackers",
+    description:
+      "The cookies and trackers Trndinn uses, why we use them, and how to manage your preferences. Includes analytics, functional, and marketing categories.",
+  },
+  aup: {
+    title: "Acceptable Use Policy — Trndinn Community Rules",
+    description:
+      "What is and isn't allowed on Trndinn. Content guidelines, prohibited activities, and the enforcement process for keeping our platform safe and useful.",
+  },
+  dpa: {
+    title: "Data Processing Addendum — Enterprise DPA & SCCs",
+    description:
+      "The Trndinn Data Processing Addendum covering GDPR Article 28, standard contractual clauses, sub-processors, and enterprise data-protection commitments.",
+  },
+  subprocessors: {
+    title: "Sub-processors — Trndinn Vendors & Data Flows",
+    description:
+      "The current list of Trndinn sub-processors and connected platforms, the data each handles, and where they operate. Updated whenever vendors change.",
+  },
+  refund: {
+    title: "Refund & Cancellation Policy — Billing at Trndinn",
+    description:
+      "Trndinn refund and cancellation policy. Billing cycles, cancellation windows, refund eligibility, credit handling, and how to contact billing support.",
+  },
+  "data-rights": {
+    title: "Your Privacy Choices & Data Rights at Trndinn",
+    description:
+      "Exercise your privacy rights at Trndinn: access, delete, correct, port, and opt out of sale/share under GDPR, CCPA/CPRA, and India DPDP. Contact channels included.",
+  },
+};
+
 function apiBase(): string {
   return process.env.NEXT_PUBLIC_BACKEND_URL || API_CONFIG.BASE_URL;
 }
@@ -53,15 +105,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const meta = await fetchLegalMeta(slug);
-  const title = meta?.title?.trim() || "Legal";
+  const enriched = LEGAL_SEO[slug];
+
+  // Precedence: CMS explicit title → local enrichment map → last-resort fallback.
+  // buildMarketingMetadata() strips a trailing "| Trndinn" so authoring in either style is safe.
+  const rawApiTitle = meta?.title?.trim();
+  const title =
+    enriched?.title || rawApiTitle || `${siteName} Legal & Compliance`;
+
   const description =
     meta?.seoDescription?.trim() ||
+    enriched?.description ||
     meta?.summary?.trim() ||
-    `Read ${siteName}'s ${title.toLowerCase()} and related legal terms.`;
+    `${siteName}'s ${(rawApiTitle || "legal").toLowerCase()} and related compliance terms.`;
+
   return buildMarketingMetadata(`/legal/${slug}`, {
     title,
     description,
-    keywords: ["Trndinn legal", title, "terms", "privacy", "compliance"],
+    keywords: [
+      `${siteName} legal`,
+      rawApiTitle || slug,
+      "terms",
+      "privacy",
+      "compliance",
+      "GDPR",
+      "CCPA",
+    ],
   });
 }
 

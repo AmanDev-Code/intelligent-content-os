@@ -17,20 +17,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Post not found" };
   }
   const site = getSiteUrl();
-  const title = (post.seo_title as string)?.trim() || (post.title as string);
+
+  // Strip any pre-baked " | Trndinn" (or " — Trndinn") suffix — Next.js root layout template will apply
+  // "| Trndinn" exactly once, so leaving one in the raw seo_title would produce "Title | Trndinn | Trndinn".
+  const rawTitle = (post.seo_title as string)?.trim() || (post.title as string);
+  const brandSuffix = new RegExp(`\\s*[|—-]\\s*${siteName}\\s*$`, "i");
+  const title = rawTitle.replace(brandSuffix, "").trim() || (post.title as string);
+
   const description =
     ((post.seo_description as string)?.trim() ||
       (post.excerpt as string)?.trim() ||
       `${post.title} — ${siteName}`) as string;
-  const canonical =
-    ((post.canonical_url as string)?.trim() ||
-      `${site.replace(/\/$/, "")}${BLOG_BASE_PATH}/${slugPath}`) as string;
+
+  // Validate DB-supplied canonical: must parse as http(s). Falls through to the computed URL for garbage
+  // like "Canonical URL https://…" that a legacy row got seeded with.
+  const computedCanonical = `${site.replace(/\/$/, "")}${BLOG_BASE_PATH}/${slugPath}`;
+  const rawCanonical = (post.canonical_url as string | undefined)?.trim();
+  let canonical = computedCanonical;
+  if (rawCanonical) {
+    try {
+      const u = new URL(rawCanonical);
+      if (u.protocol === "https:" || u.protocol === "http:") {
+        canonical = u.toString();
+      }
+    } catch {
+      // malformed value — keep the computed fallback
+    }
+  }
+
   const kw = (post.seo_keywords as string)?.trim();
   const keywords = kw ? kw.split(",").map((k) => k.trim()).filter(Boolean) : undefined;
   const og =
     ((post.og_image_url as string)?.trim() || (post.featured_image_url as string)?.trim()) || undefined;
 
   const authorName = (post.author_display_name as string | undefined)?.trim();
+  // OG title is not subject to Next.js `title.template`, so we assemble the brand form here explicitly.
+  const ogTitle = `${title} | ${siteName}`;
 
   return {
     title,
@@ -40,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical },
     authors: authorName ? [{ name: authorName }] : undefined,
     openGraph: {
-      title: `${title} | ${siteName}`,
+      title: ogTitle,
       description,
       url: canonical,
       type: "article",
@@ -51,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | ${siteName}`,
+      title: ogTitle,
       description,
       images: og ? [og] : undefined,
     },
