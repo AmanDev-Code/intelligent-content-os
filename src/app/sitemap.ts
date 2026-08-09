@@ -35,9 +35,8 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/tools",                           changeFrequency: "weekly",  priority: 0.9,  lastModified: new Date("2026-07-30") },
   { path: "/tools/instagram-reel-downloader", changeFrequency: "weekly",  priority: 0.95, lastModified: new Date("2026-07-30") },
   // Reel downloader alias URLs — programmatic SEO variants targeting different
-  // search intents. All carry rel="canonical" back to the primary URL so
-  // Google consolidates ranking signals without a duplicate-content penalty.
-  // Lower priority (0.7) than the primary (0.95) reflects that.
+  // search intents. Each self-canonicalizes so Google indexes them independently.
+  // Lower priority (0.7) than the primary (0.95) reflects link equity distribution.
   ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({
     path: `/tools/${slug}`,
     changeFrequency: "weekly" as const,

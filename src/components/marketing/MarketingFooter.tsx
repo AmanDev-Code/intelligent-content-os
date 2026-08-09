@@ -224,6 +224,11 @@ export function MarketingFooter() {
                     Your Privacy Choices
                   </Link>
                 </li>
+                <li>
+                  <Link href="/legal/aup" className="cursor-pointer text-foreground/90 transition-colors hover:text-primary">
+                    Acceptable Use
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

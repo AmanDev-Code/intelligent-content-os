@@ -7,6 +7,7 @@ import { WebApplicationSchema } from "@/components/seo/WebApplicationSchema";
 import { HowToSchema } from "@/components/seo/HowToSchema";
 import { getToolBySlug, TOOLS } from "@/lib/tools-data";
 import { getSiteUrl } from "@/lib/site";
+import { fetchPublishedBlogPosts } from "@/lib/serverBlog";
 import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderView";
 import AutoCaptionGeneratorView from "@/views/tools/AutoCaptionGeneratorView";
 import {
@@ -121,37 +122,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
 
   // ─── Reel Downloader Aliases ──────────────────────────────────────────
+  // Each alias self-canonicalizes (buildMarketingMetadata defaults canonical to
+  // the page's own URL). This lets Google index each alias independently for its
+  // target keyword cluster while serving the same underlying tool.
   const reelAlias = getReelDownloaderAlias(slug);
   if (reelAlias) {
-    const meta = await buildMarketingMetadata(`/tools/${reelAlias.slug}`, {
+    return buildMarketingMetadata(`/tools/${reelAlias.slug}`, {
       title: reelAlias.seoTitle,
       description: reelAlias.seoDescription,
       keywords: reelAlias.keywords,
     });
-    return {
-      ...meta,
-      alternates: {
-        ...(meta.alternates ?? {}),
-        canonical: `/tools/${REEL_DOWNLOADER_PRIMARY_SLUG}`,
-      },
-    };
   }
 
   // ─── Auto Caption Aliases ─────────────────────────────────────────────
   const captionAlias = getAutoCaptionAlias(slug);
   if (captionAlias) {
-    const meta = await buildMarketingMetadata(`/tools/${captionAlias.slug}`, {
+    return buildMarketingMetadata(`/tools/${captionAlias.slug}`, {
       title: captionAlias.seoTitle,
       description: captionAlias.seoDescription,
       keywords: captionAlias.keywords,
     });
-    return {
-      ...meta,
-      alternates: {
-        ...(meta.alternates ?? {}),
-        canonical: `/tools/${AUTO_CAPTION_PRIMARY_SLUG}`,
-      },
-    };
   }
 
   const tool = getToolBySlug(slug);
@@ -239,6 +229,23 @@ export default async function ToolPage({ params }: PageProps) {
   if (isReelDownloaderSlug(slug)) {
     const alias = getReelDownloaderAlias(slug);
     const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "Instagram Reel Downloader";
+
+    // Fetch related blog posts tagged "instagram-reels" for the blog section
+    const { posts: rawBlogPosts } = await fetchPublishedBlogPosts({
+      tag: "instagram-reels",
+      limit: 3,
+    });
+    const blogPosts = rawBlogPosts.map((p) => ({
+      id: String(p.id ?? ""),
+      path: String(p.path ?? ""),
+      title: String(p.title ?? ""),
+      excerpt: (p.excerpt as string) ?? undefined,
+      featured_image_url: (p.featured_image_url as string) ?? undefined,
+      featured_image_object_position: (p.featured_image_object_position as string) ?? undefined,
+      published_at: (p.published_at as string) ?? undefined,
+      reading_minutes: (p.reading_minutes as number) ?? undefined,
+    }));
+
     return (
       <>
         <BreadcrumbSchema
@@ -288,6 +295,7 @@ export default async function ToolPage({ params }: PageProps) {
         />
         <InstagramReelDownloaderView
           faqs={INSTAGRAM_REEL_FAQS}
+          blogPosts={blogPosts}
           heroVariant={
             alias
               ? {
@@ -308,6 +316,18 @@ export default async function ToolPage({ params }: PageProps) {
   if (isAutoCaptionSlug(slug)) {
     const alias = getAutoCaptionAlias(slug);
     const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "Auto Caption Generator";
+
+    const { posts: rawBlogPosts } = await fetchPublishedBlogPosts({ tag: "captions", limit: 3 });
+    const blogPosts = rawBlogPosts.map((p) => ({
+      id: String(p.id ?? ""),
+      path: String(p.path ?? ""),
+      title: String(p.title ?? ""),
+      excerpt: String(p.excerpt ?? ""),
+      featured_image_url: p.featured_image_url ? String(p.featured_image_url) : undefined,
+      published_at: p.published_at ? String(p.published_at) : undefined,
+      reading_minutes: typeof p.reading_minutes === "number" ? p.reading_minutes : undefined,
+    }));
+
     return (
       <>
         <BreadcrumbSchema
@@ -338,6 +358,7 @@ export default async function ToolPage({ params }: PageProps) {
         />
         <AutoCaptionGeneratorView
           faqs={AUTO_CAPTION_FAQS}
+          blogPosts={blogPosts}
           heroVariant={
             alias
               ? {

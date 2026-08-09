@@ -38,6 +38,7 @@ import { API_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useExperiment, trackExperimentConversion } from "@/hooks/useExperiment";
 import analytics from "@/services/analytics";
+import { BlogRelatedPosts, type RelatedPost } from "@/components/blog/BlogRelatedPosts";
 
 // ---------------------------------------------------------------------------
 // Types & Validation
@@ -360,9 +361,11 @@ export interface HeroVariant {
 export default function InstagramReelDownloaderView({
   faqs,
   heroVariant,
+  blogPosts,
 }: {
   faqs: FAQItem[];
   heroVariant?: HeroVariant;
+  blogPosts?: RelatedPost[];
 }) {
   // Default hero copy — used when this component is rendered on the primary
   // /tools/instagram-reel-downloader URL (no variant passed).
@@ -1902,6 +1905,42 @@ export default function InstagramReelDownloaderView({
                 </li>
                 <li>
                   <Link
+                    href="/compare/trndinn-vs-savefrom"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn vs SaveFrom — safety, privacy, and no extension needed
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/compare/trndinn-vs-igram"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn vs iGram — simplicity plus a creator workflow
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/compare/trndinn-vs-fastdl"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Trndinn vs FastDL — truly fast with zero ads
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/compare"
+                    className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    See all comparisons &rarr;
+                  </Link>
+                </li>
+                <li className="pt-1 border-t border-border/30">
+                  <Link
                     href="/blog/how-to-download-instagram-reels-without-watermark"
                     className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
                   >
@@ -1922,6 +1961,30 @@ export default function InstagramReelDownloaderView({
             </motion.div>
           </div>
         </section>
+
+        {/* ==================================================================
+            BLOG — Reel Tips & Guides
+        ================================================================== */}
+        {blogPosts && blogPosts.length > 0 && (
+          <section className="relative px-4 py-6 sm:py-8">
+            <div className="mx-auto max-w-6xl">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+              >
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  Reel Tips &amp; Guides
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Level up your Instagram Reel game with guides from the Trndinn blog.
+                </p>
+                <BlogRelatedPosts posts={blogPosts} />
+              </motion.div>
+            </div>
+          </section>
+        )}
 
         {/* ==================================================================
             RELATED TOOLS — floating cards with parallax hover
