@@ -31,6 +31,14 @@ import ReelDownloaderCompareView from "@/views/tools/ReelDownloaderCompareView";
  * Slug namespaces do not overlap between the two datasets.
  */
 
+/** Truncate at a word boundary to avoid mid-word cuts in SERP titles. */
+function truncateAtWord(str: string, max: number): string {
+  if (str.length <= max) return str;
+  const truncated = str.slice(0, max);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return lastSpace > max * 0.6 ? truncated.slice(0, lastSpace) : truncated;
+}
+
 const SLUG_PREFIX = "trndinn-vs-";
 
 type PageProps = {
@@ -74,8 +82,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const description =
       `Compare ${siteName} vs ${competitor.name}: free AI auto caption generator, 99+ languages, no watermark, 8.5s avg render. See features, pricing, and why creators switch.`;
     return buildMarketingMetadata(route, {
-      title: title.slice(0, 60),
-      description: description.slice(0, 155),
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
       keywords: [
         competitor.targetKeyword,
         `${competitor.name.toLowerCase()} vs trndinn`,
@@ -96,8 +104,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     `Compare ${siteName} vs ${competitor.name}: free Instagram Reel downloader with zero ads, no watermark, no login. See features, pricing, safety, and why creators switch.`;
   return buildMarketingMetadata(route, {
-    title: title.slice(0, 60),
-    description: description.slice(0, 155),
+    title: truncateAtWord(title, 60),
+    description: truncateAtWord(description, 155),
     keywords: [
       competitor.targetKeyword,
       `${competitor.name.toLowerCase()} vs trndinn`,

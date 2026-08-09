@@ -42,6 +42,8 @@ import { TOOLS } from "@/lib/tools-data";
 import { API_CONFIG } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { analytics } from "@/services/analytics";
+import { BlogRelatedPosts } from "@/components/blog/BlogRelatedPosts";
+import { CAPTION_COMPETITORS } from "@/lib/caption-competitors";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,9 +73,20 @@ interface HeroVariant {
   subline: string;
 }
 
+interface BlogPost {
+  id: string;
+  path: string;
+  title: string;
+  excerpt: string;
+  featured_image_url?: string;
+  published_at?: string;
+  reading_minutes?: number;
+}
+
 interface Props {
   faqs: FAQItem[];
   heroVariant?: HeroVariant;
+  blogPosts?: BlogPost[];
 }
 
 type PipelineStage = "idle" | "uploading" | "probing" | "transcribing" | "rendering" | "complete" | "failed";
@@ -352,10 +365,51 @@ const STATS = [
 ];
 
 // ---------------------------------------------------------------------------
+// FlipWord — cycles between "captions" and "subtitles" on the primary page
+// to capture both keyword intents. Same pattern as ToolsHubView.
+// ---------------------------------------------------------------------------
+
+const CAPTION_FLIP_WORDS = ["captions", "subtitles"];
+const CAPTION_FLIP_INTERVAL_MS = 2500;
+
+function CaptionFlipWord() {
+  const [index, setIndex] = useState(0);
+  const shouldReduce = useReducedMotion();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((i) => (i + 1) % CAPTION_FLIP_WORDS.length);
+    }, CAPTION_FLIP_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (shouldReduce) {
+    return <span className="text-gradient-brand">{CAPTION_FLIP_WORDS[index]}</span>;
+  }
+
+  return (
+    <span className="inline-flex overflow-hidden align-bottom">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={CAPTION_FLIP_WORDS[index]}
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "-100%", opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="text-gradient-brand inline-block"
+        >
+          {CAPTION_FLIP_WORDS[index]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main View
 // ---------------------------------------------------------------------------
 
-export default function AutoCaptionGeneratorView({ faqs, heroVariant }: Props) {
+export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts }: Props) {
   // State
   const [file, setFile] = useState<File | null>(null);
   const [styleId, setStyleId] = useState<CaptionStyleId>("hormozi");
@@ -721,9 +775,17 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant }: Props) {
             >
               {hero.h1Prefix}{" "}
               <span className="relative inline-block">
-                <span className="text-gradient-brand">
-                  {hero.h1Highlight}
-                </span>
+                {/* Primary page: animated flip between "captions" / "subtitles". Alias pages: static highlight. */}
+                {heroVariant ? (
+                  <span className="text-gradient-brand">
+                    {hero.h1Highlight}
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-gradient-brand">viral </span>
+                    <CaptionFlipWord />
+                  </>
+                )}
                 {/* Underline scribble */}
                 <motion.svg
                   viewBox="0 0 300 12"
@@ -2026,6 +2088,90 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant }: Props) {
                   </p>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ==================================================================
+            BLOG — Caption Tips & Guides
+        ================================================================== */}
+        {blogPosts && blogPosts.length > 0 && (
+          <section className="relative px-4 py-8 sm:py-12">
+            <div className="mx-auto max-w-6xl">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="mb-2 flex items-end justify-between gap-8">
+                  <div>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                      From the blog
+                    </p>
+                    <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                      Caption Tips &amp; Guides
+                    </h2>
+                    <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                      Learn proven captioning techniques, accessibility best practices, and engagement strategies from our content team.
+                    </p>
+                  </div>
+                </div>
+                <BlogRelatedPosts posts={blogPosts} />
+              </motion.div>
+            </div>
+          </section>
+        )}
+
+        {/* ==================================================================
+            COMPARE & LEARN MORE — internal links for SEO
+        ================================================================== */}
+        <section className="relative px-4 py-6 sm:py-8">
+          <div className="mx-auto max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="rounded-lg border border-border/40 bg-card/40 p-6"
+            >
+              <h3 className="font-display text-lg font-semibold text-foreground">
+                Compare &amp; Learn More
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                See how Trndinn&apos;s Auto Caption Generator stacks up against popular captioning tools, or browse our full comparison and alternatives hubs.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {CAPTION_COMPETITORS.map((competitor) => (
+                  <li key={competitor.slug}>
+                    <Link
+                      href={`/compare/trndinn-vs-${competitor.slug}`}
+                      className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                      Trndinn vs {competitor.name} — {competitor.wedgeSummary.toLowerCase().replace(/\.$/, "")}
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <Link
+                    href="/compare"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    All comparisons — full side-by-side breakdowns
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/alternatives"
+                    className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                    Caption tool alternatives hub — find the right fit
+                  </Link>
+                </li>
+              </ul>
             </motion.div>
           </div>
         </section>

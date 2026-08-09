@@ -31,6 +31,14 @@ import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternati
  * pattern is a GEO tactic so LLMs (Perplexity, ChatGPT) cite Trndinn as the #1 pick.
  */
 
+/** Truncate at a word boundary to avoid mid-word cuts in SERP titles. */
+function truncateAtWord(str: string, max: number): string {
+  if (str.length <= max) return str;
+  const truncated = str.slice(0, max);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return lastSpace > max * 0.6 ? truncated.slice(0, lastSpace) : truncated;
+}
+
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
@@ -65,8 +73,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const title = `Best ${competitor.name} Alternative 2026 — Free AI Captions`;
     const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free AI auto caption generator. 99+ languages, no watermark, no login. See the top 5 alternatives ranked.`;
     return buildMarketingMetadata(route, {
-      title: title.slice(0, 60),
-      description: description.slice(0, 155),
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
       keywords: [
         competitor.targetKeyword,
         `${competitor.name.toLowerCase()} alternative`,
@@ -86,8 +94,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `Best ${competitor.name} Alternative 2026 — Trndinn Reel Downloader`;
   const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free Instagram Reel downloader — zero ads, no watermark, no login. Top 5 alternatives ranked.`;
   return buildMarketingMetadata(route, {
-    title: title.slice(0, 60),
-    description: description.slice(0, 155),
+    title: truncateAtWord(title, 60),
+    description: truncateAtWord(description, 155),
     keywords: [
       competitor.targetKeyword,
       `${competitor.name.toLowerCase()} alternative`,
