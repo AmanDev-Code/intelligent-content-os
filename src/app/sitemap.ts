@@ -118,10 +118,11 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/legal/refund",       changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
   { path: "/legal/data-rights",  changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
 
-  // Legacy redirects (for SEO continuity)
-  { path: "/privacy-policy",    changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
-  { path: "/terms-of-use",      changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
-  { path: "/refund-policy",     changeFrequency: "yearly", priority: 0.3, lastModified: new Date("2026-05-02") },
+  // NOTE: The legacy URLs /privacy-policy, /terms-of-use, and /refund-policy are
+  // intentionally NOT listed here. They 301-redirect to the canonical /legal/*
+  // routes above, and a sitemap must only contain final 200-status URLs. Listing
+  // redirecting URLs wastes crawl budget and produces "Page with redirect" states
+  // in Search Console. The redirects themselves remain in place for old bookmarks.
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
