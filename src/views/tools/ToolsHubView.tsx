@@ -11,6 +11,9 @@ import {
   Hash,
   User,
   BarChart3,
+  Camera,
+  Linkedin as LinkedinIcon,
+  Github as GithubIcon,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
@@ -178,6 +181,122 @@ function AutoCaptionArtwork() {
   );
 }
 
+// Bio Generator artwork — emerald/violet gradient with multi-platform bio cards
+// X (Twitter) mark inlined — Lucide doesn't ship it, and the logo *is* an X so no label needed.
+const XMark = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 1200 1227" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M714.163 519.284L1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026zM569.165 687.828l-47.468-67.894L144.011 79.694h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026z" />
+  </svg>
+);
+
+// TikTok note mark — brand-accurate simplified glyph.
+const TikTokMark = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 256 256" fill="currentColor" className={className} aria-hidden="true">
+    <path d="M224 72a48 48 0 0 1-48-48h-32v144a32 32 0 1 1-32-32 8 8 0 0 0 8-8V96a8 8 0 0 0-8-8 64 64 0 1 0 64 64V115.6a79.6 79.6 0 0 0 48 16.4 8 8 0 0 0 8-8V80a8 8 0 0 0-8-8Z" />
+  </svg>
+);
+
+function BioGeneratorArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#10B981] via-[#8B5CF6] to-[#EC4899] p-6">
+      {/* Center: profile card mockup */}
+      <div className="relative z-10 flex h-32 w-24 flex-col items-center rounded-xl bg-black/40 ring-2 ring-white/20 backdrop-blur-md p-2">
+        {/* Avatar */}
+        <motion.div
+          className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-white/90 to-white/60"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <User className="h-4 w-4 text-[#8B5CF6]" />
+        </motion.div>
+        {/* Name line */}
+        <div className="mt-1.5 h-1 w-12 rounded-full bg-white/80" />
+        {/* Bio lines animating (word-by-word reveal) */}
+        <motion.div
+          className="mt-2 h-0.5 w-16 rounded-full bg-white/60"
+          animate={{ width: ["40%", "90%", "40%"] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="mt-1 h-0.5 w-14 rounded-full bg-white/50"
+          animate={{ width: ["60%", "80%", "60%"] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        />
+        <motion.div
+          className="mt-1 h-0.5 w-12 rounded-full bg-white/40"
+          animate={{ width: ["30%", "70%", "30%"] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        />
+        {/* Score pill */}
+        <div className="mt-auto mb-1 flex items-center gap-0.5 rounded-full bg-emerald-400/30 px-1.5 py-0.5">
+          <div className="h-1 w-1 rounded-full bg-emerald-300" />
+          <span className="text-[7px] font-bold text-emerald-200">92</span>
+        </div>
+      </div>
+
+      {/* Floating platform pills — the "6 platforms in one run" story, icons only */}
+      <motion.div
+        className="absolute left-3 top-4 flex h-6 w-6 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0], rotate: [-3, 2, -3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        aria-label="LinkedIn"
+      >
+        <LinkedinIcon className="h-3 w-3 text-white" />
+      </motion.div>
+
+      <motion.div
+        className="absolute right-4 top-3 flex h-6 w-6 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0], rotate: [3, -1, 3] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+        aria-label="Instagram"
+      >
+        <Camera className="h-3 w-3 text-white" />
+      </motion.div>
+
+      <motion.div
+        className="absolute right-3 top-14 flex h-6 w-6 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm"
+        animate={{ y: [0, -4, 0], rotate: [-2, 3, -2] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+        aria-label="X"
+      >
+        <XMark className="h-3 w-3 text-white" />
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-6 left-4 flex h-6 w-6 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0], rotate: [2, -2, 2] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+        aria-label="TikTok"
+      >
+        <TikTokMark className="h-3 w-3 text-white" />
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-4 right-5 flex h-6 w-6 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0], rotate: [-3, 1, -3] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+        aria-label="GitHub"
+      >
+        <GithubIcon className="h-3 w-3 text-white" />
+      </motion.div>
+
+      {/* Sparkle accent (AI signal) */}
+      <motion.div
+        className="absolute left-6 bottom-14"
+        animate={{ opacity: [0.4, 1, 0.4], scale: [0.9, 1.1, 0.9] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Sparkles className="h-3 w-3 text-yellow-200" />
+      </motion.div>
+
+      {/* Scattered dots */}
+      <div className="absolute top-6 right-14 h-1 w-1 rounded-full bg-white/50" />
+      <div className="absolute bottom-8 left-14 h-1.5 w-1.5 rounded-full bg-white/40" />
+      <div className="absolute top-14 left-8 h-1 w-1 rounded-full bg-white/30" />
+    </div>
+  );
+}
+
 // Placeholder artwork for coming-soon tools (subtle, muted)
 function ComingSoonArtwork({ category }: { category: ToolCategory }) {
   const Icon = CATEGORY_ICONS[category];
@@ -207,6 +326,8 @@ function getToolArtwork(tool: ToolEntry) {
       return <InstagramReelArtwork />;
     case "auto-caption-generator":
       return <AutoCaptionArtwork />;
+    case "bio-generator":
+      return <BioGeneratorArtwork />;
     default:
       return <ComingSoonArtwork category={tool.category} />;
   }

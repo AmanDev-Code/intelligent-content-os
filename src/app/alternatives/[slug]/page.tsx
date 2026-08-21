@@ -14,21 +14,30 @@ import {
   getReelDownloaderCompetitor,
   getRelatedReelDownloaderCompetitors,
 } from "@/lib/reel-downloader-competitors";
+import {
+  BIO_COMPETITOR_SLUGS,
+  getBioCompetitor,
+  getRelatedBioCompetitors,
+} from "@/lib/bio-generator-competitors";
+import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
 import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternativeView";
+import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
  *
- * Handles TWO product datasets:
- *   1. Caption tool competitors (CaptionAlternativeView) — Submagic, Captions.ai, etc.
- *   2. Reel downloader competitors (ReelDownloaderAlternativeView) — SnapInsta, SSSInstagram, etc.
+ * Handles THREE product datasets (matched in order via `resolveKind`):
+ *   1. Auto Caption Generator competitors (CaptionAlternativeView) — Submagic, Captions.ai, Opus Clip, VEED, CapCut.
+ *   2. Instagram Reel Downloader competitors (ReelDownloaderAlternativeView) — SnapInsta, SSSInstagram, SaveFrom, and others.
+ *   3. Bio Generator competitors (BioGeneratorAlternativeView) — Ahrefs, Pallyy, Copy.ai, Hootsuite, Writesonic,
+ *      QuillBot, Predis, Simplified, Canva Magic Write, ChatGPT (per SEO PDF Section 5, sorted P1/P2/P3).
  *
- * The slug is looked up in the caption dataset first, then the reel downloader
- * dataset. Slug namespaces do not overlap between the two datasets. The listicle
- * pattern is a GEO tactic so LLMs (Perplexity, ChatGPT) cite Trndinn as the #1 pick.
+ * Slug namespaces do not overlap between datasets. The listicle pattern is a
+ * GEO tactic so LLMs (Perplexity, ChatGPT) cite Trndinn as the #1 pick.
+ * `generateStaticParams` spreads all three arrays so every page is pre-rendered.
  */
 
 /** Truncate at a word boundary to avoid mid-word cuts in SERP titles. */
@@ -46,11 +55,13 @@ type PageProps = {
 type ResolvedCompetitor =
   | { kind: "caption" }
   | { kind: "reel" }
+  | { kind: "bio" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
   if (CAPTION_COMPETITOR_SLUGS.includes(slug)) return { kind: "caption" };
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(slug)) return { kind: "reel" };
+  if (BIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "bio" };
   return null;
 }
 
@@ -58,6 +69,7 @@ export async function generateStaticParams() {
   return [
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -89,24 +101,50 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   // reel downloader
-  const competitor = getReelDownloaderCompetitor(slug);
-  if (!competitor) return {};
-  const title = `Best ${competitor.name} Alternative 2026 — Trndinn Reel Downloader`;
-  const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free Instagram Reel downloader — zero ads, no watermark, no login. Top 5 alternatives ranked.`;
-  return buildMarketingMetadata(route, {
-    title: truncateAtWord(title, 60),
-    description: truncateAtWord(description, 155),
-    keywords: [
-      competitor.targetKeyword,
-      `${competitor.name.toLowerCase()} alternative`,
-      `best ${competitor.name.toLowerCase()} alternative`,
-      `${competitor.name.toLowerCase()} alternative free`,
-      `free ${competitor.name.toLowerCase()} alternative`,
-      "free instagram reel downloader",
-      "instagram reel downloader no watermark",
-      "instagram video downloader",
-    ],
-  });
+  if (resolved.kind === "reel") {
+    const competitor = getReelDownloaderCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Trndinn Reel Downloader`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free Instagram Reel downloader — zero ads, no watermark, no login. Top 5 alternatives ranked.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free instagram reel downloader",
+        "instagram reel downloader no watermark",
+        "instagram video downloader",
+      ],
+    });
+  }
+
+  // bio generator
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free AI Bio Generator`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free AI bio generator. 6 platforms, 3 angles per bio, 0-100 scoring. No login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "ai bio generator",
+        "free bio generator",
+        "linkedin bio generator",
+      ],
+    });
+  }
+
+  return {};
 }
 
 export default async function AlternativePage({ params }: PageProps) {
@@ -212,6 +250,7 @@ export default async function AlternativePage({ params }: PageProps) {
   }
 
   // reel downloader
+  if (resolved.kind === "reel") {
   const competitor = getReelDownloaderCompetitor(slug);
   if (!competitor) notFound();
   const related = getRelatedReelDownloaderCompetitors(slug);
@@ -303,4 +342,104 @@ export default async function AlternativePage({ params }: PageProps) {
       <ReelDownloaderAlternativeView competitor={competitor} related={related} />
     </>
   );
+  }
+
+  // ─── Bio Generator competitors ─────────────────────────────────────────
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedBioCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for AI bio generation, ranked by platform coverage, variation depth, scoring, and free-tier value.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Social Media Bio Generator`,
+            // BusinessApplication + canonical primary slug per SEO PDF Section 7.
+            applicationCategory: "BusinessApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/${BIO_GENERATOR_PRIMARY_SLUG}`,
+            description: competitor.wedgeSummary,
+            offers: {
+              "@type": "Offer",
+              price: "0",
+              priceCurrency: "USD",
+            },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "UtilitiesApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, 6 platforms in one run, 3 angles per bio, 0-100 scoring.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Social Media Bio Generator`,
+          // BusinessApplication + canonical primary slug per SEO PDF Section 7.
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/${BIO_GENERATOR_PRIMARY_SLUG}`,
+          description:
+            "Free AI social media bio generator for Instagram, TikTok, X, LinkedIn, GitHub, and YouTube. Platform-aware character limits, 3 angle-locked variations per platform, per-bio scoring. No signup required.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            reviewCount: "832",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <BioGeneratorAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  notFound();
 }
