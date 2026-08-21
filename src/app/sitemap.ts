@@ -4,8 +4,10 @@ import { fetchAllBlogPathsForSitemap } from "@/lib/serverBlog";
 import { getSiteUrl } from "@/lib/site";
 import { REEL_DOWNLOADER_ALIAS_SLUGS } from "@/lib/reel-downloader-aliases";
 import { AUTO_CAPTION_ALIAS_SLUGS } from "@/lib/auto-caption-aliases";
+import { BIO_GENERATOR_ALIAS_SLUGS } from "@/lib/bio-generator-aliases";
 import { CAPTION_COMPETITOR_SLUGS } from "@/lib/caption-competitors";
 import { REEL_DOWNLOADER_COMPETITOR_SLUGS } from "@/lib/reel-downloader-competitors";
+import { BIO_COMPETITOR_SLUGS } from "@/lib/bio-generator-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -53,6 +55,15 @@ const STATIC_ROUTES: StaticRoute[] = [
     lastModified: new Date("2026-08-01"),
   })),
 
+  // Bio Generator (49K/mo primary + 12 alias URLs)
+  { path: "/tools/bio-generator", changeFrequency: "weekly", priority: 0.95, lastModified: new Date("2026-08-21") },
+  ...BIO_GENERATOR_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-08-21"),
+  })),
+
   // Content pages - Medium-high priority
   { path: BLOG_BASE_PATH,   changeFrequency: "weekly",  priority: 0.8 },
   { path: "/contact",       changeFrequency: "monthly", priority: 0.7, lastModified: new Date("2026-04-01") },
@@ -97,6 +108,22 @@ const STATIC_ROUTES: StaticRoute[] = [
     changeFrequency: "monthly" as const,
     priority: 0.75,
     lastModified: new Date("2026-08-04"),
+  })),
+
+  // Bio Generator comparison pages
+  ...BIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-08-21"),
+  })),
+
+  // Bio Generator alternative pages
+  ...BIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-08-21"),
   })),
 
   // Pillar guide pages

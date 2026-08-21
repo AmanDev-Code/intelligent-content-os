@@ -14,10 +14,16 @@ import {
   getReelDownloaderCompetitor,
   getRelatedReelDownloaderCompetitors,
 } from "@/lib/reel-downloader-competitors";
+import {
+  BIO_COMPETITOR_SLUGS,
+  getBioCompetitor,
+  getRelatedBioCompetitors,
+} from "@/lib/bio-generator-competitors";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
 import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternativeView";
+import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
@@ -46,11 +52,13 @@ type PageProps = {
 type ResolvedCompetitor =
   | { kind: "caption" }
   | { kind: "reel" }
+  | { kind: "bio" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
   if (CAPTION_COMPETITOR_SLUGS.includes(slug)) return { kind: "caption" };
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(slug)) return { kind: "reel" };
+  if (BIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "bio" };
   return null;
 }
 
@@ -58,6 +66,7 @@ export async function generateStaticParams() {
   return [
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -89,24 +98,50 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   // reel downloader
-  const competitor = getReelDownloaderCompetitor(slug);
-  if (!competitor) return {};
-  const title = `Best ${competitor.name} Alternative 2026 — Trndinn Reel Downloader`;
-  const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free Instagram Reel downloader — zero ads, no watermark, no login. Top 5 alternatives ranked.`;
-  return buildMarketingMetadata(route, {
-    title: truncateAtWord(title, 60),
-    description: truncateAtWord(description, 155),
-    keywords: [
-      competitor.targetKeyword,
-      `${competitor.name.toLowerCase()} alternative`,
-      `best ${competitor.name.toLowerCase()} alternative`,
-      `${competitor.name.toLowerCase()} alternative free`,
-      `free ${competitor.name.toLowerCase()} alternative`,
-      "free instagram reel downloader",
-      "instagram reel downloader no watermark",
-      "instagram video downloader",
-    ],
-  });
+  if (resolved.kind === "reel") {
+    const competitor = getReelDownloaderCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Trndinn Reel Downloader`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free Instagram Reel downloader — zero ads, no watermark, no login. Top 5 alternatives ranked.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free instagram reel downloader",
+        "instagram reel downloader no watermark",
+        "instagram video downloader",
+      ],
+    });
+  }
+
+  // bio generator
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free AI Bio Generator`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free AI bio generator. 6 platforms, 3 angles per bio, 0-100 scoring. No login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "ai bio generator",
+        "free bio generator",
+        "linkedin bio generator",
+      ],
+    });
+  }
+
+  return {};
 }
 
 export default async function AlternativePage({ params }: PageProps) {
@@ -212,6 +247,7 @@ export default async function AlternativePage({ params }: PageProps) {
   }
 
   // reel downloader
+  if (resolved.kind === "reel") {
   const competitor = getReelDownloaderCompetitor(slug);
   if (!competitor) notFound();
   const related = getRelatedReelDownloaderCompetitors(slug);
@@ -303,4 +339,102 @@ export default async function AlternativePage({ params }: PageProps) {
       <ReelDownloaderAlternativeView competitor={competitor} related={related} />
     </>
   );
+  }
+
+  // ─── Bio Generator competitors ─────────────────────────────────────────
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedBioCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for AI bio generation, ranked by platform coverage, variation depth, scoring, and free-tier value.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Bio Generator`,
+            applicationCategory: "UtilitiesApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/bio-generator`,
+            description: competitor.wedgeSummary,
+            offers: {
+              "@type": "Offer",
+              price: "0",
+              priceCurrency: "USD",
+            },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "UtilitiesApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, 6 platforms in one run, 3 angles per bio, 0-100 scoring.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Bio Generator`,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/bio-generator`,
+          description:
+            "Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform with per-bio scoring. No login required.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            reviewCount: "832",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <BioGeneratorAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  notFound();
 }

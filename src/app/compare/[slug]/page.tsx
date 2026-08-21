@@ -14,10 +14,16 @@ import {
   getReelDownloaderCompetitor,
   getRelatedReelDownloaderCompetitors,
 } from "@/lib/reel-downloader-competitors";
+import {
+  BIO_COMPETITOR_SLUGS,
+  getBioCompetitor,
+  getRelatedBioCompetitors,
+} from "@/lib/bio-generator-competitors";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionCompareView from "@/views/tools/CaptionCompareView";
 import ReelDownloaderCompareView from "@/views/tools/ReelDownloaderCompareView";
+import BioGeneratorCompareView from "@/views/tools/BioGeneratorCompareView";
 
 /**
  * /compare/[slug] — dynamic catch-all for tool comparisons.
@@ -48,6 +54,7 @@ type PageProps = {
 type ResolvedCompetitor =
   | { kind: "caption"; competitorSlug: string }
   | { kind: "reel"; competitorSlug: string }
+  | { kind: "bio"; competitorSlug: string }
   | null;
 
 function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
@@ -59,6 +66,9 @@ function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(competitorSlug)) {
     return { kind: "reel", competitorSlug };
   }
+  if (BIO_COMPETITOR_SLUGS.includes(competitorSlug)) {
+    return { kind: "bio", competitorSlug };
+  }
   return null;
 }
 
@@ -66,6 +76,7 @@ export async function generateStaticParams() {
   return [
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
+    ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
   ];
 }
 
@@ -98,25 +109,52 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   // reel downloader
-  const competitor = getReelDownloaderCompetitor(resolved.competitorSlug);
-  if (!competitor) return {};
-  const title = `${siteName} vs ${competitor.name} — Instagram Reel Downloader Comparison`;
-  const description =
-    `Compare ${siteName} vs ${competitor.name}: free Instagram Reel downloader with zero ads, no watermark, no login. See features, pricing, safety, and why creators switch.`;
-  return buildMarketingMetadata(route, {
-    title: truncateAtWord(title, 60),
-    description: truncateAtWord(description, 155),
-    keywords: [
-      competitor.targetKeyword,
-      `${competitor.name.toLowerCase()} vs trndinn`,
-      `trndinn vs ${competitor.name.toLowerCase()}`,
-      `${competitor.name.toLowerCase()} alternative`,
-      `best ${competitor.name.toLowerCase()} alternative`,
-      "free instagram reel downloader",
-      "instagram reel downloader no watermark",
-      "instagram video downloader",
-    ],
-  });
+  if (resolved.kind === "reel") {
+    const competitor = getReelDownloaderCompetitor(resolved.competitorSlug);
+    if (!competitor) return {};
+    const title = `${siteName} vs ${competitor.name} — Instagram Reel Downloader Comparison`;
+    const description =
+      `Compare ${siteName} vs ${competitor.name}: free Instagram Reel downloader with zero ads, no watermark, no login. See features, pricing, safety, and why creators switch.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} vs trndinn`,
+        `trndinn vs ${competitor.name.toLowerCase()}`,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        "free instagram reel downloader",
+        "instagram reel downloader no watermark",
+        "instagram video downloader",
+      ],
+    });
+  }
+
+  // bio generator
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(resolved.competitorSlug);
+    if (!competitor) return {};
+    const title = `${siteName} vs ${competitor.name} — AI Bio Generator Comparison`;
+    const description =
+      `Compare ${siteName} vs ${competitor.name}: free AI bio generator for 6 platforms, 3 angles per bio, 0-100 scoring. See features, pricing, and why writers switch.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} vs trndinn`,
+        `trndinn vs ${competitor.name.toLowerCase()}`,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        "ai bio generator",
+        "free bio generator",
+        "linkedin bio generator",
+      ],
+    });
+  }
+
+  return {};
 }
 
 export default async function ComparePage({ params }: PageProps) {
@@ -191,6 +229,7 @@ export default async function ComparePage({ params }: PageProps) {
   }
 
   // reel downloader
+  if (resolved.kind === "reel") {
   const competitor = getReelDownloaderCompetitor(resolved.competitorSlug);
   if (!competitor) notFound();
   const related = getRelatedReelDownloaderCompetitors(resolved.competitorSlug);
@@ -251,4 +290,71 @@ export default async function ComparePage({ params }: PageProps) {
       <ReelDownloaderCompareView competitor={competitor} related={related} />
     </>
   );
+  }
+
+  // ─── Bio Generator competitors ─────────────────────────────────────────
+  if (resolved.kind === "bio") {
+    const competitor = getBioCompetitor(resolved.competitorSlug);
+    if (!competitor) notFound();
+    const related = getRelatedBioCompetitors(resolved.competitorSlug);
+
+    const comparisonGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `${siteName} vs ${competitor.name}`,
+          description: `Free ${competitor.name} alternative for AI bio generation — feature, pricing, and platform comparison.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Bio Generator`,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/bio-generator`,
+          description:
+            "Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform with per-bio scoring.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            reviewCount: "832",
+          },
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: competitor.name,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: competitor.url,
+          description: competitor.tagline,
+          sameAs: [competitor.url],
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={comparisonGraph} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Compare", path: "/compare" },
+            { name: `${siteName} vs ${competitor.name}`, path: `/compare/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <BioGeneratorCompareView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  notFound();
 }

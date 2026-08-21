@@ -10,6 +10,7 @@ import { getSiteUrl } from "@/lib/site";
 import { fetchPublishedBlogPosts } from "@/lib/serverBlog";
 import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderView";
 import AutoCaptionGeneratorView from "@/views/tools/AutoCaptionGeneratorView";
+import BioGeneratorView from "@/views/tools/BioGeneratorView";
 import {
   REEL_DOWNLOADER_PRIMARY_SLUG,
   REEL_DOWNLOADER_ALIAS_SLUGS,
@@ -22,6 +23,12 @@ import {
   getAutoCaptionAlias,
   isAutoCaptionSlug,
 } from "@/lib/auto-caption-aliases";
+import {
+  BIO_GENERATOR_PRIMARY_SLUG,
+  BIO_GENERATOR_ALIAS_SLUGS,
+  getBioGeneratorAlias,
+  isBioGeneratorSlug,
+} from "@/lib/bio-generator-aliases";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -144,6 +151,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // ─── Bio Generator Aliases ──────────────────────────────────────────────
+  const bioAlias = getBioGeneratorAlias(slug);
+  if (bioAlias) {
+    return buildMarketingMetadata(`/tools/${bioAlias.slug}`, {
+      title: bioAlias.seoTitle,
+      description: bioAlias.seoDescription,
+      keywords: bioAlias.keywords,
+    });
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
@@ -196,6 +213,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // ─── Primary: Bio Generator ──────────────────────────────────────────
+  if (slug === BIO_GENERATOR_PRIMARY_SLUG) {
+    return buildMarketingMetadata(`/tools/${BIO_GENERATOR_PRIMARY_SLUG}`, {
+      title: "Free AI Bio Generator — Write Bios for 6 Platforms in One Run",
+      description:
+        "Free bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. AI writes 3 platform-tuned variations per network. Score each draft 0-100. No login.",
+      keywords: [
+        "bio generator",
+        "bio generator free",
+        "ai bio generator",
+        "linkedin bio generator",
+        "instagram bio generator free",
+        "social media bio generator",
+        "bio maker online",
+        "professional bio generator",
+        "short bio generator",
+        "tiktok bio generator",
+        "twitter bio generator",
+      ],
+    });
+  }
+
   // ─── Generic fallback ─────────────────────────────────────────────────
   const generic = tool.description || "A free tool by Trndinn.";
   const description = `${generic} Free, no login, no signup. Part of Trndinn's free tools for creators and marketers.`;
@@ -218,6 +257,7 @@ export function generateStaticParams() {
     ...TOOLS.filter((t) => t.live).map((t) => ({ slug: t.slug })),
     ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({ slug })),
     ...AUTO_CAPTION_ALIAS_SLUGS.map((slug) => ({ slug })),
+    ...BIO_GENERATOR_ALIAS_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -359,6 +399,103 @@ export default async function ToolPage({ params }: PageProps) {
         <AutoCaptionGeneratorView
           faqs={AUTO_CAPTION_FAQS}
           blogPosts={blogPosts}
+          heroVariant={
+            alias
+              ? {
+                  h1Prefix: alias.h1Prefix,
+                  h1Highlight: alias.h1Highlight,
+                  h1Suffix: alias.h1Suffix,
+                  eyebrow: alias.eyebrow,
+                  subline: alias.heroSubline,
+                }
+              : undefined
+          }
+        />
+      </>
+    );
+  }
+
+  // ─── Bio Generator (primary + aliases) ─────────────────────────────────
+  if (isBioGeneratorSlug(slug)) {
+    const alias = getBioGeneratorAlias(slug);
+    const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "AI Bio Generator";
+
+    const BIO_GENERATOR_FAQS = [
+      {
+        question: "How does the AI bio generator work?",
+        answer:
+          "Enter your role (e.g. 'Senior product designer at a healthcare SaaS'), pick platforms and tone, then click Generate. AI writes 3 distinct bios per platform — each within the platform's character limit. Copy the one you like best.",
+      },
+      {
+        question: "Which platforms does the bio generator support?",
+        answer:
+          "LinkedIn (2,600 chars), Instagram (150 chars), X/Twitter (160 chars), TikTok (80 chars), GitHub (160 chars), YouTube (1,000 chars), and a general-purpose format (300 chars). You can generate for all of them in one run.",
+      },
+      {
+        question: "Is the bio generator really free?",
+        answer:
+          "Yes. Trndinn's Bio Generator is free forever with no signup and no watermark. The rate limit is 15 generations per hour per IP — plenty for personal use. No credit card required.",
+      },
+      {
+        question: "How is this different from ChatGPT for writing bios?",
+        answer:
+          "Trndinn encodes platform-specific mechanics — LinkedIn's 210-char desktop truncation, recruiter Boolean keywords, Instagram's 150-char emoji layout patterns, TikTok's 80-char tagline format. ChatGPT gives a generic bio; Trndinn gives one tuned to where it'll actually live.",
+      },
+      {
+        question: "What does the bio scoring feature do?",
+        answer:
+          "The scoring feature rates each bio 0-100 across 5 dimensions: hook (does the opening grab attention?), clarity (who are you + what do you do?), platform fit (uses the platform's conventions?), impact (specific outcomes vs. adjectives?), and originality (stands out vs. template?). It also gives 3 specific improvement tips.",
+      },
+      {
+        question: "Can I regenerate just one bio without re-running all of them?",
+        answer:
+          "Yes. Each bio card has a Regenerate button. Click it to get a fresh variation for that one card while keeping the others. You never need to re-run the entire generation.",
+      },
+      {
+        question: "What tones are available?",
+        answer:
+          "12 tones: Professional, Casual, Creative, Witty, Authoritative, Storytelling, Inspirational, Friendly, Sarcastic, Confident, Humble, and Humorous. Each one changes the AI's writing style and vocabulary.",
+      },
+      {
+        question: "Does it optimize for LinkedIn recruiter search?",
+        answer:
+          "Yes. LinkedIn bios are generated with recruiter Boolean keywords woven in — role titles, seniority indicators, industry keywords, skill terms, and quantified outcomes. The output highlights which keywords were detected.",
+      },
+    ];
+
+    return (
+      <>
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Tools", path: "/tools" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
+          ]}
+        />
+        <FAQPageSchema
+          faqs={BIO_GENERATOR_FAQS}
+          pageUrl={`${base}/tools/${slug}`}
+        />
+        <WebApplicationSchema
+          name={alias?.seoTitle.split(" — ")[0] ?? "Free AI Bio Generator"}
+          description="Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform, 0-100 scoring. No login required."
+          url={`/tools/${slug}`}
+          applicationCategory="UtilitiesApplication"
+          featureList={[
+            "AI bio generation for 6 platforms",
+            "3 variations per platform (credibility, outcome, story angles)",
+            "Live character counter tied to platform limits",
+            "Per-bio 0-100 scoring with 5 dimensions + tips",
+            "Recruiter keyword highlighting (LinkedIn)",
+            "Anti-buzzword linter",
+            "12 tone options",
+            "No login required",
+            "Free forever",
+          ]}
+        />
+        <BioGeneratorView
+          faqs={BIO_GENERATOR_FAQS}
+          defaultPlatform={alias?.platformHint}
           heroVariant={
             alias
               ? {

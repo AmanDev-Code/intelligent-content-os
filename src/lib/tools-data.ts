@@ -41,6 +41,15 @@ export const TOOLS: ToolEntry[] = [
     live: true,
   },
   {
+    slug: "bio-generator",
+    name: "AI Bio Generator",
+    description: "Write LinkedIn, Instagram, X, TikTok, GitHub, and YouTube bios in one run. 3 angles per platform, 0-100 scoring. Free, no login.",
+    category: "Bio Generator",
+    platform: "Multi-platform",
+    isAI: true,
+    live: true,
+  },
+  {
     slug: "linkedin-post-generator",
     name: "LinkedIn Post Generator",
     description: "Generate scroll-stopping LinkedIn posts with AI trained on viral patterns.",
