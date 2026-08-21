@@ -19,6 +19,7 @@ import {
   getBioCompetitor,
   getRelatedBioCompetitors,
 } from "@/lib/bio-generator-competitors";
+import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionCompareView from "@/views/tools/CaptionCompareView";
@@ -28,13 +29,15 @@ import BioGeneratorCompareView from "@/views/tools/BioGeneratorCompareView";
 /**
  * /compare/[slug] — dynamic catch-all for tool comparisons.
  *
- * Handles TWO product datasets:
- *   1. Caption tool competitors (CaptionCompareView) — Submagic, Captions.ai, etc.
- *   2. Reel downloader competitors (ReelDownloaderCompareView) — SnapInsta, SSSInstagram, etc.
+ * Handles THREE product datasets (matched in order via `resolveCompetitor`):
+ *   1. Auto Caption Generator competitors (CaptionCompareView) — Submagic, Captions.ai, Opus Clip, VEED, CapCut.
+ *   2. Instagram Reel Downloader competitors (ReelDownloaderCompareView) — SnapInsta, SSSInstagram, SaveFrom, and others.
+ *   3. Bio Generator competitors (BioGeneratorCompareView) — Ahrefs, Pallyy, Copy.ai, Hootsuite, Writesonic, QuillBot,
+ *      Predis, Simplified, Canva Magic Write, ChatGPT (per SEO PDF Section 5, sorted P1/P2/P3).
  *
- * Slugs are the `trndinn-vs-{competitor}` pattern. The competitor slug portion
- * is looked up in the caption dataset first, then the reel downloader dataset.
- * Slug namespaces do not overlap between the two datasets.
+ * Slugs use the `trndinn-vs-{competitor}` pattern; slug namespaces do not overlap
+ * between datasets. `generateStaticParams` spreads all three arrays so every page
+ * is pre-rendered at build time.
  */
 
 /** Truncate at a word boundary to avoid mid-word cuts in SERP titles. */
@@ -310,12 +313,14 @@ export default async function ComparePage({ params }: PageProps) {
         },
         {
           "@type": "SoftwareApplication",
-          name: `${siteName} Bio Generator`,
-          applicationCategory: "UtilitiesApplication",
+          name: `${siteName} Social Media Bio Generator`,
+          // Per SEO PDF Section 7 — applicationCategory: BusinessApplication
+          applicationCategory: "BusinessApplication",
           operatingSystem: "Web",
-          url: `${base}/tools/bio-generator`,
+          // Point at the canonical primary slug per PDF Section 7, not the old alias.
+          url: `${base}/tools/${BIO_GENERATOR_PRIMARY_SLUG}`,
           description:
-            "Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform with per-bio scoring.",
+            "Free AI social media bio generator for Instagram, TikTok, X, LinkedIn, GitHub, and YouTube. Platform-aware character limits, 3 variations per platform, per-bio scoring.",
           offers: {
             "@type": "Offer",
             price: "0",

@@ -86,79 +86,84 @@ export const FOCUS_AREAS: Array<{ id: string; label: string; Icon: IconType }> =
   { id: "contrarian",   label: "Contrarian",   Icon: Flame   },
 ];
 
+/**
+ * Audience option IDs used by the dropdown. Templates below reference these
+ * IDs so `loadTemplate` populates the Select cleanly (no orphaned values).
+ */
+export const AUDIENCE_OPTIONS: Array<{ id: string; label: string }> = [
+  { id: "general",    label: "General audience" },
+  { id: "recruiters", label: "Recruiters" },
+  { id: "clients",    label: "Potential clients" },
+  { id: "peers",      label: "Industry peers" },
+  { id: "followers",  label: "Followers / fans" },
+  { id: "investors",  label: "Investors" },
+];
+
 export const ROLE_TEMPLATES: Array<{ label: string; role: string; facts: string; goal: string; audience: string }> = [
   {
     label: "Senior engineer",
     role: "Senior software engineer at a Series B fintech",
     facts: "Python, TypeScript, distributed systems, 8 years, ex-Stripe",
     goal: "Get recruiter DMs from Series B+ startups",
-    audience: "Recruiters",
+    audience: "recruiters",
   },
   {
     label: "Product designer",
     role: "Senior product designer at a healthcare SaaS",
     facts: "Design systems, Figma, 200+ shipped features, ex-Notion",
     goal: "Find inbound freelance clients",
-    audience: "Potential clients",
+    audience: "clients",
   },
   {
     label: "Founder",
     role: "Co-founder of an AI content platform, ex-Airbnb PM",
     facts: "Raised $2M seed, 10K users, YC W25 batch",
     goal: "Meet other operators and prospective hires",
-    audience: "Industry peers",
+    audience: "peers",
   },
   {
     label: "Marketer",
     role: "Head of growth at a B2B SaaS with $8M ARR",
     facts: "SEO, paid, product-led growth, 40+ playbooks published",
     goal: "Speaking gigs and consulting inbound",
-    audience: "Industry peers",
+    audience: "peers",
   },
   {
     label: "Creator",
     role: "Newsletter writer covering AI tools for solopreneurs",
     facts: "12K subscribers, weekly Tuesday drop, ex-Substack",
     goal: "Grow inbound sponsor interest",
-    audience: "Followers / fans",
+    audience: "followers",
   },
   {
     label: "Job seeker",
     role: "Product manager laid off from a Series C SaaS, 6 years total",
     facts: "Shipped B2B analytics, marketplace, and payments products",
     goal: "Land a senior PM role at a Series A-B startup",
-    audience: "Recruiters",
+    audience: "recruiters",
   },
   {
     label: "Coach / consultant",
     role: "Executive coach for mid-career leaders in India and the Middle East",
     facts: "ICF PCC-certified, 500+ hours coached, published in HBR India",
     goal: "Attract inbound coaching clients from Series A-C startups",
-    audience: "Potential clients",
+    audience: "clients",
   },
   {
     label: "Educator / academic",
     role: "PhD researcher in climate policy at the University of São Paulo",
     facts: "3 peer-reviewed papers, Fulbright alum, keynote at COP28",
     goal: "Speaker invitations and research collaborations",
-    audience: "Industry peers",
+    audience: "peers",
   },
   {
     label: "Small business owner",
     role: "Owner of a Lagos-based fashion brand shipping across West Africa",
     facts: "50K Instagram followers, featured in Vogue Africa, 5 years in business",
     goal: "Grow wholesale partnerships and press coverage",
-    audience: "Potential clients",
+    audience: "clients",
   },
 ];
-
-export const AUDIENCE_OPTIONS = [
-  "General audience",
-  "Recruiters",
-  "Potential clients",
-  "Industry peers",
-  "Followers / fans",
-] as const;
 
 export function platformById(id: BioPlatform) {
   return PLATFORMS.find((p) => p.id === id) ?? PLATFORMS[0]!;

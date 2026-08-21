@@ -213,24 +213,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
-  // ─── Primary: Bio Generator ──────────────────────────────────────────
+  // ─── Primary: Social Media Bio Generator (per SEO expert PDF Section 7) ──
+  // Title: 56 chars (fits ≤60 with " | Trndinn" append)
+  // Description: 154 chars (fits ≤155)
+  // Primary keywords: social media bio generator / instagram bio generator
   if (slug === BIO_GENERATOR_PRIMARY_SLUG) {
     return buildMarketingMetadata(`/tools/${BIO_GENERATOR_PRIMARY_SLUG}`, {
-      title: "Free AI Bio Generator — Write Bios for 6 Platforms in One Run",
+      title: "Free AI Social Media Bio Generator — No Signup",
       description:
-        "Free bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. AI writes 3 platform-tuned variations per network. Score each draft 0-100. No login.",
+        "Generate on-brand bios in seconds for Instagram, TikTok, X & LinkedIn. Free AI bio generator with live character counts, tones & emojis. No signup.",
       keywords: [
-        "bio generator",
-        "bio generator free",
-        "ai bio generator",
-        "linkedin bio generator",
-        "instagram bio generator free",
         "social media bio generator",
-        "bio maker online",
-        "professional bio generator",
-        "short bio generator",
+        "instagram bio generator",
+        "ai bio generator",
+        "free bio generator",
         "tiktok bio generator",
+        "linkedin bio generator",
         "twitter bio generator",
+        "ai caption generator",
+        "instagram caption generator",
+        "social media caption generator",
+        "aesthetic bio generator",
       ],
     });
   }
@@ -420,46 +423,60 @@ export default async function ToolPage({ params }: PageProps) {
     const alias = getBioGeneratorAlias(slug);
     const breadcrumbName = alias?.seoTitle.split(" — ")[0] ?? "AI Bio Generator";
 
+    // ─── FAQs — AEO-optimized per PDF Section 8 ─────────────────────────
+    // Each answer is ≤40 words, direct, and snippet-ready for featured snippets,
+    // People-Also-Ask boxes, and voice answers. First sentence answers the
+    // question directly (LLMs extract these verbatim).
     const BIO_GENERATOR_FAQS = [
       {
-        question: "How does the AI bio generator work?",
+        question: "What is an AI bio generator?",
         answer:
-          "Enter your role (e.g. 'Senior product designer at a healthcare SaaS'), pick platforms and tone, then click Generate. AI writes 3 distinct bios per platform — each within the platform's character limit. Copy the one you like best.",
+          "An AI bio generator uses a language model to turn a few details — your niche, tone, and a call to action — into ready-to-use profile bios that fit each platform's character limit.",
+      },
+      {
+        question: "How do I write a good Instagram bio?",
+        answer:
+          "1) Say who you are and who you help. 2) Add one proof point or personality line. 3) Include a clear call to action. 4) Keep it under 150 characters. Trndinn's bio generator does all four in one click.",
+      },
+      {
+        question: "Is Trndinn's bio generator free?",
+        answer:
+          "Yes. Trndinn's AI bio generator is free with no signup, and it produces on-brand variations that already fit each platform's character limit.",
+      },
+      {
+        question: "What is the best free AI bio generator in 2026?",
+        answer:
+          "The best free AI bio generators in 2026 include Trndinn, Ahrefs, Pallyy, and Copy.ai — ranked on tone control, platform character limits, output quality, and whether they require signup. Trndinn leads on platform-aware limits and no signup.",
+      },
+      {
+        question: "How many characters can an Instagram bio be?",
+        answer:
+          "An Instagram bio can be up to 150 characters. TikTok allows 80, X (Twitter) allows 160, and LinkedIn's headline allows 220 — Trndinn's generator auto-fits your bio to each limit.",
+      },
+      {
+        question: "Can AI write captions for Instagram and TikTok?",
+        answer:
+          "Yes. AI caption generators create platform-appropriate captions from a topic, photo description, or tone. Trndinn generates multiple caption options with hashtags and emojis tuned to each platform.",
+      },
+      {
+        question: "Do I need to sign up to use a bio generator?",
+        answer:
+          "Not with Trndinn. Many bio tools gate output behind an email signup, but Trndinn generates and lets you copy bios instantly with no account required.",
+      },
+      {
+        question: "What tone should my bio be?",
+        answer:
+          "Match your tone to your audience: professional for LinkedIn, witty or aesthetic for Instagram, punchy for TikTok. Trndinn lets you pick a tone and instantly re-generate the bio in that voice.",
       },
       {
         question: "Which platforms does the bio generator support?",
         answer:
-          "LinkedIn (2,600 chars), Instagram (150 chars), X/Twitter (160 chars), TikTok (80 chars), GitHub (160 chars), YouTube (1,000 chars), and a general-purpose format (300 chars). You can generate for all of them in one run.",
+          "LinkedIn (2,600 chars), Instagram (150), X/Twitter (160), TikTok (80), GitHub (160), YouTube (1,000), and a general-purpose format (300). Generate for all of them in a single run.",
       },
       {
-        question: "Is the bio generator really free?",
+        question: "How does Trndinn's bio scoring work?",
         answer:
-          "Yes. Trndinn's Bio Generator is free forever with no signup and no watermark. The rate limit is 15 generations per hour per IP — plenty for personal use. No credit card required.",
-      },
-      {
-        question: "How is this different from ChatGPT for writing bios?",
-        answer:
-          "Trndinn encodes platform-specific mechanics — LinkedIn's 210-char desktop truncation, recruiter Boolean keywords, Instagram's 150-char emoji layout patterns, TikTok's 80-char tagline format. ChatGPT gives a generic bio; Trndinn gives one tuned to where it'll actually live.",
-      },
-      {
-        question: "What does the bio scoring feature do?",
-        answer:
-          "The scoring feature rates each bio 0-100 across 5 dimensions: hook (does the opening grab attention?), clarity (who are you + what do you do?), platform fit (uses the platform's conventions?), impact (specific outcomes vs. adjectives?), and originality (stands out vs. template?). It also gives 3 specific improvement tips.",
-      },
-      {
-        question: "Can I regenerate just one bio without re-running all of them?",
-        answer:
-          "Yes. Each bio card has a Regenerate button. Click it to get a fresh variation for that one card while keeping the others. You never need to re-run the entire generation.",
-      },
-      {
-        question: "What tones are available?",
-        answer:
-          "12 tones: Professional, Casual, Creative, Witty, Authoritative, Storytelling, Inspirational, Friendly, Sarcastic, Confident, Humble, and Humorous. Each one changes the AI's writing style and vocabulary.",
-      },
-      {
-        question: "Does it optimize for LinkedIn recruiter search?",
-        answer:
-          "Yes. LinkedIn bios are generated with recruiter Boolean keywords woven in — role titles, seniority indicators, industry keywords, skill terms, and quantified outcomes. The output highlights which keywords were detected.",
+          "Each bio is scored 0-100 across five dimensions: hook, clarity, platform fit, impact, and originality. The tool also returns three specific rewrite suggestions so you can improve the draft on the spot.",
       },
     ];
 
@@ -477,20 +494,40 @@ export default async function ToolPage({ params }: PageProps) {
           pageUrl={`${base}/tools/${slug}`}
         />
         <WebApplicationSchema
-          name={alias?.seoTitle.split(" — ")[0] ?? "Free AI Bio Generator"}
-          description="Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform, 0-100 scoring. No login required."
+          name={alias?.seoTitle.split(" — ")[0] ?? "Free AI Social Media Bio Generator"}
+          description="Free AI bio generator for Instagram, TikTok, X, LinkedIn, GitHub, and YouTube. Platform-aware character limits, tones, emojis. No signup."
           url={`/tools/${slug}`}
-          applicationCategory="UtilitiesApplication"
+          applicationCategory="BusinessApplication"
           featureList={[
-            "AI bio generation for 6 platforms",
-            "3 variations per platform (credibility, outcome, story angles)",
-            "Live character counter tied to platform limits",
-            "Per-bio 0-100 scoring with 5 dimensions + tips",
-            "Recruiter keyword highlighting (LinkedIn)",
-            "Anti-buzzword linter",
-            "12 tone options",
-            "No login required",
-            "Free forever",
+            "AI bio generation for Instagram, TikTok, X, LinkedIn, GitHub, YouTube",
+            "3 variations per platform (credibility, outcome, positioning)",
+            "Live character counter for every platform limit",
+            "12 tone options — professional, witty, aesthetic, and more",
+            "Emoji layouts tuned per platform",
+            "Anti-buzzword linter (removes 'passionate about', 'results-driven')",
+            "Per-bio 0-100 scoring across 5 dimensions",
+            "LinkedIn recruiter-keyword highlighting",
+            "No signup, no watermark, no daily limit",
+          ]}
+        />
+        <HowToSchema
+          name="How to write a social media bio with AI"
+          description="Generate on-brand bios for Instagram, TikTok, X, LinkedIn, GitHub, and YouTube in three steps using Trndinn's free AI bio generator. No signup, no watermark."
+          pageUrl={`${base}/tools/${slug}`}
+          totalTime="PT30S"
+          steps={[
+            {
+              name: "Describe yourself",
+              text: "Type your role, one win, and who reads your bio. Add optional facts, goals, and audience for a sharper result.",
+            },
+            {
+              name: "Pick platforms and tone",
+              text: "Select the platforms you need — Instagram, TikTok, X, LinkedIn, GitHub, or YouTube — and choose a tone (professional, witty, aesthetic, etc.).",
+            },
+            {
+              name: "Copy your bio",
+              text: "AI generates three variations per platform, each already inside the platform's character limit. Copy the one you love and paste it into your profile.",
+            },
           ]}
         />
         <BioGeneratorView

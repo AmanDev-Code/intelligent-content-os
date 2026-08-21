@@ -1,35 +1,29 @@
 /**
  * SEO alias slugs for the Bio Generator tool.
  *
- * Same pattern as auto-caption-aliases.ts + reel-downloader-aliases.ts:
- * - Each alias is its own URL with unique H1/meta targeting a distinct search intent.
- * - Each self-canonicalizes (no cross-canonical to primary) so Google indexes them
- *   as independent pages for their target keyword clusters — the fix for the
- *   indexing issue we hit on earlier tools.
- * - Covers LinkedIn, Instagram, X/Twitter, TikTok, YouTube, and generic "bio"
- *   keyword clusters. Total addressable monthly search volume ≈ 49,000+.
+ * SOURCE OF TRUTH: Trndinn_AI_Bio_Caption_Generator_SEO_Analysis.pdf (3 Aug 2026)
+ * Prepared by SEO expert — keyword volumes from Semrush/Ahrefs-class data.
  *
- * Volume estimates (Ahrefs/Semrush-class, US) from the PRD in Notion:
- *   bio generator                   9,900
- *   linkedin bio generator          5,400
- *   instagram bio generator free    6,600
- *   ai bio generator                4,400
- *   professional bio writer         2,900
- *   linkedin summary generator      3,200
- *   bio generator for instagram     4,100
- *   tiktok bio generator            2,400
- *   twitter bio generator           2,100
- *   bio maker online                1,800
- *   linkedin about section generator 1,900
- *   social media bio generator      2,200
- *   short bio generator             1,600
+ * Architecture:
+ * - PRIMARY slug is `social-media-bio-generator` (Section 7 of the PDF) — resolves
+ *   through the tool page route with its own dedicated metadata, not through this array.
+ * - 14 ALIAS entries below, each its own URL with unique H1/meta targeting a distinct
+ *   keyword cluster. The commented "#4" slot in the numbered list belongs to the primary
+ *   slug itself (`social-media-bio-generator`, 18,100/mo) and lives in the route — that's
+ *   why the numbered comments go 1, 2, 3, (#4 = primary), 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15.
+ * - Each alias self-canonicalizes (no cross-canonical to primary) so Google indexes
+ *   them independently for their target keywords.
+ * - Covers all transactional keywords from the PDF Section 3 + Section 4.
+ *
+ * URL count in sitemap: 1 primary + 14 aliases = 15 tool page URLs.
+ * Total addressable monthly search volume across all 15: ~235,000+
+ *
+ * IMPORTANT: seoTitle must be ≤50 chars because the template appends " | Trndinn"
+ * (10 chars) making the full title ≤60 chars for SERP display.
  */
 
-export const BIO_GENERATOR_PRIMARY_SLUG = 'bio-generator';
+export const BIO_GENERATOR_PRIMARY_SLUG = 'social-media-bio-generator';
 
-/** Optional per-alias platform preselection so /tools/linkedin-bio-generator
- *  boots with LinkedIn pre-checked. Kept as a suggestion — the view still
- *  lets users flip other platforms on. */
 export type BioAliasPlatformHint =
   | 'linkedin'
   | 'instagram'
@@ -49,24 +43,198 @@ export interface BioGeneratorAlias {
   h1Suffix: string;
   eyebrow: string;
   heroSubline: string;
-  /** Preselected platform when landing on this alias. Falls back to "general". */
   platformHint: BioAliasPlatformHint;
 }
 
 const ALIASES: BioGeneratorAlias[] = [
+  // ─── #1 HEAD MONEY TERM — 40,500/mo ───────────────────────────────────────
+  {
+    slug: 'instagram-bio-generator',
+    seoTitle: 'Instagram Bio Generator — Free AI, No Signup',
+    seoDescription:
+      'Free Instagram bio generator. AI writes 3 bios tuned to the 150-char limit with emoji bullets and a CTA line. No signup. Copy-paste in seconds.',
+    keywords: [
+      'instagram bio generator',
+      'instagram bio generator free',
+      'free instagram bio generator',
+      'ig bio generator',
+      'insta bio generator',
+      'instagram bio maker',
+      'ai instagram bio generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'Instagram bio generator',
+    h1Suffix: 'with 150-char precision.',
+    eyebrow: 'AI-powered • Free forever • No signup • 150-char optimized',
+    heroSubline:
+      'Type your niche, pick a tone, hit generate. AI writes 3 Instagram bios that fit the 150-char limit with emoji bullets and a clear CTA. Copy and paste.',
+    platformHint: 'instagram',
+  },
+
+  // ─── #2 — 33,100/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'ai-caption-generator',
+    seoTitle: 'AI Caption Generator — Free for All Platforms',
+    seoDescription:
+      'Free AI caption generator for Instagram, LinkedIn, TikTok & X. Platform-aware character limits, tone control, and emojis. No signup required.',
+    keywords: [
+      'ai caption generator',
+      'ai caption generator free',
+      'caption generator ai',
+      'ai social media caption generator',
+      'free ai caption generator',
+      'instagram caption generator ai',
+      'ai post caption generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'AI caption generator',
+    h1Suffix: 'for every platform.',
+    eyebrow: 'AI-powered • Free forever • No signup • Multi-platform',
+    heroSubline:
+      'Generate platform-ready captions for Instagram, LinkedIn, TikTok, and X in one run. AI respects each platform\'s character limits and native style.',
+    platformHint: 'general',
+  },
+
+  // ─── #3 — 27,100/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'instagram-caption-generator',
+    seoTitle: 'Instagram Caption Generator — Free AI Writer',
+    seoDescription:
+      'Free Instagram caption generator. AI writes engaging captions with hashtags, emojis, and CTAs tuned to IG\'s algorithm. No signup. Instant results.',
+    keywords: [
+      'instagram caption generator',
+      'instagram caption generator free',
+      'free instagram caption generator',
+      'ig caption generator',
+      'caption generator for instagram',
+      'ai instagram caption generator',
+      'insta caption maker',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'Instagram caption generator',
+    h1Suffix: 'with hashtags & CTAs.',
+    eyebrow: 'AI-powered • Free forever • No signup • Hashtag-ready',
+    heroSubline:
+      'Describe your post or photo. AI writes 3 captions with relevant hashtags, emojis, and a call-to-action designed for Instagram engagement.',
+    platformHint: 'instagram',
+  },
+
+  // ─── #4 — 18,100/mo (this is also the PRIMARY but as its own alias entry
+  //     for the map — the primary slug renders from the same data) ─────────────
+  // NOTE: The primary page `/tools/social-media-bio-generator` uses its own
+  // metadata in the page.tsx route. This alias covers the hub keyword when
+  // someone types it slightly differently.
+
+  // ─── #5 — 14,800/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'ai-bio-generator',
+    seoTitle: 'AI Bio Generator — Free for 6 Platforms',
+    seoDescription:
+      'AI bio generator that writes for LinkedIn, Instagram, X, TikTok, GitHub & YouTube. 3 variations per platform. Free, no signup, no watermark.',
+    keywords: [
+      'ai bio generator',
+      'ai bio writer',
+      'ai bio maker',
+      'ai profile bio generator',
+      'ai bio generator free',
+      'chatgpt bio generator',
+      'artificial intelligence bio generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'AI bio generator',
+    h1Suffix: 'for every platform.',
+    eyebrow: 'AI-powered • Free forever • No signup • 6 platforms in one run',
+    heroSubline:
+      'One input, six platforms. AI writes 3 bio variations each for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. Copy the ones that sound like you.',
+    platformHint: 'general',
+  },
+
+  // ─── #6 — 12,100/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'social-media-bio-generator-free',
+    seoTitle: 'Free Social Media Bio Generator — No Signup',
+    seoDescription:
+      'Free social media bio generator. No signup, no credit limits. AI writes platform-aware bios for Instagram, LinkedIn, X, TikTok & more. Instant results.',
+    keywords: [
+      'free bio generator',
+      'free social media bio generator',
+      'bio generator free',
+      'free bio maker',
+      'social media bio generator free',
+      'free ai bio generator',
+      'bio generator no signup',
+    ],
+    h1Prefix: '100% free',
+    h1Highlight: 'social media bio generator',
+    h1Suffix: '— no signup, no limits.',
+    eyebrow: 'Free forever • No signup • No credit limits • Unlimited generations',
+    heroSubline:
+      'No email, no paywall, no daily cap. AI writes 3 platform-specific bios per run with tone control, emoji options, and live character counts.',
+    platformHint: 'general',
+  },
+
+  // ─── #7 — 9,900/mo ─────────────────────────────────────────────────────────
+  {
+    slug: 'tiktok-bio-generator',
+    seoTitle: 'TikTok Bio Generator — Free 80-Char AI',
+    seoDescription:
+      'Free TikTok bio generator. AI writes 3 punchy 80-char taglines that answer "why follow?" in one glance. No signup. Instant copy-paste.',
+    keywords: [
+      'tiktok bio generator',
+      'tiktok bio ideas generator',
+      'tiktok bio maker',
+      'tiktok bio writer',
+      'tiktok bio ai',
+      'tik tok bio generator',
+      'tiktok bio for creators',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'TikTok bio generator',
+    h1Suffix: 'built for 80 chars.',
+    eyebrow: 'AI-powered • Free forever • No signup • 80-char tagline optimized',
+    heroSubline:
+      'AI writes 3 TikTok taglines that answer "why should I follow?" in a single glance — every one built for the tight 80-char limit.',
+    platformHint: 'tiktok',
+  },
+
+  // ─── #8 — 9,900/mo (old primary, now an alias) ─────────────────────────────
+  {
+    slug: 'bio-generator',
+    seoTitle: 'Bio Generator — Free AI for Any Platform',
+    seoDescription:
+      'Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub & YouTube. 3 variations per platform with tone and emoji control. No signup.',
+    keywords: [
+      'bio generator',
+      'bio generator free',
+      'bio maker',
+      'bio writer',
+      'bio creator',
+      'profile bio generator',
+      'online bio generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'bio generator',
+    h1Suffix: 'for any social platform.',
+    eyebrow: 'AI-powered • Free forever • No signup • 6 platforms',
+    heroSubline:
+      'Enter your details, pick your platforms, and get 3 on-brand bio variations per network — all tuned to each platform\'s character limits.',
+    platformHint: 'general',
+  },
+
+  // ─── #9 — 8,100/mo ─────────────────────────────────────────────────────────
   {
     slug: 'linkedin-bio-generator',
-    seoTitle: 'LinkedIn Bio Generator — Free AI Headlines & About',
+    seoTitle: 'LinkedIn Bio Generator — Free AI Writer',
     seoDescription:
-      'Free LinkedIn bio generator. AI writes recruiter-optimized About sections and headlines with your role, skills, and outcomes. No login. 3 variations per run.',
+      'Free LinkedIn bio generator. AI writes recruiter-optimized About sections and headlines with your role, skills & outcomes. No login. 3 variations.',
     keywords: [
       'linkedin bio generator',
       'linkedin bio generator free',
       'linkedin bio writer',
-      'linkedin bio maker',
+      'linkedin about generator',
+      'linkedin summary generator',
+      'linkedin about section generator',
       'ai linkedin bio generator',
-      'linkedin bio ai',
-      'free linkedin bio generator',
     ],
     h1Prefix: 'Free',
     h1Highlight: 'LinkedIn bio generator',
@@ -76,144 +244,13 @@ const ALIASES: BioGeneratorAlias[] = [
       'Enter your role and one outcome. AI writes 3 LinkedIn About drafts front-loaded for the 210-char desktop cut, with recruiter keywords woven in.',
     platformHint: 'linkedin',
   },
-  {
-    slug: 'instagram-bio-generator-free',
-    seoTitle: 'Instagram Bio Generator Free — AI 150-Char Bios',
-    seoDescription:
-      'Free Instagram bio generator. AI writes 3 bio variations tuned to the 150-char limit with emoji bullets and a call-to-action. No login required. Try instantly.',
-    keywords: [
-      'instagram bio generator free',
-      'free instagram bio generator',
-      'instagram bio maker',
-      'instagram bio writer',
-      'insta bio generator',
-      'ig bio generator',
-      'ai instagram bio generator',
-    ],
-    h1Prefix: 'Free',
-    h1Highlight: 'Instagram bio generator',
-    h1Suffix: 'made for 150 chars.',
-    eyebrow: 'AI-powered • Free forever • No login • Emoji-ready',
-    heroSubline:
-      'Type your niche and drop in one line about you. AI writes 3 punchy Instagram bios that fit the 150-char limit with a clear CTA. Copy and paste.',
-    platformHint: 'instagram',
-  },
-  {
-    slug: 'ai-bio-generator',
-    seoTitle: 'AI Bio Generator — Free Writer for 6 Platforms',
-    seoDescription:
-      'AI bio generator that writes for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube in one run. 3 variations per platform. Free, no login, no watermark.',
-    keywords: [
-      'ai bio generator',
-      'ai bio writer',
-      'ai bio maker',
-      'artificial intelligence bio generator',
-      'ai profile bio generator',
-      'ai bio creator',
-      'chatgpt bio generator',
-    ],
-    h1Prefix: 'Free',
-    h1Highlight: 'AI bio generator',
-    h1Suffix: 'for every platform.',
-    eyebrow: 'AI-powered • Free forever • No login • 6 platforms in one run',
-    heroSubline:
-      'One input, six platforms. AI writes 3 bio variations each for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. Copy the ones you love.',
-    platformHint: 'general',
-  },
-  {
-    slug: 'professional-bio-generator',
-    seoTitle: 'Professional Bio Generator — Free AI Writer',
-    seoDescription:
-      'Write professional bios in seconds. AI generator crafts speaker, author, and executive bios in first- or third-person. Multiple lengths. Free, no login.',
-    keywords: [
-      'professional bio generator',
-      'professional bio writer',
-      'speaker bio generator',
-      'author bio generator',
-      'executive bio generator',
-      'third person bio generator',
-      'about me generator',
-    ],
-    h1Prefix: 'Write a',
-    h1Highlight: 'professional bio',
-    h1Suffix: 'in 30 seconds.',
-    eyebrow: 'AI-powered • Free forever • Speaker · Author · Executive-ready',
-    heroSubline:
-      'AI writes 3 professional bios calibrated for speaker decks, book jackets, and company pages. First- or third-person. Short, medium, or long.',
-    platformHint: 'general',
-  },
-  {
-    slug: 'linkedin-summary-generator',
-    seoTitle: 'LinkedIn Summary Generator — Free AI About',
-    seoDescription:
-      'Free LinkedIn summary generator. AI writes About sections with a story-arc structure, recruiter keywords, and a clear CTA. 3 drafts per run, no login.',
-    keywords: [
-      'linkedin summary generator',
-      'linkedin about generator',
-      'linkedin about section generator',
-      'linkedin summary writer',
-      'linkedin summary ai',
-      'about section linkedin generator',
-      'linkedin bio summary generator',
-    ],
-    h1Prefix: 'Free',
-    h1Highlight: 'LinkedIn summary generator',
-    h1Suffix: 'for the About section.',
-    eyebrow: 'AI-powered • Free forever • Story-arc structured • Recruiter-tuned',
-    heroSubline:
-      'AI writes 3 LinkedIn About drafts with a hook → what-you-do → wins → CTA arc. Every draft front-loads the 210-char desktop cut.',
-    platformHint: 'linkedin',
-  },
-  {
-    slug: 'bio-generator-for-instagram',
-    seoTitle: 'Bio Generator for Instagram — Free AI Emoji Bios',
-    seoDescription:
-      'Bio generator for Instagram: AI writes 3 bios tuned to the 150-char limit with emoji bullets, line breaks, and a native call-to-action. Free, instant, no login.',
-    keywords: [
-      'bio generator for instagram',
-      'instagram profile bio generator',
-      'instagram bio ideas generator',
-      'insta bio ideas',
-      'instagram bio maker free',
-      'ig bio ideas',
-      'instagram bio for boys',
-      'instagram bio for girls',
-    ],
-    h1Prefix: 'Bio generator',
-    h1Highlight: 'for Instagram',
-    h1Suffix: 'with emoji layouts.',
-    eyebrow: 'AI-powered • Free forever • 150-char optimized • Emoji-ready',
-    heroSubline:
-      'Type your niche. AI writes 3 Instagram bios with emoji bullets, tight line breaks, and a CTA to your link — all inside 150 chars.',
-    platformHint: 'instagram',
-  },
-  {
-    slug: 'tiktok-bio-generator',
-    seoTitle: 'TikTok Bio Generator — Free 80-Char AI Writer',
-    seoDescription:
-      'Free TikTok bio generator. AI writes 3 punchy 80-char taglines optimized for the "why follow" answer. No login required. Instant results.',
-    keywords: [
-      'tiktok bio generator',
-      'tiktok bio ideas generator',
-      'tiktok bio ai',
-      'tiktok bio writer',
-      'tiktok bio maker',
-      'tiktok bio for creators',
-      'tik tok bio generator',
-    ],
-    h1Prefix: 'Free',
-    h1Highlight: 'TikTok bio generator',
-    h1Suffix: 'built for 80 chars.',
-    eyebrow: 'AI-powered • Free forever • One-line tagline optimized',
-    heroSubline:
-      'AI writes 3 TikTok taglines that answer "why follow?" in a single glance — every one built for the 80-char limit.',
-    platformHint: 'tiktok',
-  },
+
+  // ─── #10 — 6,600/mo ────────────────────────────────────────────────────────
   {
     slug: 'twitter-bio-generator',
-    seoTitle: 'Twitter (X) Bio Generator — Free 160-Char AI',
+    seoTitle: 'Twitter Bio Generator — Free 160-Char AI',
     seoDescription:
-      'Free Twitter/X bio generator. AI writes 3 bios inside the 160-char limit with role, focus, and personality dialed in. No login. Copy and paste.',
+      'Free Twitter/X bio generator. AI writes 3 bios inside the 160-char limit with role, focus & personality. No login. Copy and paste instantly.',
     keywords: [
       'twitter bio generator',
       'x bio generator',
@@ -226,98 +263,128 @@ const ALIASES: BioGeneratorAlias[] = [
     h1Prefix: 'Free',
     h1Highlight: 'Twitter (X) bio generator',
     h1Suffix: 'for the 160-char limit.',
-    eyebrow: 'AI-powered • Free forever • 160-char optimized',
+    eyebrow: 'AI-powered • Free forever • No login • 160-char optimized',
     heroSubline:
-      'AI writes 3 X bios in the 160-char budget with the [role at company] · [focus] · [personality] structure that reads best on X.',
+      'AI writes 3 X bios in the 160-char budget with the [role] · [focus] · [personality] structure that reads best on Twitter/X.',
     platformHint: 'twitter',
   },
+
+  // ─── #11 — 6,600/mo ────────────────────────────────────────────────────────
   {
-    slug: 'bio-maker-online',
-    seoTitle: 'Bio Maker Online — Free AI for Any Platform',
+    slug: 'social-media-caption-generator',
+    seoTitle: 'Social Media Caption Generator — Free AI',
     seoDescription:
-      'Bio maker online: free AI creates 3 bio variations for any platform with tone, length, and emoji controls. LinkedIn, Instagram, X, TikTok in one run.',
+      'Free social media caption generator for Instagram, LinkedIn, TikTok & X. AI writes platform-tuned captions with hashtags and emojis. No signup.',
     keywords: [
-      'bio maker online',
-      'bio maker free',
-      'online bio maker',
-      'bio creator online',
-      'bio maker ai',
-      'best bio maker online',
-      'free bio maker no login',
+      'social media caption generator',
+      'social media caption generator free',
+      'caption generator for social media',
+      'free caption generator',
+      'ai caption generator social media',
+      'social post caption generator',
     ],
     h1Prefix: 'Free',
-    h1Highlight: 'bio maker online',
-    h1Suffix: 'for any social platform.',
-    eyebrow: 'AI-powered • Free forever • Any platform • No login',
+    h1Highlight: 'social media caption generator',
+    h1Suffix: 'for every network.',
+    eyebrow: 'AI-powered • Free forever • No signup • Multi-platform captions',
     heroSubline:
-      'Pick your platforms, dial the tone, hit generate. AI writes 3 bio variations per platform tuned to each network\'s limits and native format.',
+      'One topic, every platform. AI generates captions tuned to Instagram, LinkedIn, TikTok, and X with proper hashtags, emojis, and tone.',
     platformHint: 'general',
   },
+
+  // ─── #12 — 5,400/mo ────────────────────────────────────────────────────────
   {
-    slug: 'linkedin-about-section-generator',
-    seoTitle: 'LinkedIn About Section Generator — Free AI',
+    slug: 'aesthetic-bio-generator',
+    seoTitle: 'Aesthetic Bio Generator — Free AI Fonts & Emojis',
     seoDescription:
-      'AI About section generator for LinkedIn. Writes 3 story-arc drafts inside the 2,600-char cap with recruiter keywords and a clear CTA. Free, no login.',
+      'Free aesthetic bio generator for Instagram & TikTok. AI writes bios with aesthetic fonts, symbols & emojis that match Gen-Z visual style. No signup.',
     keywords: [
-      'linkedin about section generator',
-      'linkedin about generator',
-      'linkedin about writer',
-      'linkedin about section examples',
-      'about section ai generator',
-      'linkedin about section ai',
-      'linkedin about me generator',
+      'aesthetic bio generator',
+      'aesthetic instagram bio generator',
+      'aesthetic bio maker',
+      'aesthetic bio ideas generator',
+      'cute bio generator',
+      'aesthetic bio for instagram',
+      'gen z bio generator',
     ],
-    h1Prefix: 'AI',
-    h1Highlight: 'LinkedIn About section generator',
-    h1Suffix: 'tuned for 2,600 chars.',
-    eyebrow: 'AI-powered • Free forever • Story-arc structure',
+    h1Prefix: 'Free',
+    h1Highlight: 'aesthetic bio generator',
+    h1Suffix: 'with fonts & emojis.',
+    eyebrow: 'AI-powered • Free forever • No signup • Aesthetic fonts & symbols',
     heroSubline:
-      'AI writes 3 LinkedIn About drafts with a hook → context → proof → CTA arc, all inside the 2,600-char cap and front-loaded for desktop truncation.',
+      'AI writes 3 aesthetic bios with emoji layouts, symbols, and line breaks tuned for the Instagram and TikTok visual style.',
+    platformHint: 'instagram',
+  },
+
+  // ─── #13 — 4,400/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'youtube-description-generator',
+    seoTitle: 'YouTube Description Generator — Free AI',
+    seoDescription:
+      'Free YouTube description generator. AI writes channel and video descriptions optimized for search with timestamps, links & CTAs. No signup.',
+    keywords: [
+      'youtube description generator',
+      'youtube description generator free',
+      'youtube channel description generator',
+      'youtube video description generator',
+      'ai youtube description writer',
+      'youtube about generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'YouTube description generator',
+    h1Suffix: 'optimized for search.',
+    eyebrow: 'AI-powered • Free forever • No signup • SEO-tuned descriptions',
+    heroSubline:
+      'AI writes channel descriptions (first 100 chars visible) and video descriptions with content pillars, timestamps, and a subscribe CTA.',
+    platformHint: 'youtube',
+  },
+
+  // ─── #14 — 4,400/mo ────────────────────────────────────────────────────────
+  {
+    slug: 'linkedin-headline-generator',
+    seoTitle: 'LinkedIn Headline Generator — Free AI Writer',
+    seoDescription:
+      'Free LinkedIn headline generator. AI writes 3 recruiter-optimized headlines with your role, value prop & keywords. No signup. Instant results.',
+    keywords: [
+      'linkedin headline generator',
+      'linkedin headline generator free',
+      'linkedin headline writer',
+      'linkedin headline ai',
+      'professional headline generator',
+      'linkedin title generator',
+      'ai linkedin headline generator',
+    ],
+    h1Prefix: 'Free',
+    h1Highlight: 'LinkedIn headline generator',
+    h1Suffix: 'that signals your value.',
+    eyebrow: 'AI-powered • Free forever • No signup • Recruiter-keyword loaded',
+    heroSubline:
+      'AI writes 3 LinkedIn headlines (220-char max) packed with role keywords, outcome signals, and a personality hook. Front-loaded for recruiter search.',
     platformHint: 'linkedin',
   },
+
+  // ─── #15 — 3,600/mo ────────────────────────────────────────────────────────
   {
-    slug: 'social-media-bio-generator',
-    seoTitle: 'Social Media Bio Generator — Free AI Writer',
+    slug: 'professional-bio-generator',
+    seoTitle: 'Professional Bio Generator — Free AI Writer',
     seoDescription:
-      'Free social media bio generator. AI writes bios for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube in one run — every bio inside its platform limit.',
+      'Free professional bio generator. AI writes speaker, author & executive bios in first or third person. Multiple lengths. No signup required.',
     keywords: [
-      'social media bio generator',
-      'social media bio writer',
-      'social bio generator',
-      'multi-platform bio generator',
-      'social profile bio generator',
-      'social bio ai generator',
-      'bio generator for social media',
+      'professional bio generator',
+      'professional bio writer',
+      'speaker bio generator',
+      'author bio generator',
+      'executive bio generator',
+      'third person bio generator',
+      'about me generator professional',
     ],
-    h1Prefix: 'Free',
-    h1Highlight: 'social media bio generator',
-    h1Suffix: 'for every network.',
-    eyebrow: 'AI-powered • Free forever • 6 platforms • One input',
+    h1Prefix: 'Write a',
+    h1Highlight: 'professional bio',
+    h1Suffix: 'in 30 seconds.',
+    eyebrow: 'AI-powered • Free forever • Speaker · Author · Executive ready',
     heroSubline:
-      'One prompt. Six platforms. AI writes 3 bio variations each for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube in seconds.',
+      'AI writes 3 professional bios for speaker decks, book jackets, and company pages. First or third person. Short, medium, or long.',
     platformHint: 'general',
-  },
-  {
-    slug: 'short-bio-generator',
-    seoTitle: 'Short Bio Generator — Free AI for Tight Limits',
-    seoDescription:
-      'Free short bio generator. AI writes 3 tight bios in 50, 100, or 160 char lengths for Twitter, TikTok, GitHub, or any short-form field. No login.',
-    keywords: [
-      'short bio generator',
-      'short bio writer',
-      'short bio maker',
-      'short bio for social media',
-      'short bio examples generator',
-      'short professional bio generator',
-      'micro bio generator',
-    ],
-    h1Prefix: 'Free',
-    h1Highlight: 'short bio generator',
-    h1Suffix: 'for tight limits.',
-    eyebrow: 'AI-powered • Free forever • 50-160 char lengths',
-    heroSubline:
-      'AI writes 3 short bios tuned to short-form profile fields on X, TikTok, GitHub, and about-me sections. Every draft respects the target length.',
-    platformHint: 'twitter',
   },
 ];
 

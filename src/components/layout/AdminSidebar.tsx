@@ -23,6 +23,10 @@ import {
   FlaskConical,
   Activity,
   Captions,
+  Wrench,
+  PenLine,
+  Download,
+  Subtitles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -53,6 +57,7 @@ function SidebarContent({
     icon: typeof LayoutDashboard;
     label: string;
     show: boolean;
+    section?: string;
   }[] = [
     { to: "/admin", icon: LayoutDashboard, label: "Overview", show: sections.overview },
     { to: "/admin/users", icon: Users, label: "Users", show: sections.users },
@@ -68,6 +73,19 @@ function SidebarContent({
     { to: "/admin/pricing-plans", icon: CreditCard, label: "Pricing Plans", show: sections.settings },
     { to: "/admin/site", icon: Megaphone, label: "Marketing Site", show: sections.settings },
     { to: "/admin/settings", icon: Settings, label: "Admin Settings", show: sections.settings },
+  ];
+
+  // Tools section — per-tool analytics grouped together so admin can
+  // observe what's happening on each tool from one place.
+  const toolItems: {
+    to: string;
+    icon: typeof Wrench;
+    label: string;
+    show: boolean;
+  }[] = [
+    { to: "/admin/bio-generator", icon: PenLine, label: "Bio Generator", show: true },
+    { to: "/admin/media-engine", icon: Download, label: "Reel Downloader", show: sections.media },
+    { to: "/admin/transcription", icon: Subtitles, label: "Auto Caption", show: sections.media },
   ];
 
   return (
@@ -143,6 +161,44 @@ function SidebarContent({
               item.to === "/admin"
                 ? pathname === "/admin"
                 : pathname === item.to || pathname.startsWith(item.to + "/");
+            return (
+              <NavLink
+                key={item.to}
+                href={item.to}
+                onClick={onItemClick}
+                className={cn(
+                  "flex items-center transition-all duration-200 group relative",
+                  collapsed ? "justify-center w-full h-12 rounded-xl" : "gap-3 rounded-lg px-3 py-2.5",
+                  "text-sm font-medium",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-4 w-4")} aria-hidden />
+                {!collapsed && <span>{item.label}</span>}
+                {collapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                    {item.label}
+                  </div>
+                )}
+              </NavLink>
+            );
+          })}
+
+        {/* ── Tools section ─────────────────────────────────────── */}
+        {!collapsed && (
+          <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+            Tools
+          </p>
+        )}
+        {collapsed && <div className="h-3" />}
+        {toolItems
+          .filter((i) => i.show)
+          .map((item) => {
+            const isActive = pathname === item.to || pathname.startsWith(item.to + "/");
             return (
               <NavLink
                 key={item.to}

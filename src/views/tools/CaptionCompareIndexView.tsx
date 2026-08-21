@@ -8,6 +8,7 @@ import { Reveal } from "@/components/marketing/Reveal";
 import { Section, SectionHeading } from "@/components/marketing/Section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import type { BioCompetitor } from "@/lib/bio-generator-competitors";
 import type { CaptionCompetitor } from "@/lib/caption-competitors";
 import type { CoreCompetitor } from "@/lib/core-competitors";
 import type { ReelDownloaderCompetitor } from "@/lib/reel-downloader-competitors";
@@ -17,18 +18,26 @@ type Props = {
   captionCompetitors: readonly CaptionCompetitor[];
   coreCompetitors: readonly CoreCompetitor[];
   reelDownloaderCompetitors?: readonly ReelDownloaderCompetitor[];
+  bioCompetitors?: readonly BioCompetitor[];
 };
 
 /**
  * /compare — hub page listing ALL comparison pages in one place.
  *
- * Two sections:
- * 1. Core platform comparisons (/vs/*) — Trndinn (whole platform) vs Buffer, Hootsuite, Postiz, Predis, Taplio
- * 2. Auto caption tool comparisons (/compare/trndinn-vs-*) — Trndinn's caption tool vs Submagic, Captions.ai, Opus Clip, VEED, CapCut
+ * Four sections:
+ * 1. Core platform comparisons (/vs/*) — Trndinn platform vs Buffer, Hootsuite, Postiz, Predis, Taplio
+ * 2. Bio Generator comparisons (/compare/trndinn-vs-*) — vs Ahrefs, Pallyy, Copy.ai, Hootsuite, Writesonic, QuillBot, Predis, Simplified, Canva, ChatGPT (per SEO PDF Section 5)
+ * 3. Auto Caption Generator comparisons — vs Submagic, Captions.ai, Opus Clip, VEED, CapCut
+ * 4. Instagram Reel Downloader comparisons — vs SnapInsta, SSSInstagram, SaveFrom, and others
  *
  * Breadcrumb is transparent (no background band) so it blends with the shell canvas.
  */
-export default function CaptionCompareIndexView({ captionCompetitors, coreCompetitors, reelDownloaderCompetitors }: Props) {
+export default function CaptionCompareIndexView({
+  captionCompetitors,
+  coreCompetitors,
+  reelDownloaderCompetitors,
+  bioCompetitors,
+}: Props) {
   return (
     <MarketingShell>
       <main>
@@ -136,7 +145,49 @@ export default function CaptionCompareIndexView({ captionCompetitors, coreCompet
           </div>
         </Section>
 
-        {/* ─── Section 2: Caption tool comparisons ─── */}
+        {/* ─── Section 2: Bio Generator comparisons (largest addressable volume) ─── */}
+        {bioCompetitors && bioCompetitors.length > 0 && (
+          <Section className="!py-6 sm:!py-8 md:!py-10 border-t border-border/40">
+            <SectionHeading
+              eyebrow="Free tool"
+              title="Social Media Bio Generator vs AI bio tools"
+              subtitle={`How ${siteName}'s free bio generator compares to Ahrefs, Pallyy, Copy.ai, and every leading AI bio tool. Platform-aware character limits, tone control, no signup.`}
+            />
+            <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
+              {bioCompetitors.map((c, i) => (
+                <Reveal key={c.slug} delay={i * 40}>
+                  <Link
+                    href={`/compare/trndinn-vs-${c.slug}`}
+                    className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-md transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                          {siteName} vs
+                        </p>
+                        <h3 className="mt-1 font-display text-xl font-bold text-foreground">
+                          {c.name}
+                        </h3>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                    </div>
+                    <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                      {c.wedgeSummary}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                      <span className="rounded-full bg-muted/60 px-2 py-0.5">bio generator</span>
+                      <span className="rounded-full bg-muted/60 px-2 py-0.5">
+                        {c.targetKeyword}
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ─── Section 3: Caption tool comparisons ─── */}
         <Section className="!py-6 sm:!py-8 md:!py-10 border-t border-border/40">
           <SectionHeading
             eyebrow="Free tool"

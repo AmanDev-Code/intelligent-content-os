@@ -91,11 +91,22 @@ export interface UseBioStreamReturn {
   copiedKey: string | null;
   regenKey: string | null;
 
+  // Feedback state — `votes` maps `${platform}:${idx}` → 'up' | 'down'.
+  // `votingKey` is the card currently posting a vote (used for spinner).
+  votes: Record<string, "up" | "down">;
+  votingKey: string | null;
+
   // Actions
   submit: () => Promise<void>;
   regenerateOne: (platform: BioPlatform, variationIndex: number) => Promise<void>;
   scoreOne: (platform: BioPlatform, variationIndex: number, text: string) => Promise<void>;
   copyBio: (platform: BioPlatform, variationIndex: number, text: string) => void;
+  voteBio: (
+    platform: BioPlatform,
+    variationIndex: number,
+    text: string,
+    vote: "up" | "down",
+  ) => Promise<void>;
 
   // Refs
   outputRef: React.RefObject<HTMLDivElement>;
@@ -122,6 +133,9 @@ export function useBioStream(defaultPlatform?: BioPlatform): UseBioStreamReturn 
   const [scoring, setScoring] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [regenKey, setRegenKey] = useState<string | null>(null);
+  const [votes, setVotes] = useState<Record<string, "up" | "down">>({});
+  const [votingKey, setVotingKey] = useState<string | null>(null);
+  const [generationId, setGenerationId] = useState<string | null>(null);
   const outputRef = useRef<HTMLDivElement>(null!);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -170,6 +184,8 @@ export function useBioStream(defaultPlatform?: BioPlatform): UseBioStreamReturn 
     setIsGenerating(true);
     setResults([]);
     setScores({});
+    setVotes({});
+    setGenerationId(null);
     setPendingPlatforms(new Set(platforms));
     setActiveTab(null);
     requestAnimationFrame(() =>
@@ -210,6 +226,7 @@ export function useBioStream(defaultPlatform?: BioPlatform): UseBioStreamReturn 
         }
         if (event === "start") {
           setPendingPlatforms(new Set(parsed.platforms ?? platforms));
+          if (parsed.generationId) setGenerationId(String(parsed.generationId));
         } else if (event === "platform" && parsed.result) {
           const result = parsed.result as BioPlatformResult;
           sawAnyPlatform = true;
@@ -333,6 +350,84 @@ export function useBioStream(defaultPlatform?: BioPlatform): UseBioStreamReturn 
     [goal],
   );
 
+  /**
+   * Post a thumbs-up / thumbs-down for a specific variation.
+   *
+   * Optimistic: we set the vote locally first so the UI feels instant, then
+   * roll back if the server rejects. Tapping the same thumb again clears the
+   * vote (server sees an upsert on the same generation/variation and would
+   * store the latest anyway; here we mirror that on the client).
+   */
+  const voteBio = useCallback(
+    async (
+      platform: BioPlatform,
+      variationIndex: number,
+      text: string,
+      vote: "up" | "down",
+    ) => {
+      const key = `${platform}:${variationIndex}`;
+
+      // Toggle-off: same thumb tapped again clears the local state (server
+      // still receives the vote so admin sees engagement — this is fine).
+      const nextVote = votes[key] === vote ? null : vote;
+      const previous = votes[key] ?? null;
+
+      setVotingKey(key);
+      setVotes((prev) => {
+        const next = { ...prev };
+        if (nextVote) next[key] = nextVote;
+        else delete next[key];
+        return next;
+      });
+
+      try {
+        // Angle is derived from variation index — the backend always returns
+        // credibility, outcome, positioning, (direction) in that order.
+        const angle =
+          (["credibility", "outcome", "positioning", "direction"][variationIndex] as
+            | "credibility"
+            | "outcome"
+            | "positioning"
+            | "direction"
+            | undefined) ?? "credibility";
+
+        const res = await fetch(apiUrl("/api/tools/bio-generator/feedback"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vote,
+            platform,
+            angle,
+            tone,
+            bioType,
+            focusAreas,
+            emojis,
+            variationIndex,
+            text,
+            generationId: generationId ?? undefined,
+          }),
+        });
+        if (!res.ok) {
+          // Roll back on server rejection.
+          setVotes((prev) => {
+            const next = { ...prev };
+            if (previous) next[key] = previous;
+            else delete next[key];
+            return next;
+          });
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.message || `HTTP ${res.status}`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not record feedback";
+        toast.error(msg);
+      } finally {
+        setVotingKey(null);
+      }
+    },
+    [votes, results, tone, bioType, focusAreas, emojis, generationId],
+  );
+
   const copyBio = useCallback((platform: BioPlatform, variationIndex: number, text: string) => {
     void navigator.clipboard.writeText(text).then(
       () => {
@@ -393,10 +488,13 @@ export function useBioStream(defaultPlatform?: BioPlatform): UseBioStreamReturn 
     scoring,
     copiedKey,
     regenKey,
+    votes,
+    votingKey,
     submit,
     regenerateOne,
     scoreOne,
     copyBio,
+    voteBio,
     outputRef,
   };
 }

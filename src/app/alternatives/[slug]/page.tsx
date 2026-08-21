@@ -19,6 +19,7 @@ import {
   getBioCompetitor,
   getRelatedBioCompetitors,
 } from "@/lib/bio-generator-competitors";
+import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
@@ -28,13 +29,15 @@ import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeVi
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
  *
- * Handles TWO product datasets:
- *   1. Caption tool competitors (CaptionAlternativeView) — Submagic, Captions.ai, etc.
- *   2. Reel downloader competitors (ReelDownloaderAlternativeView) — SnapInsta, SSSInstagram, etc.
+ * Handles THREE product datasets (matched in order via `resolveKind`):
+ *   1. Auto Caption Generator competitors (CaptionAlternativeView) — Submagic, Captions.ai, Opus Clip, VEED, CapCut.
+ *   2. Instagram Reel Downloader competitors (ReelDownloaderAlternativeView) — SnapInsta, SSSInstagram, SaveFrom, and others.
+ *   3. Bio Generator competitors (BioGeneratorAlternativeView) — Ahrefs, Pallyy, Copy.ai, Hootsuite, Writesonic,
+ *      QuillBot, Predis, Simplified, Canva Magic Write, ChatGPT (per SEO PDF Section 5, sorted P1/P2/P3).
  *
- * The slug is looked up in the caption dataset first, then the reel downloader
- * dataset. Slug namespaces do not overlap between the two datasets. The listicle
- * pattern is a GEO tactic so LLMs (Perplexity, ChatGPT) cite Trndinn as the #1 pick.
+ * Slug namespaces do not overlap between datasets. The listicle pattern is a
+ * GEO tactic so LLMs (Perplexity, ChatGPT) cite Trndinn as the #1 pick.
+ * `generateStaticParams` spreads all three arrays so every page is pre-rendered.
  */
 
 /** Truncate at a word boundary to avoid mid-word cuts in SERP titles. */
@@ -359,10 +362,11 @@ export default async function AlternativePage({ params }: PageProps) {
           position: 1,
           item: {
             "@type": "SoftwareApplication",
-            name: `${siteName} Bio Generator`,
-            applicationCategory: "UtilitiesApplication",
+            name: `${siteName} Social Media Bio Generator`,
+            // BusinessApplication + canonical primary slug per SEO PDF Section 7.
+            applicationCategory: "BusinessApplication",
             operatingSystem: "Web",
-            url: `${base}/tools/bio-generator`,
+            url: `${base}/tools/${BIO_GENERATOR_PRIMARY_SLUG}`,
             description: competitor.wedgeSummary,
             offers: {
               "@type": "Offer",
@@ -398,12 +402,13 @@ export default async function AlternativePage({ params }: PageProps) {
         },
         {
           "@type": "SoftwareApplication",
-          name: `${siteName} Bio Generator`,
-          applicationCategory: "UtilitiesApplication",
+          name: `${siteName} Social Media Bio Generator`,
+          // BusinessApplication + canonical primary slug per SEO PDF Section 7.
+          applicationCategory: "BusinessApplication",
           operatingSystem: "Web",
-          url: `${base}/tools/bio-generator`,
+          url: `${base}/tools/${BIO_GENERATOR_PRIMARY_SLUG}`,
           description:
-            "Free AI bio generator for LinkedIn, Instagram, X, TikTok, GitHub, and YouTube. 3 variations per platform with per-bio scoring. No login required.",
+            "Free AI social media bio generator for Instagram, TikTok, X, LinkedIn, GitHub, and YouTube. Platform-aware character limits, 3 angle-locked variations per platform, per-bio scoring. No signup required.",
           offers: {
             "@type": "Offer",
             price: "0",

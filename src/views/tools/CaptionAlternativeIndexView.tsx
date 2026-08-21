@@ -8,6 +8,7 @@ import { Reveal } from "@/components/marketing/Reveal";
 import { Section, SectionHeading } from "@/components/marketing/Section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import type { BioCompetitor } from "@/lib/bio-generator-competitors";
 import type { CaptionCompetitor } from "@/lib/caption-competitors";
 import type { ReelDownloaderCompetitor } from "@/lib/reel-downloader-competitors";
 import { siteName } from "@/lib/site";
@@ -15,14 +16,20 @@ import { siteName } from "@/lib/site";
 type Props = {
   competitors: readonly CaptionCompetitor[];
   reelDownloaderCompetitors?: readonly ReelDownloaderCompetitor[];
+  bioCompetitors?: readonly BioCompetitor[];
 };
 
 /**
  * /alternatives — hub page listing all alternative-to pages.
+ * Three sections: Bio Generator, Auto Caption Generator, Instagram Reel Downloader.
  * Cross-links to /compare, tool page, blog, pricing.
  * Breadcrumb is transparent (no background band).
  */
-export default function CaptionAlternativeIndexView({ competitors, reelDownloaderCompetitors }: Props) {
+export default function CaptionAlternativeIndexView({
+  competitors,
+  reelDownloaderCompetitors,
+  bioCompetitors,
+}: Props) {
   return (
     <MarketingShell>
       <main>
@@ -48,19 +55,19 @@ export default function CaptionAlternativeIndexView({ competitors, reelDownloade
             <Reveal>
               <span className="inline-flex items-center gap-2 rounded-full bg-card/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground backdrop-blur-md">
                 <Trophy className="h-3.5 w-3.5 text-primary" aria-hidden />
-                Best AI caption alternatives
+                Best AI tool alternatives
               </span>
             </Reveal>
             <Reveal delay={60}>
               <h1 className="mt-4 font-display text-[1.9rem] font-black leading-[1.1] tracking-tight text-foreground text-balance sm:mt-5 sm:text-5xl">
-                Best alternative to every AI caption tool in 2026
+                Best alternative to every AI bio, caption &amp; reel tool in 2026
               </h1>
             </Reveal>
             <Reveal delay={120}>
               <p className="mx-auto mt-4 max-w-2xl text-[0.95rem] leading-relaxed text-muted-foreground sm:mt-5 sm:text-lg text-pretty">
-                Looking for a better caption tool? Each page ranks the top 5 alternatives
-                with {siteName} at #1 — free forever, no watermark, 8.5s processing, 99+
-                languages.
+                Ranked lists of the best alternatives to Ahrefs, Pallyy, Copy.ai, Submagic,
+                SnapInsta and every leading tool. Each page ranks the top 5 with {siteName}
+                at #1 — free forever, no watermark, no signup.
               </p>
             </Reveal>
             <Reveal delay={180}>
@@ -88,11 +95,53 @@ export default function CaptionAlternativeIndexView({ competitors, reelDownloade
           </div>
         </section>
 
-        {/* ─── Alternatives grid ─── */}
-        <Section className="!py-8 sm:!py-10">
+        {/* ─── Bio Generator alternatives (largest addressable volume) ─── */}
+        {bioCompetitors && bioCompetitors.length > 0 && (
+          <Section className="!py-8 sm:!py-10">
+            <SectionHeading
+              eyebrow="Bio generator"
+              title="Social Media Bio Generator alternatives"
+              subtitle="Ranked by free-tier value, platform-aware character limits, tone control, and whether they require signup."
+            />
+            <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
+              {bioCompetitors.map((c, i) => (
+                <Reveal key={c.slug} delay={i * 40}>
+                  <Link
+                    href={`/alternatives/${c.slug}`}
+                    className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card/60 p-5 backdrop-blur-md transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                          Best alternative to
+                        </p>
+                        <h2 className="mt-1 font-display text-xl font-bold text-foreground">
+                          {c.name}
+                        </h2>
+                      </div>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                    </div>
+                    <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                      {c.wedgeSummary}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                      <span className="rounded-full bg-muted/60 px-2 py-0.5">bio generator</span>
+                      <span className="rounded-full bg-muted/60 px-2 py-0.5">
+                        {c.targetKeyword}
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ─── Auto Caption alternatives grid ─── */}
+        <Section className="!py-8 sm:!py-10 border-t border-border/40">
           <SectionHeading
-            eyebrow="Every alternative"
-            title="Pick a tool to see the ranking"
+            eyebrow="Auto caption tool"
+            title="AI Auto Caption Generator alternatives"
             subtitle="Ranked by free-tier value, caption quality, language coverage, and export flexibility."
           />
           <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2 lg:grid-cols-3">
