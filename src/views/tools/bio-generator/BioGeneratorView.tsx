@@ -50,6 +50,8 @@ import { BioOutputTabs } from "./BioOutputTabs";
 import { BioPendingState } from "./BioPendingState";
 import { useBioStream } from "./use-bio-stream";
 import type { BioPlatform, BioGeneratorViewHeroVariant } from "./types";
+import { useToolFeedback } from "@/hooks/useToolFeedback";
+import { ToolFeedbackCard, ToolFeedbackButton } from "@/components/feedback/ToolFeedbackCard";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -326,6 +328,7 @@ export default function BioGeneratorView({
 }: BioGeneratorViewProps) {
   const bio = useBioStream(defaultPlatform);
   const shouldReduceMotion = useReducedMotion();
+  const feedback = useToolFeedback("bio-generator", bio.results.length > 0 && !bio.isGenerating);
 
   // Subtle parallax for hero decorations — same rhythm as caption generator.
   const { scrollY } = useScroll();
@@ -469,6 +472,24 @@ export default function BioGeneratorView({
                       bios per platform.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Tool Feedback — appears after bios are generated (alongside thumbs up/down) */}
+              {bio.results.length > 0 && !bio.isGenerating && (
+                <div className="flex flex-col items-center gap-3 mt-4">
+                  <ToolFeedbackCard
+                    toolSlug="bio-generator"
+                    toolName="AI Bio Generator"
+                    visible={feedback.showCard}
+                    onDismiss={feedback.dismiss}
+                    onSubmit={feedback.submit}
+                    submitting={feedback.submitting}
+                    mode="auto"
+                  />
+                  {feedback.showButton && (
+                    <ToolFeedbackButton onClick={feedback.openManual} />
+                  )}
                 </div>
               )}
             </div>

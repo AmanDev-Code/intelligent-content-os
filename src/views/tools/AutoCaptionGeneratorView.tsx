@@ -44,6 +44,8 @@ import { cn } from "@/lib/utils";
 import { analytics } from "@/services/analytics";
 import { BlogRelatedPosts } from "@/components/blog/BlogRelatedPosts";
 import { CAPTION_COMPETITORS } from "@/lib/caption-competitors";
+import { useToolFeedback } from "@/hooks/useToolFeedback";
+import { ToolFeedbackCard, ToolFeedbackButton } from "@/components/feedback/ToolFeedbackCard";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -421,6 +423,7 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+  const feedback = useToolFeedback("auto-caption-generator", stage === "complete" || stage === "failed");
   const [isDragging, setIsDragging] = useState(false);
 
   // Caption position editor state
@@ -1504,6 +1507,24 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
                 </div>
               </div>
             </motion.div>
+
+            {/* Tool Feedback — appears after complete or failed */}
+            {(stage === "complete" || stage === "failed") && (
+              <div className="flex flex-col items-center gap-3 mt-4">
+                <ToolFeedbackCard
+                  toolSlug="auto-caption-generator"
+                  toolName="Auto Caption Generator"
+                  visible={feedback.showCard}
+                  onDismiss={feedback.dismiss}
+                  onSubmit={feedback.submit}
+                  submitting={feedback.submitting}
+                  mode="auto"
+                />
+                {feedback.showButton && (
+                  <ToolFeedbackButton onClick={feedback.openManual} />
+                )}
+              </div>
+            )}
 
             {/* Helper text */}
             <motion.p

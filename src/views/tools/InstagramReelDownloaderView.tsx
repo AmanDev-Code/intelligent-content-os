@@ -39,6 +39,8 @@ import { cn } from "@/lib/utils";
 import { useExperiment, trackExperimentConversion } from "@/hooks/useExperiment";
 import analytics from "@/services/analytics";
 import { BlogRelatedPosts, type RelatedPost } from "@/components/blog/BlogRelatedPosts";
+import { useToolFeedback } from "@/hooks/useToolFeedback";
+import { ToolFeedbackCard, ToolFeedbackButton } from "@/components/feedback/ToolFeedbackCard";
 
 // ---------------------------------------------------------------------------
 // Types & Validation
@@ -384,6 +386,7 @@ export default function InstagramReelDownloaderView({
   const inputRef = useRef<HTMLInputElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+  const feedback = useToolFeedback("instagram-reel-downloader", !!(result || error));
 
   const placeholder = useCyclingPlaceholder(PLACEHOLDER_EXAMPLES);
 
@@ -1108,6 +1111,24 @@ export default function InstagramReelDownloaderView({
             </AnimatePresence>
           </div>
         </section>
+
+        {/* Tool Feedback — appears after any result (success or error) */}
+        {(result || error) && (
+          <div className="flex flex-col items-center gap-3 px-4">
+            <ToolFeedbackCard
+              toolSlug="instagram-reel-downloader"
+              toolName="Instagram Reel Downloader"
+              visible={feedback.showCard}
+              onDismiss={feedback.dismiss}
+              onSubmit={feedback.submit}
+              submitting={feedback.submitting}
+              mode="auto"
+            />
+            {feedback.showButton && (
+              <ToolFeedbackButton onClick={feedback.openManual} />
+            )}
+          </div>
+        )}
 
         {/* ==================================================================
             HOW IT WORKS — horizontal timeline with dotted track
