@@ -124,6 +124,11 @@ const AdminScraperDebug: React.FC = () => {
   const [postSaveHealth, setPostSaveHealth] = useState<HealthRow[] | null>(null);
   const [connectLoading, setConnectLoading] = useState(false);
   const [extractNowLoading, setExtractNowLoading] = useState(false);
+  const [igUsername, setIgUsername] = useState("");
+  const [igPassword, setIgPassword] = useState("");
+  const [igLoginStep, setIgLoginStep] = useState<"idle" | "2fa">("idle");
+  const [ig2faCode, setIg2faCode] = useState("");
+  const [ig2faType, setIg2faType] = useState("");
 
   const loadCredentials = async () => {
     setCredLoading(true);
@@ -324,17 +329,52 @@ const AdminScraperDebug: React.FC = () => {
   const connectInstagram = async () => {
     setConnectLoading(true);
     try {
-      const res = await apiClient.post("/admin/scraper/instagram-connect", {});
-      const d = res?.data;
+      const res = await apiClient.post("/admin/scraper/instagram-mobile-login", {
+        username: igUsername,
+        password: igPassword,
+      });
+      const d = res?.data || res;
       if (d?.success) {
-        toast.success("Session extracted! Reloading credentials...");
+        toast.success(`Logged in as @${d.username || 'unknown'}! Session saved (90+ days).`);
+        setIgUsername("");
+        setIgPassword("");
+        setIgLoginStep("idle");
+        await loadCredentials();
+        await loadHealth();
+      } else if (d?.challengeRequired) {
+        setIgLoginStep("2fa");
+        setIg2faType(d.challengeType || "code");
+        toast.info(d.message || "2FA required. Enter the code.");
+      } else {
+        toast.error(d?.message || "Login failed");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Instagram login failed");
+    } finally {
+      setConnectLoading(false);
+    }
+  };
+
+  const verify2FA = async () => {
+    setConnectLoading(true);
+    try {
+      const res = await apiClient.post("/admin/scraper/instagram-mobile-verify-2fa", {
+        code: ig2faCode.trim(),
+      });
+      const d = res?.data || res;
+      if (d?.success) {
+        toast.success(`2FA verified! Logged in as @${d.username || 'unknown'}.`);
+        setIgLoginStep("idle");
+        setIg2faCode("");
+        setIgUsername("");
+        setIgPassword("");
         await loadCredentials();
         await loadHealth();
       } else {
-        toast.error(d?.error || "Connection failed");
+        toast.error(d?.message || "Invalid code. Try again.");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Instagram connect failed");
+      toast.error(e?.message || "2FA verification failed");
     } finally {
       setConnectLoading(false);
     }
@@ -475,50 +515,107 @@ const AdminScraperDebug: React.FC = () => {
         )}
 
         <div className="space-y-4 text-sm">
-          {/* Quick Connect section */}
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
-            <Label className="text-xs font-semibold">Quick Connect</Label>
+          {/* Quick Connect section — Mobile API Login */}
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
+            <Label className="text-xs font-semibold">Quick Connect — Instagram Login</Label>
             <p className="text-xs text-muted-foreground">
-              Auto-extract Instagram session from a browser or refresh an existing session.
+              Login via Instagram Mobile API for a long-lived session (90+ days).
+              Handles 2FA and checkpoint challenges.
             </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={connectInstagram}
-                disabled={connectLoading}
-              >
-                {connectLoading ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Opening browser…
-                  </>
-                ) : (
-                  <>
-                    <Link className="h-3.5 w-3.5 mr-1.5" />
-                    Connect Instagram (Browser)
-                  </>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={extractNow}
-                disabled={extractNowLoading}
-              >
-                {extractNowLoading ? (
-                  <>
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    Refreshing…
-                  </>
-                ) : (
-                  <>
-                    <RotateCw className="h-3.5 w-3.5 mr-1.5" />
-                    Refresh Session
-                  </>
-                )}
-              </Button>
-            </div>
+
+            {igLoginStep === "idle" ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Instagram username"
+                  value={igUsername}
+                  onChange={(e) => setIgUsername(e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoComplete="username"
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={igPassword}
+                  onChange={(e) => setIgPassword(e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoComplete="current-password"
+                  onKeyDown={(e) => e.key === "Enter" && igUsername && igPassword && connectInstagram()}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={connectInstagram}
+                    disabled={connectLoading || !igUsername.trim() || !igPassword.trim()}
+                  >
+                    {connectLoading ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Logging in…
+                      </>
+                    ) : (
+                      <>
+                        <Link className="h-3.5 w-3.5 mr-1.5" />
+                        Connect Instagram
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={extractNow}
+                    disabled={extractNowLoading}
+                  >
+                    {extractNowLoading ? (
+                      <>
+                        <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        Refreshing…
+                      </>
+                    ) : (
+                      <>
+                        <RotateCw className="h-3.5 w-3.5 mr-1.5" />
+                        Refresh Session
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground/70">
+                  If captcha appears, use the Chrome Extension instead.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  🔐 2FA Required ({ig2faType}). Enter the verification code:
+                </p>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={ig2faCode}
+                  onChange={(e) => setIg2faCode(e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  maxLength={8}
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && ig2faCode.trim() && verify2FA()}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={verify2FA}
+                    disabled={connectLoading || !ig2faCode.trim()}
+                  >
+                    {connectLoading ? "Verifying…" : "Verify Code"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setIgLoginStep("idle"); setIg2faCode(""); }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
