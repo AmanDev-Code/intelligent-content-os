@@ -452,9 +452,32 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
 
   // File drop handler
   const handleFile = useCallback((f: File) => {
-    const validTypes = ["video/mp4", "video/quicktime", "video/webm"];
-    if (!validTypes.includes(f.type)) {
-      setError("Unsupported format. Please upload MP4, MOV, or WebM.");
+    // Accept all major video formats. Some browsers/OS report non-standard MIME types
+    // (e.g. video/x-m4v for .m4v, video/x-matroska for .mkv, "" for some .mp4 on Windows).
+    const validTypes = [
+      "video/mp4",
+      "video/quicktime",     // .mov
+      "video/webm",
+      "video/x-m4v",         // .m4v (macOS)
+      "video/x-matroska",    // .mkv
+      "video/x-msvideo",     // .avi
+      "video/avi",           // .avi alt
+      "video/3gpp",          // .3gp
+      "video/3gpp2",         // .3g2
+      "video/ogg",           // .ogv
+      "video/x-flv",         // .flv
+      "video/mp2t",          // .ts/.mts
+    ];
+    const validExtensions = [
+      ".mp4", ".mov", ".webm", ".m4v", ".mkv", ".avi",
+      ".3gp", ".3g2", ".ogv", ".flv", ".ts", ".mts", ".mpe", ".mpg", ".mpeg",
+    ];
+    const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
+    const typeOk = validTypes.includes(f.type) || f.type.startsWith("video/");
+    const extOk = validExtensions.includes(ext);
+
+    if (!typeOk && !extOk) {
+      setError("Unsupported format. Please upload a video file (MP4, MOV, WebM, AVI, MKV, etc.).");
       return;
     }
     if (f.size > 100 * 1024 * 1024) {
@@ -944,7 +967,7 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="video/mp4,video/quicktime,video/webm"
+                          accept="video/*,.mp4,.mov,.webm,.mkv,.avi,.m4v,.3gp,.flv,.ts,.mts,.mpg,.mpeg"
                           className="hidden"
                           onChange={(e) =>
                             e.target.files?.[0] && handleFile(e.target.files[0])
@@ -970,6 +993,8 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
                           <span className="rounded-full bg-muted/50 px-2.5 py-1">MP4</span>
                           <span className="rounded-full bg-muted/50 px-2.5 py-1">MOV</span>
                           <span className="rounded-full bg-muted/50 px-2.5 py-1">WebM</span>
+                          <span className="rounded-full bg-muted/50 px-2.5 py-1">AVI</span>
+                          <span className="rounded-full bg-muted/50 px-2.5 py-1">MKV</span>
                           <span className="rounded-full bg-muted/50 px-2.5 py-1">Up to 1.5 min</span>
                           <span className="rounded-full bg-muted/50 px-2.5 py-1">Max 100 MB</span>
                         </div>
@@ -2057,7 +2082,7 @@ export default function AutoCaptionGeneratorView({ faqs, heroVariant, blogPosts 
                 </thead>
                 <tbody className="text-muted-foreground">
                   <tr className="border-t border-border/30">
-                    <td className="px-4 py-3">MP4, MOV, WebM</td>
+                    <td className="px-4 py-3">MP4, MOV, WebM, AVI, MKV, M4V, 3GP, FLV</td>
                     <td className="px-4 py-3">1.5 min, 100 MB</td>
                     <td className="px-4 py-3">MP4 (H.264 + AAC)</td>
                   </tr>
