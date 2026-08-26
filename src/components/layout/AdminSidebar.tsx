@@ -27,6 +27,7 @@ import {
   PenLine,
   Download,
   Subtitles,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -86,6 +87,7 @@ function SidebarContent({
     { to: "/admin/bio-generator", icon: PenLine, label: "Bio Generator", show: true },
     { to: "/admin/media-engine", icon: Download, label: "Reel Downloader", show: sections.media },
     { to: "/admin/transcription", icon: Subtitles, label: "Auto Caption", show: sections.media },
+    { to: "/admin/tool-feedback", icon: Star, label: "Tool Feedback", show: sections.feedback },
   ];
 
   return (

@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Star, MessageSquarePlus, Sparkles, X } from "lucide-react";
+import { Star, MessageSquarePlus, Sparkles } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -17,10 +24,10 @@ interface ToolFeedbackCardProps {
 }
 
 /**
- * Compact glass-morphism feedback card that slides up after tool use.
- * Non-blocking — user can still interact with tool results behind it.
+ * Tool Feedback Dialog — popup modal that appears after tool use.
+ * Shows star rating + optional message textarea.
  *
- * Design: glass card, amber stars, subtle entrance animation.
+ * Design: glass-morphism dialog, amber stars, smooth entrance.
  * Accessibility: keyboard navigable stars, ARIA labels, focus management.
  */
 export function ToolFeedbackCard({
@@ -36,144 +43,130 @@ export function ToolFeedbackCard({
   const [message, setMessage] = useState("");
   const [showTextarea, setShowTextarea] = useState(false);
 
-  if (!visible) return null;
-
   const handleSubmit = async () => {
     if (rating === 0) return;
     await onSubmit(rating, message || undefined);
-    // Reset on success (component will unmount via visible=false)
     setRating(0);
     setMessage("");
     setShowTextarea(false);
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) onDismiss();
+  };
+
   const activeRating = hoveredStar || rating;
 
   return (
-    <div
-      className={cn(
-        "mt-4 w-full max-w-md mx-auto",
-        "bg-card/60 backdrop-blur-xl border border-border/50 rounded-lg",
-        "p-4 shadow-lg",
-        "animate-fade-in-up",
-        // Subtle glow on the card
-        "ring-1 ring-primary/5",
-      )}
-      role="region"
-      aria-label={`Rate your experience with ${toolName}`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <p className="text-sm font-medium text-foreground">
+    <Dialog open={visible} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-sm bg-card/80 backdrop-blur-xl border-border/50">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Sparkles className="h-5 w-5 text-primary" />
             {mode === "auto" ? "How was your experience?" : `Rate ${toolName}`}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="p-1 rounded-md text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/50 transition-colors"
-          aria-label="Dismiss feedback"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            Your feedback helps us improve {toolName}.
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Star Rating */}
-      <div className="flex items-center gap-1 mb-3" role="radiogroup" aria-label="Rating">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => setRating(rating === n ? 0 : n)}
-            onMouseEnter={() => setHoveredStar(n)}
-            onMouseLeave={() => setHoveredStar(0)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight" && n < 5) {
-                setRating(n + 1);
-                (e.currentTarget.nextElementSibling as HTMLElement)?.focus();
-              }
-              if (e.key === "ArrowLeft" && n > 1) {
-                setRating(n - 1);
-                (e.currentTarget.previousElementSibling as HTMLElement)?.focus();
-              }
-            }}
-            className={cn(
-              "p-1 rounded-md transition-all duration-150",
-              activeRating >= n
-                ? "text-amber-500 scale-110"
-                : "text-muted-foreground/30 hover:text-muted-foreground/50",
+        <div className="space-y-4 py-2">
+          {/* Star Rating */}
+          <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRating(rating === n ? 0 : n)}
+                onMouseEnter={() => setHoveredStar(n)}
+                onMouseLeave={() => setHoveredStar(0)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowRight" && n < 5) {
+                    setRating(n + 1);
+                    (e.currentTarget.nextElementSibling as HTMLElement)?.focus();
+                  }
+                  if (e.key === "ArrowLeft" && n > 1) {
+                    setRating(n - 1);
+                    (e.currentTarget.previousElementSibling as HTMLElement)?.focus();
+                  }
+                }}
+                className={cn(
+                  "p-1.5 rounded-lg transition-all duration-150",
+                  activeRating >= n
+                    ? "text-amber-500 scale-110"
+                    : "text-muted-foreground/30 hover:text-muted-foreground/50",
+                )}
+                role="radio"
+                aria-checked={rating === n}
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                tabIndex={rating === n || (rating === 0 && n === 1) ? 0 : -1}
+              >
+                <Star
+                  className={cn(
+                    "h-8 w-8 transition-all duration-150",
+                    activeRating >= n && "fill-current",
+                  )}
+                />
+              </button>
+            ))}
+            {rating > 0 && (
+              <span className="ml-3 text-sm text-muted-foreground">
+                {rating === 5
+                  ? "Excellent!"
+                  : rating === 4
+                    ? "Great"
+                    : rating === 3
+                      ? "Okay"
+                      : rating === 2
+                        ? "Could be better"
+                        : "Poor"}
+              </span>
             )}
-            role="radio"
-            aria-checked={rating === n}
-            aria-label={`${n} star${n > 1 ? "s" : ""}`}
-            tabIndex={rating === n || (rating === 0 && n === 1) ? 0 : -1}
-          >
-            <Star
-              className={cn(
-                "h-7 w-7 transition-all duration-150",
-                activeRating >= n && "fill-current",
-              )}
+          </div>
+
+          {/* Expandable textarea */}
+          {!showTextarea ? (
+            <button
+              type="button"
+              onClick={() => setShowTextarea(true)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              Add a comment (optional)
+            </button>
+          ) : (
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Any new feature you want or any issue? Let us know!"
+              className="min-h-[80px] max-h-[140px] resize-none text-sm"
+              maxLength={2000}
+              autoFocus
             />
-          </button>
-        ))}
-        {rating > 0 && (
-          <span className="ml-2 text-xs text-muted-foreground">
-            {rating === 5
-              ? "Excellent!"
-              : rating === 4
-                ? "Great"
-                : rating === 3
-                  ? "Okay"
-                  : rating === 2
-                    ? "Could be better"
-                    : "Poor"}
-          </span>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Expandable textarea */}
-      {!showTextarea ? (
-        <button
-          type="button"
-          onClick={() => setShowTextarea(true)}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 flex items-center gap-1"
-        >
-          <MessageSquarePlus className="h-3 w-3" />
-          Add a comment (optional)
-        </button>
-      ) : (
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Any new feature you want or any issue? Let us know!"
-          className="mb-3 min-h-[72px] max-h-[120px] resize-none text-sm bg-background/50"
-          maxLength={2000}
-          autoFocus
-        />
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDismiss}
-          className="text-xs text-muted-foreground"
-        >
-          Not now
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleSubmit}
-          disabled={rating === 0 || submitting}
-          className="px-4"
-        >
-          {submitting ? "Sending..." : "Submit"}
-        </Button>
-      </div>
-    </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDismiss}
+            className="text-muted-foreground"
+          >
+            Not now
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={rating === 0 || submitting}
+            className="px-5"
+          >
+            {submitting ? "Sending..." : "Submit"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
