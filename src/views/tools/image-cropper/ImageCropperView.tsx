@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { useImageProcessor } from "@/hooks/tools/useImageProcessor";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
@@ -204,7 +205,11 @@ export default function ImageCropperView({ tool, alias }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8">
+    <MarketingShell>
+    <div
+      style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
+    >
+    <main className="mx-auto max-w-4xl px-6 py-10 space-y-4 sm:space-y-6">
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -427,6 +432,8 @@ export default function ImageCropperView({ tool, alias }: Props) {
           </Accordion>
         </section>
       )}
+    </main>
     </div>
+    </MarketingShell>
   );
 }

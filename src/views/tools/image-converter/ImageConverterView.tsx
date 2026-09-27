@@ -1037,14 +1037,27 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           )}
                         </div>
 
-                        {/* Arrow */}
+                        {/* Arrow / Swap */}
                         <div className="flex flex-col items-center justify-center">
-                          <div
-                            className="flex h-8 w-8 items-center justify-center rounded-full"
-                            style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
-                          >
-                            <ArrowRight className="h-4 w-4 text-white" aria-hidden />
-                          </div>
+                          {reverseExists ? (
+                            <button
+                              onClick={() => router.push(`/tools/${reverseSlug}`)}
+                              title={`Switch to ${tool.toLabel} → ${tool.fromLabel}`}
+                              aria-label={`Swap to ${tool.toLabel} to ${tool.fromLabel}`}
+                              className="flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+                            >
+                              <ArrowLeftRight className="h-4 w-4 text-white" aria-hidden />
+                            </button>
+                          ) : (
+                            <div
+                              className="flex h-8 w-8 items-center justify-center rounded-full"
+                              style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+                              aria-hidden
+                            >
+                              <ArrowRight className="h-4 w-4 text-white" />
+                            </div>
+                          )}
                         </div>
 
                         {/* Converted preview */}
