@@ -185,6 +185,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       style={{
         position: "sticky",
         top: "64px",
+        height: "fit-content",
         maxHeight: "calc(100vh - 64px)",
         overflowY: "auto",
         background: "hsl(223 62% 6%)",
