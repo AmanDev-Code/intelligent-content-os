@@ -160,13 +160,24 @@ function getGlow(fmt: string) {
 
 function Sidebar({ activeSlug }: { activeSlug: string }) {
   const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
 
-  // Filter CONVERSION_TOOLS by query for the CONVERT section
-  const filteredConvert = query.trim()
-    ? CONVERSION_TOOLS.filter(t =>
-        `${t.fromLabel} ${t.toLabel} ${t.slug}`.toLowerCase().includes(query.toLowerCase())
-      )
+  // Filter ALL sections by search query
+  const filteredConvert = q
+    ? CONVERSION_TOOLS.filter(t => `${t.fromLabel} ${t.toLabel} ${t.slug}`.toLowerCase().includes(q))
     : CONVERSION_TOOLS;
+
+  const filteredPopular = q
+    ? SIDEBAR_POPULAR.filter(t => t.label.toLowerCase().includes(q))
+    : SIDEBAR_POPULAR;
+
+  const filteredOptimize = q
+    ? SIDEBAR_OPTIMIZE.filter(t => t.label.toLowerCase().includes(q))
+    : SIDEBAR_OPTIMIZE;
+
+  const filteredGenerate = q
+    ? SIDEBAR_GENERATE.filter(t => t.label.toLowerCase().includes(q))
+    : SIDEBAR_GENERATE;
 
   return (
     <nav
@@ -174,10 +185,9 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       style={{
         position: "sticky",
         top: "64px",
-        height: "calc(100vh - 64px)",
+        maxHeight: "calc(100vh - 64px)",
         overflowY: "auto",
         background: "hsl(223 62% 6%)",
-        borderRight: "1px solid hsl(224 28% 18%)",
       }}
       aria-label="Image tools navigation"
     >
@@ -204,7 +214,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
             <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Popular
             </p>
-            {SIDEBAR_POPULAR.map(t => {
+            {filteredPopular.map(t => {
               const isActive = t.slug === activeSlug;
               return (
                 <Link
@@ -284,7 +294,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Optimize
             </p>
-            {SIDEBAR_OPTIMIZE.map(t => {
+            {filteredOptimize.map(t => {
               const Icon = t.icon;
               const isActive = t.slug === activeSlug;
               return (
@@ -319,7 +329,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Generate
             </p>
-            {SIDEBAR_GENERATE.map(t => {
+            {filteredGenerate.map(t => {
               const Icon = t.icon;
               const isActive = t.slug === activeSlug;
               return (
@@ -352,9 +362,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       {/* Trndinn promo card at bottom */}
       <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(223 62% 12%), hsl(224 36% 18%))", border: "1px solid hsl(224 28% 24%)" }}>
         <div className="flex items-center gap-2 mb-1.5">
-          <div className="flex h-5 w-5 items-center justify-center rounded" style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}>
-            <span className="text-[9px] font-black text-white">T</span>
-          </div>
+          <img src="/logo-icon.svg" alt="" className="h-5 w-5" aria-hidden />
           <span className="text-[11px] font-semibold text-foreground">trndinn</span>
         </div>
         <p className="text-[10.5px] leading-relaxed text-muted-foreground">
