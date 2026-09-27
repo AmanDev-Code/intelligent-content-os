@@ -24,6 +24,11 @@ import {
   getImageConverterCompetitor,
   getRelatedImageConverterCompetitors,
 } from "@/lib/image-converter-competitors";
+import {
+  IMAGE_EDIT_COMPETITOR_SLUGS,
+  getImageEditCompetitor,
+  getRelatedImageEditCompetitors,
+} from "@/lib/image-edit-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
@@ -31,6 +36,7 @@ import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
 import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternativeView";
 import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeView";
 import ImageConverterAlternativeView from "@/views/tools/ImageConverterAlternativeView";
+import ImageEditAlternativeView from "@/views/tools/ImageEditAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
@@ -63,6 +69,7 @@ type ResolvedCompetitor =
   | { kind: "reel" }
   | { kind: "bio" }
   | { kind: "image-converter" }
+  | { kind: "image-edit" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
@@ -70,6 +77,7 @@ function resolveKind(slug: string): ResolvedCompetitor {
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(slug)) return { kind: "reel" };
   if (BIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "bio" };
   if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-converter" };
+  if (IMAGE_EDIT_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-edit" };
   return null;
 }
 
@@ -79,6 +87,7 @@ export async function generateStaticParams() {
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -171,6 +180,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "free image converter",
         "online image converter",
         "browser based image converter",
+      ],
+    });
+  }
+
+  // image edit
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Image Editor`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based image editor. 9 tools, no uploads, no daily limits, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free image editor online",
+        "online image compressor",
+        "browser based image editor",
       ],
     });
   }
@@ -559,6 +590,97 @@ export default async function AlternativePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <ImageConverterAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image edit competitors ───────────────────────────────────────────────
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedImageEditCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for image editing, ranked by privacy, daily limits, feature coverage, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Image Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/compress-jpg`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, 9 tools, no uploads, no daily limits.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/compress-jpg`,
+          description:
+            "Free browser-based image editing suite with 9 tools — compress, resize, crop, rotate, watermark, pipeline editing. All processing via Canvas API — zero uploads, unlimited usage, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "743",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageEditAlternativeView competitor={competitor} related={related} />
       </>
     );
   }

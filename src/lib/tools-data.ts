@@ -7,7 +7,8 @@ export type ToolCategory =
   | "Bio Generator"
   | "Hashtag"
   | "Analytics"
-  | "Image Converter";
+  | "Image Converter"
+  | "Image Editor";
 
 export type ToolPlatform = "Instagram" | "LinkedIn" | "Twitter" | "TikTok" | "Multi-platform";
 
@@ -130,6 +131,17 @@ export const TOOLS: ToolEntry[] = [
   { slug: "png-to-ico",   name: "PNG to ICO Converter",   description: "Convert PNG to ICO online free. Create favicons and Windows icons. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
   { slug: "jpg-to-ico",   name: "JPG to ICO Converter",   description: "Convert JPG to ICO online free. Create favicons and Windows icons. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
   { slug: "webp-to-ico",  name: "WebP to ICO Converter",  description: "Convert WebP to ICO online free. Create favicons and Windows icons. No signup.",        category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+
+  // ─── Image Edit & Compression (9 tools) ───────────────────────────────────
+  { slug: "compress-jpg",    name: "JPG Compressor",       description: "Compress JPG images online free. Quality slider, up to 90% size reduction. No signup, browser-based.",                        category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "compress-png",    name: "PNG Compressor",       description: "Compress PNG images online free. Preserves transparency. Up to 80% size reduction. No signup, browser-based.",                category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "compress-webp",   name: "WebP Compressor",      description: "Compress WebP images online free. Reduce file size 20-50% with quality control. No signup, browser-based.",                  category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "compress-gif",    name: "GIF Compressor",       description: "Compress GIF images online free. Reduce animated or static GIF size 30-70%. No signup, browser-based.",                      category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "image-resizer",   name: "Image Resizer",        description: "Resize images online free. Platform presets for LinkedIn, Instagram, Twitter, YouTube, Facebook. No signup.",                 category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "image-cropper",   name: "Image Cropper",        description: "Crop images online free. Pixel-precise crop area controls. No signup, browser-based, instant download.",                      category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "image-rotator",   name: "Image Rotator",        description: "Rotate and flip images online free. 90°, 180°, 270° and flip H/V. No signup, browser-based.",                                category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "watermark-image", name: "Image Watermark Tool", description: "Add text or image watermarks to photos online free. 9 positions, opacity control. No signup, browser-based.",                 category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "image-workbench", name: "Image Workbench",      description: "Multi-op image pipeline editor. Chain resize, crop, rotate, compress, convert in one run. No signup, browser-based.",        category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
 ];
 
 export function getToolBySlug(slug: string): ToolEntry | undefined {

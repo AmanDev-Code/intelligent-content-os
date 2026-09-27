@@ -24,6 +24,11 @@ import {
   getImageConverterCompetitor,
   getRelatedImageConverterCompetitors,
 } from "@/lib/image-converter-competitors";
+import {
+  IMAGE_EDIT_COMPETITOR_SLUGS,
+  getImageEditCompetitor,
+  getRelatedImageEditCompetitors,
+} from "@/lib/image-edit-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
@@ -31,6 +36,7 @@ import CaptionCompareView from "@/views/tools/CaptionCompareView";
 import ReelDownloaderCompareView from "@/views/tools/ReelDownloaderCompareView";
 import BioGeneratorCompareView from "@/views/tools/BioGeneratorCompareView";
 import ImageConverterCompareView from "@/views/tools/ImageConverterCompareView";
+import ImageEditCompareView from "@/views/tools/ImageEditCompareView";
 
 /**
  * /compare/[slug] — dynamic catch-all for tool comparisons.
@@ -65,6 +71,7 @@ type ResolvedCompetitor =
   | { kind: "reel"; competitorSlug: string }
   | { kind: "bio"; competitorSlug: string }
   | { kind: "image-converter"; competitorSlug: string }
+  | { kind: "image-edit"; competitorSlug: string }
   | null;
 
 function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
@@ -82,6 +89,9 @@ function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
   if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(competitorSlug)) {
     return { kind: "image-converter", competitorSlug };
   }
+  if (IMAGE_EDIT_COMPETITOR_SLUGS.includes(competitorSlug)) {
+    return { kind: "image-edit", competitorSlug };
+  }
   return null;
 }
 
@@ -91,6 +101,7 @@ export async function generateStaticParams() {
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
+    ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
   ];
 }
 
@@ -187,6 +198,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "free image converter",
         "online image converter",
         "browser based image converter",
+      ],
+    });
+  }
+
+  // image edit
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(resolved.competitorSlug);
+    if (!competitor) return {};
+    const title = `${siteName} vs ${competitor.name} — Image Editor Comparison`;
+    const description =
+      `Compare ${siteName} vs ${competitor.name}: free browser-based image editor, 9 tools, no uploads, no daily limits. See features, pricing, and why creators switch.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} vs trndinn`,
+        `trndinn vs ${competitor.name.toLowerCase()}`,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        "free image editor online",
+        "online image compressor",
+        "browser based image editor",
       ],
     });
   }
@@ -455,6 +489,70 @@ export default async function ComparePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <ImageConverterCompareView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image edit competitors ───────────────────────────────────────────────
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(resolved.competitorSlug);
+    if (!competitor) notFound();
+    const related = getRelatedImageEditCompetitors(resolved.competitorSlug);
+
+    const comparisonGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `${siteName} vs ${competitor.name}`,
+          description: `Free ${competitor.name} alternative for image editing — feature, privacy, and pricing comparison.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/compress-jpg`,
+          description:
+            "Free browser-based image editing suite with 9 tools — compress, resize, crop, rotate, watermark, and pipeline editing. All processing via Canvas API — zero uploads, unlimited usage, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "743",
+          },
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: competitor.name,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: competitor.url,
+          description: competitor.tagline,
+          sameAs: [competitor.url],
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={comparisonGraph} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Compare", path: "/compare" },
+            { name: `${siteName} vs ${competitor.name}`, path: `/compare/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageEditCompareView competitor={competitor} related={related} />
       </>
     );
   }

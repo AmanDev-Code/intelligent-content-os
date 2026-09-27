@@ -38,6 +38,7 @@ const CATEGORY_ICONS: Record<ToolCategory, typeof Download> = {
   Hashtag: Hash,
   Analytics: BarChart3,
   "Image Converter": ImageIcon,
+  "Image Editor": ImageIcon,
 };
 
 // ---------------------------------------------------------------------------

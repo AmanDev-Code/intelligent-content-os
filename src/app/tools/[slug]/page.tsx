@@ -12,6 +12,12 @@ import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderVi
 import AutoCaptionGeneratorView from "@/views/tools/AutoCaptionGeneratorView";
 import BioGeneratorView from "@/views/tools/BioGeneratorView";
 import ImageConverterView from "@/views/tools/ImageConverterView";
+import ImageCompressorView from "@/views/tools/ImageCompressorView";
+import ImageResizerView from "@/views/tools/ImageResizerView";
+import ImageCropperView from "@/views/tools/ImageCropperView";
+import ImageRotatorView from "@/views/tools/ImageRotatorView";
+import WatermarkView from "@/views/tools/WatermarkView";
+import ImageWorkbenchView from "@/views/tools/ImageWorkbenchView";
 import {
   REEL_DOWNLOADER_PRIMARY_SLUG,
   REEL_DOWNLOADER_ALIAS_SLUGS,
@@ -40,6 +46,16 @@ import {
   getConverterAlias,
   isConverterAliasSlug,
 } from "@/lib/image-converter-aliases";
+import {
+  ALL_EDIT_SLUGS,
+  getEditTool,
+  isEditSlug,
+} from "@/lib/image-edit-data";
+import {
+  IMAGE_EDIT_ALIAS_SLUGS,
+  getEditAlias,
+  isEditAliasSlug,
+} from "@/lib/image-edit-aliases";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -199,6 +215,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // ─── Image Edit Aliases ───────────────────────────────────────────────────
+  const editAlias = getEditAlias(slug);
+  if (editAlias) {
+    return buildMarketingMetadata(`/tools/${editAlias.slug}`, {
+      title: editAlias.seoTitle,
+      description: editAlias.seoDescription,
+      keywords: editAlias.keywords,
+    });
+  }
+
+  // ─── Image Edit primary tools ─────────────────────────────────────────────
+  if (isEditSlug(slug)) {
+    const editTool = getEditTool(slug)!;
+    return buildMarketingMetadata(`/tools/${slug}`, {
+      title: editTool.seoTitle,
+      description: editTool.seoDescription,
+      keywords: [
+        editTool.primaryKeyword,
+        `free ${editTool.name.toLowerCase()} online`,
+        `${editTool.name.toLowerCase()} no signup`,
+        "free image editor online",
+        "browser-based image editor",
+      ],
+    });
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
@@ -301,6 +343,8 @@ export function generateStaticParams() {
     ...BIO_GENERATOR_ALIAS_SLUGS.map((slug) => ({ slug })),
     ...ALL_CONVERSION_SLUGS.map((slug) => ({ slug })),
     ...IMAGE_CONVERTER_ALIAS_SLUGS.map((slug) => ({ slug })),
+    ...ALL_EDIT_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_EDIT_ALIAS_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -651,6 +695,161 @@ export default async function ToolPage({ params }: PageProps) {
           alias={alias}
           faqs={convTool.faqs}
         />
+      </>
+    );
+  }
+
+  // ─── Image Edit tools (primary + aliases) ────────────────────────────────
+  if (isEditSlug(slug) || isEditAliasSlug(slug)) {
+    const alias = getEditAlias(slug);
+    const canonicalSlug = alias ? alias.canonical : slug;
+    const editTool = getEditTool(canonicalSlug);
+    if (!editTool) notFound();
+    const breadcrumbName = alias
+      ? alias.seoTitle.split(" — ")[0]
+      : editTool.h1;
+
+    const isCompressor = ["compress-jpg", "compress-png", "compress-webp", "compress-gif"].includes(canonicalSlug);
+
+    const howToStepsCompressor = [
+      {
+        name: `Upload your image`,
+        text: `Click or drag and drop your image into the upload area above.`,
+      },
+      {
+        name: "Adjust the quality slider",
+        text: "Set the quality percentage — 80% is the default sweet spot for 50%+ size reduction with no visible quality loss.",
+      },
+      {
+        name: "Download your compressed image",
+        text: "Click Compress Image, then Download. Your compressed file is ready instantly — no server upload, no watermark.",
+      },
+    ];
+
+    const howToStepsResize = [
+      {
+        name: "Upload your image",
+        text: "Click or drag and drop your image into the upload area above.",
+      },
+      {
+        name: "Choose a platform preset or enter custom dimensions",
+        text: "Pick a one-click preset for LinkedIn, Instagram, Twitter, YouTube, or Facebook — or enter exact pixel dimensions manually.",
+      },
+      {
+        name: "Download your resized image",
+        text: "Click Resize Image, then Download. Your resized image is ready instantly — all in your browser.",
+      },
+    ];
+
+    const howToStepsGeneric = [
+      {
+        name: "Upload your image",
+        text: "Click or drag and drop your image into the upload area above.",
+      },
+      {
+        name: "Configure settings",
+        text: `Adjust the settings for your ${editTool.name.toLowerCase()} operation.`,
+      },
+      {
+        name: "Download your result",
+        text: "Click the action button and download your processed image instantly — all browser-based, no upload.",
+      },
+    ];
+
+    const howToSteps = isCompressor
+      ? howToStepsCompressor
+      : canonicalSlug === "image-resizer"
+      ? howToStepsResize
+      : howToStepsGeneric;
+
+    const webAppFeatures = isCompressor
+      ? [
+          "Quality slider for precise compression control",
+          "Browser-based — images never uploaded to any server",
+          "Batch compression — multiple files at once",
+          "Before/after file size comparison",
+          "No signup, no watermark, no usage limits",
+          "Works on desktop and mobile",
+        ]
+      : canonicalSlug === "image-resizer"
+      ? [
+          "Platform presets for LinkedIn, Instagram, Twitter, YouTube, Facebook",
+          "Custom pixel dimension input",
+          "Aspect ratio lock / unlock",
+          "Browser-based — images never uploaded",
+          "No signup, no watermark, no limits",
+          "Works on desktop and mobile",
+        ]
+      : canonicalSlug === "image-cropper"
+      ? [
+          "Pixel-precise X/Y offset and dimension controls",
+          "Browser-based — images never uploaded",
+          "No signup, no watermark, no limits",
+          "Works on desktop and mobile",
+        ]
+      : canonicalSlug === "image-rotator"
+      ? [
+          "Rotate 90°, 180°, 270°, −90°",
+          "Flip horizontal and vertical",
+          "Browser-based — images never uploaded",
+          "No signup, no watermark, no limits",
+        ]
+      : canonicalSlug === "watermark-image"
+      ? [
+          "Text watermark with font size, color, opacity",
+          "Image/logo watermark with opacity control",
+          "9 position presets",
+          "Browser-based — images never uploaded",
+          "No signup, no watermark on output",
+        ]
+      : [
+          "Multi-op pipeline: Resize, Crop, Rotate, Compress, Convert",
+          "Chain unlimited operations in one pass",
+          "Browser-based — images never uploaded",
+          "No signup, no watermark, no limits",
+        ];
+
+    const ViewComponent =
+      isCompressor
+        ? ImageCompressorView
+        : canonicalSlug === "image-resizer"
+        ? ImageResizerView
+        : canonicalSlug === "image-cropper"
+        ? ImageCropperView
+        : canonicalSlug === "image-rotator"
+        ? ImageRotatorView
+        : canonicalSlug === "watermark-image"
+        ? WatermarkView
+        : ImageWorkbenchView;
+
+    return (
+      <>
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Tools", path: "/tools" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
+          ]}
+        />
+        <FAQPageSchema
+          faqs={editTool.faqs}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+        />
+        <WebApplicationSchema
+          name={alias ? alias.seoTitle.split(" — ")[0] : editTool.h1}
+          description={editTool.seoDescription}
+          url={`/tools/${canonicalSlug}`}
+          applicationCategory="MultimediaApplication"
+          featureList={webAppFeatures}
+        />
+        <HowToSchema
+          name={`How to use the ${editTool.name}`}
+          description={editTool.description}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+          totalTime="PT30S"
+          steps={howToSteps}
+        />
+        <ViewComponent tool={editTool} alias={alias} />
       </>
     );
   }
