@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { BreadcrumbSchema } from "@/components/seo/BreadcrumbSchema";
-import { ImageToolsHubView } from "@/views/tools/ImageToolsHubView";
+import ImageToolsHubView from "@/views/tools/ImageToolsHubView";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMarketingMetadata("/tools/image", {

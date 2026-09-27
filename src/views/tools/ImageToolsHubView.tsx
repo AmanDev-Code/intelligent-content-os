@@ -1,244 +1,287 @@
 "use client";
 
 /**
- * ImageToolsHubView — image tools category hub.
+ * ImageToolsHubView — image tools category hub showing all 49 tools.
  * Dark-themed layout matching the converter pages.
+ * Pulls real tool data from image-converter-data, image-edit-data, image-utility-data.
  */
 
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
-  Image as ImageIcon,
   RefreshCw,
   Minimize2,
-  Pencil,
+  Scissors,
   Wrench,
+  Sparkles,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { CONVERSION_TOOLS } from "@/lib/image-converter-data";
+import { EDIT_TOOLS } from "@/lib/image-edit-data";
+import { UTILITY_TOOLS } from "@/lib/image-utility-data";
 
-// ---------------------------------------------------------------------------
-// Tool registry — 49 image tools, grouped into 4 categories
-// ---------------------------------------------------------------------------
+// ─── Format color for icon badges ────────────────────────────────────────────
 
-interface ImageTool {
-  slug: string;
-  name: string;
-  description: string;
+const FORMAT_COLORS: Record<string, string> = {
+  png: "#3B82F6", jpg: "#EF4444", jpeg: "#EF4444", webp: "#10B981",
+  heic: "#F59E0B", heif: "#F59E0B", svg: "#F97316", avif: "#8B5CF6",
+  gif: "#EC4899", bmp: "#6B7280", tiff: "#6B7280", tif: "#6B7280", ico: "#F59E0B",
+};
+
+function getColor(slug: string): string {
+  const from = slug.split("-to-")[0] ?? slug;
+  return FORMAT_COLORS[from] ?? "#F97316";
 }
 
-const CONVERT_TOOLS: ImageTool[] = [
-  { slug: "image-converter", name: "Image Converter", description: "Convert between JPG, PNG, WEBP, AVIF, GIF, BMP, TIFF and more." },
-  { slug: "jpg-to-png", name: "JPG to PNG", description: "Convert JPEG images to lossless PNG with transparency support." },
-  { slug: "png-to-jpg", name: "PNG to JPG", description: "Flatten transparent PNGs to JPEG for smaller file sizes." },
-  { slug: "image-to-webp", name: "Image to WebP", description: "Convert any image to modern WebP for faster web loading." },
-  { slug: "webp-to-jpg", name: "WebP to JPG", description: "Convert WebP back to universal JPEG format." },
-  { slug: "heic-to-jpg", name: "HEIC to JPG", description: "Convert iPhone HEIC photos to JPEG for cross-platform sharing." },
-  { slug: "svg-to-png", name: "SVG to PNG", description: "Rasterise scalable SVG vectors to PNG at any resolution." },
-  { slug: "gif-to-mp4", name: "GIF to MP4", description: "Convert animated GIFs to MP4 for smaller social media files." },
-];
+// ─── Section data ─────────────────────────────────────────────────────────────
 
-const COMPRESS_TOOLS: ImageTool[] = [
-  { slug: "image-compressor", name: "Image Compressor", description: "Reduce image file size without visible quality loss." },
-  { slug: "jpg-compressor", name: "JPG Compressor", description: "Compress JPEG images with adjustable quality slider." },
-  { slug: "png-compressor", name: "PNG Compressor", description: "Losslessly compress PNG files to save storage and bandwidth." },
-  { slug: "bulk-image-compressor", name: "Bulk Image Compressor", description: "Compress multiple images at once and download as ZIP." },
-];
-
-const EDIT_TOOLS: ImageTool[] = [
-  { slug: "image-resizer", name: "Image Resizer", description: "Resize images to exact dimensions or by percentage." },
-  { slug: "image-cropper", name: "Image Cropper", description: "Crop images to a custom selection or preset aspect ratio." },
-  { slug: "image-rotator", name: "Image Rotator", description: "Rotate images 90°, 180°, 270° or to a custom angle." },
-  { slug: "background-remover", name: "Background Remover", description: "Remove backgrounds from photos using AI — no green screen needed." },
-  { slug: "image-filters", name: "Image Filters", description: "Apply brightness, contrast, saturation, blur and sepia effects." },
-];
-
-const UTILITY_TOOLS: ImageTool[] = [
-  { slug: "image-to-text", name: "Image to Text (OCR)", description: "Extract editable text from images and screenshots with OCR." },
-  { slug: "image-to-base64", name: "Image to Base64", description: "Encode any image as a Base64 data URI for inline embedding." },
-  { slug: "qr-code-generator", name: "QR Code Generator", description: "Generate QR codes for URLs, text, Wi-Fi, or contact cards." },
-  { slug: "image-metadata", name: "Metadata Viewer", description: "Read EXIF, IPTC, and XMP metadata from photos." },
-  { slug: "image-collage", name: "Collage Maker", description: "Combine multiple images into a grid or freeform collage." },
-  { slug: "image-to-pdf", name: "Image to PDF", description: "Convert one or more images into a single PDF document." },
-  { slug: "watermark-adder", name: "Watermark Adder", description: "Add text or image watermarks to protect your photos." },
-];
-
-// ---------------------------------------------------------------------------
-// Category section config
-// ---------------------------------------------------------------------------
-
-interface CategorySection {
+interface SectionConfig {
   id: string;
   label: string;
   icon: typeof RefreshCw;
-  colorHsl: string;
-  tools: ImageTool[];
+  accentColor: string;
+  tools: Array<{ slug: string; name: string; description: string }>;
 }
 
-const SECTIONS: CategorySection[] = [
-  { id: "convert", label: "CONVERT", icon: RefreshCw, colorHsl: "21 95% 56%", tools: CONVERT_TOOLS },
-  { id: "compress", label: "COMPRESS", icon: Minimize2, colorHsl: "142.1 76.2% 36.3%", tools: COMPRESS_TOOLS },
-  { id: "edit", label: "EDIT", icon: Pencil, colorHsl: "217 91% 60%", tools: EDIT_TOOLS },
-  { id: "utility", label: "UTILITY", icon: Wrench, colorHsl: "270 95.2% 75.3%", tools: UTILITY_TOOLS },
+const SECTIONS: SectionConfig[] = [
+  {
+    id: "convert",
+    label: "CONVERT",
+    icon: RefreshCw,
+    accentColor: "#F97316",
+    tools: CONVERSION_TOOLS.map(t => ({
+      slug: t.slug,
+      name: `${t.fromLabel} → ${t.toLabel}`,
+      description: t.whyConvert.slice(0, 80) + (t.whyConvert.length > 80 ? "…" : ""),
+    })),
+  },
+  {
+    id: "compress",
+    label: "COMPRESS",
+    icon: Minimize2,
+    accentColor: "#10B981",
+    tools: EDIT_TOOLS.filter(t =>
+      t.slug.startsWith("compress-")
+    ).map(t => ({
+      slug: t.slug,
+      name: t.name,
+      description: t.description,
+    })),
+  },
+  {
+    id: "edit",
+    label: "EDIT",
+    icon: Scissors,
+    accentColor: "#3B82F6",
+    tools: EDIT_TOOLS.filter(t =>
+      !t.slug.startsWith("compress-")
+    ).map(t => ({
+      slug: t.slug,
+      name: t.name,
+      description: t.description,
+    })),
+  },
+  {
+    id: "utility",
+    label: "UTILITY",
+    icon: Wrench,
+    accentColor: "#8B5CF6",
+    tools: UTILITY_TOOLS.map(t => ({
+      slug: t.slug,
+      name: t.name,
+      description: t.description,
+    })),
+  },
 ];
 
-// ---------------------------------------------------------------------------
-// Tool Card
-// ---------------------------------------------------------------------------
+const totalTools = SECTIONS.reduce((sum, s) => sum + s.tools.length, 0);
 
-function ToolCard({ tool, colorHsl }: { tool: ImageTool; colorHsl: string }) {
+// ─── FloatingOrb ─────────────────────────────────────────────────────────────
+
+function FloatingOrb({ className, color, delay = 0 }: { className: string; color: string; delay?: number }) {
+  const shouldReduce = useReducedMotion();
   return (
-    <li>
-      <Link
-        href={`/tools/${tool.slug}`}
-        aria-label={tool.name}
-        className="group flex h-full flex-col rounded-lg p-4 transition-all duration-200"
-        style={{
-          background: "hsl(223 62% 9%)",
-          border: "1px solid hsl(224 28% 18%)",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = `hsl(${colorHsl})`;
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = "hsl(224 28% 18%)";
-        }}
-      >
-        <div className="mb-2 flex items-start gap-3">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{ backgroundColor: `hsl(${colorHsl} / 0.12)` }}
-          >
-            <ImageIcon
-              className="h-4 w-4"
-              style={{ color: `hsl(${colorHsl})` }}
-              aria-hidden="true"
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3
-              className="text-sm font-semibold transition-colors duration-200"
-              style={{ color: "hsl(210 40% 98%)" }}
-            >
-              {tool.name}
-            </h3>
-            <p
-              className="mt-1 text-xs leading-relaxed"
-              style={{ color: "hsl(215 20.2% 65.1%)" }}
-            >
-              {tool.description}
-            </p>
-          </div>
-        </div>
-        <span
-          className="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-semibold transition-colors duration-200"
-          style={{ color: `hsl(${colorHsl})` }}
-        >
-          Try it
-          <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true" />
-        </span>
-      </Link>
-    </li>
+    <motion.div
+      className={`pointer-events-none absolute rounded-full blur-3xl opacity-30 ${className}`}
+      style={{ background: color }}
+      animate={shouldReduce ? undefined : { x: [0, 20, -15, 0], y: [0, -30, 15, 0], scale: [1, 1.06, 0.97, 1] }}
+      transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay }}
+    />
   );
 }
 
-// ---------------------------------------------------------------------------
-// View
-// ---------------------------------------------------------------------------
+// ─── Component ────────────────────────────────────────────────────────────────
 
-export function ImageToolsHubView() {
+export default function ImageToolsHubView() {
+  const shouldReduce = useReducedMotion();
+
   return (
     <MarketingShell>
-      <div
-        className="min-h-screen"
-        style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
-      >
-        {/* Hero */}
-        <section className="px-4 pt-16 pb-10 text-center sm:pt-24 sm:pb-14">
-          <div className="mx-auto max-w-3xl space-y-4">
-            <p
-              className="text-xs font-bold uppercase tracking-widest"
-              style={{ color: "hsl(21 95% 56%)" }}
-            >
-              Free · No signup · In-browser
-            </p>
-            <h1 className="font-display text-[clamp(2rem,5vw,3.5rem)] font-bold leading-[1.1] tracking-tight">
-              49{" "}
-              <span
-                style={{
-                  background: "linear-gradient(135deg, hsl(21 95% 56%), hsl(32 95% 50%))",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
+      <div style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}>
+        <main className="relative overflow-hidden">
+
+          {/* Background orbs */}
+          <FloatingOrb className="left-[-8%] top-[5%] h-[400px] w-[400px]" color="radial-gradient(circle, #F97316 0%, transparent 70%)" />
+          <FloatingOrb className="right-[-6%] top-[20%] h-[350px] w-[350px]" color="radial-gradient(circle, #8B5CF6 0%, transparent 70%)" delay={4} />
+
+          {/* Hero */}
+          <section className="relative px-6 pb-10 pt-14 lg:px-10">
+            <div className="mx-auto max-w-5xl">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
+                style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
               >
-                Free
-              </span>{" "}
-              Image Tools
-            </h1>
-            <p
-              className="mx-auto max-w-xl text-base leading-relaxed sm:text-lg"
-              style={{ color: "hsl(215 20.2% 65.1%)" }}
-            >
-              Convert, compress, resize, crop, remove backgrounds — all in your
-              browser. No signup, no upload.
-            </p>
-          </div>
-        </section>
+                <Sparkles className="h-3 w-3 text-primary" aria-hidden />
+                {totalTools} free tools · 100% browser-based
+              </motion.div>
 
-        {/* Category sections */}
-        {SECTIONS.map((section) => {
-          const SectionIcon = section.icon;
-          return (
-            <section
-              key={section.id}
-              id={section.id}
-              className="px-4 pb-10 sm:pb-14"
-              aria-labelledby={`${section.id}-heading`}
-            >
-              <div className="mx-auto max-w-6xl">
-                {/* Section header */}
-                <div className="mb-6 flex items-center gap-3">
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-lg"
-                    style={{ backgroundColor: `hsl(${section.colorHsl} / 0.12)` }}
+              <motion.h1
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.1 }}
+                className="font-display text-[clamp(2rem,4.5vw,3.5rem)] font-bold leading-[1.1] tracking-tight"
+              >
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg, #F97316, #F59E0B)" }}>
+                  Free
+                </span>{" "}
+                Image Tools
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.2 }}
+                className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground"
+              >
+                Convert, compress, resize, crop, remove backgrounds, generate favicons, extract text — all in your browser. No signup, no upload, no watermark.
+              </motion.p>
+            </div>
+          </section>
+
+          {/* Tool sections */}
+          {SECTIONS.map((section, sIdx) => {
+            const Icon = section.icon;
+            return (
+              <section key={section.id} className="px-6 pb-10 lg:px-10" id={section.id}>
+                <div className="mx-auto max-w-5xl">
+                  {/* Section header */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.35 }}
+                    className="mb-5 flex items-center gap-3"
                   >
-                    <SectionIcon
-                      className="h-4 w-4"
-                      style={{ color: `hsl(${section.colorHsl})` }}
-                      aria-hidden="true"
-                    />
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-lg"
+                      style={{ background: `${section.accentColor}20` }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: section.accentColor }} aria-hidden />
+                    </div>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      {section.label}
+                    </h2>
+                    <div className="flex-1 border-t" style={{ borderColor: "hsl(224 28% 18%)" }} aria-hidden />
+                    <span className="text-xs text-muted-foreground">{section.tools.length} tools</span>
+                  </motion.div>
+
+                  {/* Tool grid */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {section.tools.map((tool, tIdx) => {
+                      const badgeColor = getColor(tool.slug);
+                      const badgeText = tool.slug.includes("-to-")
+                        ? tool.slug.split("-to-")[0].toUpperCase().slice(0, 3)
+                        : tool.name.slice(0, 2).toUpperCase();
+
+                      return (
+                        <motion.div
+                          key={tool.slug}
+                          initial={{ opacity: 0, y: 12 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-30px" }}
+                          transition={{ duration: 0.3, delay: tIdx * 0.02 }}
+                        >
+                          <Link
+                            href={`/tools/${tool.slug}`}
+                            className="group flex items-start gap-3 rounded-xl p-3.5 transition-all duration-200"
+                            style={{
+                              background: "hsl(223 62% 9%)",
+                              border: "1px solid hsl(224 28% 18%)",
+                            }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.borderColor = `${badgeColor}50`;
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.borderColor = "hsl(224 28% 18%)";
+                            }}
+                          >
+                            <span
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[9px] font-black text-white"
+                              style={{ background: badgeColor }}
+                              aria-hidden
+                            >
+                              {badgeText}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                                {tool.name}
+                              </p>
+                              <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                                {tool.description}
+                              </p>
+                            </div>
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                  <h2
-                    id={`${section.id}-heading`}
-                    className="text-xs font-bold uppercase tracking-widest"
-                    style={{ color: `hsl(${section.colorHsl})` }}
-                  >
-                    {section.label}
-                  </h2>
-                  <div
-                    className="h-px flex-1"
-                    style={{ backgroundColor: "hsl(224 28% 18%)" }}
-                    aria-hidden="true"
-                  />
                 </div>
+              </section>
+            );
+          })}
 
-                {/* Tool grid */}
-                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {section.tools.map((tool) => (
-                    <ToolCard
-                      key={tool.slug}
-                      tool={tool}
-                      colorHsl={section.colorHsl}
-                    />
-                  ))}
-                </ul>
+          {/* Bottom CTA */}
+          <section className="px-6 pb-16 pt-6 lg:px-10">
+            <div className="mx-auto max-w-3xl text-center">
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                className="font-display text-2xl font-bold tracking-tight sm:text-3xl"
+              >
+                <span className="text-foreground">One platform for </span>
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg, #F97316, #F59E0B)" }}>
+                  all your content
+                </span>
+              </motion.h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Convert images for free. Then schedule, publish, and grow — all from one place.
+              </p>
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
+                >
+                  Start free — $0.86/mo <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/tools"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  style={{ border: "1px solid hsl(224 28% 22%)" }}
+                >
+                  Back to all tools
+                </Link>
               </div>
-            </section>
-          );
-        })}
+            </div>
+          </section>
 
-        {/* Bottom spacer */}
-        <div className="h-12 sm:h-20" aria-hidden="true" />
+        </main>
       </div>
     </MarketingShell>
   );
