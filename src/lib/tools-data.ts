@@ -9,7 +9,9 @@ export type ToolCategory =
   | "Analytics"
   | "Image Converter"
   | "Image Editor"
-  | "Image Utility";
+  | "Image Utility"
+  | "Audio"
+  | "Video";
 
 export type ToolPlatform = "Instagram" | "LinkedIn" | "Twitter" | "TikTok" | "Multi-platform";
 
@@ -143,6 +145,17 @@ export const TOOLS: ToolEntry[] = [
   { slug: "image-rotator",   name: "Image Rotator",        description: "Rotate and flip images online free. 90°, 180°, 270° and flip H/V. No signup, browser-based.",                                category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
   { slug: "watermark-image", name: "Image Watermark Tool", description: "Add text or image watermarks to photos online free. 9 positions, opacity control. No signup, browser-based.",                 category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
   { slug: "image-workbench", name: "Image Workbench",      description: "Multi-op image pipeline editor. Chain resize, crop, rotate, compress, convert in one run. No signup, browser-based.",        category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+
+  // ─── Audio Tools (4 tools — Phase 7) ─────────────────────────────────────
+  { slug: "audio-converter",  name: "Audio Converter",  description: "Convert audio files online free — MP3, WAV, FLAC, AAC, OGG, M4A. No upload, no signup, FFmpeg WASM in your browser.", category: "Audio", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "audio-recorder",   name: "Audio Recorder",   description: "Record audio online free from your microphone. No app, no signup. Browser MediaRecorder API. Download as WEBM.",          category: "Audio", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "text-to-speech",   name: "Text to Speech",   description: "Convert text to speech online free with natural browser voices. Adjust speed and pitch. No signup, no download.",           category: "Audio", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "speech-to-text",   name: "Speech to Text",   description: "Transcribe speech to text online free. Live transcript, 8 languages. Chrome and Edge. No signup, no upload.",               category: "Audio", platform: "Multi-platform", isAI: false, live: true },
+
+  // ─── Video Tools (3 tools — Phase 7) ─────────────────────────────────────
+  { slug: "video-converter",  name: "Video Converter",  description: "Convert video files online free — MP4, MOV, AVI, MKV, WEBM. No upload, no signup, FFmpeg WASM in your browser.",           category: "Video", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "video-recorder",   name: "Video Recorder",   description: "Record webcam video online free. No app, no signup. Browser MediaRecorder API. Download as WEBM.",                           category: "Video", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "screen-recorder",  name: "Screen Recorder",  description: "Record your screen online free. No download, no extension. Chrome and Edge getDisplayMedia API. Download as WEBM.",          category: "Video", platform: "Multi-platform", isAI: false, live: true },
 
   // ─── Image Utility / AI tools (7 tools — Phase 4) ────────────────────────
   { slug: "image-to-base64",    name: "Image to Base64 Converter", description: "Convert any image to a Base64 data URI instantly. Browser-based — files never leave your device. Free, no signup.",          category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },

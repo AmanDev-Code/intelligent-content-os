@@ -15,6 +15,8 @@ import {
   Linkedin as LinkedinIcon,
   Github as GithubIcon,
   ImageIcon,
+  Music2,
+  Video,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,8 @@ const CATEGORY_ICONS: Record<ToolCategory, typeof Download> = {
   "Image Converter": ImageIcon,
   "Image Editor": ImageIcon,
   "Image Utility": ImageIcon,
+  Audio: Music2,
+  Video: Video,
 };
 
 // ---------------------------------------------------------------------------

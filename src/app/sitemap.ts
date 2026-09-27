@@ -17,6 +17,12 @@ import { IMAGE_EDIT_COMPETITOR_SLUGS } from "@/lib/image-edit-competitors";
 import { ALL_UTILITY_SLUGS } from "@/lib/image-utility-data";
 import { IMAGE_UTILITY_ALIAS_SLUGS } from "@/lib/image-utility-aliases";
 import { IMAGE_UTILITY_COMPETITOR_SLUGS } from "@/lib/image-utility-competitors";
+import { ALL_AUDIO_SLUGS } from "@/lib/audio-data";
+import { AUDIO_ALIAS_SLUGS } from "@/lib/audio-aliases";
+import { AUDIO_COMPETITOR_SLUGS } from "@/lib/audio-competitors";
+import { ALL_VIDEO_SLUGS } from "@/lib/video-data";
+import { VIDEO_ALIAS_SLUGS } from "@/lib/video-aliases";
+import { VIDEO_COMPETITOR_SLUGS } from "@/lib/video-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -234,6 +240,74 @@ const STATIC_ROUTES: StaticRoute[] = [
 
   // 5 image utility alternative pages (priority 0.75)
   ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 7: Audio tools ─────────────────────────────────────────────────
+
+  // 4 primary audio tool URLs (priority 0.9)
+  ...ALL_AUDIO_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 20 audio alias URLs — 5 per tool (priority 0.7)
+  ...AUDIO_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 audio compare pages (priority 0.8)
+  ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 audio alternative pages (priority 0.75)
+  ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 7: Video tools ─────────────────────────────────────────────────
+
+  // 3 primary video tool URLs (priority 0.9)
+  ...ALL_VIDEO_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 15 video alias URLs — 5 per tool (priority 0.7)
+  ...VIDEO_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 video compare pages (priority 0.8)
+  ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 video alternative pages (priority 0.75)
+  ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({
     path: `/alternatives/${slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.75,

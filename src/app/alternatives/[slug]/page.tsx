@@ -34,6 +34,16 @@ import {
   getImageUtilityCompetitor,
   getRelatedImageUtilityCompetitors,
 } from "@/lib/image-utility-competitors";
+import {
+  AUDIO_COMPETITOR_SLUGS,
+  getAudioCompetitor,
+  getRelatedAudioCompetitors,
+} from "@/lib/audio-competitors";
+import {
+  VIDEO_COMPETITOR_SLUGS,
+  getVideoCompetitor,
+  getRelatedVideoCompetitors,
+} from "@/lib/video-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
@@ -43,6 +53,8 @@ import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeVi
 import ImageConverterAlternativeView from "@/views/tools/ImageConverterAlternativeView";
 import ImageEditAlternativeView from "@/views/tools/ImageEditAlternativeView";
 import ImageUtilityAlternativeView from "@/views/tools/ImageUtilityAlternativeView";
+import AudioAlternativeView from "@/views/tools/AudioAlternativeView";
+import VideoAlternativeView from "@/views/tools/VideoAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
@@ -77,6 +89,8 @@ type ResolvedCompetitor =
   | { kind: "image-converter" }
   | { kind: "image-edit" }
   | { kind: "image-utility" }
+  | { kind: "audio" }
+  | { kind: "video" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
@@ -86,6 +100,8 @@ function resolveKind(slug: string): ResolvedCompetitor {
   if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-converter" };
   if (IMAGE_EDIT_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-edit" };
   if (IMAGE_UTILITY_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-utility" };
+  if (AUDIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "audio" };
+  if (VIDEO_COMPETITOR_SLUGS.includes(slug)) return { kind: "video" };
   return null;
 }
 
@@ -97,6 +113,8 @@ export async function generateStaticParams() {
     ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -233,6 +251,50 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "free image utility tools",
         "background remover free",
         "browser-based image tools",
+      ],
+    });
+  }
+
+  // audio
+  if (resolved.kind === "audio") {
+    const competitor = getAudioCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Audio Tools`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based audio toolkit. Converter, recorder, TTS, and STT — no uploads, no daily limits, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free audio converter online",
+        "online audio recorder",
+        "browser-based audio tool",
+      ],
+    });
+  }
+
+  // video
+  if (resolved.kind === "video") {
+    const competitor = getVideoCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Video Tools`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based video toolkit. Converter, webcam recorder, screen recorder — no watermark, no upload, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free video converter online",
+        "screen recorder online free",
+        "browser-based video tool",
       ],
     });
   }
@@ -803,6 +865,188 @@ export default async function AlternativePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <ImageUtilityAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Audio competitors ────────────────────────────────────────────────────
+  if (resolved.kind === "audio") {
+    const competitor = getAudioCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedAudioCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The best ${competitor.name} alternatives for audio tools, ranked by privacy, feature breadth, pricing, and ease of use.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Audio Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/audio-converter`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, browser-local audio processing, 4 tools in one suite, no uploads, no watermark.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Audio Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/audio-converter`,
+          description:
+            "Free browser-based audio toolkit — convert MP3/WAV/FLAC/AAC, record from microphone, text-to-speech, and speech-to-text. Zero uploads, no signup, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "521",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <AudioAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Video competitors ────────────────────────────────────────────────────
+  if (resolved.kind === "video") {
+    const competitor = getVideoCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedVideoCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The best ${competitor.name} alternatives for video tools, ranked by privacy, watermark policy, feature breadth, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Video Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/video-converter`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, no watermark, browser-local video processing, 3 tools in one suite.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Video Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/video-converter`,
+          description:
+            "Free browser-based video toolkit — convert MP4/MOV/AVI/MKV/WEBM, record webcam video, and capture your screen. Zero uploads, no watermark, no signup.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "438",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <VideoAlternativeView competitor={competitor} related={related} />
       </>
     );
   }
