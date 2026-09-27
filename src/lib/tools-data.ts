@@ -6,7 +6,8 @@ export type ToolCategory =
   | "Hook & Caption"
   | "Bio Generator"
   | "Hashtag"
-  | "Analytics";
+  | "Analytics"
+  | "Image Converter";
 
 export type ToolPlatform = "Instagram" | "LinkedIn" | "Twitter" | "TikTok" | "Multi-platform";
 
@@ -94,6 +95,41 @@ export const TOOLS: ToolEntry[] = [
     isAI: true,
     live: false,
   },
+
+  // ─── Image Converters (33 tools) ───────────────────────────────────────────
+  { slug: "png-to-jpg",   name: "PNG to JPG Converter",   description: "Convert PNG to JPG online free. No signup, instant download, browser-based.",          category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-png",   name: "JPG to PNG Converter",   description: "Convert JPG to PNG online free. Lossless output, no signup, instant download.",        category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-jpg",  name: "WebP to JPG Converter",  description: "Convert WebP to JPG online free. No signup, instant download, browser-based.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-png",  name: "WebP to PNG Converter",  description: "Convert WebP to PNG online free. Lossless output, no signup, instant download.",       category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-webp",  name: "JPG to WebP Converter",  description: "Convert JPG to WebP online free. 25-35% smaller files, no signup.",                    category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-webp",  name: "PNG to WebP Converter",  description: "Convert PNG to WebP online free. Smaller files for faster websites. No signup.",       category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "heic-to-jpg",  name: "HEIC to JPG Converter",  description: "Convert iPhone HEIC photos to JPG online free. No signup, no upload.",                  category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "heic-to-png",  name: "HEIC to PNG Converter",  description: "Convert iPhone HEIC photos to lossless PNG free. No signup, browser-based.",           category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "svg-to-png",   name: "SVG to PNG Converter",   description: "Convert SVG to high-resolution PNG online free. No signup, instant download.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "gif-to-jpg",   name: "GIF to JPG Converter",   description: "Convert GIF to JPG online free. Extract first frame as static JPG. No signup.",        category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "gif-to-png",   name: "GIF to PNG Converter",   description: "Convert GIF to PNG online free. Lossless first-frame extraction. No signup.",          category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "gif-to-webp",  name: "GIF to WebP Converter",  description: "Convert GIF to WebP online free. Smaller animated images for the web. No signup.",     category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "bmp-to-jpg",   name: "BMP to JPG Converter",   description: "Convert BMP to JPG online free. Reduce file size by 90%+. No signup.",                 category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "bmp-to-png",   name: "BMP to PNG Converter",   description: "Convert BMP to PNG online free. Lossless compression, no signup.",                     category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "tiff-to-jpg",  name: "TIFF to JPG Converter",  description: "Convert TIFF to JPG online free. Reduce large TIFF files for web sharing. No signup.", category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "tiff-to-png",  name: "TIFF to PNG Converter",  description: "Convert TIFF to PNG online free. Lossless output with universal compatibility.",       category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-avif",  name: "JPG to AVIF Converter",  description: "Convert JPG to AVIF online free. 50% smaller files with next-gen compression.",        category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-avif",  name: "PNG to AVIF Converter",  description: "Convert PNG to AVIF online free. Smallest file sizes for the web. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-avif", name: "WebP to AVIF Converter", description: "Convert WebP to AVIF online free. 20% smaller than WebP. No signup.",                  category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "avif-to-jpg",  name: "AVIF to JPG Converter",  description: "Convert AVIF to JPG online free. Universal compatibility. No signup.",                  category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "avif-to-png",  name: "AVIF to PNG Converter",  description: "Convert AVIF to PNG online free. Lossless output, no signup.",                         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-gif",   name: "JPG to GIF Converter",   description: "Convert JPG to GIF online free. Create static GIF images from photos. No signup.",     category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-gif",   name: "PNG to GIF Converter",   description: "Convert PNG to GIF online free. Web-ready GIF output. No signup.",                     category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-gif",  name: "WebP to GIF Converter",  description: "Convert WebP to GIF online free. Universal GIF compatibility. No signup.",             category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-bmp",   name: "JPG to BMP Converter",   description: "Convert JPG to BMP online free. Uncompressed bitmap for legacy software. No signup.",  category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-bmp",   name: "PNG to BMP Converter",   description: "Convert PNG to BMP online free. Uncompressed bitmap output. No signup.",               category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-bmp",  name: "WebP to BMP Converter",  description: "Convert WebP to BMP online free. Legacy-compatible bitmap output. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-tiff",  name: "JPG to TIFF Converter",  description: "Convert JPG to TIFF online free. Print-ready output for publishing. No signup.",       category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-tiff",  name: "PNG to TIFF Converter",  description: "Convert PNG to TIFF online free. Lossless print-quality output. No signup.",           category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-tiff", name: "WebP to TIFF Converter", description: "Convert WebP to TIFF online free. Print-ready output for professional use. No signup.", category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "png-to-ico",   name: "PNG to ICO Converter",   description: "Convert PNG to ICO online free. Create favicons and Windows icons. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "jpg-to-ico",   name: "JPG to ICO Converter",   description: "Convert JPG to ICO online free. Create favicons and Windows icons. No signup.",         category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "webp-to-ico",  name: "WebP to ICO Converter",  description: "Convert WebP to ICO online free. Create favicons and Windows icons. No signup.",        category: "Image Converter", platform: "Multi-platform", isAI: false, live: true },
 ];
 
 export function getToolBySlug(slug: string): ToolEntry | undefined {

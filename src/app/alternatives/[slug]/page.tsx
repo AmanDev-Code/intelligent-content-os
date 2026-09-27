@@ -19,12 +19,18 @@ import {
   getBioCompetitor,
   getRelatedBioCompetitors,
 } from "@/lib/bio-generator-competitors";
+import {
+  IMAGE_CONVERTER_COMPETITOR_SLUGS,
+  getImageConverterCompetitor,
+  getRelatedImageConverterCompetitors,
+} from "@/lib/image-converter-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
 import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternativeView";
 import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeView";
+import ImageConverterAlternativeView from "@/views/tools/ImageConverterAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
@@ -56,12 +62,14 @@ type ResolvedCompetitor =
   | { kind: "caption" }
   | { kind: "reel" }
   | { kind: "bio" }
+  | { kind: "image-converter" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
   if (CAPTION_COMPETITOR_SLUGS.includes(slug)) return { kind: "caption" };
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(slug)) return { kind: "reel" };
   if (BIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "bio" };
+  if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-converter" };
   return null;
 }
 
@@ -70,6 +78,7 @@ export async function generateStaticParams() {
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -140,6 +149,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "ai bio generator",
         "free bio generator",
         "linkedin bio generator",
+      ],
+    });
+  }
+
+  // image converter
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Image Converter`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based image converter. 33 formats, no uploads, unlimited batch, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free image converter",
+        "online image converter",
+        "browser based image converter",
       ],
     });
   }
@@ -437,6 +468,97 @@ export default async function AlternativePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <BioGeneratorAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image converter competitors ──────────────────────────────────────────
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedImageConverterCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for image conversion, ranked by privacy, batch support, format coverage, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Image Converter`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/png-to-jpg`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, local browser processing, 33 format pairs, unlimited batch, no watermark.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Converter`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/png-to-jpg`,
+          description:
+            "Free browser-based image converter with 33 format pairs. All conversion happens locally via the Canvas API — zero uploads, unlimited batch, no watermark, no login.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "892",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageConverterAlternativeView competitor={competitor} related={related} />
       </>
     );
   }

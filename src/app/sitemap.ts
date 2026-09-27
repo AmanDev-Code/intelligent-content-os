@@ -8,6 +8,9 @@ import { BIO_GENERATOR_ALIAS_SLUGS } from "@/lib/bio-generator-aliases";
 import { CAPTION_COMPETITOR_SLUGS } from "@/lib/caption-competitors";
 import { REEL_DOWNLOADER_COMPETITOR_SLUGS } from "@/lib/reel-downloader-competitors";
 import { BIO_COMPETITOR_SLUGS } from "@/lib/bio-generator-competitors";
+import { ALL_CONVERSION_SLUGS } from "@/lib/image-converter-data";
+import { IMAGE_CONVERTER_ALIAS_SLUGS } from "@/lib/image-converter-aliases";
+import { IMAGE_CONVERTER_COMPETITOR_SLUGS } from "@/lib/image-converter-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -129,6 +132,38 @@ const STATIC_ROUTES: StaticRoute[] = [
     changeFrequency: "monthly" as const,
     priority: 0.75,
     lastModified: new Date("2026-08-22"),
+  })),
+
+  // Image conversion tools (33 primary — PNG/JPG/WebP/AVIF/GIF/BMP/TIFF/ICO/HEIC/SVG)
+  ...ALL_CONVERSION_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image conversion aliases (165 — 5 per tool)
+  ...IMAGE_CONVERTER_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image converter compare pages (5 — Convertio/iLoveIMG/CloudConvert/Zamzar/Squoosh)
+  ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image converter alternative pages (5)
+  ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
   })),
 
   // Pillar guide pages

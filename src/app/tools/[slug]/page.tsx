@@ -11,6 +11,7 @@ import { fetchPublishedBlogPosts } from "@/lib/serverBlog";
 import InstagramReelDownloaderView from "@/views/tools/InstagramReelDownloaderView";
 import AutoCaptionGeneratorView from "@/views/tools/AutoCaptionGeneratorView";
 import BioGeneratorView from "@/views/tools/BioGeneratorView";
+import ImageConverterView from "@/views/tools/ImageConverterView";
 import {
   REEL_DOWNLOADER_PRIMARY_SLUG,
   REEL_DOWNLOADER_ALIAS_SLUGS,
@@ -29,6 +30,16 @@ import {
   getBioGeneratorAlias,
   isBioGeneratorSlug,
 } from "@/lib/bio-generator-aliases";
+import {
+  ALL_CONVERSION_SLUGS,
+  getConversionTool,
+  isConversionSlug,
+} from "@/lib/image-converter-data";
+import {
+  IMAGE_CONVERTER_ALIAS_SLUGS,
+  getConverterAlias,
+  isConverterAliasSlug,
+} from "@/lib/image-converter-aliases";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -161,6 +172,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // ─── Image Converter Aliases ─────────────────────────────────────────────
+  const converterAlias = getConverterAlias(slug);
+  if (converterAlias) {
+    return buildMarketingMetadata(`/tools/${converterAlias.slug}`, {
+      title: converterAlias.seoTitle,
+      description: converterAlias.seoDescription,
+      keywords: converterAlias.keywords,
+    });
+  }
+
+  // ─── Image Converter primary tools ───────────────────────────────────────
+  if (isConversionSlug(slug)) {
+    const convTool = getConversionTool(slug)!;
+    return buildMarketingMetadata(`/tools/${slug}`, {
+      title: convTool.seoTitle,
+      description: convTool.seoDescription,
+      keywords: [
+        convTool.primaryKeyword,
+        `${convTool.fromLabel.toLowerCase()} to ${convTool.toLabel.toLowerCase()} converter`,
+        `free ${convTool.fromLabel.toLowerCase()} to ${convTool.toLabel.toLowerCase()} converter`,
+        `convert ${convTool.fromLabel.toLowerCase()} to ${convTool.toLabel.toLowerCase()}`,
+        "free image converter",
+        "online image converter",
+      ],
+    });
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
@@ -261,6 +299,8 @@ export function generateStaticParams() {
     ...REEL_DOWNLOADER_ALIAS_SLUGS.map((slug) => ({ slug })),
     ...AUTO_CAPTION_ALIAS_SLUGS.map((slug) => ({ slug })),
     ...BIO_GENERATOR_ALIAS_SLUGS.map((slug) => ({ slug })),
+    ...ALL_CONVERSION_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_CONVERTER_ALIAS_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -544,6 +584,72 @@ export default async function ToolPage({ params }: PageProps) {
                 }
               : undefined
           }
+        />
+      </>
+    );
+  }
+
+  // ─── Image Converter (primary + aliases) ─────────────────────────────────
+  if (isConversionSlug(slug) || isConverterAliasSlug(slug)) {
+    const alias = getConverterAlias(slug);
+    const canonicalSlug = alias ? alias.canonical : slug;
+    const convTool = getConversionTool(canonicalSlug);
+    if (!convTool) notFound();
+    const breadcrumbName = alias
+      ? alias.seoTitle.split(" — ")[0]
+      : convTool.h1;
+
+    return (
+      <>
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Tools", path: "/tools" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
+          ]}
+        />
+        <FAQPageSchema
+          faqs={convTool.faqs}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+        />
+        <WebApplicationSchema
+          name={alias ? alias.seoTitle.split(" — ")[0] : convTool.h1}
+          description={convTool.seoDescription}
+          url={`/tools/${canonicalSlug}`}
+          applicationCategory="MultimediaApplication"
+          featureList={[
+            `Convert ${convTool.fromLabel} to ${convTool.toLabel} online`,
+            "Browser-based — images never uploaded to any server",
+            "Batch conversion — multiple files at once",
+            "Quality slider for lossy formats",
+            "No signup, no watermark, no usage limits",
+            "Works on desktop and mobile",
+          ]}
+        />
+        <HowToSchema
+          name={`How to convert ${convTool.fromLabel} to ${convTool.toLabel} free`}
+          description={`Convert ${convTool.fromLabel} to ${convTool.toLabel} in 3 steps using Trndinn's free online converter. No signup, no watermark, no server uploads.`}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+          totalTime="PT30S"
+          steps={[
+            {
+              name: `Upload your ${convTool.fromLabel} file`,
+              text: `Click or drag and drop your ${convTool.fromLabel} file into the upload area. Multiple files are supported for batch conversion.`,
+            },
+            {
+              name: "Convert",
+              text: `Click "Convert to ${convTool.toLabel}". The conversion runs entirely in your browser — no files are uploaded to any server.`,
+            },
+            {
+              name: `Download your ${convTool.toLabel}`,
+              text: `Click Download to save your converted ${convTool.toLabel} file. Batch results can be downloaded individually.`,
+            },
+          ]}
+        />
+        <ImageConverterView
+          tool={convTool}
+          alias={alias}
+          faqs={convTool.faqs}
         />
       </>
     );

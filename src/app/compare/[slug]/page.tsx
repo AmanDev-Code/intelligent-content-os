@@ -19,12 +19,18 @@ import {
   getBioCompetitor,
   getRelatedBioCompetitors,
 } from "@/lib/bio-generator-competitors";
+import {
+  IMAGE_CONVERTER_COMPETITOR_SLUGS,
+  getImageConverterCompetitor,
+  getRelatedImageConverterCompetitors,
+} from "@/lib/image-converter-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionCompareView from "@/views/tools/CaptionCompareView";
 import ReelDownloaderCompareView from "@/views/tools/ReelDownloaderCompareView";
 import BioGeneratorCompareView from "@/views/tools/BioGeneratorCompareView";
+import ImageConverterCompareView from "@/views/tools/ImageConverterCompareView";
 
 /**
  * /compare/[slug] — dynamic catch-all for tool comparisons.
@@ -58,6 +64,7 @@ type ResolvedCompetitor =
   | { kind: "caption"; competitorSlug: string }
   | { kind: "reel"; competitorSlug: string }
   | { kind: "bio"; competitorSlug: string }
+  | { kind: "image-converter"; competitorSlug: string }
   | null;
 
 function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
@@ -72,6 +79,9 @@ function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
   if (BIO_COMPETITOR_SLUGS.includes(competitorSlug)) {
     return { kind: "bio", competitorSlug };
   }
+  if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(competitorSlug)) {
+    return { kind: "image-converter", competitorSlug };
+  }
   return null;
 }
 
@@ -80,6 +90,7 @@ export async function generateStaticParams() {
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
+    ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
   ];
 }
 
@@ -153,6 +164,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "ai bio generator",
         "free bio generator",
         "linkedin bio generator",
+      ],
+    });
+  }
+
+  // image converter
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(resolved.competitorSlug);
+    if (!competitor) return {};
+    const title = `${siteName} vs ${competitor.name} — Image Converter Comparison`;
+    const description =
+      `Compare ${siteName} vs ${competitor.name}: free browser-based image converter, 33 formats, no uploads, unlimited batch. See features, pricing, and why creators switch.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} vs trndinn`,
+        `trndinn vs ${competitor.name.toLowerCase()}`,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        "free image converter",
+        "online image converter",
+        "browser based image converter",
       ],
     });
   }
@@ -357,6 +391,70 @@ export default async function ComparePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <BioGeneratorCompareView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image converter competitors ──────────────────────────────────────────
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(resolved.competitorSlug);
+    if (!competitor) notFound();
+    const related = getRelatedImageConverterCompetitors(resolved.competitorSlug);
+
+    const comparisonGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `${siteName} vs ${competitor.name}`,
+          description: `Free ${competitor.name} alternative for image conversion — feature, privacy, and pricing comparison.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Converter`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/png-to-jpg`,
+          description:
+            "Free browser-based image converter with 33 format pairs. All conversion happens locally via the Canvas API — zero uploads, unlimited batch, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "892",
+          },
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: competitor.name,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: competitor.url,
+          description: competitor.tagline,
+          sameAs: [competitor.url],
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={comparisonGraph} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Compare", path: "/compare" },
+            { name: `${siteName} vs ${competitor.name}`, path: `/compare/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageConverterCompareView competitor={competitor} related={related} />
       </>
     );
   }

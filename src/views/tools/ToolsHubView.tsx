@@ -14,6 +14,7 @@ import {
   Camera,
   Linkedin as LinkedinIcon,
   Github as GithubIcon,
+  ImageIcon,
 } from "lucide-react";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const CATEGORY_ICONS: Record<ToolCategory, typeof Download> = {
   "Bio Generator": User,
   Hashtag: Hash,
   Analytics: BarChart3,
+  "Image Converter": ImageIcon,
 };
 
 // ---------------------------------------------------------------------------
