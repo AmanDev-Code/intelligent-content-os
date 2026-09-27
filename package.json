@@ -68,7 +68,14 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/core": "^0.12.10",
+    "@imgly/background-removal": "^1.7.0",
+    "tesseract.js": "^7.0.0",
+    "qrcode": "^1.5.4",
+    "jszip": "^3.10.1",
+    "file-saver": "^2.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -82,6 +89,8 @@
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@types/qrcode": "^1.5.5",
+    "@types/file-saver": "^2.0.7"
   }
 }
