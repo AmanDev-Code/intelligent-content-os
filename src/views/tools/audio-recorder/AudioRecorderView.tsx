@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { AudioToolsShell } from "@/views/tools/audio-tools/AudioToolsShell";
 import { cn } from "@/lib/utils";
 import type { AudioTool } from "@/lib/audio-data";
 import type { AudioAlias } from "@/lib/audio-aliases";
@@ -168,6 +169,7 @@ export default function AudioRecorderView({ tool, alias }: Props) {
   const h1Suffix = alias?.h1Suffix ?? "";
 
   return (
+    <AudioToolsShell activeSlug="audio-recorder">
     <div className="flex-1 space-y-4 sm:space-y-6">
       {/* ─── Hero ─── */}
       <div className="space-y-2">
@@ -394,5 +396,6 @@ export default function AudioRecorderView({ tool, alias }: Props) {
         </div>
       )}
     </div>
+    </AudioToolsShell>
   );
 }

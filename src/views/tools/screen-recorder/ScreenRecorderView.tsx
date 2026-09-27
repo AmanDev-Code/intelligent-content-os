@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { VideoToolsShell } from "@/views/tools/video-tools/VideoToolsShell";
 import { cn } from "@/lib/utils";
 import type { VideoTool } from "@/lib/video-data";
 import type { VideoAlias } from "@/lib/video-aliases";
@@ -196,6 +197,7 @@ export default function ScreenRecorderView({ tool, alias }: Props) {
   }, [videoUrl, stopRecording]);
 
   return (
+    <VideoToolsShell activeSlug="screen-recorder">
     <div className="flex-1 space-y-4 sm:space-y-6">
       {/* ─── Hero ─── */}
       <div className="space-y-2">
@@ -413,5 +415,6 @@ export default function ScreenRecorderView({ tool, alias }: Props) {
         </div>
       )}
     </div>
+    </VideoToolsShell>
   );
 }
