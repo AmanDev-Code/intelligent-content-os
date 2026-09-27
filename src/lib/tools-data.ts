@@ -8,7 +8,8 @@ export type ToolCategory =
   | "Hashtag"
   | "Analytics"
   | "Image Converter"
-  | "Image Editor";
+  | "Image Editor"
+  | "Image Utility";
 
 export type ToolPlatform = "Instagram" | "LinkedIn" | "Twitter" | "TikTok" | "Multi-platform";
 
@@ -142,6 +143,15 @@ export const TOOLS: ToolEntry[] = [
   { slug: "image-rotator",   name: "Image Rotator",        description: "Rotate and flip images online free. 90°, 180°, 270° and flip H/V. No signup, browser-based.",                                category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
   { slug: "watermark-image", name: "Image Watermark Tool", description: "Add text or image watermarks to photos online free. 9 positions, opacity control. No signup, browser-based.",                 category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
   { slug: "image-workbench", name: "Image Workbench",      description: "Multi-op image pipeline editor. Chain resize, crop, rotate, compress, convert in one run. No signup, browser-based.",        category: "Image Editor", platform: "Multi-platform", isAI: false, live: true },
+
+  // ─── Image Utility / AI tools (7 tools — Phase 4) ────────────────────────
+  { slug: "image-to-base64",    name: "Image to Base64 Converter", description: "Convert any image to a Base64 data URI instantly. Browser-based — files never leave your device. Free, no signup.",          category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "base64-to-image",    name: "Base64 to Image Converter", description: "Decode a Base64 data URI back to a PNG or JPG image. Preview and download instantly. Browser-based, no upload, no signup.",     category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "favicon-generator",  name: "Favicon Generator",         description: "Generate all favicon sizes from any PNG, JPG, or SVG. Downloads a ZIP with ico, apple-touch-icon, and webmanifest. Free.",      category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "background-remover", name: "Background Remover",        description: "Remove image backgrounds with AI — free, browser-based, no signup. ONNX model runs locally via WebAssembly. Zero uploads.",     category: "Image Utility", platform: "Multi-platform", isAI: true,  live: true },
+  { slug: "image-to-text",      name: "Image to Text (OCR)",       description: "Extract text from any image using OCR. Supports 8 languages. Browser-based via Tesseract.js WASM — images never uploaded.",     category: "Image Utility", platform: "Multi-platform", isAI: true,  live: true },
+  { slug: "qr-code-generator",  name: "QR Code Generator",         description: "Generate QR codes with custom colors, error correction, and margins. Download as PNG or SVG. Free, no signup, no watermark.",   category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },
+  { slug: "profile-pic-creator",name: "Profile Picture Creator",   description: "Create a custom profile picture from an emoji. Choose color, shape, size, rotation. Download as PNG. Free, no signup.",         category: "Image Utility", platform: "Multi-platform", isAI: false, live: true },
 ];
 
 export function getToolBySlug(slug: string): ToolEntry | undefined {

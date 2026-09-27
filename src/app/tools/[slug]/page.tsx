@@ -56,6 +56,23 @@ import {
   getEditAlias,
   isEditAliasSlug,
 } from "@/lib/image-edit-aliases";
+import {
+  ALL_UTILITY_SLUGS,
+  getUtilityTool,
+  isUtilitySlug,
+} from "@/lib/image-utility-data";
+import {
+  IMAGE_UTILITY_ALIAS_SLUGS,
+  getUtilityAlias,
+  isUtilityAliasSlug,
+} from "@/lib/image-utility-aliases";
+import ImageToBase64View from "@/views/tools/ImageToBase64View";
+import Base64ToImageView from "@/views/tools/Base64ToImageView";
+import FaviconGeneratorView from "@/views/tools/FaviconGeneratorView";
+import BackgroundRemoverView from "@/views/tools/BackgroundRemoverView";
+import ImageToTextView from "@/views/tools/ImageToTextView";
+import QRCodeGeneratorView from "@/views/tools/QRCodeGeneratorView";
+import ProfilePicCreatorView from "@/views/tools/ProfilePicCreatorView";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -241,6 +258,32 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
+  // ─── Image Utility Aliases ────────────────────────────────────────────────
+  const utilityAlias = getUtilityAlias(slug);
+  if (utilityAlias) {
+    return buildMarketingMetadata(`/tools/${utilityAlias.slug}`, {
+      title: utilityAlias.seoTitle,
+      description: utilityAlias.seoDescription,
+      keywords: utilityAlias.keywords,
+    });
+  }
+
+  // ─── Image Utility primary tools ─────────────────────────────────────────
+  if (isUtilitySlug(slug)) {
+    const utilityTool = getUtilityTool(slug)!;
+    return buildMarketingMetadata(`/tools/${slug}`, {
+      title: utilityTool.seoTitle,
+      description: utilityTool.seoDescription,
+      keywords: [
+        utilityTool.primaryKeyword,
+        `free ${utilityTool.primaryKeyword} online`,
+        `${utilityTool.primaryKeyword} no signup`,
+        "free image utility tool",
+        "browser-based image tool",
+      ],
+    });
+  }
+
   const tool = getToolBySlug(slug);
   if (!tool) return {};
 
@@ -345,6 +388,8 @@ export function generateStaticParams() {
     ...IMAGE_CONVERTER_ALIAS_SLUGS.map((slug) => ({ slug })),
     ...ALL_EDIT_SLUGS.map((slug) => ({ slug })),
     ...IMAGE_EDIT_ALIAS_SLUGS.map((slug) => ({ slug })),
+    ...ALL_UTILITY_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_UTILITY_ALIAS_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -850,6 +895,177 @@ export default async function ToolPage({ params }: PageProps) {
           steps={howToSteps}
         />
         <ViewComponent tool={editTool} alias={alias} />
+      </>
+    );
+  }
+
+  // ─── Image Utility tools (primary + aliases) ─────────────────────────────
+  if (isUtilitySlug(slug) || isUtilityAliasSlug(slug)) {
+    const alias = getUtilityAlias(slug);
+    const canonicalSlug = alias ? alias.canonical : slug;
+    const utilityTool = getUtilityTool(canonicalSlug);
+    if (!utilityTool) notFound();
+    const breadcrumbName = alias
+      ? alias.seoTitle.split(" — ")[0]
+      : utilityTool.h1;
+
+    // Generative tools (no file upload) use different HowTo steps
+    const isGenerative = ["qr-code-generator", "profile-pic-creator"].includes(canonicalSlug);
+
+    const howToStepsUpload = [
+      {
+        name: "Upload your image",
+        text: "Click or drag and drop your image into the upload area above.",
+      },
+      {
+        name: "Process",
+        text: `The tool runs entirely in your browser — no server upload, no signup required.`,
+      },
+      {
+        name: "Download your result",
+        text: "Click Download to save the output to your device instantly.",
+      },
+    ];
+
+    const howToStepsQR = [
+      {
+        name: "Enter your content",
+        text: "Type or paste the URL, text, phone number, or contact info you want to encode.",
+      },
+      {
+        name: "Customize",
+        text: "Choose foreground and background colors, error correction level (L/M/Q/H), and margin.",
+      },
+      {
+        name: "Download PNG or SVG",
+        text: "Click Download PNG for raster output or Download SVG for a scalable vector — no watermark, no branding.",
+      },
+    ];
+
+    const howToStepsProfilePic = [
+      {
+        name: "Pick an emoji",
+        text: "Choose any emoji from the grid as the centerpiece of your profile picture.",
+      },
+      {
+        name: "Customize style",
+        text: "Select background color, circle or square shape, output size (64–512px), and emoji rotation.",
+      },
+      {
+        name: "Download PNG",
+        text: "Click Download to save a clean PNG — no watermark, no account needed.",
+      },
+    ];
+
+    const howToSteps =
+      canonicalSlug === "qr-code-generator"
+        ? howToStepsQR
+        : canonicalSlug === "profile-pic-creator"
+        ? howToStepsProfilePic
+        : howToStepsUpload;
+
+    const webAppFeatures: Record<string, string[]> = {
+      "image-to-base64": [
+        "Encode PNG, JPG, WebP, GIF, SVG to Base64 data URI",
+        "Copy to clipboard or download as .txt",
+        "Browser-based — image never uploaded to any server",
+        "No signup, no file size limit",
+      ],
+      "base64-to-image": [
+        "Paste any Base64 data URI and preview the decoded image",
+        "Download as PNG or JPG with one click",
+        "Browser-based — no server upload",
+        "No signup, no daily limit",
+      ],
+      "favicon-generator": [
+        "favicon.ico (16/32/48px multi-size)",
+        "apple-touch-icon.png (180px)",
+        "android-chrome-192x192.png and android-chrome-512x512.png",
+        "site.webmanifest — ready to deploy",
+        "ZIP download, browser-based Canvas API",
+        "No signup, no upload to server",
+      ],
+      "background-remover": [
+        "AI background removal via ONNX WebAssembly",
+        "Zero server upload — model runs locally",
+        "Full-resolution transparent PNG output",
+        "No credits, no watermark, no signup",
+        "Model cached after first download (~43 MB)",
+      ],
+      "image-to-text": [
+        "OCR via Tesseract.js WebAssembly — runs locally",
+        "Supports 8 languages: English, Spanish, French, German, Chinese, Japanese, Hindi, Arabic",
+        "Download extracted text as .txt",
+        "No server upload, no email required",
+        "Works on photos, screenshots, scanned documents",
+      ],
+      "qr-code-generator": [
+        "Custom foreground and background colors",
+        "Error correction levels: L, M, Q, H",
+        "Margin control",
+        "Download as PNG or scalable SVG",
+        "No watermark, no branding, browser-local generation",
+        "No signup",
+      ],
+      "profile-pic-creator": [
+        "80+ emoji choices",
+        "Custom background color",
+        "Circle or square shape",
+        "Output sizes from 64px to 512px",
+        "Emoji rotation control",
+        "Clean PNG download — no watermark",
+      ],
+    };
+
+    const features = webAppFeatures[canonicalSlug] ?? [
+      "Browser-based — files never uploaded to any server",
+      "No signup, no watermark, no daily limit",
+      "Works on desktop and mobile",
+    ];
+
+    const ViewComponent =
+      canonicalSlug === "image-to-base64"
+        ? ImageToBase64View
+        : canonicalSlug === "base64-to-image"
+        ? Base64ToImageView
+        : canonicalSlug === "favicon-generator"
+        ? FaviconGeneratorView
+        : canonicalSlug === "background-remover"
+        ? BackgroundRemoverView
+        : canonicalSlug === "image-to-text"
+        ? ImageToTextView
+        : canonicalSlug === "qr-code-generator"
+        ? QRCodeGeneratorView
+        : ProfilePicCreatorView;
+
+    return (
+      <>
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Tools", path: "/tools" },
+            { name: breadcrumbName, path: `/tools/${slug}` },
+          ]}
+        />
+        <FAQPageSchema
+          faqs={utilityTool.faqs}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+        />
+        <WebApplicationSchema
+          name={alias ? alias.seoTitle.split(" — ")[0] : utilityTool.h1}
+          description={utilityTool.seoDescription}
+          url={`/tools/${canonicalSlug}`}
+          applicationCategory="UtilitiesApplication"
+          featureList={features}
+        />
+        <HowToSchema
+          name={`How to use ${utilityTool.name}`}
+          description={utilityTool.description}
+          pageUrl={`${base}/tools/${canonicalSlug}`}
+          totalTime={isGenerative ? "PT15S" : "PT30S"}
+          steps={howToSteps}
+        />
+        <ViewComponent tool={utilityTool} alias={alias} />
       </>
     );
   }

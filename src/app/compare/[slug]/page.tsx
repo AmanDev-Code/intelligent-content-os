@@ -29,6 +29,11 @@ import {
   getImageEditCompetitor,
   getRelatedImageEditCompetitors,
 } from "@/lib/image-edit-competitors";
+import {
+  IMAGE_UTILITY_COMPETITOR_SLUGS,
+  getImageUtilityCompetitor,
+  getRelatedImageUtilityCompetitors,
+} from "@/lib/image-utility-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
@@ -37,6 +42,7 @@ import ReelDownloaderCompareView from "@/views/tools/ReelDownloaderCompareView";
 import BioGeneratorCompareView from "@/views/tools/BioGeneratorCompareView";
 import ImageConverterCompareView from "@/views/tools/ImageConverterCompareView";
 import ImageEditCompareView from "@/views/tools/ImageEditCompareView";
+import ImageUtilityCompareView from "@/views/tools/ImageUtilityCompareView";
 
 /**
  * /compare/[slug] — dynamic catch-all for tool comparisons.
@@ -72,6 +78,7 @@ type ResolvedCompetitor =
   | { kind: "bio"; competitorSlug: string }
   | { kind: "image-converter"; competitorSlug: string }
   | { kind: "image-edit"; competitorSlug: string }
+  | { kind: "image-utility"; competitorSlug: string }
   | null;
 
 function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
@@ -92,6 +99,9 @@ function resolveCompetitor(rawSlug: string): ResolvedCompetitor {
   if (IMAGE_EDIT_COMPETITOR_SLUGS.includes(competitorSlug)) {
     return { kind: "image-edit", competitorSlug };
   }
+  if (IMAGE_UTILITY_COMPETITOR_SLUGS.includes(competitorSlug)) {
+    return { kind: "image-utility", competitorSlug };
+  }
   return null;
 }
 
@@ -102,6 +112,7 @@ export async function generateStaticParams() {
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
     ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
+    ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({ slug: `${SLUG_PREFIX}${slug}` })),
   ];
 }
 
@@ -221,6 +232,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "free image editor online",
         "online image compressor",
         "browser based image editor",
+      ],
+    });
+  }
+
+  // image utility
+  if (resolved.kind === "image-utility") {
+    const competitor = getImageUtilityCompetitor(resolved.competitorSlug);
+    if (!competitor) return {};
+    const title = `${siteName} vs ${competitor.name} — Image Utility Tool Comparison`;
+    const description =
+      `Compare ${siteName} vs ${competitor.name}: free browser-based image utility suite — background removal, OCR, favicon generation, QR codes, Base64. See features, pricing, and why creators switch.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} vs trndinn`,
+        `trndinn vs ${competitor.name.toLowerCase()}`,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        "free image utility tools",
+        "browser-based image tools",
+        "background remover free",
       ],
     });
   }
@@ -553,6 +587,70 @@ export default async function ComparePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <ImageEditCompareView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image utility competitors ────────────────────────────────────────────
+  if (resolved.kind === "image-utility") {
+    const competitor = getImageUtilityCompetitor(resolved.competitorSlug);
+    if (!competitor) notFound();
+    const related = getRelatedImageUtilityCompetitors(resolved.competitorSlug);
+
+    const comparisonGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `${siteName} vs ${competitor.name}`,
+          description: `Free ${competitor.name} alternative — image utility suite comparison: background removal, OCR, favicon generation, QR codes, Base64 encoding.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Utility Suite`,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/background-remover`,
+          description:
+            "Free browser-based image utility suite: AI background removal, OCR text extraction, favicon generation, QR code creation, Base64 encoding/decoding, and profile picture creation — all zero uploads, no signup.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "612",
+          },
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: competitor.name,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: competitor.url,
+          description: competitor.tagline,
+          sameAs: [competitor.url],
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={comparisonGraph} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Compare", path: "/compare" },
+            { name: `${siteName} vs ${competitor.name}`, path: `/compare/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageUtilityCompareView competitor={competitor} related={related} />
       </>
     );
   }

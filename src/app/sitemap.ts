@@ -14,6 +14,9 @@ import { IMAGE_CONVERTER_COMPETITOR_SLUGS } from "@/lib/image-converter-competit
 import { ALL_EDIT_SLUGS } from "@/lib/image-edit-data";
 import { IMAGE_EDIT_ALIAS_SLUGS } from "@/lib/image-edit-aliases";
 import { IMAGE_EDIT_COMPETITOR_SLUGS } from "@/lib/image-edit-competitors";
+import { ALL_UTILITY_SLUGS } from "@/lib/image-utility-data";
+import { IMAGE_UTILITY_ALIAS_SLUGS } from "@/lib/image-utility-aliases";
+import { IMAGE_UTILITY_COMPETITOR_SLUGS } from "@/lib/image-utility-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -197,6 +200,40 @@ const STATIC_ROUTES: StaticRoute[] = [
 
   // 5 image edit alternative pages (priority 0.75)
   ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 4: Image utility / AI tools ───────────────────────────────────
+
+  // 7 primary utility tool URLs (priority 0.9)
+  ...ALL_UTILITY_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 35 utility alias URLs — 5 per tool (priority 0.7)
+  ...IMAGE_UTILITY_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image utility compare pages (priority 0.8)
+  ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image utility alternative pages (priority 0.75)
+  ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({
     path: `/alternatives/${slug}`,
     changeFrequency: "monthly" as const,
     priority: 0.75,
