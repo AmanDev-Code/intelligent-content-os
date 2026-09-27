@@ -101,12 +101,12 @@ const loadLibheif = async () => {
   if (libheifLoading) return libheifLoading;
 
   libheifLoading = (async () => {
-    // Dynamic import — wasm file placed in /public/wasm/libheif.mjs.
-    // The path is a runtime URL, not a static module specifier;
-    // TypeScript cannot resolve it so we suppress the error here only.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore — runtime URL import for WASM module
-    const module = await import("/wasm/libheif.mjs");
+    // Use new Function to prevent Next.js from attempting to bundle
+    // this at build time. The file lives in /public/wasm/libheif.mjs
+    // and is served as a static asset — it must be loaded at runtime only.
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const dynamicImport = new Function("path", "return import(path)");
+    const module = await dynamicImport("/wasm/libheif.mjs");
     libheifInstance = await module.default();
     return libheifInstance;
   })();
