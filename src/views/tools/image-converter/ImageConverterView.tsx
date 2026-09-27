@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -608,9 +609,10 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
   const toGlow   = getGlow(tool.toFormat);
 
   return (
-    // Full-height dark layout — sidebar + main
+    <MarketingShell>
+    {/* Full-height dark layout — sidebar + main */}
     <div
-      className="flex min-h-screen"
+      className="flex"
       style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
     >
       <Sidebar activeSlug={tool.slug} />
@@ -1206,5 +1208,6 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
 
       </main>
     </div>
+    </MarketingShell>
   );
 }
