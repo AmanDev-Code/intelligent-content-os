@@ -27,6 +27,7 @@ import {
   ImageIcon,
   Download,
   ArrowRight,
+  ArrowLeftRight,
   RotateCcw,
   ChevronDown,
   CheckCircle2,
@@ -48,6 +49,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
@@ -57,6 +59,7 @@ import { useImageProcessor } from "@/hooks/tools/useImageProcessor";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
 import { IMAGE_CONVERTER_COMPETITORS } from "@/lib/image-converter-competitors";
 import { cn } from "@/lib/utils";
+import { CONVERSION_TOOLS } from "@/lib/image-converter-data";
 import type { ConversionTool } from "@/lib/image-converter-data";
 import type { ConverterAlias } from "@/lib/image-converter-aliases";
 
@@ -79,34 +82,41 @@ const LOSSY_FORMATS = new Set(["jpg", "jpeg", "webp", "avif", "gif"]);
 
 // ─── Sidebar data ─────────────────────────────────────────────────────────────
 
-const SIDEBAR = {
-  popular: [
-    { slug: "png-to-jpg",  label: "PNG → JPG",  color: "#EF4444" },
-    { slug: "jpg-to-png",  label: "JPG → PNG",  color: "#3B82F6" },
-    { slug: "webp-to-jpg", label: "WebP → JPG", color: "#10B981" },
-    { slug: "heic-to-jpg", label: "HEIC → JPG", color: "#F59E0B" },
-  ],
-  convert: [
-    { slug: "png-to-jpg",    label: "PNG → JPG",    color: "#EF4444" },
-    { slug: "jpg-to-png",    label: "JPG → PNG",    color: "#3B82F6" },
-    { slug: "webp-to-jpg",   label: "WebP → JPG",   color: "#10B981" },
-    { slug: "webp-to-png",   label: "WebP → PNG",   color: "#06B6D4" },
-    { slug: "heic-to-jpg",   label: "HEIC → JPG",   color: "#F59E0B" },
-    { slug: "heic-to-png",   label: "HEIC → PNG",   color: "#8B5CF6" },
-    { slug: "svg-to-png",    label: "SVG → PNG",    color: "#F97316" },
-    { slug: "avif-to-jpg",   label: "AVIF → JPG",   color: "#EC4899" },
-  ],
-  optimize: [
-    { slug: "compress-jpg",       label: "Compress Image",    color: "#F97316", icon: Minimize2 },
-    { slug: "image-resizer",      label: "Resize Image",      color: "#3B82F6", icon: Layers },
-    { slug: "background-remover", label: "Remove Background", color: "#10B981", icon: Wand2 },
-    { slug: "image-workbench",    label: "Enhance Image",     color: "#8B5CF6", icon: Palette },
-  ],
-  generate: [
-    { slug: "favicon-generator",  label: "Favicon Generator",  color: "#F59E0B", icon: Star },
-    { slug: "qr-code-generator",  label: "QR Code Generator",  color: "#06B6D4", icon: QrCode },
-    { slug: "image-to-base64",    label: "Image to Base64",    color: "#8B5CF6", icon: FileCode2 },
-  ],
+const SIDEBAR_POPULAR = [
+  { slug: "png-to-jpg",  label: "PNG → JPG",  color: "#EF4444" },
+  { slug: "jpg-to-png",  label: "JPG → PNG",  color: "#3B82F6" },
+  { slug: "webp-to-jpg", label: "WebP → JPG", color: "#10B981" },
+  { slug: "heic-to-jpg", label: "HEIC → JPG", color: "#F59E0B" },
+];
+
+const SIDEBAR_OPTIMIZE = [
+  { slug: "compress-jpg",       label: "Compress Image",    color: "#F97316", icon: Minimize2 },
+  { slug: "image-resizer",      label: "Resize Image",      color: "#3B82F6", icon: Layers },
+  { slug: "background-remover", label: "Remove Background", color: "#10B981", icon: Wand2 },
+  { slug: "image-workbench",    label: "Enhance Image",     color: "#8B5CF6", icon: Palette },
+];
+
+const SIDEBAR_GENERATE = [
+  { slug: "favicon-generator",  label: "Favicon Generator",  color: "#F59E0B", icon: Star },
+  { slug: "qr-code-generator",  label: "QR Code Generator",  color: "#06B6D4", icon: QrCode },
+  { slug: "image-to-base64",    label: "Image to Base64",    color: "#8B5CF6", icon: FileCode2 },
+];
+
+// Format → color for sidebar convert items
+const FORMAT_COLORS: Record<string, string> = {
+  png:  "#3B82F6",
+  jpg:  "#EF4444",
+  jpeg: "#EF4444",
+  webp: "#10B981",
+  heic: "#F59E0B",
+  heif: "#F59E0B",
+  svg:  "#F97316",
+  avif: "#8B5CF6",
+  gif:  "#EC4899",
+  bmp:  "#6B7280",
+  tiff: "#6B7280",
+  tif:  "#6B7280",
+  ico:  "#F59E0B",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -151,10 +161,21 @@ function getGlow(fmt: string) {
 function Sidebar({ activeSlug }: { activeSlug: string }) {
   const [query, setQuery] = useState("");
 
+  // Filter CONVERSION_TOOLS by query for the CONVERT section
+  const filteredConvert = query.trim()
+    ? CONVERSION_TOOLS.filter(t =>
+        `${t.fromLabel} ${t.toLabel} ${t.slug}`.toLowerCase().includes(query.toLowerCase())
+      )
+    : CONVERSION_TOOLS;
+
   return (
     <nav
-      className="hidden lg:flex flex-col w-[210px] shrink-0 overflow-y-auto"
+      className="hidden lg:flex flex-col w-[210px] shrink-0"
       style={{
+        position: "sticky",
+        top: "64px",
+        height: "calc(100vh - 64px)",
+        overflowY: "auto",
         background: "hsl(223 62% 6%)",
         borderRight: "1px solid hsl(224 28% 18%)",
       }}
@@ -177,53 +198,56 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       </div>
 
       <div className="flex-1 py-2 space-y-0.5">
-        {/* POPULAR */}
-        <div>
-          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-            Popular
-          </p>
-          {SIDEBAR.popular.map(t => {
-            const isActive = t.slug === activeSlug;
-            return (
-              <Link
-                key={t.slug}
-                href={`/tools/${t.slug}`}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive
-                    ? "font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                style={isActive ? {
-                  background: `${t.color}20`,
-                  color: t.color,
-                } : undefined}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-black text-white"
-                  style={{ background: t.color }}
-                  aria-hidden
+        {/* POPULAR — hide when searching */}
+        {!query.trim() && (
+          <div>
+            <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Popular
+            </p>
+            {SIDEBAR_POPULAR.map(t => {
+              const isActive = t.slug === activeSlug;
+              return (
+                <Link
+                  key={t.slug}
+                  href={`/tools/${t.slug}`}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive
+                      ? "font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  style={isActive ? {
+                    background: `${t.color}20`,
+                    color: t.color,
+                  } : undefined}
                 >
-                  {t.label.split(" → ")[0].slice(0, 3)}
-                </span>
-                {t.label}
-                {isActive && (
-                  <ArrowRight className="ml-auto h-3 w-3 shrink-0" aria-hidden />
-                )}
-              </Link>
-            );
-          })}
-        </div>
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-black text-white"
+                    style={{ background: t.color }}
+                    aria-hidden
+                  >
+                    {t.label.split(" → ")[0].slice(0, 3)}
+                  </span>
+                  {t.label}
+                  {isActive && (
+                    <ArrowRight className="ml-auto h-3 w-3 shrink-0" aria-hidden />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-        {/* CONVERT */}
+        {/* CONVERT — all 33 from CONVERSION_TOOLS */}
         <div>
           <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Convert
           </p>
-          {SIDEBAR.convert.map(t => {
+          {filteredConvert.map(t => {
             const isActive = t.slug === activeSlug;
+            const color = FORMAT_COLORS[t.fromFormat] ?? "#F97316";
             return (
               <Link
                 key={t.slug}
@@ -236,86 +260,93 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
                     ? "font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 )}
-                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
+                style={isActive ? { background: `${color}20`, color } : undefined}
               >
                 <span
                   className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-black text-white"
-                  style={{ background: t.color }}
+                  style={{ background: color }}
                   aria-hidden
                 >
-                  {t.label.split(" → ")[0].slice(0, 3)}
+                  {t.fromLabel.slice(0, 3).toUpperCase()}
                 </span>
-                {t.label}
+                <span className="truncate">{t.fromLabel} → {t.toLabel}</span>
               </Link>
             );
           })}
+          {filteredConvert.length === 0 && (
+            <p className="px-3 py-2 text-[11px] text-muted-foreground/60">No tools found</p>
+          )}
         </div>
 
-        {/* OPTIMIZE */}
-        <div>
-          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-            Optimize
-          </p>
-          {SIDEBAR.optimize.map(t => {
-            const Icon = t.icon;
-            const isActive = t.slug === activeSlug;
-            return (
-              <Link
-                key={t.slug}
-                href={`/tools/${t.slug}`}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
-                )}
-                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
-                  style={{ background: t.color }}
-                  aria-hidden
+        {/* OPTIMIZE — hide when searching */}
+        {!query.trim() && (
+          <div>
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Optimize
+            </p>
+            {SIDEBAR_OPTIMIZE.map(t => {
+              const Icon = t.icon;
+              const isActive = t.slug === activeSlug;
+              return (
+                <Link
+                  key={t.slug}
+                  href={`/tools/${t.slug}`}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
                 >
-                  <Icon className="h-3 w-3" />
-                </span>
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
+                    style={{ background: t.color }}
+                    aria-hidden
+                  >
+                    <Icon className="h-3 w-3" />
+                  </span>
+                  {t.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-        {/* GENERATE */}
-        <div>
-          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-            Generate
-          </p>
-          {SIDEBAR.generate.map(t => {
-            const Icon = t.icon;
-            const isActive = t.slug === activeSlug;
-            return (
-              <Link
-                key={t.slug}
-                href={`/tools/${t.slug}`}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
-                )}
-                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
-                  style={{ background: t.color }}
-                  aria-hidden
+        {/* GENERATE — hide when searching */}
+        {!query.trim() && (
+          <div>
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Generate
+            </p>
+            {SIDEBAR_GENERATE.map(t => {
+              const Icon = t.icon;
+              const isActive = t.slug === activeSlug;
+              return (
+                <Link
+                  key={t.slug}
+                  href={`/tools/${t.slug}`}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
                 >
-                  <Icon className="h-3 w-3" />
-                </span>
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
+                    style={{ background: t.color }}
+                    aria-hidden
+                  >
+                    <Icon className="h-3 w-3" />
+                  </span>
+                  {t.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Trndinn promo card at bottom */}
@@ -547,10 +578,13 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
   const { convertImage } = useImageProcessor();
   const { downloadSingle, downloadMultiple } = useFileDownload();
   const shouldReduce = useReducedMotion();
+  const router = useRouter();
 
   const [tab, setTab] = useState<"upload" | "url" | "search">("upload");
   const [files, setFiles] = useState<File[]>([]);
   const [urlInput, setUrlInput] = useState("");
+  const [urlFetching, setUrlFetching] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [results, setResults] = useState<ResultRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -572,9 +606,33 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
     subline:    alias?.heroSubline ?? tool.whyConvert,
   };
 
+  // Swap button — navigate to reverse conversion if it exists
+  const reverseSlug = `${tool.toFormat}-to-${tool.fromFormat}`;
+  const reverseExists = CONVERSION_TOOLS.some(t => t.slug === reverseSlug);
+
   const handleFiles = useCallback((incoming: File[]) => {
     setFiles(incoming); setResults([]); setError(null); setProgress(0);
   }, []);
+
+  const handleFetchUrl = useCallback(async () => {
+    if (!urlInput.trim()) return;
+    setUrlFetching(true);
+    setUrlError(null);
+    try {
+      const res = await fetch(urlInput.trim());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      if (!blob.type.startsWith("image/")) throw new Error("URL does not point to an image");
+      const filename = urlInput.split("/").pop()?.split("?")[0] || "image";
+      const file = new File([blob], filename, { type: blob.type });
+      handleFiles([file]);
+      setTab("upload"); // switch to upload tab to show the file
+    } catch (e) {
+      setUrlError(e instanceof Error ? e.message : "Failed to fetch image. Check the URL and try again.");
+    } finally {
+      setUrlFetching(false);
+    }
+  }, [urlInput, handleFiles]);
 
   const handleConvert = useCallback(async () => {
     if (!files.length) return;
@@ -667,6 +725,51 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               </span>
               {hero.h1Suffix && <> {hero.h1Suffix}</>}
             </motion.h1>
+
+            {/* Format swap row */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.18 }}
+              className="mt-5 flex items-center gap-3"
+            >
+              {/* FROM badge */}
+              <span
+                className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold text-white"
+                style={{ background: fromGlow, boxShadow: `0 0 12px ${fromGlow}40` }}
+              >
+                {tool.fromLabel}
+              </span>
+
+              {/* Swap button */}
+              {reverseExists ? (
+                <button
+                  onClick={() => router.push(`/tools/${reverseSlug}`)}
+                  title="Swap conversion direction"
+                  aria-label={`Swap to ${tool.toLabel} to ${tool.fromLabel}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+                >
+                  <ArrowLeftRight className="h-4 w-4 text-white" aria-hidden />
+                </button>
+              ) : (
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+                  aria-hidden
+                >
+                  <ArrowRight className="h-4 w-4 text-white" />
+                </div>
+              )}
+
+              {/* TO badge */}
+              <span
+                className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold text-white"
+                style={{ background: toGlow, boxShadow: `0 0 12px ${toGlow}40` }}
+              >
+                {tool.toLabel}
+              </span>
+            </motion.div>
 
             {/* Subline */}
             <motion.p
@@ -869,16 +972,28 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                     <label className="text-sm font-medium text-foreground" htmlFor="url-input">
                       Image URL
                     </label>
-                    <input
-                      id="url-input"
-                      type="url"
-                      value={urlInput}
-                      onChange={e => setUrlInput(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="rounded-xl border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      style={{ background: "hsl(224 36% 11%)", borderColor: "hsl(224 28% 22%)" }}
-                    />
-                    <p className="text-xs text-muted-foreground">Paste a direct image URL to convert it.</p>
+                    <div className="flex gap-2">
+                      <input
+                        id="url-input"
+                        type="url"
+                        value={urlInput}
+                        onChange={e => setUrlInput(e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        className="flex-1 rounded-xl border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        style={{ background: "hsl(224 36% 11%)", borderColor: "hsl(224 28% 22%)" }}
+                        onKeyDown={e => { if (e.key === "Enter") handleFetchUrl(); }}
+                      />
+                      <button
+                        onClick={handleFetchUrl}
+                        disabled={!urlInput.trim() || urlFetching}
+                        className="rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:opacity-40 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
+                      >
+                        {urlFetching ? "Fetching…" : "Fetch"}
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Paste a direct image URL (JPG, PNG, WebP, etc.) to convert it.</p>
+                    {urlError && <p className="text-xs text-destructive">{urlError}</p>}
                   </div>
                 )}
 
