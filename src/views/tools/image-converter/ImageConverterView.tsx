@@ -14,7 +14,7 @@
  * prefers-reduced-motion safe. WCAG AA.
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import {
   motion,
   AnimatePresence,
@@ -162,21 +162,23 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
 
-  // Filter ALL sections by search query
+  // Filter ALL sections by search query — matches labels, slugs, descriptions, and keywords
   const filteredConvert = q
-    ? CONVERSION_TOOLS.filter(t => `${t.fromLabel} ${t.toLabel} ${t.slug}`.toLowerCase().includes(q))
+    ? CONVERSION_TOOLS.filter(t =>
+        `${t.fromLabel} ${t.toLabel} ${t.slug} ${t.primaryKeyword} ${t.seoDescription} ${t.whyConvert}`.toLowerCase().includes(q)
+      )
     : CONVERSION_TOOLS;
 
   const filteredPopular = q
-    ? SIDEBAR_POPULAR.filter(t => t.label.toLowerCase().includes(q))
+    ? SIDEBAR_POPULAR.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
     : SIDEBAR_POPULAR;
 
   const filteredOptimize = q
-    ? SIDEBAR_OPTIMIZE.filter(t => t.label.toLowerCase().includes(q))
+    ? SIDEBAR_OPTIMIZE.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
     : SIDEBAR_OPTIMIZE;
 
   const filteredGenerate = q
-    ? SIDEBAR_GENERATE.filter(t => t.label.toLowerCase().includes(q))
+    ? SIDEBAR_GENERATE.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
     : SIDEBAR_GENERATE;
 
   return (
@@ -188,13 +190,13 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
         height: "fit-content",
         maxHeight: "calc(100vh - 64px)",
         overflowY: "auto",
-        background: "hsl(223 62% 6%)",
+        background: "hsl(var(--tool-bg))",
       }}
       aria-label="Image tools navigation"
     >
       {/* Search */}
-      <div className="px-3 py-3 border-b" style={{ borderColor: "hsl(224 28% 18%)" }}>
-        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ background: "hsl(224 36% 14%)" }}>
+      <div className="px-3 py-3 border-b" style={{ borderColor: "hsl(var(--tool-border))" }}>
+        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ background: "hsl(var(--tool-surface-dim))" }}>
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <input
             type="text"
@@ -209,8 +211,8 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       </div>
 
       <div className="flex-1 py-2 space-y-0.5">
-        {/* POPULAR — hide when searching */}
-        {!query.trim() && (
+        {/* POPULAR — show when not searching, or when search matches */}
+        {(!query.trim() || filteredPopular.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Popular
@@ -289,8 +291,8 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
           )}
         </div>
 
-        {/* OPTIMIZE — hide when searching */}
-        {!query.trim() && (
+        {/* OPTIMIZE — show when not searching, or when search matches */}
+        {(!query.trim() || filteredOptimize.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Optimize
@@ -324,8 +326,8 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
           </div>
         )}
 
-        {/* GENERATE — hide when searching */}
-        {!query.trim() && (
+        {/* GENERATE — show when not searching, or when search matches */}
+        {(!query.trim() || filteredGenerate.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Generate
@@ -361,7 +363,7 @@ function Sidebar({ activeSlug }: { activeSlug: string }) {
       </div>
 
       {/* Trndinn promo card at bottom */}
-      <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(223 62% 12%), hsl(224 36% 18%))", border: "1px solid hsl(224 28% 24%)" }}>
+      <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-border)))", border: "1px solid hsl(var(--border))" }}>
         <div className="flex items-center gap-2 mb-1.5">
           <img src="/logo-icon.svg" alt="" className="h-5 w-5" aria-hidden />
           <span className="text-[11px] font-semibold text-foreground">trndinn</span>
@@ -443,7 +445,7 @@ function Hero3DCards({
         <div
           className="relative h-36 w-28 rounded-2xl overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, hsl(223 62% 14%), hsl(224 36% 22%))",
+            background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-border)))",
             border: `2px solid ${fromGlow}40`,
             boxShadow: `0 0 30px ${fromGlow}30, 0 0 60px ${fromGlow}15, inset 0 1px 0 ${fromGlow}20`,
             transform: "rotateY(-12deg) rotateX(4deg)",
@@ -453,7 +455,7 @@ function Hero3DCards({
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg, ${fromGlow}30 0%, hsl(223 62% 10%) 100%)`,
+              background: `linear-gradient(135deg, ${fromGlow}30 0%, hsl(var(--tool-bg)) 100%)`,
             }}
           />
           {/* Mountain-like placeholder */}
@@ -461,12 +463,12 @@ function Hero3DCards({
             <defs>
               <linearGradient id="fromSky" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={fromGlow} stopOpacity="0.6" />
-                <stop offset="100%" stopColor="hsl(223,62%,8%)" stopOpacity="1" />
+                <stop offset="100%" stopColor="hsl(var(--tool-bg))" stopOpacity="1" />
               </linearGradient>
             </defs>
             <rect width="112" height="144" fill="url(#fromSky)" />
-            <polygon points="20,120 56,50 92,120" fill="hsl(223,62%,20%)" opacity="0.9" />
-            <polygon points="0,120 35,70 65,120" fill="hsl(223,62%,16%)" opacity="0.8" />
+            <polygon points="20,120 56,50 92,120" fill="hsl(var(--tool-border))" opacity="0.9" />
+            <polygon points="0,120 35,70 65,120" fill="hsl(var(--tool-surface-dim))" opacity="0.8" />
           </svg>
           {/* Format label */}
           <div className="absolute bottom-0 left-0 right-0 py-2 text-center" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
@@ -501,7 +503,7 @@ function Hero3DCards({
         <div
           className="relative h-40 w-32 rounded-2xl overflow-hidden"
           style={{
-            background: "linear-gradient(135deg, hsl(223 62% 14%), hsl(224 36% 22%))",
+            background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-border)))",
             border: `2px solid ${toGlow}60`,
             boxShadow: `0 0 40px ${toGlow}40, 0 0 80px ${toGlow}20, inset 0 1px 0 ${toGlow}30`,
             transform: "rotateY(12deg) rotateX(-4deg)",
@@ -510,19 +512,19 @@ function Hero3DCards({
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(135deg, ${toGlow}40 0%, hsl(223 62% 10%) 100%)`,
+              background: `linear-gradient(135deg, ${toGlow}40 0%, hsl(var(--tool-bg)) 100%)`,
             }}
           />
           <svg className="absolute inset-0 h-full w-full opacity-70" viewBox="0 0 128 160" fill="none">
             <defs>
               <linearGradient id="toSky" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={toGlow} stopOpacity="0.7" />
-                <stop offset="100%" stopColor="hsl(223,62%,8%)" stopOpacity="1" />
+                <stop offset="100%" stopColor="hsl(var(--tool-bg))" stopOpacity="1" />
               </linearGradient>
             </defs>
             <rect width="128" height="160" fill="url(#toSky)" />
-            <polygon points="20,140 64,55 108,140" fill="hsl(223,62%,22%)" opacity="0.9" />
-            <polygon points="0,140 40,80 72,140" fill="hsl(223,62%,18%)" opacity="0.8" />
+            <polygon points="20,140 64,55 108,140" fill="hsl(var(--tool-border))" opacity="0.9" />
+            <polygon points="0,140 40,80 72,140" fill="hsl(var(--tool-surface-dim))" opacity="0.8" />
           </svg>
           {/* Neon corner glow */}
           <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: `inset 0 0 20px ${toGlow}20` }} />
@@ -532,6 +534,173 @@ function Hero3DCards({
         </div>
       </motion.div>
     </div>
+  );
+}
+
+// ─── Format Swap Row (interactive dropdowns) ─────────────────────────────────
+
+/** Build lookup maps once — which "to" formats exist for each "from", and vice versa. */
+const FROM_FORMATS = [...new Set(CONVERSION_TOOLS.map(t => t.fromFormat))].sort();
+
+/** from → Set<to> */
+const FROM_TO_MAP = new Map<string, Set<string>>();
+/** to → Set<from> */
+const TO_FROM_MAP = new Map<string, Set<string>>();
+
+for (const t of CONVERSION_TOOLS) {
+  if (!FROM_TO_MAP.has(t.fromFormat)) FROM_TO_MAP.set(t.fromFormat, new Set());
+  FROM_TO_MAP.get(t.fromFormat)!.add(t.toFormat);
+  if (!TO_FROM_MAP.has(t.toFormat)) TO_FROM_MAP.set(t.toFormat, new Set());
+  TO_FROM_MAP.get(t.toFormat)!.add(t.fromFormat);
+}
+
+/** Uppercase label for a format key */
+function fmtLabel(fmt: string): string {
+  return fmt.toUpperCase();
+}
+
+function FormatSwapRow({
+  currentFrom,
+  currentTo,
+  fromGlow,
+  toGlow,
+  reverseExists,
+  reverseSlug,
+  router,
+}: {
+  currentFrom: string;
+  currentTo: string;
+  fromGlow: string;
+  toGlow: string;
+  reverseExists: boolean;
+  reverseSlug: string;
+  router: ReturnType<typeof useRouter>;
+}) {
+  /** Available "to" options given the current "from" selection. */
+  const toOptions = useMemo(
+    () => [...(FROM_TO_MAP.get(currentFrom) ?? [])].sort(),
+    [currentFrom],
+  );
+
+  /** Navigate to the new slug when either dropdown changes. */
+  const navigateTo = useCallback(
+    (from: string, to: string) => {
+      const slug = `${from}-to-${to}`;
+      if (CONVERSION_TOOLS.some(t => t.slug === slug)) {
+        router.push(`/tools/${slug}`);
+      }
+    },
+    [router],
+  );
+
+  const handleFromChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newFrom = e.target.value;
+      // If the current "to" is available for the new "from", keep it; otherwise pick the first available
+      const availableTos = FROM_TO_MAP.get(newFrom);
+      const newTo = availableTos?.has(currentTo) ? currentTo : [...(availableTos ?? [])][0];
+      if (newFrom && newTo) navigateTo(newFrom, newTo);
+    },
+    [currentTo, navigateTo],
+  );
+
+  const handleToChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newTo = e.target.value;
+      navigateTo(currentFrom, newTo);
+    },
+    [currentFrom, navigateTo],
+  );
+
+  /* Shared select styles — blends into the dark hero using tool CSS variables */
+  const selectClass =
+    "appearance-none cursor-pointer rounded-lg pl-3 pr-7 py-1.5 text-sm font-bold text-white border-0 " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 " +
+    "transition-shadow";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.18 }}
+      className="mt-5 flex items-center gap-3"
+    >
+      {/* FROM dropdown */}
+      <div className="relative inline-flex">
+        <label htmlFor="hero-from-format" className="sr-only">
+          Source format
+        </label>
+        <select
+          id="hero-from-format"
+          value={currentFrom}
+          onChange={handleFromChange}
+          className={selectClass}
+          style={{
+            background: fromGlow,
+            boxShadow: `0 0 12px ${fromGlow}40`,
+          }}
+        >
+          {FROM_FORMATS.map(fmt => (
+            <option key={fmt} value={fmt} style={{ background: "#1a1a2e", color: "#fff" }}>
+              {fmtLabel(fmt)}
+            </option>
+          ))}
+        </select>
+        {/* Custom chevron overlay */}
+        <ChevronDown
+          className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/70"
+          aria-hidden
+        />
+      </div>
+
+      {/* Swap button */}
+      {reverseExists ? (
+        <button
+          onClick={() => router.push(`/tools/${reverseSlug}`)}
+          title="Swap conversion direction"
+          aria-label={`Swap to ${fmtLabel(currentTo)} to ${fmtLabel(currentFrom)}`}
+          className="flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+        >
+          <ArrowLeftRight className="h-4 w-4 text-white" aria-hidden />
+        </button>
+      ) : (
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-full"
+          style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+          aria-hidden
+        >
+          <ArrowRight className="h-4 w-4 text-white" />
+        </div>
+      )}
+
+      {/* TO dropdown */}
+      <div className="relative inline-flex">
+        <label htmlFor="hero-to-format" className="sr-only">
+          Target format
+        </label>
+        <select
+          id="hero-to-format"
+          value={currentTo}
+          onChange={handleToChange}
+          className={selectClass}
+          style={{
+            background: toGlow,
+            boxShadow: `0 0 12px ${toGlow}40`,
+          }}
+        >
+          {toOptions.map(fmt => (
+            <option key={fmt} value={fmt} style={{ background: "#1a1a2e", color: "#fff" }}>
+              {fmtLabel(fmt)}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/70"
+          aria-hidden
+        />
+      </div>
+    </motion.div>
   );
 }
 
@@ -546,7 +715,7 @@ function FaqItem({ question, answer, index }: { question: string; answer: string
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.35, delay: index * 0.04 }}
       className="border-b last:border-b-0"
-      style={{ borderColor: "hsl(224 28% 18%)" }}
+      style={{ borderColor: "hsl(var(--tool-border))" }}
     >
       <button
         type="button"
@@ -680,7 +849,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
     {/* Full-height dark layout — sidebar + main */}
     <div
       className="flex"
-      style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
+      style={{ background: "hsl(var(--tool-bg))", color: "hsl(var(--foreground))" }}
     >
       <Sidebar activeSlug={tool.slug} />
 
@@ -693,7 +862,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
         <section
           className="relative overflow-hidden px-6 pb-12 pt-10 lg:px-10 lg:pt-12"
           style={{
-            background: "linear-gradient(180deg, hsl(223 62% 9%) 0%, hsl(223 62% 7%) 100%)",
+            background: "linear-gradient(180deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-bg)) 100%)",
           }}
         >
           {/* 3D cards (desktop, absolutely positioned on the right) */}
@@ -713,7 +882,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
               className="mb-5 inline-flex rounded-full px-3 py-1 text-xs font-medium"
-              style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+              style={{ background: "hsl(var(--tool-surface-dim))", border: "1px solid hsl(var(--border))" }}
             >
               {hero.eyebrow}
             </motion.div>
@@ -735,50 +904,16 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               {hero.h1Suffix && <> {hero.h1Suffix}</>}
             </motion.h1>
 
-            {/* Format swap row */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.18 }}
-              className="mt-5 flex items-center gap-3"
-            >
-              {/* FROM badge */}
-              <span
-                className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold text-white"
-                style={{ background: fromGlow, boxShadow: `0 0 12px ${fromGlow}40` }}
-              >
-                {tool.fromLabel}
-              </span>
-
-              {/* Swap button */}
-              {reverseExists ? (
-                <button
-                  onClick={() => router.push(`/tools/${reverseSlug}`)}
-                  title="Swap conversion direction"
-                  aria-label={`Swap to ${tool.toLabel} to ${tool.fromLabel}`}
-                  className="flex h-8 w-8 items-center justify-center rounded-full transition-all hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
-                >
-                  <ArrowLeftRight className="h-4 w-4 text-white" aria-hidden />
-                </button>
-              ) : (
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full"
-                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
-                  aria-hidden
-                >
-                  <ArrowRight className="h-4 w-4 text-white" />
-                </div>
-              )}
-
-              {/* TO badge */}
-              <span
-                className="inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-bold text-white"
-                style={{ background: toGlow, boxShadow: `0 0 12px ${toGlow}40` }}
-              >
-                {tool.toLabel}
-              </span>
-            </motion.div>
+            {/* Format swap row — interactive dropdowns */}
+            <FormatSwapRow
+              currentFrom={tool.fromFormat}
+              currentTo={tool.toFormat}
+              fromGlow={fromGlow}
+              toGlow={toGlow}
+              reverseExists={reverseExists}
+              reverseSlug={reverseSlug}
+              router={router}
+            />
 
             {/* Subline */}
             <motion.p
@@ -805,7 +940,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 <div key={title} className="flex items-center gap-2.5">
                   <div
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+                    style={{ background: "hsl(var(--tool-surface-dim))", border: "1px solid hsl(var(--border))" }}
                   >
                     <Icon className="h-4 w-4 text-primary" aria-hidden />
                   </div>
@@ -829,14 +964,13 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="rounded-2xl overflow-hidden"
             style={{
-              background: "hsl(223 62% 9%)",
-              border: "1px solid",
+              background: "hsl(var(--tool-surface))",
               borderColor: `${fromGlow}30`,
               boxShadow: `0 0 40px ${fromGlow}10`,
             }}
           >
             {/* Tabs */}
-            <div className="flex items-center gap-0 border-b px-4 pt-1" style={{ borderColor: "hsl(224 28% 18%)" }}>
+            <div className="flex items-center gap-0 border-b px-4 pt-1" style={{ borderColor: "hsl(var(--tool-border))" }}>
               {[
                 { key: "upload", label: "Upload Image", icon: Upload },
                 { key: "url",    label: "Enter URL",    icon: Link2 },
@@ -867,7 +1001,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
             <div className="flex flex-col gap-0 lg:flex-row">
 
               {/* Upload zone (left) */}
-              <div className="flex-1 p-5 lg:border-r" style={{ borderColor: "hsl(224 28% 18%)" }}>
+              <div className="flex-1 p-5 lg:border-r" style={{ borderColor: "hsl(var(--tool-border))" }}>
                 {tab === "upload" && (
                   <div>
                     {/* Drop zone */}
@@ -887,7 +1021,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           ? "border-primary scale-[1.01]"
                           : "border-muted-foreground/20 hover:border-primary/40"
                       )}
-                      style={dragging ? { background: `${fromGlow}08` } : { background: "hsl(224 36% 11%)" }}
+                      style={dragging ? { background: `${fromGlow}08` } : { background: "hsl(var(--tool-surface-dim))" }}
                     >
                       <div
                         className="flex h-14 w-14 items-center justify-center rounded-xl"
@@ -914,7 +1048,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           <span
                             key={f}
                             className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground"
-                            style={{ borderColor: "hsl(224 28% 24%)", background: "hsl(224 36% 14%)" }}
+                            style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--tool-surface-dim))" }}
                           >
                             {f}
                           </span>
@@ -954,7 +1088,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           <div
                             key={i}
                             className="relative h-12 w-12 overflow-hidden rounded-lg border"
-                            style={{ borderColor: "hsl(224 28% 24%)" }}
+                            style={{ borderColor: "hsl(var(--border))" }}
                           >
                             <img
                               src={URL.createObjectURL(f)}
@@ -966,7 +1100,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                         {files.length > 5 && (
                           <div
                             className="flex h-12 w-12 items-center justify-center rounded-lg border text-xs text-muted-foreground"
-                            style={{ borderColor: "hsl(224 28% 24%)", background: "hsl(224 36% 14%)" }}
+                            style={{ borderColor: "hsl(var(--border))", background: "hsl(var(--tool-surface-dim))" }}
                           >
                             +{files.length - 5}
                           </div>
@@ -989,7 +1123,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                         onChange={e => setUrlInput(e.target.value)}
                         placeholder="https://example.com/image.jpg"
                         className="flex-1 rounded-xl border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        style={{ background: "hsl(224 36% 11%)", borderColor: "hsl(224 28% 22%)" }}
+                        style={{ background: "hsl(var(--tool-surface-dim))", borderColor: "hsl(var(--border))" }}
                         onKeyDown={e => { if (e.key === "Enter") handleFetchUrl(); }}
                       />
                       <button
@@ -1025,7 +1159,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           <p className="mb-2 text-xs font-medium text-muted-foreground">Original {tool.fromLabel}</p>
                           <div
                             className="flex h-28 items-center justify-center rounded-xl"
-                            style={{ background: "hsl(224 36% 11%)", border: "1px dashed hsl(224 28% 22%)" }}
+                            style={{ background: "hsl(var(--tool-surface-dim))", border: "1px dashed hsl(var(--border))" }}
                           >
                             {hasFiles && files[0] ? (
                               <img src={URL.createObjectURL(files[0])} alt="original" className="h-full w-full rounded-xl object-cover" />
@@ -1066,7 +1200,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                           <p className="mb-2 text-xs font-medium text-muted-foreground">Converted {tool.toLabel}</p>
                           <div
                             className="flex h-28 items-center justify-center rounded-xl"
-                            style={{ background: "hsl(224 36% 11%)", border: `1px dashed ${toGlow}40` }}
+                            style={{ background: "hsl(var(--tool-surface-dim))", border: `1px dashed ${toGlow}40` }}
                           >
                             <span className="text-xs font-bold" style={{ color: toGlow }}>{tool.toLabel}</span>
                           </div>
@@ -1076,7 +1210,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
 
                       {/* Quality slider */}
                       {isLossy && hasFiles && (
-                        <div className="rounded-xl p-3 space-y-2" style={{ background: "hsl(224 36% 11%)", border: "1px solid hsl(224 28% 18%)" }}>
+                        <div className="rounded-xl p-3 space-y-2" style={{ background: "hsl(var(--tool-surface-dim))", border: "1px solid hsl(var(--tool-border))" }}>
                           <div className="flex justify-between">
                             <label htmlFor="quality" className="text-xs font-medium text-foreground">Quality</label>
                             <span className="text-xs font-bold text-primary">{quality}%</span>
@@ -1115,7 +1249,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                         {results.map((r, i) => {
                           const delta = ((r.converted.size - r.original.size) / r.original.size) * 100;
                           return (
-                            <li key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: "hsl(224 36% 11%)" }}>
+                            <li key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: "hsl(var(--tool-surface-dim))" }}>
                               <span className="min-w-0 flex-1 truncate font-medium text-foreground">{r.converted.name}</span>
                               <span className="shrink-0 text-xs text-muted-foreground">{fmtBytes(r.original.size)} → {fmtBytes(r.converted.size)}</span>
                               {delta < -1 && <span className="shrink-0 text-xs font-semibold text-emerald-400">{delta.toFixed(0)}%</span>}
@@ -1130,7 +1264,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
             </div>
 
             {/* Convert / Download button — full width */}
-            <div className="border-t p-4" style={{ borderColor: "hsl(224 28% 18%)" }}>
+            <div className="border-t p-4" style={{ borderColor: "hsl(var(--tool-border))" }}>
               {!done ? (
                 <button
                   onClick={handleConvert}
@@ -1157,7 +1291,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                   <button
                     onClick={handleReset}
                     className="flex items-center justify-center rounded-xl px-4 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+                    style={{ background: "hsl(var(--tool-surface-dim))", border: "1px solid hsl(var(--tool-border))" }}
                     aria-label="Convert more files"
                   >
                     <RotateCcw className="h-5 w-5" aria-hidden />
@@ -1186,7 +1320,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.3, delay: i * 0.06 }}
                 className="flex items-start gap-3 rounded-xl p-4"
-                style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+                style={{ background: "hsl(var(--tool-surface))", border: "1px solid hsl(var(--tool-border))" }}
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "hsl(var(--primary) / 0.12)" }}>
                   <Icon className="h-4 w-4 text-primary" aria-hidden />
@@ -1212,7 +1346,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               viewport={{ once: true }}
               transition={{ duration: 0.4 }}
               className="relative overflow-hidden rounded-2xl p-6"
-              style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+              style={{ background: "hsl(var(--tool-surface))", border: "1px solid hsl(var(--tool-border))" }}
             >
               <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
                 <span className="text-[80px] font-black text-foreground">{tool.toLabel}</span>
@@ -1231,7 +1365,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.1 }}
               className="relative overflow-hidden rounded-2xl p-6"
-              style={{ background: "linear-gradient(135deg, hsl(223 62% 11%), hsl(224 36% 16%))", border: "1px solid hsl(var(--primary) / 0.2)" }}
+              style={{ background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-surface-dim)))", border: "1px solid hsl(var(--primary) / 0.2)" }}
             >
               {/* Floating icons decoration */}
               <div className="absolute right-4 top-4 flex gap-2 opacity-60">
@@ -1287,7 +1421,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 <Link
                   href={`/tools/${t.slug}`}
                   className="group flex items-center gap-3 rounded-xl p-3 transition-colors"
-                  style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+                  style={{ background: "hsl(var(--tool-surface))", border: "1px solid hsl(var(--tool-border))" }}
                 >
                   <div
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
@@ -1311,7 +1445,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
         <section className="px-6 pb-6 lg:px-10">
           <div
             className="rounded-2xl p-6"
-            style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+            style={{ background: "hsl(var(--tool-surface))", border: "1px solid hsl(var(--tool-border))" }}
           >
             <h3 className="text-base font-semibold text-foreground">Compare &amp; Learn More</h3>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">

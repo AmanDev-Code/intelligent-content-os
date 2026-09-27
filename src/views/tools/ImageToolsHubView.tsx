@@ -118,7 +118,7 @@ export default function ImageToolsHubView() {
 
   return (
     <MarketingShell>
-      <div style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}>
+      <div style={{ background: "hsl(var(--tool-bg))", color: "hsl(var(--foreground))" }}>
         <main className="relative overflow-hidden">
 
           {/* Background orbs */}
@@ -133,7 +133,7 @@ export default function ImageToolsHubView() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium"
-                style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+                style={{ background: "hsl(var(--tool-surface-dim))", border: "1px solid hsl(var(--border))" }}
               >
                 <Sparkles className="h-3 w-3 text-primary" aria-hidden />
                 {totalTools} free tools · 100% browser-based
@@ -185,7 +185,7 @@ export default function ImageToolsHubView() {
                     <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                       {section.label}
                     </h2>
-                    <div className="flex-1 border-t" style={{ borderColor: "hsl(224 28% 18%)" }} aria-hidden />
+                    <div className="flex-1 border-t" style={{ borderColor: "hsl(var(--tool-border))" }} aria-hidden />
                     <span className="text-xs text-muted-foreground">{section.tools.length} tools</span>
                   </motion.div>
 
@@ -209,14 +209,14 @@ export default function ImageToolsHubView() {
                             href={`/tools/${tool.slug}`}
                             className="group flex items-start gap-3 rounded-xl p-3.5 transition-all duration-200"
                             style={{
-                              background: "hsl(223 62% 9%)",
-                              border: "1px solid hsl(224 28% 18%)",
+                              background: "hsl(var(--tool-surface))",
+                              border: "1px solid hsl(var(--tool-border))",
                             }}
                             onMouseEnter={e => {
                               (e.currentTarget as HTMLElement).style.borderColor = `${badgeColor}50`;
                             }}
                             onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.borderColor = "hsl(224 28% 18%)";
+                              (e.currentTarget as HTMLElement).style.borderColor = "hsl(var(--tool-border))";
                             }}
                           >
                             <span
@@ -273,7 +273,7 @@ export default function ImageToolsHubView() {
                 <Link
                   href="/tools"
                   className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  style={{ border: "1px solid hsl(224 28% 22%)" }}
+                  style={{ border: "1px solid hsl(var(--border))" }}
                 >
                   Back to all tools
                 </Link>

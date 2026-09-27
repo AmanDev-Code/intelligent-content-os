@@ -41,6 +41,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
+import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { cn } from "@/lib/utils";
 import type { UtilityTool } from "@/lib/image-utility-data";
 import type { UtilityAlias } from "@/lib/image-utility-aliases";
@@ -199,6 +200,7 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
   }, []);
 
   return (
+    <MarketingShell>
     <main className="flex-1 space-y-4 sm:space-y-6">
       {/* ----------------------------------------------------------------
           Hero
@@ -516,5 +518,6 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
         </div>
       </section>
     </main>
+    </MarketingShell>
   );
 }

@@ -67,7 +67,7 @@ export default function ImageUtilityAlternativeView({ competitor, related }: Pro
 
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb ─── */}
         <nav
           aria-label="Breadcrumb"

@@ -317,9 +317,15 @@ export function ImageToolsSidebar({ activeSlug, className }: ImageToolsSidebarPr
           "w-[240px] shrink-0",
           "border-r border-[hsl(var(--border))]",
           "bg-[hsl(var(--muted))]",
-          "sticky top-0 h-screen overflow-y-auto",
           className
         )}
+        style={{
+          position: "sticky",
+          top: "64px",
+          height: "fit-content",
+          maxHeight: "calc(100vh - 64px)",
+          overflowY: "auto",
+        }}
       >
         <div className="border-b border-[hsl(var(--border))] px-3 py-3">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[hsl(var(--muted-foreground)/0.7)]">

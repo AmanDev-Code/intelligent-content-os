@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { ImageEditShell } from "@/views/tools/image-tools/ImageEditShell";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { useImageProcessor } from "@/hooks/tools/useImageProcessor";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
@@ -250,50 +250,7 @@ export default function ImageResizerView({ tool, alias }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <MarketingShell>
-    <div
-      style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
-    >
-    <main className="mx-auto max-w-4xl px-6 py-10 space-y-4 sm:space-y-6">
-      {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="rounded-full text-xs">
-            {eyebrow}
-          </Badge>
-        </div>
-
-        {alias ? (
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl font-heading text-foreground">
-            {alias.h1Prefix}{" "}
-            <span className="gradient-text">{alias.h1Highlight}</span>{" "}
-            {alias.h1Suffix}
-          </h1>
-        ) : (
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl font-heading text-foreground">
-            {tool.h1}
-          </h1>
-        )}
-
-        <p className="text-[hsl(var(--muted-foreground))] max-w-2xl text-sm sm:text-base leading-relaxed">
-          {heroSubline}
-        </p>
-
-        <ul className="flex flex-wrap gap-2 pt-1" aria-label="Tool features">
-          {TRUST_BADGES.map(({ icon: Icon, label }) => (
-            <li key={label}>
-              <Badge variant="outline" className="gap-1.5 text-xs font-medium">
-                <Icon className="h-3 w-3" aria-hidden />
-                {label}
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <Separator />
-
-      {/* ── Tool card ───────────────────────────────────────────────────── */}
+    <ImageEditShell slug={tool.slug}>
       <Card className="p-0 overflow-hidden">
         <CardHeader className="px-4 py-4 sm:px-6 sm:py-5 pb-2 sm:pb-4 bg-[hsl(var(--muted)/0.3)]">
           <div className="flex items-center gap-2">
@@ -518,36 +475,6 @@ export default function ImageResizerView({ tool, alias }: Props) {
           </div>
         </CardContent>
       </Card>
-
-      {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      {tool.faqs.length > 0 && (
-        <section aria-labelledby="faq-heading">
-          <h2
-            id="faq-heading"
-            className="text-xl font-bold tracking-tight sm:text-2xl font-heading mb-4 text-foreground"
-          >
-            Frequently asked questions
-          </h2>
-          <Accordion type="single" collapsible className="w-full space-y-1">
-            {tool.faqs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`faq-${i}`}
-                className="border border-[hsl(var(--border))] rounded-lg px-4"
-              >
-                <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-[hsl(var(--muted-foreground))] pb-4 leading-relaxed">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </section>
-      )}
-    </main>
-    </div>
-    </MarketingShell>
+    </ImageEditShell>
   );
 }

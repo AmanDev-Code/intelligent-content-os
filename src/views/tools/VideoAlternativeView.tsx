@@ -55,7 +55,7 @@ export default function VideoAlternativeView({ competitor, related }: Props) {
 
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb ─── */}
         <nav
           aria-label="Breadcrumb"

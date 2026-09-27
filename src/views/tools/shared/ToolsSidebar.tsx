@@ -79,12 +79,26 @@ export interface ToolsSidebarProps {
 export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
   const [query, setQuery] = useState("");
 
-  // Filter CONVERSION_TOOLS by query for the CONVERT section
-  const filteredConvert = query.trim()
+  const q = query.trim().toLowerCase();
+
+  // Filter ALL sections by query — matches labels, slugs, descriptions, and keywords
+  const filteredConvert = q
     ? CONVERSION_TOOLS.filter(t =>
-        `${t.fromLabel} ${t.toLabel} ${t.slug}`.toLowerCase().includes(query.toLowerCase())
+        `${t.fromLabel} ${t.toLabel} ${t.slug} ${t.primaryKeyword} ${t.seoDescription} ${t.whyConvert}`.toLowerCase().includes(q)
       )
     : CONVERSION_TOOLS;
+
+  const filteredPopular = q
+    ? SIDEBAR_POPULAR.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
+    : SIDEBAR_POPULAR;
+
+  const filteredOptimize = q
+    ? SIDEBAR_OPTIMIZE.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
+    : SIDEBAR_OPTIMIZE;
+
+  const filteredGenerate = q
+    ? SIDEBAR_GENERATE.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
+    : SIDEBAR_GENERATE;
 
   return (
     <nav
@@ -92,16 +106,17 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
       style={{
         position: "sticky",
         top: "64px",
-        height: "calc(100vh - 64px)",
+        height: "fit-content",
+        maxHeight: "calc(100vh - 64px)",
         overflowY: "auto",
-        background: "hsl(223 62% 6%)",
-        borderRight: "1px solid hsl(224 28% 18%)",
+        background: "hsl(var(--tool-bg))",
+        borderRight: "1px solid hsl(var(--tool-border))",
       }}
       aria-label="Image tools navigation"
     >
       {/* Search */}
-      <div className="px-3 py-3 border-b" style={{ borderColor: "hsl(224 28% 18%)" }}>
-        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ background: "hsl(224 36% 14%)" }}>
+      <div className="px-3 py-3 border-b" style={{ borderColor: "hsl(var(--tool-border))" }}>
+        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ background: "hsl(var(--tool-surface-dim))" }}>
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
           <input
             type="text"
@@ -116,13 +131,13 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
       </div>
 
       <div className="flex-1 py-2 space-y-0.5">
-        {/* POPULAR — hide when searching */}
-        {!query.trim() && (
+        {/* POPULAR — show when not searching, or when search matches */}
+        {(!q || filteredPopular.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Popular
             </p>
-            {SIDEBAR_POPULAR.map(t => {
+            {filteredPopular.map(t => {
               const isActive = t.slug === activeSlug;
               return (
                 <Link
@@ -196,13 +211,13 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
           )}
         </div>
 
-        {/* OPTIMIZE — hide when searching */}
-        {!query.trim() && (
+        {/* OPTIMIZE — show when not searching, or when search matches */}
+        {(!q || filteredOptimize.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Optimize
             </p>
-            {SIDEBAR_OPTIMIZE.map(t => {
+            {filteredOptimize.map(t => {
               const Icon = t.icon;
               const isActive = t.slug === activeSlug;
               return (
@@ -231,13 +246,13 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
           </div>
         )}
 
-        {/* GENERATE — hide when searching */}
-        {!query.trim() && (
+        {/* GENERATE — show when not searching, or when search matches */}
+        {(!q || filteredGenerate.length > 0) && (
           <div>
             <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
               Generate
             </p>
-            {SIDEBAR_GENERATE.map(t => {
+            {filteredGenerate.map(t => {
               const Icon = t.icon;
               const isActive = t.slug === activeSlug;
               return (
@@ -268,7 +283,7 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
       </div>
 
       {/* Trndinn promo card at bottom */}
-      <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(223 62% 12%), hsl(224 36% 18%))", border: "1px solid hsl(224 28% 24%)" }}>
+      <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-border)))", border: "1px solid hsl(var(--border))" }}>
         <div className="flex items-center gap-2 mb-1.5">
           <div className="flex h-5 w-5 items-center justify-center rounded" style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}>
             <span className="text-[9px] font-black text-white">T</span>

@@ -32,7 +32,7 @@ export default function CaptionAlternativeIndexView({
 }: Props) {
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb (no background) ─── */}
         <nav
           aria-label="Breadcrumb"

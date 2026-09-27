@@ -66,14 +66,14 @@ function ToolCard({ tool }: { tool: VideoTool }) {
         aria-label={tool.name}
         className="group flex h-full flex-col rounded-lg p-6 transition-all duration-200"
         style={{
-          background: "hsl(223 62% 9%)",
-          border: "1px solid hsl(224 28% 18%)",
+          background: "hsl(var(--tool-surface))",
+          border: "1px solid hsl(var(--tool-border))",
         }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLElement).style.borderColor = `hsl(${COLOR_HSL})`;
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.borderColor = "hsl(224 28% 18%)";
+          (e.currentTarget as HTMLElement).style.borderColor = "hsl(var(--tool-border))";
         }}
       >
         <div
@@ -88,7 +88,7 @@ function ToolCard({ tool }: { tool: VideoTool }) {
         </div>
         <h3
           className="text-base font-semibold transition-colors duration-200"
-          style={{ color: "hsl(210 40% 98%)" }}
+          style={{ color: "hsl(var(--foreground))" }}
         >
           {tool.name}
         </h3>
@@ -119,7 +119,7 @@ export function VideoToolsHubView() {
     <MarketingShell>
       <div
         className="min-h-screen"
-        style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
+        style={{ background: "hsl(var(--tool-bg))", color: "hsl(var(--foreground))" }}
       >
         {/* Hero */}
         <section className="px-4 pt-16 pb-10 text-center sm:pt-24 sm:pb-14">

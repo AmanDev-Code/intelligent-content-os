@@ -56,7 +56,7 @@ export default function ImageConverterAlternativeView({ competitor, related }: P
 
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb ─── */}
         <nav
           aria-label="Breadcrumb"
