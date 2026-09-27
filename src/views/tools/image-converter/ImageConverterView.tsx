@@ -1,45 +1,54 @@
 "use client";
 
 /**
- * ImageConverterView — handles all 33 image conversion tools.
+ * ImageConverterView — matches the reference design:
+ * - Left sidebar with colored icon badges, search, categories (POPULAR/CONVERT/OPTIMIZE/GENERATE)
+ * - Dark space-theme main area (deep navy)
+ * - Hero: 3D floating format cards (FROM → TO) with neon glow + "From this / To this" labels
+ * - Tool workspace: tabbed upload + split preview + advanced settings
+ * - Trust features row, info cards, related tools strip
  *
- * Structure mirrors InstagramReelDownloaderView exactly:
- *   MarketingShell → Hero (orbs + doodles + tool UI) → How it works →
- *   Features → Image Toolbox → Compare & Learn More → FAQ → Related tools → CTA
- *
- * Color identity: primary orange (#F97316) → amber (#F59E0B) gradient (not Instagram purple).
- * All Trndinn design tokens: hsl(var(--token)) only. No hex except inline gradients.
- * Framer Motion for hero + section reveals. prefers-reduced-motion safe.
+ * Trndinn tokens: hsl(var(--token)) for all non-gradient colors.
+ * Gradients use inline style only (brand orange #F97316 / amber #F59E0B + dark navy).
+ * framer-motion for hero 3D card entrance + section reveals.
+ * prefers-reduced-motion safe. WCAG AA.
  */
 
 import { useState, useCallback, useRef } from "react";
 import {
   motion,
   AnimatePresence,
-  useScroll,
-  useTransform,
   useReducedMotion,
 } from "framer-motion";
 import {
+  Search,
   Upload,
+  Link2,
+  ImageIcon,
   Download,
-  RotateCcw,
   ArrowRight,
+  RotateCcw,
   ChevronDown,
   CheckCircle2,
   AlertCircle,
   Zap,
   ShieldCheck,
+  Wifi,
   Minimize2,
   Crop,
-  Image as ImageIcon,
-  QrCode,
   Wand2,
+  QrCode,
+  Star,
+  Settings2,
   FileCode2,
+  Layers,
+  Palette,
+  ArrowUpRight,
+  Plus,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 
-import { MarketingShell } from "@/components/marketing/MarketingShell";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
@@ -67,182 +76,37 @@ interface ResultRow {
 
 const LOSSY_FORMATS = new Set(["jpg", "jpeg", "webp", "avif", "gif"]);
 
-// Image tool gradient — orange → amber (distinct from Instagram's purple)
-const IMG_GRADIENT = "linear-gradient(90deg, #F97316, #FB923C, #F59E0B, #F97316)";
-const IMG_GRADIENT_STATIC = "linear-gradient(90deg, #F97316, #F59E0B)";
+// ─── Sidebar data ─────────────────────────────────────────────────────────────
 
-// Related image tools shown in the "Toolbox" section at the bottom
-const IMAGE_TOOLBOX = [
-  { slug: "compress-jpg",       icon: Minimize2,  title: "Compress JPG",      desc: "Reduce JPG file size without visible quality loss." },
-  { slug: "compress-png",       icon: Minimize2,  title: "Compress PNG",      desc: "Shrink PNG files while keeping full transparency." },
-  { slug: "image-resizer",      icon: ImageIcon,  title: "Image Resizer",     desc: "Resize to exact pixels or social media presets." },
-  { slug: "image-cropper",      icon: Crop,       title: "Image Cropper",     desc: "Crop to any aspect ratio or free-form area." },
-  { slug: "background-remover", icon: Wand2,      title: "Remove Background", desc: "AI-powered background removal. Transparent PNG output." },
-  { slug: "qr-code-generator",  icon: QrCode,     title: "QR Code Generator", desc: "Generate QR codes for any URL. PNG + SVG download." },
-];
-
-// ─── Decorative SVGs ──────────────────────────────────────────────────────────
-
-const SparkleGlyph = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden="true">
-    <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z" fill="currentColor" />
-  </svg>
-);
-
-const DottedCircle = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 60 60" className={className} fill="none" aria-hidden="true">
-    {Array.from({ length: 12 }).map((_, i) => {
-      const angle = (i / 12) * Math.PI * 2;
-      return <circle key={i} cx={30 + 24 * Math.cos(angle)} cy={30 + 24 * Math.sin(angle)} r="2.5" fill="currentColor" opacity={0.6 - i * 0.03} />;
-    })}
-  </svg>
-);
-
-const ZigzagLine = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 80 24" className={className} fill="none" aria-hidden="true">
-    <path d="M2 12L14 4L26 20L38 4L50 20L62 4L78 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ConvertGlyph = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 32 32" className={className} fill="none" aria-hidden="true">
-    <path d="M8 20h16M20 14l6 6-6 6M24 12H8M12 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-// ─── FloatingOrb ─────────────────────────────────────────────────────────────
-
-function FloatingOrb({ className, color, delay = 0 }: { className: string; color: string; delay?: number }) {
-  const shouldReduce = useReducedMotion();
-  return (
-    <motion.div
-      className={cn("pointer-events-none absolute rounded-full blur-3xl opacity-35", className)}
-      style={{ background: color }}
-      animate={shouldReduce ? undefined : { x: [0, 25, -15, 0], y: [0, -35, 20, 0], scale: [1, 1.08, 0.96, 1] }}
-      transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay }}
-    />
-  );
-}
-
-// ─── FaqItem ─────────────────────────────────────────────────────────────────
-
-function FaqItem({ question, answer, index }: { question: string; answer: string; index: number }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.4, delay: index * 0.05 }}
-      className="border-b border-border/40 last:border-b-0"
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="group flex w-full items-center justify-between gap-6 py-6 text-left"
-        aria-expanded={open}
-      >
-        <span className="font-display text-lg font-medium text-foreground sm:text-xl">{question}</span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20"
-        >
-          <ChevronDown className="h-4 w-4" />
-        </motion.span>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <p className="max-w-2xl pb-6 pr-12 text-base leading-relaxed text-muted-foreground">{answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-// ─── CompactDropzone ─────────────────────────────────────────────────────────
-
-function CompactDropzone({
-  fromLabel,
-  fromMime,
-  onFiles,
-  disabled,
-}: {
-  fromLabel: string;
-  fromMime: string;
-  onFiles: (f: File[]) => void;
-  disabled?: boolean;
-}) {
-  const [drag, setDrag] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  return (
-    <div
-      role="button"
-      tabIndex={disabled ? -1 : 0}
-      aria-label={`Upload ${fromLabel} file`}
-      aria-disabled={disabled}
-      onDragOver={(e) => { e.preventDefault(); if (!disabled) setDrag(true); }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => { e.preventDefault(); setDrag(false); if (!disabled) { const f = Array.from(e.dataTransfer.files); if (f.length) onFiles(f); } }}
-      onClick={() => !disabled && inputRef.current?.click()}
-      onKeyDown={(e) => { if (!disabled && (e.key === "Enter" || e.key === " ")) inputRef.current?.click(); }}
-      className={cn(
-        "group relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-8 py-10 text-center transition-all duration-200",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        drag
-          ? "border-primary bg-primary/5 scale-[1.01]"
-          : "border-border/60 bg-card/40 hover:border-primary/50 hover:bg-primary/3",
-        disabled && "pointer-events-none opacity-50"
-      )}
-    >
-      {/* Gradient glow on drag */}
-      {drag && (
-        <div className="absolute inset-0 -z-10 rounded-2xl opacity-20 blur-xl" style={{ background: IMG_GRADIENT_STATIC }} />
-      )}
-
-      {/* Upload icon */}
-      <div
-        className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-200 group-hover:scale-105"
-        style={{ background: "hsl(var(--primary) / 0.1)" }}
-      >
-        <Upload className="h-6 w-6 text-primary" aria-hidden />
-      </div>
-
-      <div>
-        <p className="text-base font-semibold text-foreground">
-          Drop <span className="text-primary">{fromLabel}</span> files here
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          or{" "}
-          <span className="text-primary underline underline-offset-2 hover:text-primary/80">
-            click to browse
-          </span>
-          {" "}· batch supported · up to 50 MB each
-        </p>
-      </div>
-
-      <input
-        ref={inputRef}
-        type="file"
-        accept={fromMime}
-        multiple
-        className="sr-only"
-        tabIndex={-1}
-        onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) onFiles(f); }}
-        aria-hidden
-      />
-    </div>
-  );
-}
+const SIDEBAR = {
+  popular: [
+    { slug: "png-to-jpg",  label: "PNG → JPG",  color: "#EF4444" },
+    { slug: "jpg-to-png",  label: "JPG → PNG",  color: "#3B82F6" },
+    { slug: "webp-to-jpg", label: "WebP → JPG", color: "#10B981" },
+    { slug: "heic-to-jpg", label: "HEIC → JPG", color: "#F59E0B" },
+  ],
+  convert: [
+    { slug: "png-to-jpg",    label: "PNG → JPG",    color: "#EF4444" },
+    { slug: "jpg-to-png",    label: "JPG → PNG",    color: "#3B82F6" },
+    { slug: "webp-to-jpg",   label: "WebP → JPG",   color: "#10B981" },
+    { slug: "webp-to-png",   label: "WebP → PNG",   color: "#06B6D4" },
+    { slug: "heic-to-jpg",   label: "HEIC → JPG",   color: "#F59E0B" },
+    { slug: "heic-to-png",   label: "HEIC → PNG",   color: "#8B5CF6" },
+    { slug: "svg-to-png",    label: "SVG → PNG",    color: "#F97316" },
+    { slug: "avif-to-jpg",   label: "AVIF → JPG",   color: "#EC4899" },
+  ],
+  optimize: [
+    { slug: "compress-jpg",       label: "Compress Image",    color: "#F97316", icon: Minimize2 },
+    { slug: "image-resizer",      label: "Resize Image",      color: "#3B82F6", icon: Layers },
+    { slug: "background-remover", label: "Remove Background", color: "#10B981", icon: Wand2 },
+    { slug: "image-workbench",    label: "Enhance Image",     color: "#8B5CF6", icon: Palette },
+  ],
+  generate: [
+    { slug: "favicon-generator",  label: "Favicon Generator",  color: "#F59E0B", icon: Star },
+    { slug: "qr-code-generator",  label: "QR Code Generator",  color: "#06B6D4", icon: QrCode },
+    { slug: "image-to-base64",    label: "Image to Base64",    color: "#8B5CF6", icon: FileCode2 },
+  ],
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -260,6 +124,422 @@ function outName(name: string, fmt: string): string {
   return `${base}.${fmt === "image/x-icon" ? "ico" : fmt}`;
 }
 
+// Format → gradient for the 3D hero card glow
+const FORMAT_GLOW: Record<string, string> = {
+  png:  "#3B82F6",
+  jpg:  "#F97316",
+  jpeg: "#F97316",
+  webp: "#10B981",
+  avif: "#8B5CF6",
+  heic: "#F59E0B",
+  heif: "#F59E0B",
+  svg:  "#F97316",
+  gif:  "#EC4899",
+  bmp:  "#6B7280",
+  tiff: "#6B7280",
+  tif:  "#6B7280",
+  ico:  "#F59E0B",
+};
+
+function getGlow(fmt: string) {
+  return FORMAT_GLOW[fmt.toLowerCase()] ?? "#F97316";
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
+function Sidebar({ activeSlug }: { activeSlug: string }) {
+  const [query, setQuery] = useState("");
+
+  return (
+    <nav
+      className="hidden lg:flex flex-col w-[210px] shrink-0 overflow-y-auto"
+      style={{
+        background: "hsl(223 62% 6%)",
+        borderRight: "1px solid hsl(224 28% 18%)",
+      }}
+      aria-label="Image tools navigation"
+    >
+      {/* Search */}
+      <div className="px-3 py-3 border-b" style={{ borderColor: "hsl(224 28% 18%)" }}>
+        <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ background: "hsl(224 36% 14%)" }}>
+          <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search tools..."
+            className="flex-1 bg-transparent text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+            aria-label="Search tools"
+          />
+          <span className="hidden text-[10px] text-muted-foreground/60 sm:block">⌘K</span>
+        </div>
+      </div>
+
+      <div className="flex-1 py-2 space-y-0.5">
+        {/* POPULAR */}
+        <div>
+          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            Popular
+          </p>
+          {SIDEBAR.popular.map(t => {
+            const isActive = t.slug === activeSlug;
+            return (
+              <Link
+                key={t.slug}
+                href={`/tools/${t.slug}`}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive
+                    ? "font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                style={isActive ? {
+                  background: `${t.color}20`,
+                  color: t.color,
+                } : undefined}
+              >
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-black text-white"
+                  style={{ background: t.color }}
+                  aria-hidden
+                >
+                  {t.label.split(" → ")[0].slice(0, 3)}
+                </span>
+                {t.label}
+                {isActive && (
+                  <ArrowRight className="ml-auto h-3 w-3 shrink-0" aria-hidden />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* CONVERT */}
+        <div>
+          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            Convert
+          </p>
+          {SIDEBAR.convert.map(t => {
+            const isActive = t.slug === activeSlug;
+            return (
+              <Link
+                key={t.slug}
+                href={`/tools/${t.slug}`}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive
+                    ? "font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
+              >
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[9px] font-black text-white"
+                  style={{ background: t.color }}
+                  aria-hidden
+                >
+                  {t.label.split(" → ")[0].slice(0, 3)}
+                </span>
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* OPTIMIZE */}
+        <div>
+          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            Optimize
+          </p>
+          {SIDEBAR.optimize.map(t => {
+            const Icon = t.icon;
+            const isActive = t.slug === activeSlug;
+            return (
+              <Link
+                key={t.slug}
+                href={`/tools/${t.slug}`}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
+              >
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
+                  style={{ background: t.color }}
+                  aria-hidden
+                >
+                  <Icon className="h-3 w-3" />
+                </span>
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* GENERATE */}
+        <div>
+          <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+            Generate
+          </p>
+          {SIDEBAR.generate.map(t => {
+            const Icon = t.icon;
+            const isActive = t.slug === activeSlug;
+            return (
+              <Link
+                key={t.slug}
+                href={`/tools/${t.slug}`}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
+                )}
+                style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
+              >
+                <span
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
+                  style={{ background: t.color }}
+                  aria-hidden
+                >
+                  <Icon className="h-3 w-3" />
+                </span>
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Trndinn promo card at bottom */}
+      <div className="mx-2 mb-3 rounded-xl p-3" style={{ background: "linear-gradient(135deg, hsl(223 62% 12%), hsl(224 36% 18%))", border: "1px solid hsl(224 28% 24%)" }}>
+        <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex h-5 w-5 items-center justify-center rounded" style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}>
+            <span className="text-[9px] font-black text-white">T</span>
+          </div>
+          <span className="text-[11px] font-semibold text-foreground">trndinn</span>
+        </div>
+        <p className="text-[10.5px] leading-relaxed text-muted-foreground">
+          Create content, schedule posts and grow your brand with AI.
+        </p>
+        <Link
+          href="/pricing"
+          className="mt-2 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
+        >
+          Try Trndinn
+          <ArrowUpRight className="h-3 w-3" aria-hidden />
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+// ─── 3D Hero Format Cards ─────────────────────────────────────────────────────
+
+function Hero3DCards({
+  fromLabel,
+  toLabel,
+  fromFormat,
+  toFormat,
+  shouldReduce,
+}: {
+  fromLabel: string;
+  toLabel: string;
+  fromFormat: string;
+  toFormat: string;
+  shouldReduce: boolean | null;
+}) {
+  const fromGlow = getGlow(fromFormat);
+  const toGlow   = getGlow(toFormat);
+
+  return (
+    <div className="pointer-events-none absolute right-0 top-0 hidden h-full w-[42%] lg:flex items-center justify-center pr-8" aria-hidden>
+      {/* "From this" label */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="absolute left-[8%] top-[22%] flex flex-col items-center gap-1 text-muted-foreground"
+        style={{ fontFamily: "cursive" }}
+      >
+        <span className="text-sm italic">From this</span>
+        <svg viewBox="0 0 40 30" className="h-6 w-10 rotate-45 text-muted-foreground/60" fill="none">
+          <path d="M5 5 Q20 2, 35 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M28 16 L35 20 L30 26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </motion.div>
+
+      {/* "To this" label */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+        className="absolute right-[6%] top-[16%] flex flex-col items-end gap-1 text-muted-foreground"
+        style={{ fontFamily: "cursive" }}
+      >
+        <span className="text-sm italic">To this</span>
+        <svg viewBox="0 0 40 30" className="h-6 w-10 -scale-x-100 rotate-45 text-muted-foreground/60" fill="none">
+          <path d="M5 5 Q20 2, 35 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M28 16 L35 20 L30 26" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </motion.div>
+
+      {/* FROM card */}
+      <motion.div
+        initial={{ opacity: 0, x: -40, rotateY: 20 }}
+        animate={{ opacity: 1, x: 0, rotateY: shouldReduce ? 0 : -12 }}
+        transition={{ delay: 0.3, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        style={{ perspective: 800, transformStyle: "preserve-3d" }}
+        className="relative mr-[-20px]"
+      >
+        <div
+          className="relative h-36 w-28 rounded-2xl overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, hsl(223 62% 14%), hsl(224 36% 22%))",
+            border: `2px solid ${fromGlow}40`,
+            boxShadow: `0 0 30px ${fromGlow}30, 0 0 60px ${fromGlow}15, inset 0 1px 0 ${fromGlow}20`,
+            transform: "rotateY(-12deg) rotateX(4deg)",
+          }}
+        >
+          {/* Gradient placeholder image */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${fromGlow}30 0%, hsl(223 62% 10%) 100%)`,
+            }}
+          />
+          {/* Mountain-like placeholder */}
+          <svg className="absolute inset-0 h-full w-full opacity-60" viewBox="0 0 112 144" fill="none">
+            <defs>
+              <linearGradient id="fromSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={fromGlow} stopOpacity="0.6" />
+                <stop offset="100%" stopColor="hsl(223,62%,8%)" stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <rect width="112" height="144" fill="url(#fromSky)" />
+            <polygon points="20,120 56,50 92,120" fill="hsl(223,62%,20%)" opacity="0.9" />
+            <polygon points="0,120 35,70 65,120" fill="hsl(223,62%,16%)" opacity="0.8" />
+          </svg>
+          {/* Format label */}
+          <div className="absolute bottom-0 left-0 right-0 py-2 text-center" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+            <span className="text-xs font-black tracking-wider text-white">{fromLabel.toUpperCase()}</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Arrow */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.7, duration: 0.4 }}
+        className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border"
+        style={{
+          background: "linear-gradient(135deg, #F97316, #F59E0B)",
+          borderColor: "#F97316",
+          boxShadow: "0 0 20px #F9731640",
+        }}
+      >
+        <ArrowRight className="h-5 w-5 text-white" aria-hidden />
+      </motion.div>
+
+      {/* TO card */}
+      <motion.div
+        initial={{ opacity: 0, x: 40, rotateY: -20 }}
+        animate={{ opacity: 1, x: 0, rotateY: shouldReduce ? 0 : 12 }}
+        transition={{ delay: 0.5, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        style={{ perspective: 800, transformStyle: "preserve-3d" }}
+        className="relative ml-[-20px]"
+      >
+        <div
+          className="relative h-40 w-32 rounded-2xl overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, hsl(223 62% 14%), hsl(224 36% 22%))",
+            border: `2px solid ${toGlow}60`,
+            boxShadow: `0 0 40px ${toGlow}40, 0 0 80px ${toGlow}20, inset 0 1px 0 ${toGlow}30`,
+            transform: "rotateY(12deg) rotateX(-4deg)",
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${toGlow}40 0%, hsl(223 62% 10%) 100%)`,
+            }}
+          />
+          <svg className="absolute inset-0 h-full w-full opacity-70" viewBox="0 0 128 160" fill="none">
+            <defs>
+              <linearGradient id="toSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={toGlow} stopOpacity="0.7" />
+                <stop offset="100%" stopColor="hsl(223,62%,8%)" stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <rect width="128" height="160" fill="url(#toSky)" />
+            <polygon points="20,140 64,55 108,140" fill="hsl(223,62%,22%)" opacity="0.9" />
+            <polygon points="0,140 40,80 72,140" fill="hsl(223,62%,18%)" opacity="0.8" />
+          </svg>
+          {/* Neon corner glow */}
+          <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: `inset 0 0 20px ${toGlow}20` }} />
+          <div className="absolute bottom-0 left-0 right-0 py-2 text-center" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+            <span className="text-xs font-black tracking-wider text-white">{toLabel.toUpperCase()}</span>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── FaqItem ─────────────────────────────────────────────────────────────────
+
+function FaqItem({ question, answer, index }: { question: string; answer: string; index: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.35, delay: index * 0.04 }}
+      className="border-b last:border-b-0"
+      style={{ borderColor: "hsl(224 28% 18%)" }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex w-full items-center justify-between gap-4 py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-expanded={open}
+      >
+        <span className="text-base font-medium text-foreground">{question}</span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.22 }}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary"
+          style={{ background: "hsl(var(--primary) / 0.12)" }}
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="max-w-2xl pb-5 pr-10 text-sm leading-relaxed text-muted-foreground">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ImageConverterView({ tool, alias, faqs }: Props) {
@@ -267,30 +547,28 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
   const { downloadSingle, downloadMultiple } = useFileDownload();
   const shouldReduce = useReducedMotion();
 
+  const [tab, setTab] = useState<"upload" | "url" | "search">("upload");
   const [files, setFiles] = useState<File[]>([]);
+  const [urlInput, setUrlInput] = useState("");
   const [results, setResults] = useState<ResultRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [quality, setQuality] = useState(92);
+  const [dragging, setDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isLossy = LOSSY_FORMATS.has(tool.toFormat);
   const isHeic  = ["heic", "heif"].includes(tool.fromFormat);
   const done    = results.length > 0;
   const hasFiles = files.length > 0;
 
-  // Parallax scroll for hero doodles
-  const { scrollY } = useScroll();
-  const yLeft  = useTransform(scrollY, [0, 500], [0, -50]);
-  const yRight = useTransform(scrollY, [0, 500], [0, 35]);
-
-  // Hero copy — alias overrides primary
   const hero = {
-    h1Prefix:  alias?.h1Prefix    ?? "Free",
-    h1Highlight: alias?.h1Highlight ?? `${tool.fromLabel} to ${tool.toLabel}`,
-    h1Suffix:  alias?.h1Suffix    ?? "Converter",
-    eyebrow:   alias?.eyebrow     ?? `100% browser-based · zero upload risk`,
-    subline:   alias?.heroSubline ?? tool.whyConvert,
+    h1Prefix:   alias?.h1Prefix    ?? "Turn any",
+    h1Highlight: alias?.h1Highlight ?? `${tool.fromLabel} into ${tool.toLabel}`,
+    h1Suffix:   alias?.h1Suffix    ?? "— instantly.",
+    eyebrow:    alias?.eyebrow     ?? `Free ${tool.fromLabel} to ${tool.toLabel} Converter`,
+    subline:    alias?.heroSubline ?? tool.whyConvert,
   };
 
   const handleFiles = useCallback((incoming: File[]) => {
@@ -326,543 +604,607 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
     setFiles([]); setResults([]); setError(null); setProgress(0);
   }, []);
 
+  const fromGlow = getGlow(tool.fromFormat);
+  const toGlow   = getGlow(tool.toFormat);
+
   return (
-    <MarketingShell>
-      <main className="relative overflow-hidden">
+    // Full-height dark layout — sidebar + main
+    <div
+      className="flex min-h-screen"
+      style={{ background: "hsl(223 62% 7%)", color: "hsl(210 40% 98%)" }}
+    >
+      <Sidebar activeSlug={tool.slug} />
 
-        {/* ================================================================
-            HERO — full viewport, floating orbs, doodles, tool as centerpiece
-        ================================================================ */}
-        <section className="relative flex min-h-[80vh] items-center justify-center px-4 py-14 sm:py-16">
+      {/* Main content */}
+      <main className="flex-1 min-w-0 overflow-x-hidden">
 
-          {/* Background orbs — warm orange/amber palette */}
-          <FloatingOrb className="left-[-8%] top-[8%] h-[420px] w-[420px]"  color="radial-gradient(circle, hsl(21 95% 56% / 0.35) 0%, transparent 70%)" />
-          <FloatingOrb className="right-[-6%] top-[18%] h-[360px] w-[360px]" color="radial-gradient(circle, hsl(38 92% 50% / 0.3) 0%, transparent 70%)" delay={3} />
-          <FloatingOrb className="bottom-[-12%] left-[28%] h-[480px] w-[480px]" color="radial-gradient(circle, hsl(21 95% 56% / 0.2) 0%, transparent 70%)" delay={6} />
+        {/* ════════════════════════════════════════════════════════════════
+            HERO
+        ════════════════════════════════════════════════════════════════ */}
+        <section
+          className="relative overflow-hidden px-6 pb-12 pt-10 lg:px-10 lg:pt-12"
+          style={{
+            background: "linear-gradient(180deg, hsl(223 62% 9%) 0%, hsl(223 62% 7%) 100%)",
+          }}
+        >
+          {/* 3D cards (desktop, absolutely positioned on the right) */}
+          <Hero3DCards
+            fromLabel={tool.fromLabel}
+            toLabel={tool.toLabel}
+            fromFormat={tool.fromFormat}
+            toFormat={tool.toFormat}
+            shouldReduce={shouldReduce}
+          />
 
-          {/* Desktop doodles */}
-          <motion.div style={shouldReduce ? undefined : { y: yLeft }} className="pointer-events-none absolute left-[6%] top-[18%] hidden text-primary/35 lg:block">
-            <SparkleGlyph className="h-8 w-8" />
-          </motion.div>
-          <motion.div
-            className="pointer-events-none absolute right-[8%] top-[22%] hidden text-primary/25 lg:block"
-            animate={shouldReduce ? undefined : { rotate: [0, 360] }}
-            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          >
-            <DottedCircle className="h-16 w-16" />
-          </motion.div>
-          <motion.div style={shouldReduce ? undefined : { y: yRight }} className="pointer-events-none absolute right-[10%] top-[60%] hidden text-primary/35 lg:block">
-            <ConvertGlyph className="h-14 w-14" />
-          </motion.div>
-          <motion.div
-            className="pointer-events-none absolute left-[10%] top-[68%] hidden text-primary/25 lg:block"
-            animate={shouldReduce ? undefined : { rotate: [-8, 8, -8] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ZigzagLine className="h-6 w-20" />
-          </motion.div>
-          <motion.div
-            className="pointer-events-none absolute right-[4%] bottom-[18%] hidden text-primary/35 lg:block"
-            animate={shouldReduce ? undefined : { y: [0, -10, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <SparkleGlyph className="h-5 w-5" />
-          </motion.div>
-
-          {/* CENTER STAGE */}
-          <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-
-            {/* Live pill */}
+          {/* Left: headline + trust + tool workspace */}
+          <div className="relative z-10 max-w-[680px]">
+            {/* Pill badge */}
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full bg-card/70 px-4 py-1.5 backdrop-blur-md"
+              transition={{ duration: 0.4 }}
+              className="mb-5 inline-flex rounded-full px-3 py-1 text-xs font-medium"
+              style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
             >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              <span className="text-xs font-medium tracking-wide text-foreground/80">
-                {hero.eyebrow}
-              </span>
+              {hero.eyebrow}
             </motion.div>
 
             {/* H1 */}
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="font-display text-[clamp(2.2rem,5.5vw,4.5rem)] font-bold leading-[1.06] tracking-tight text-foreground"
+              transition={{ duration: 0.55, delay: 0.1 }}
+              className="font-display text-[clamp(2rem,4.5vw,3.8rem)] font-bold leading-[1.08] tracking-tight"
             >
               {hero.h1Prefix}{" "}
-              <span className="relative inline-block">
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: IMG_GRADIENT_STATIC }}
-                >
-                  {hero.h1Highlight}
-                </span>
-                {/* Underline scribble */}
-                <motion.svg viewBox="0 0 300 12" className="absolute -bottom-1 left-0 h-3 w-full" fill="none" aria-hidden>
-                  <motion.path
-                    d="M2 8 Q 50 2, 100 6 T 200 6 T 298 8"
-                    stroke="url(#conv-underline)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.2, delay: 0.6 }}
-                  />
-                  <defs>
-                    <linearGradient id="conv-underline" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#F97316" />
-                      <stop offset="100%" stopColor="#F59E0B" />
-                    </linearGradient>
-                  </defs>
-                </motion.svg>
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: "linear-gradient(90deg, #F97316, #F59E0B)" }}
+              >
+                {hero.h1Highlight}
               </span>
-              {hero.h1Suffix && <><br />{hero.h1Suffix}</>}
+              {hero.h1Suffix && <> {hero.h1Suffix}</>}
             </motion.h1>
 
             {/* Subline */}
             <motion.p
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.28 }}
-              className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground"
+              transition={{ duration: 0.45, delay: 0.22 }}
+              className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground"
             >
               {hero.subline}
             </motion.p>
 
-            {/* Trust chips */}
+            {/* 3 trust features */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.38 }}
-              className="mt-5 flex flex-wrap items-center justify-center gap-3"
+              transition={{ duration: 0.4, delay: 0.32 }}
+              className="mt-6 flex flex-wrap gap-6"
             >
               {[
-                { icon: Zap,        label: "No signup" },
-                { icon: ShieldCheck, label: "Never uploaded" },
-                { icon: CheckCircle2, label: "Instant" },
-              ].map(({ icon: Icon, label }) => (
-                <span
-                  key={label}
-                  className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs font-medium text-foreground/70 backdrop-blur-sm"
-                >
-                  <Icon className="h-3 w-3 text-primary" aria-hidden />
-                  {label}
-                </span>
-              ))}
-            </motion.div>
-
-            {/* ── TOOL UI ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.45 }}
-              className="mt-10 w-full max-w-2xl"
-            >
-              {/* Glowing card wrapper */}
-              <div className="group relative">
-                <motion.div
-                  className="absolute -inset-0.5 rounded-2xl opacity-50 blur-lg"
-                  style={{ background: IMG_GRADIENT, backgroundSize: "200% 100%" }}
-                  animate={shouldReduce ? undefined : { backgroundPosition: ["0% 0%", "200% 0%"] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                />
-
-                <div className="relative rounded-2xl bg-card p-5 sm:p-6">
-                  {/* Format pair display */}
-                  <div className="mb-5 flex items-center justify-center gap-4">
-                    <div className="flex h-14 w-20 flex-col items-center justify-center rounded-xl border-2 border-border bg-muted/30">
-                      <span className="text-base font-black tracking-tight text-foreground">{tool.fromLabel}</span>
-                      <span className="mt-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">source</span>
-                    </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "hsl(var(--primary) / 0.1)" }}>
-                      <ArrowRight className="h-3.5 w-3.5 text-primary" aria-hidden />
-                    </div>
-                    <div className="relative flex h-14 w-20 flex-col items-center justify-center rounded-xl border-2" style={{ borderColor: "hsl(var(--primary) / 0.4)", background: "hsl(var(--primary) / 0.06)" }}>
-                      <span className="text-base font-black tracking-tight text-primary">{tool.toLabel}</span>
-                      <span className="mt-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">output</span>
-                    </div>
+                { icon: Zap,        title: "Instant conversion", sub: "No waiting" },
+                { icon: ShieldCheck, title: "100% private",       sub: "Files never uploaded" },
+                { icon: Wifi,        title: "Works offline",      sub: "In your browser" },
+              ].map(({ icon: Icon, title, sub }) => (
+                <div key={title} className="flex items-center gap-2.5">
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+                  >
+                    <Icon className="h-4 w-4 text-primary" aria-hidden />
                   </div>
-
-                  {/* HEIC notice */}
-                  {isHeic && (
-                    <div className="mb-4 flex gap-2.5 rounded-xl bg-muted/50 px-3.5 py-3 text-sm text-muted-foreground">
-                      <span className="mt-0.5 shrink-0 text-primary">ⓘ</span>
-                      Your browser won&apos;t preview HEIC files but conversion works fine — HEIC decoding runs locally via WebAssembly.
-                    </div>
-                  )}
-
-                  <AnimatePresence mode="wait">
-                    {!done ? (
-                      <motion.div key="upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <CompactDropzone fromLabel={tool.fromLabel} fromMime={tool.fromMime} onFiles={handleFiles} disabled={busy} />
-
-                        {/* Quality slider */}
-                        {isLossy && hasFiles && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            className="mt-4 space-y-2 rounded-xl border border-border/50 bg-muted/20 px-4 py-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <label htmlFor="quality-slider" className="text-sm font-medium text-foreground">Quality</label>
-                              <span className="text-sm font-bold text-primary" aria-live="polite">{quality}%</span>
-                            </div>
-                            <Slider id="quality-slider" min={1} max={100} step={1} value={[quality]} onValueChange={([v]) => setQuality(v)} aria-label={`Output quality: ${quality}%`} />
-                            <p className="text-[11px] text-muted-foreground">92% is visually identical to lossless for most images.</p>
-                          </motion.div>
-                        )}
-
-                        {error && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mt-4 flex gap-2 rounded-xl bg-destructive/10 px-4 py-3 text-sm"
-                          >
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
-                            <span className="text-destructive">{error}</span>
-                          </motion.div>
-                        )}
-
-                        {busy && (
-                          <div className="mt-4 space-y-1.5">
-                            <div className="flex justify-between text-xs font-medium">
-                              <span className="text-muted-foreground">Converting {tool.fromLabel} → {tool.toLabel}…</span>
-                              <span className="text-primary">{progress}%</span>
-                            </div>
-                            <Progress value={progress} className="h-1.5" />
-                          </div>
-                        )}
-
-                        <motion.div whileHover={shouldReduce ? undefined : { scale: 1.01 }} whileTap={shouldReduce ? undefined : { scale: 0.98 }} className="mt-4">
-                          <Button
-                            onClick={handleConvert}
-                            disabled={!hasFiles || busy}
-                            size="lg"
-                            className="h-14 w-full rounded-xl text-base font-semibold text-white shadow-lg shadow-primary/25 disabled:opacity-50"
-                            style={{ background: hasFiles ? IMG_GRADIENT_STATIC : undefined }}
-                          >
-                            {busy ? (
-                              <><span className="mr-2 inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden />Converting…</>
-                            ) : (
-                              <><Download className="mr-2 h-5 w-5" aria-hidden />Convert to {tool.toLabel}</>
-                            )}
-                          </Button>
-                        </motion.div>
-                      </motion.div>
-                    ) : (
-                      <motion.div key="result" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                          <div className="mb-3 flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-hidden />
-                            <span className="font-semibold text-foreground">{results.length === 1 ? "Ready to download" : `${results.length} files ready`}</span>
-                          </div>
-                          <ul className="space-y-2 text-sm">
-                            {results.map((r, i) => {
-                              const delta = ((r.converted.size - r.original.size) / r.original.size) * 100;
-                              return (
-                                <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-background/60 px-3 py-2">
-                                  <span className="min-w-0 flex-1 truncate font-medium text-foreground">{r.converted.name}</span>
-                                  <span className="shrink-0 text-xs text-muted-foreground">{fmtBytes(r.original.size)} → {fmtBytes(r.converted.size)}</span>
-                                  {delta < -1 && <span className="shrink-0 text-xs font-semibold text-emerald-600 dark:text-emerald-400">{delta.toFixed(0)}%</span>}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                        <div className="mt-4 flex gap-3">
-                          <Button onClick={handleDownload} size="lg" className="flex-1 font-semibold" style={{ background: IMG_GRADIENT_STATIC }}>
-                            <Download className="mr-2 h-4 w-4" aria-hidden />
-                            {results.length === 1 ? `Download ${tool.toLabel}` : `Download all (${results.length})`}
-                          </Button>
-                          <Button onClick={handleReset} variant="outline" size="lg" aria-label="Convert more files">
-                            <RotateCcw className="h-4 w-4" aria-hidden />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{title}</p>
+                    <p className="text-xs text-muted-foreground">{sub}</p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ================================================================
-            HOW IT WORKS — 3-step horizontal timeline
-        ================================================================ */}
-        <section className="relative hidden px-4 py-12 sm:block sm:py-16">
-          <div className="mx-auto max-w-5xl">
-            <motion.h2
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="mb-10 text-center font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-            >
-              How to convert {tool.fromLabel} to {tool.toLabel}
-            </motion.h2>
-
-            <div className="relative flex items-start justify-center gap-0">
-              {/* Connecting track */}
-              <div className="absolute left-1/2 top-8 h-0.5 w-[calc(66%-8rem)] -translate-x-1/2 bg-border/40" aria-hidden />
-
-              {[
-                { icon: Upload,  title: `Upload ${tool.fromLabel}`, caption: "Drag & drop or click to browse. Batch supported — no file size limit." },
-                { icon: Zap,     title: isLossy ? "Set quality" : "Instant conversion", caption: isLossy ? `Adjust quality (default 92%). Higher = better quality, larger file.` : `${tool.toLabel} is lossless — no settings needed.` },
-                { icon: Download, title: "Download", caption: "Converts in your browser. Nothing uploaded. Download instantly." },
-              ].map((step, i) => {
-                const Icon = step.icon;
-                return (
-                  <motion.div
-                    key={step.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{ duration: 0.4, delay: i * 0.1 }}
-                    className="flex flex-1 flex-col items-center gap-4 px-6 text-center"
-                  >
-                    <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm" style={{ background: "hsl(var(--primary) / 0.1)" }}>
-                      <Icon className="h-7 w-7 text-primary" aria-hidden />
-                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
-                        {i + 1}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-display text-lg font-semibold tracking-tight text-foreground">{step.title}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">{step.caption}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ================================================================
-            AEO CONTENT — entity-first TL;DR + features
-        ================================================================ */}
-        <section className="relative px-4 py-8 sm:py-12">
-          <div className="mx-auto max-w-3xl">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-            >
-              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Why convert
-              </p>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {tool.fromLabel} vs {tool.toLabel} — when to convert
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                {tool.whyConvert}
-              </p>
-            </motion.div>
-
-            {/* Features grid */}
-            <motion.ul
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
-              {[
-                "100% browser-based — images never leave your device",
-                "No signup, no account, no watermark added",
-                "Batch conversion — upload multiple files at once",
-                `${isLossy ? "Quality slider" : "Lossless conversion"} — full control over output`,
-                "Supports drag & drop and file browser upload",
-                "Works on any device — phone, tablet, desktop",
-              ].map((feat, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm text-foreground">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
-                  {feat}
-                </li>
               ))}
-            </motion.ul>
+            </motion.div>
           </div>
         </section>
 
-        {/* ================================================================
-            IMAGE TOOLBOX — related image tools (same pattern as Reel Downloader)
-        ================================================================ */}
-        <section className="relative px-4 py-12 sm:py-16">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="mb-8"
-            >
-              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Image Tools
-              </p>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                More free image tools
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {IMAGE_TOOLBOX.map((t, i) => {
-                const Icon = t.icon;
-                return (
-                  <motion.div
-                    key={t.slug}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{ duration: 0.4, delay: i * 0.06 }}
-                  >
-                    <Link
-                      href={`/tools/${t.slug}`}
-                      className="group flex h-full flex-col rounded-xl border border-border/60 bg-card/60 p-5 transition-all duration-200 hover:border-primary/30 hover:bg-card hover:shadow-sm"
-                    >
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <h3 className="font-display text-sm font-semibold text-foreground">{t.title}</h3>
-                      <p className="mt-1 flex-1 text-xs leading-relaxed text-muted-foreground">{t.desc}</p>
-                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        Try it free <ArrowRight className="h-3 w-3" />
-                      </span>
-                    </Link>
-                  </motion.div>
-                );
-              })}
+        {/* ════════════════════════════════════════════════════════════════
+            TOOL WORKSPACE
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="px-6 py-6 lg:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "hsl(223 62% 9%)",
+              border: "1px solid",
+              borderColor: `${fromGlow}30`,
+              boxShadow: `0 0 40px ${fromGlow}10`,
+            }}
+          >
+            {/* Tabs */}
+            <div className="flex items-center gap-0 border-b px-4 pt-1" style={{ borderColor: "hsl(224 28% 18%)" }}>
+              {[
+                { key: "upload", label: "Upload Image", icon: Upload },
+                { key: "url",    label: "Enter URL",    icon: Link2 },
+                { key: "search", label: "Search Image", icon: Search, badge: "NEW" },
+              ].map(({ key, label, icon: Icon, badge }) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key as typeof tab)}
+                  className={cn(
+                    "flex items-center gap-1.5 border-b-2 px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none",
+                    tab === key
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                  {label}
+                  {badge && (
+                    <span className="ml-1 rounded px-1 py-0.5 text-[9px] font-bold text-white" style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}>
+                      {badge}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="mt-6 text-center text-sm text-muted-foreground"
-            >
-              <Link href="/tools/image" className="text-primary hover:underline underline-offset-2">
-                Browse all 49 free image tools →
-              </Link>
-            </motion.p>
-          </div>
-        </section>
+            {/* Workspace body */}
+            <div className="flex flex-col gap-0 lg:flex-row">
 
-        {/* ================================================================
-            COMPARE & LEARN MORE — competitor links (same pattern as Reel Downloader)
-        ================================================================ */}
-        <section className="relative px-4 py-6 sm:py-8">
-          <div className="mx-auto max-w-3xl">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="rounded-xl border border-border/40 bg-card/40 p-6"
-            >
-              <h3 className="font-display text-lg font-semibold text-foreground">
-                Compare &amp; Learn More
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                See how Trndinn&apos;s image converter stacks up against the alternatives, or read our format conversion guides.
-              </p>
-              <ul className="mt-4 space-y-2 text-sm">
-                {IMAGE_CONVERTER_COMPETITORS.slice(0, 5).map((c) => (
-                  <li key={c.slug}>
-                    <Link
-                      href={`/compare/trndinn-vs-${c.slug}`}
-                      className="inline-flex items-center gap-1.5 text-primary underline-offset-2 hover:underline"
+              {/* Upload zone (left) */}
+              <div className="flex-1 p-5 lg:border-r" style={{ borderColor: "hsl(224 28% 18%)" }}>
+                {tab === "upload" && (
+                  <div>
+                    {/* Drop zone */}
+                    <div
+                      role="button"
+                      tabIndex={busy ? -1 : 0}
+                      aria-label={`Upload ${tool.fromLabel} file`}
+                      onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={e => { e.preventDefault(); setDragging(false); const f = Array.from(e.dataTransfer.files); if (f.length) handleFiles(f); }}
+                      onClick={() => inputRef.current?.click()}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed py-10 text-center transition-all duration-200 cursor-pointer",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        dragging
+                          ? "border-primary scale-[1.01]"
+                          : "border-muted-foreground/20 hover:border-primary/40"
+                      )}
+                      style={dragging ? { background: `${fromGlow}08` } : { background: "hsl(224 36% 11%)" }}
                     >
-                      <ArrowRight className="h-3 w-3" />
-                      Trndinn vs {c.name} — {c.tagline}
-                    </Link>
-                  </li>
-                ))}
-                <li>
-                  <Link href="/compare" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-primary underline-offset-2 hover:underline">
-                    <ArrowRight className="h-3 w-3" />
-                    See all comparisons →
-                  </Link>
-                </li>
-              </ul>
-            </motion.div>
-          </div>
+                      <div
+                        className="flex h-14 w-14 items-center justify-center rounded-xl"
+                        style={{ background: `${fromGlow}20`, border: `1px solid ${fromGlow}30` }}
+                      >
+                        <Upload className="h-6 w-6" style={{ color: fromGlow }} aria-hidden />
+                      </div>
+                      <div>
+                        <p className="text-base font-semibold text-foreground">
+                          Drag &amp; drop your <span style={{ color: fromGlow }}>{tool.fromLabel}</span> image here
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          or{" "}
+                          <span className="underline underline-offset-2 cursor-pointer" style={{ color: fromGlow }}>
+                            click to browse
+                          </span>{" "}
+                          (up to 50 MB)
+                        </p>
+                      </div>
+
+                      {/* Format + size pills */}
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        {[tool.fromLabel.toUpperCase(), ...(isHeic ? ["HEIF"] : []), "MAX 50MB"].map(f => (
+                          <span
+                            key={f}
+                            className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground"
+                            style={{ borderColor: "hsl(224 28% 24%)", background: "hsl(224 36% 14%)" }}
+                          >
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+
+                      <input
+                        ref={inputRef}
+                        type="file"
+                        accept={tool.fromMime}
+                        multiple
+                        className="sr-only"
+                        tabIndex={-1}
+                        onChange={e => { const f = Array.from(e.target.files ?? []); if (f.length) handleFiles(f); }}
+                        aria-hidden
+                      />
+                    </div>
+
+                    {/* Browse Files button */}
+                    <button
+                      onClick={() => inputRef.current?.click()}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
+                    >
+                      <Upload className="h-4 w-4" aria-hidden />
+                      Browse Files
+                    </button>
+
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                      Supported: {tool.fromLabel.toUpperCase()}{isHeic ? ", HEIF" : ""} · Max size: 50 MB
+                    </p>
+
+                    {/* Thumbnail strip (when files selected) */}
+                    {hasFiles && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {files.slice(0, 5).map((f, i) => (
+                          <div
+                            key={i}
+                            className="relative h-12 w-12 overflow-hidden rounded-lg border"
+                            style={{ borderColor: "hsl(224 28% 24%)" }}
+                          >
+                            <img
+                              src={URL.createObjectURL(f)}
+                              alt={f.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ))}
+                        {files.length > 5 && (
+                          <div
+                            className="flex h-12 w-12 items-center justify-center rounded-lg border text-xs text-muted-foreground"
+                            style={{ borderColor: "hsl(224 28% 24%)", background: "hsl(224 36% 14%)" }}
+                          >
+                            +{files.length - 5}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {tab === "url" && (
+                  <div className="flex flex-col gap-3">
+                    <label className="text-sm font-medium text-foreground" htmlFor="url-input">
+                      Image URL
+                    </label>
+                    <input
+                      id="url-input"
+                      type="url"
+                      value={urlInput}
+                      onChange={e => setUrlInput(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="rounded-xl border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ background: "hsl(224 36% 11%)", borderColor: "hsl(224 28% 22%)" }}
+                    />
+                    <p className="text-xs text-muted-foreground">Paste a direct image URL to convert it.</p>
+                  </div>
+                )}
+
+                {tab === "search" && (
+                  <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
+                    <Search className="h-10 w-10 text-muted-foreground/40" aria-hidden />
+                    <p className="text-sm text-muted-foreground">Search by image — coming soon.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Preview / result (right) */}
+              <div className="flex flex-col p-5 lg:w-[380px]">
+                <AnimatePresence mode="wait">
+                  {!done ? (
+                    <motion.div key="pre" className="flex flex-1 flex-col gap-4">
+                      <div className="flex gap-4">
+                        {/* Original */}
+                        <div className="flex-1">
+                          <p className="mb-2 text-xs font-medium text-muted-foreground">Original {tool.fromLabel}</p>
+                          <div
+                            className="flex h-28 items-center justify-center rounded-xl"
+                            style={{ background: "hsl(224 36% 11%)", border: "1px dashed hsl(224 28% 22%)" }}
+                          >
+                            {hasFiles && files[0] ? (
+                              <img src={URL.createObjectURL(files[0])} alt="original" className="h-full w-full rounded-xl object-cover" />
+                            ) : (
+                              <ImageIcon className="h-8 w-8 text-muted-foreground/30" aria-hidden />
+                            )}
+                          </div>
+                          {hasFiles && files[0] && (
+                            <p className="mt-1 text-[10px] text-muted-foreground">{files[0].name.slice(0, 16)} · {fmtBytes(files[0].size)}</p>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex flex-col items-center justify-center">
+                          <div
+                            className="flex h-8 w-8 items-center justify-center rounded-full"
+                            style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", boxShadow: "0 0 12px #F9731640" }}
+                          >
+                            <ArrowRight className="h-4 w-4 text-white" aria-hidden />
+                          </div>
+                        </div>
+
+                        {/* Converted preview */}
+                        <div className="flex-1">
+                          <p className="mb-2 text-xs font-medium text-muted-foreground">Converted {tool.toLabel}</p>
+                          <div
+                            className="flex h-28 items-center justify-center rounded-xl"
+                            style={{ background: "hsl(224 36% 11%)", border: `1px dashed ${toGlow}40` }}
+                          >
+                            <span className="text-xs font-bold" style={{ color: toGlow }}>{tool.toLabel}</span>
+                          </div>
+                          <p className="mt-1 text-[10px] text-muted-foreground">After conversion</p>
+                        </div>
+                      </div>
+
+                      {/* Quality slider */}
+                      {isLossy && hasFiles && (
+                        <div className="rounded-xl p-3 space-y-2" style={{ background: "hsl(224 36% 11%)", border: "1px solid hsl(224 28% 18%)" }}>
+                          <div className="flex justify-between">
+                            <label htmlFor="quality" className="text-xs font-medium text-foreground">Quality</label>
+                            <span className="text-xs font-bold text-primary">{quality}%</span>
+                          </div>
+                          <Slider id="quality" min={1} max={100} step={1} value={[quality]} onValueChange={([v]) => setQuality(v)} />
+                          <p className="text-[10px] text-muted-foreground">92% is visually identical to lossless for most images.</p>
+                        </div>
+                      )}
+
+                      {/* Error */}
+                      {error && (
+                        <div className="flex gap-2 rounded-xl p-3 text-sm" style={{ background: "hsl(0 62% 30% / 0.2)", border: "1px solid hsl(0 62% 30% / 0.4)" }}>
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
+                          <span className="text-destructive">{error}</span>
+                        </div>
+                      )}
+
+                      {/* Progress */}
+                      {busy && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">Converting…</span>
+                            <span className="font-medium text-primary">{progress}%</span>
+                          </div>
+                          <Progress value={progress} className="h-1.5" />
+                        </div>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div key="result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-1 flex-col gap-3">
+                      <div className="flex items-center gap-2 rounded-xl p-3" style={{ background: "hsl(142 71% 45% / 0.12)", border: "1px solid hsl(142 71% 45% / 0.25)" }}>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                        <span className="text-sm font-semibold text-foreground">{results.length === 1 ? "Ready to download" : `${results.length} files ready`}</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {results.map((r, i) => {
+                          const delta = ((r.converted.size - r.original.size) / r.original.size) * 100;
+                          return (
+                            <li key={i} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: "hsl(224 36% 11%)" }}>
+                              <span className="min-w-0 flex-1 truncate font-medium text-foreground">{r.converted.name}</span>
+                              <span className="shrink-0 text-xs text-muted-foreground">{fmtBytes(r.original.size)} → {fmtBytes(r.converted.size)}</span>
+                              {delta < -1 && <span className="shrink-0 text-xs font-semibold text-emerald-400">{delta.toFixed(0)}%</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Convert / Download button — full width */}
+            <div className="border-t p-4" style={{ borderColor: "hsl(224 28% 18%)" }}>
+              {!done ? (
+                <button
+                  onClick={handleConvert}
+                  disabled={!hasFiles || busy}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl py-4 text-base font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  style={{ background: "linear-gradient(90deg, #F97316, #F59E0B)", boxShadow: hasFiles ? "0 0 24px #F9731630" : "none" }}
+                >
+                  {busy ? (
+                    <><RefreshCw className="h-5 w-5 animate-spin" aria-hidden />Converting…</>
+                  ) : (
+                    <>Convert to {tool.toLabel} <ArrowRight className="h-5 w-5" aria-hidden /></>
+                  )}
+                </button>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleDownload}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-4 text-base font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    style={{ background: "linear-gradient(90deg, #F97316, #F59E0B)", boxShadow: "0 0 24px #F9731630" }}
+                  >
+                    <Download className="h-5 w-5" aria-hidden />
+                    {results.length === 1 ? `Download ${tool.toLabel}` : `Download all (${results.length})`}
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center justify-center rounded-xl px-4 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    style={{ background: "hsl(224 36% 14%)", border: "1px solid hsl(224 28% 22%)" }}
+                    aria-label="Convert more files"
+                  >
+                    <RotateCcw className="h-5 w-5" aria-hidden />
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
         </section>
 
-        {/* ================================================================
-            FAQ
-        ================================================================ */}
-        {faqs.length > 0 && (
-          <section className="relative px-4 py-12 sm:py-16">
-            <div className="mx-auto max-w-3xl">
-              <motion.h2
-                initial={{ opacity: 0, y: 12 }}
+        {/* ════════════════════════════════════════════════════════════════
+            4 TRUST FEATURES
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="px-6 py-6 lg:px-10">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {[
+              { icon: Zap,          title: "No signup",           sub: "Get started instantly" },
+              { icon: ShieldCheck,  title: "Private & secure",    sub: "Files never leave your device" },
+              { icon: CheckCircle2, title: "High quality output", sub: "Multiple format options" },
+              { icon: Layers,       title: "Batch conversion",    sub: "Convert multiple files at once" },
+            ].map(({ icon: Icon, title, sub }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4 }}
-                className="mb-6 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+                transition={{ duration: 0.3, delay: i * 0.06 }}
+                className="flex items-start gap-3 rounded-xl p-4"
+                style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
               >
-                Frequently asked questions
-              </motion.h2>
-              <div>
-                {faqs.map((faq, i) => (
-                  <FaqItem key={i} question={faq.question} answer={faq.answer} index={i} />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "hsl(var(--primary) / 0.12)" }}>
+                  <Icon className="h-4 w-4 text-primary" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            INFO CARDS + CTA
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="px-6 pb-6 lg:px-10">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* What is this format? */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              className="relative overflow-hidden rounded-2xl p-6"
+              style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+            >
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
+                <span className="text-[80px] font-black text-foreground">{tool.toLabel}</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground">What is {tool.toLabel} format?</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.whyConvert}</p>
+              <button className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline underline-offset-2">
+                Learn more <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
+
+            {/* Need more? CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="relative overflow-hidden rounded-2xl p-6"
+              style={{ background: "linear-gradient(135deg, hsl(223 62% 11%), hsl(224 36% 16%))", border: "1px solid hsl(var(--primary) / 0.2)" }}
+            >
+              {/* Floating icons decoration */}
+              <div className="absolute right-4 top-4 flex gap-2 opacity-60">
+                {[fromGlow, toGlow, "#8B5CF6"].map((c, i) => (
+                  <div
+                    key={i}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-xs font-bold"
+                    style={{ background: c, transform: `rotate(${(i - 1) * 8}deg)` }}
+                  >
+                    {i === 0 ? tool.fromLabel.slice(0, 3) : i === 1 ? tool.toLabel.slice(0, 3) : "AI"}
+                  </div>
                 ))}
               </div>
+              <h3 className="text-lg font-bold text-foreground">Need more?</h3>
+              <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-muted-foreground">
+                Generate content, schedule posts, and grow your brand with Trndinn AI — from $0.86/mo.
+              </p>
+              <Link
+                href="/pricing"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
+              >
+                Create with Trndinn <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            MORE IMAGE TOOLS
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="px-6 pb-6 lg:px-10">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+            <Link href="/tools/image" className="text-sm font-medium text-primary hover:underline underline-offset-2">
+              View all tools →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { slug: "png-to-ico",         label: "PNG → ICO",         color: "#F59E0B", desc: "Convert PNG to ICO" },
+              { slug: "image-resizer",       label: "Resize Image",      color: "#3B82F6", desc: "Resize to any dimensions" },
+              { slug: "compress-jpg",        label: "Compress Image",    color: "#F97316", desc: "Reduce image file size" },
+              { slug: "background-remover",  label: "Remove Background", color: "#10B981", desc: "AI background removal" },
+            ].map((t, i) => (
+              <motion.div
+                key={t.slug}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+              >
+                <Link
+                  href={`/tools/${t.slug}`}
+                  className="group flex items-center gap-3 rounded-xl p-3 transition-colors"
+                  style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
+                    style={{ background: t.color }}
+                  >
+                    {t.label.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{t.label}</p>
+                    <p className="truncate text-xs text-muted-foreground">{t.desc}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            COMPARE
+        ════════════════════════════════════════════════════════════════ */}
+        <section className="px-6 pb-6 lg:px-10">
+          <div
+            className="rounded-2xl p-6"
+            style={{ background: "hsl(223 62% 9%)", border: "1px solid hsl(224 28% 18%)" }}
+          >
+            <h3 className="text-base font-semibold text-foreground">Compare &amp; Learn More</h3>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {IMAGE_CONVERTER_COMPETITORS.slice(0, 4).map(c => (
+                <Link
+                  key={c.slug}
+                  href={`/compare/trndinn-vs-${c.slug}`}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <ArrowRight className="h-3 w-3 shrink-0" aria-hidden />
+                  Trndinn vs {c.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ════════════════════════════════════════════════════════════════
+            FAQ
+        ════════════════════════════════════════════════════════════════ */}
+        {faqs.length > 0 && (
+          <section className="px-6 pb-12 lg:px-10">
+            <h2 className="mb-2 text-xl font-bold text-foreground">Frequently asked questions</h2>
+            <div className="mt-4">
+              {faqs.map((faq, i) => (
+                <FaqItem key={i} question={faq.question} answer={faq.answer} index={i} />
+              ))}
             </div>
           </section>
         )}
 
-        {/* ================================================================
-            FINAL CTA
-        ================================================================ */}
-        <section className="relative px-4 py-16 sm:py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <motion.h2
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-              className="font-display text-3xl font-bold tracking-tight sm:text-4xl"
-            >
-              <span className="text-foreground">One platform for </span>
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: IMG_GRADIENT_STATIC }}>
-                all your content
-              </span>
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="mt-4 text-base leading-relaxed text-muted-foreground"
-            >
-              Convert images for free. Then schedule, publish, and grow — all from one place.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            >
-              <Button asChild size="lg" className="px-8 font-semibold text-white shadow-lg shadow-primary/25" style={{ background: IMG_GRADIENT_STATIC }}>
-                <Link href="/pricing">Start free — $0.86/mo</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link href="/tools">Browse all free tools</Link>
-              </Button>
-            </motion.div>
-          </div>
-        </section>
-
       </main>
-    </MarketingShell>
+    </div>
   );
 }
