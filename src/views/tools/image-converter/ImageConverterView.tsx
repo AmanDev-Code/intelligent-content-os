@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * ImageConverterView — generic component that handles all 33 conversion tools.
+ * ImageConverterView — professional converter UI for all 33 image conversion tools.
+ * Uses ImageToolsShell for layout (sidebar + hero + AEO content).
  *
- * Shadcn primitives: Card, CardContent, CardHeader, Button, Badge, Progress,
- *   Accordion, AccordionContent, AccordionItem, AccordionTrigger, Alert,
- *   AlertDescription, Slider, Separator.
- * Design tokens: --background, --foreground, --card, --card-foreground,
- *   --muted, --muted-foreground, --primary, --primary-foreground,
- *   --border, --destructive, --destructive-foreground, --ring.
+ * Shadcn primitives: Card, CardContent, CardHeader, Button, Badge,
+ *   Progress, Slider, Alert, AlertDescription, Separator.
+ * Design tokens: --background, --foreground, --card, --muted,
+ *   --muted-foreground, --primary, --primary-foreground, --border,
+ *   --destructive, --destructive-foreground, --ring, --chart-2.
  * Icons: Lucide only.
- * Motion: CSS only (no framer-motion — app UI).
+ * Motion: CSS only for tool UI (no framer-motion — shell handles animation).
  */
 
 import { useState, useCallback } from "react";
@@ -25,6 +25,7 @@ import {
   Info,
   ArrowRight,
   FileImage,
+  ArrowRightLeft,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,15 +34,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
+import { ImageToolsShell } from "@/views/tools/image-tools/ImageToolsShell";
 import { useImageProcessor } from "@/hooks/tools/useImageProcessor";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
 import { cn } from "@/lib/utils";
@@ -58,18 +53,16 @@ interface Props {
   faqs: Array<{ question: string; answer: string }>;
 }
 
+interface FileResultRow {
+  original: File;
+  converted: File;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Formats where quality slider is meaningful (lossy output). */
 const LOSSY_FORMATS = new Set(["jpg", "jpeg", "webp", "avif", "gif"]);
-
-const TRUST_BADGES = [
-  { icon: Zap, label: "No signup required" },
-  { icon: Shield, label: "Images never leave your browser" },
-  { icon: Clock, label: "Instant conversion" },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -83,57 +76,135 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 }
 
-function getSizeDelta(original: number, converted: number): string {
-  if (original === 0) return "";
+function getSizeDelta(original: number, converted: number): {
+  text: string;
+  isSmaller: boolean;
+} {
+  if (original === 0) return { text: "", isSmaller: false };
   const delta = ((converted - original) / original) * 100;
   const sign = delta < 0 ? "" : "+";
-  return `${sign}${delta.toFixed(1)}%`;
-}
-
-function getDeltaColor(original: number, converted: number): string {
-  if (original === 0) return "";
-  const delta = ((converted - original) / original) * 100;
-  // Smaller file = good (green-ish), larger file = neutral (muted)
-  return delta < -5
-    ? "text-[hsl(142.1_76.2%_36.3%)]"
-    : delta > 5
-    ? "text-[hsl(var(--muted-foreground))]"
-    : "text-[hsl(var(--muted-foreground))]";
+  return {
+    text: `${sign}${delta.toFixed(1)}%`,
+    isSmaller: delta < -2,
+  };
 }
 
 function buildOutputFileName(inputName: string, toFormat: string): string {
   const dotIdx = inputName.lastIndexOf(".");
   const base = dotIdx > 0 ? inputName.slice(0, dotIdx) : inputName;
-  // ico is image/x-icon but file extension is .ico
   const ext = toFormat === "image/x-icon" ? "ico" : toFormat;
   return `${base}.${ext}`;
 }
 
-// ---------------------------------------------------------------------------
-// FileResultRow
-// ---------------------------------------------------------------------------
-
-interface FileResultRow {
-  original: File;
-  converted: File;
+function getFormatColor(fmt: string): string {
+  const map: Record<string, string> = {
+    png: "hsl(221 83% 53%)",
+    jpg: "hsl(var(--chart-1))",
+    jpeg: "hsl(var(--chart-1))",
+    webp: "hsl(142 71% 45%)",
+    avif: "hsl(270 95% 65%)",
+    heic: "hsl(var(--chart-1))",
+    svg: "hsl(47 96% 53%)",
+    gif: "hsl(var(--chart-4))",
+    bmp: "hsl(var(--muted-foreground))",
+    tiff: "hsl(var(--muted-foreground))",
+    ico: "hsl(221 83% 53%)",
+  };
+  return map[fmt.toLowerCase()] ?? "hsl(var(--primary))";
 }
 
+// ---------------------------------------------------------------------------
+// FormatCard — the from/to badge pair
+// ---------------------------------------------------------------------------
+
+function FormatCard({
+  fromLabel,
+  toLabel,
+  fromFormat,
+  toFormat,
+}: {
+  fromLabel: string;
+  toLabel: string;
+  fromFormat: string;
+  toFormat: string;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-4 py-2">
+      <div
+        className="flex h-16 w-20 flex-col items-center justify-center rounded-lg border-2 border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-sm"
+        aria-label={`From: ${fromLabel}`}
+      >
+        <span
+          className="text-lg font-bold"
+          style={{ color: getFormatColor(fromFormat) }}
+        >
+          {fromLabel}
+        </span>
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider mt-0.5">
+          source
+        </span>
+      </div>
+
+      <div className="flex flex-col items-center gap-1" aria-hidden="true">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[hsl(var(--primary)/0.1)]">
+          <ArrowRightLeft className="h-4 w-4 text-[hsl(var(--primary))]" />
+        </div>
+      </div>
+
+      <div
+        className="flex h-16 w-20 flex-col items-center justify-center rounded-lg border-2 border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.06)] shadow-sm"
+        aria-label={`To: ${toLabel}`}
+      >
+        <span
+          className="text-lg font-bold"
+          style={{ color: getFormatColor(toFormat) }}
+        >
+          {toLabel}
+        </span>
+        <span className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase tracking-wider mt-0.5">
+          output
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ResultRow
+// ---------------------------------------------------------------------------
+
 function ResultRow({ row }: { row: FileResultRow }) {
-  const delta = getSizeDelta(row.original.size, row.converted.size);
-  const deltaColor = getDeltaColor(row.original.size, row.converted.size);
+  const { text: delta, isSmaller } = getSizeDelta(
+    row.original.size,
+    row.converted.size
+  );
 
   return (
-    <li className="flex items-center justify-between gap-3 rounded-md bg-[hsl(var(--muted))] px-3 py-2 text-sm">
-      <span className="flex items-center gap-2 truncate text-foreground">
-        <FileImage className="h-4 w-4 shrink-0 text-[hsl(var(--muted-foreground))]" aria-hidden />
-        <span className="truncate max-w-[180px] sm:max-w-xs">{row.converted.name}</span>
+    <li className="flex items-center justify-between gap-3 rounded-md bg-[hsl(var(--muted)/0.5)] px-3 py-2.5 text-sm">
+      <span className="flex min-w-0 items-center gap-2">
+        <FileImage
+          className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]"
+          aria-hidden
+        />
+        <span className="truncate max-w-[160px] sm:max-w-xs font-medium text-foreground">
+          {row.converted.name}
+        </span>
       </span>
       <span className="flex shrink-0 items-center gap-2 text-xs">
         <span className="text-[hsl(var(--muted-foreground))]">
           {formatBytes(row.original.size)} → {formatBytes(row.converted.size)}
         </span>
         {delta && (
-          <span className={cn("font-semibold", deltaColor)}>{delta}</span>
+          <span
+            className={cn(
+              "font-semibold",
+              isSmaller
+                ? "text-[hsl(142_71%_38%)] dark:text-[hsl(142_71%_55%)]"
+                : "text-[hsl(var(--muted-foreground))]"
+            )}
+          >
+            {delta}
+          </span>
         )}
       </span>
     </li>
@@ -141,10 +212,10 @@ function ResultRow({ row }: { row: FileResultRow }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main component
+// ToolControls — the inner UI rendered as children of ImageToolsShell
 // ---------------------------------------------------------------------------
 
-export default function ImageConverterView({ tool, alias, faqs }: Props) {
+function ToolControls({ tool, alias, faqs: _faqs }: Props) {
   const { convertImage } = useImageProcessor();
   const { downloadSingle, downloadMultiple } = useFileDownload();
 
@@ -158,15 +229,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
   const isLossy = LOSSY_FORMATS.has(tool.toFormat);
   const isHeic = tool.fromFormat === "heic";
   const isDone = results.length > 0;
-
-  // Resolve hero copy — alias overrides primary tool defaults for SEO variants.
-  // Pattern matches HeroVariant in InstagramReelDownloaderView / AutoCaptionGeneratorView.
-  const eyebrow = alias?.eyebrow ?? `Free ${tool.fromLabel} to ${tool.toLabel} Converter`;
-  const heroSubline = alias?.heroSubline ?? tool.whyConvert;
-
-  // ---------------------------------------------------------------------------
-  // Handlers
-  // ---------------------------------------------------------------------------
+  const hasFiles = selectedFiles.length > 0;
 
   const handleFilesSelected = useCallback((files: File[]) => {
     setSelectedFiles(files);
@@ -177,33 +240,24 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
 
   const handleConvert = useCallback(async () => {
     if (selectedFiles.length === 0) return;
-
     setIsProcessing(true);
     setProgress(0);
     setError(undefined);
-
     const newResults: FileResultRow[] = [];
 
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         const qualityFraction = isLossy ? quality / 100 : undefined;
-
-        // Determine the target format string — for ICO, use "ico"
         const targetFmt = tool.toFormat === "ico" ? "ico" : tool.toFormat;
-
         const converted = await convertImage(file, targetFmt, qualityFraction);
-
-        // Rename the output file to have the correct extension
         const outputName = buildOutputFileName(file.name, targetFmt);
         const renamedFile = new File([converted], outputName, {
           type: tool.toMime,
         });
-
         newResults.push({ original: file, converted: renamedFile });
         setProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
       }
-
       setResults(newResults);
     } catch (err) {
       const msg =
@@ -232,75 +286,57 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
     setProgress(0);
   }, []);
 
-  const hasFiles = selectedFiles.length > 0;
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
   return (
-    <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8">
-      {/* ─── Page header ─── */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="rounded-full text-xs">
-            {eyebrow}
-          </Badge>
-          <Badge variant="outline" className="rounded-full text-xs">
-            {tool.fromLabel} → {tool.toLabel}
-          </Badge>
-        </div>
-        {alias ? (
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl font-heading text-foreground">
-            {alias.h1Prefix}{" "}
-            <span className="gradient-text">{alias.h1Highlight}</span>{" "}
-            {alias.h1Suffix}
-          </h1>
-        ) : (
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl font-heading text-foreground">
-            {tool.h1}
-          </h1>
-        )}
-        <p className="text-sm text-[hsl(var(--muted-foreground))] sm:text-base max-w-2xl">
-          {heroSubline}
-        </p>
-      </div>
+    <div className="space-y-4">
+      {/* Format badge pair */}
+      <FormatCard
+        fromLabel={tool.fromLabel}
+        toLabel={tool.toLabel}
+        fromFormat={tool.fromFormat}
+        toFormat={tool.toFormat}
+      />
 
-      {/* ─── Trust badges ─── */}
-      <div className="flex flex-wrap gap-3" aria-label="Trust indicators">
-        {TRUST_BADGES.map(({ icon: Icon, label }) => (
-          <div
+      {/* Trust row */}
+      <div className="flex flex-wrap gap-2" aria-label="Trust indicators">
+        {[
+          { icon: Zap, label: "No signup" },
+          { icon: Shield, label: "Never uploaded" },
+          { icon: Clock, label: "Instant" },
+        ].map(({ icon: Icon, label }) => (
+          <span
             key={label}
-            className="flex items-center gap-1.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-3 py-1 text-xs text-[hsl(var(--muted-foreground))]"
+            className="flex items-center gap-1.5 rounded-full border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2.5 py-1 text-[11px] text-[hsl(var(--muted-foreground))]"
           >
-            <Icon className="h-3.5 w-3.5 text-[hsl(var(--primary))]" aria-hidden />
+            <Icon className="h-3 w-3 text-[hsl(var(--primary))]" aria-hidden />
             {label}
-          </div>
+          </span>
         ))}
       </div>
 
-      {/* ─── HEIC notice ─── */}
+      {/* HEIC notice */}
       {isHeic && (
         <Alert>
           <Info className="h-4 w-4" aria-hidden />
-          <AlertDescription>
-            Your browser may not show a preview of HEIC files — the conversion will still work.
+          <AlertDescription className="text-sm">
+            Your browser may not preview HEIC files — conversion still works.
             HEIC decoding happens locally via WebAssembly; no files are uploaded.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* ─── Main tool card ─── */}
-      <Card className="p-4 sm:p-6">
-        <CardHeader className="px-0 pt-0 pb-2 sm:pb-4">
+      {/* Main card */}
+      <Card>
+        <CardHeader className="pb-2 sm:pb-4">
           <h2 className="text-base font-semibold text-foreground sm:text-lg">
-            Upload {tool.fromLabel} {selectedFiles.length > 1 ? "files" : "file"}
+            {isDone
+              ? `${results.length} file${results.length === 1 ? "" : "s"} converted`
+              : `Upload ${tool.fromLabel} file${selectedFiles.length > 1 ? "s" : ""}`}
           </h2>
         </CardHeader>
 
-        <CardContent className="px-0 pb-0 space-y-4">
-          {/* Dropzone */}
-          {!isDone && (
+        <CardContent className="space-y-4">
+          {/* Drop zone or reset button */}
+          {!isDone ? (
             <ImageDropzone
               accept={tool.fromMime}
               multiple
@@ -308,21 +344,18 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
               onFilesSelected={handleFilesSelected}
               disabled={isProcessing}
             />
-          )}
-
-          {/* Reset: show new dropzone button when done */}
-          {isDone && !isProcessing && (
+          ) : (
             <button
               onClick={handleReset}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] py-4 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted)/0.6)] hover:text-foreground"
-              aria-label="Upload new files"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] py-4 text-sm font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted)/0.6)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-1"
+              aria-label={`Upload new ${tool.fromLabel} files`}
             >
               <RotateCcw className="h-4 w-4" aria-hidden />
               Convert more {tool.fromLabel} files
             </button>
           )}
 
-          {/* Quality slider — lossy formats only */}
+          {/* Quality slider */}
           {isLossy && hasFiles && !isDone && (
             <div className="space-y-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] p-3 sm:p-4">
               <div className="flex items-center justify-between">
@@ -332,7 +365,10 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 >
                   Output quality
                 </label>
-                <span className="text-sm font-semibold text-[hsl(var(--primary))]" aria-live="polite">
+                <span
+                  className="text-sm font-bold text-[hsl(var(--primary))]"
+                  aria-live="polite"
+                >
                   {quality}%
                 </span>
               </div>
@@ -347,7 +383,7 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 aria-label={`Output quality: ${quality}%`}
               />
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                92% is visually identical to lossless for most images. Lower values produce smaller files.
+                92% is visually identical to lossless for most images.
               </p>
             </div>
           )}
@@ -365,9 +401,9 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
             <div className="space-y-2" aria-live="polite" aria-busy="true">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[hsl(var(--muted-foreground))]">
-                  Converting {tool.fromLabel} to {tool.toLabel}…
+                  Converting {tool.fromLabel} → {tool.toLabel}…
                 </span>
-                <span className="font-medium text-foreground">{progress}%</span>
+                <span className="font-semibold text-foreground">{progress}%</span>
               </div>
               <Progress
                 value={progress}
@@ -386,16 +422,16 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
             >
               <div className="flex items-center gap-2">
                 <CheckCircle2
-                  className="h-5 w-5 text-[hsl(142.1_76.2%_36.3%)]"
+                  className="h-5 w-5 text-[hsl(142_71%_45%)]"
                   aria-hidden
                 />
                 <span className="font-semibold text-foreground">
                   {results.length === 1
-                    ? "File converted — ready to download"
-                    : `${results.length} files converted`}
+                    ? "Ready to download"
+                    : `${results.length} files ready`}
                 </span>
               </div>
-              <ul className="space-y-2">
+              <ul className="space-y-2" aria-label="Converted files">
                 {results.map((row, i) => (
                   <ResultRow key={i} row={row} />
                 ))}
@@ -404,10 +440,12 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
                   Average size change:{" "}
                   <strong className="text-foreground">
-                    {getSizeDelta(
-                      results.reduce((sum, r) => sum + r.original.size, 0),
-                      results.reduce((sum, r) => sum + r.converted.size, 0)
-                    )}
+                    {
+                      getSizeDelta(
+                        results.reduce((sum, r) => sum + r.original.size, 0),
+                        results.reduce((sum, r) => sum + r.converted.size, 0)
+                      ).text
+                    }
                   </strong>
                 </p>
               )}
@@ -433,7 +471,10 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                     Converting…
                   </>
                 ) : (
-                  `Convert to ${tool.toLabel}`
+                  <>
+                    Convert to {tool.toLabel}
+                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
+                  </>
                 )}
               </Button>
             ) : (
@@ -441,10 +482,12 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
                 onClick={handleDownloadAll}
                 size="lg"
                 className="w-full sm:w-auto px-8 font-semibold"
-                aria-label={`Download ${results.length === 1 ? tool.toLabel : "all"} files`}
+                aria-label={`Download ${results.length === 1 ? tool.toLabel + " file" : "all files"}`}
               >
                 <Download className="mr-2 h-4 w-4" aria-hidden />
-                {results.length === 1 ? `Download ${tool.toLabel}` : `Download all (${results.length})`}
+                {results.length === 1
+                  ? `Download ${tool.toLabel}`
+                  : `Download all (${results.length})`}
               </Button>
             )}
 
@@ -464,49 +507,51 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
         </CardContent>
       </Card>
 
-      {/* ─── How it works ─── */}
-      <Card className="p-4 sm:p-6">
-        <CardHeader className="px-0 pt-0 pb-2 sm:pb-4">
+      {/* How it works */}
+      <Card>
+        <CardHeader className="pb-2 sm:pb-4">
           <h2 className="text-base font-semibold text-foreground sm:text-lg">
             How to convert {tool.fromLabel} to {tool.toLabel}
           </h2>
         </CardHeader>
-        <CardContent className="px-0 pb-0">
+        <CardContent>
           <ol className="space-y-3" aria-label="Conversion steps">
             {[
               {
-                step: "1",
+                n: "1",
                 title: `Upload your ${tool.fromLabel} file`,
-                desc: `Drag and drop or click to select one or more ${tool.fromLabel} files. No size limit beyond available device memory.`,
+                desc: `Drag and drop or click to select. Batch conversion supported — no file size limit beyond device memory.`,
               },
               {
-                step: "2",
-                title: "Adjust quality (optional)",
+                n: "2",
+                title: isLossy ? "Set output quality" : "Ready to convert",
                 desc: isLossy
-                  ? `Set the output quality slider (default 92%). Higher quality = larger file. Lower quality = smaller file.`
-                  : `No quality settings needed — ${tool.toLabel} uses lossless compression.`,
+                  ? `Adjust the quality slider (default 92%). Higher = larger file, better quality.`
+                  : `${tool.toLabel} uses lossless compression — no quality settings needed.`,
               },
               {
-                step: "3",
+                n: "3",
                 title: `Click "Convert to ${tool.toLabel}"`,
-                desc: `Conversion happens entirely in your browser using the Canvas API. No uploads, no waiting for a server.`,
+                desc: `Conversion uses your browser's Canvas API. No uploads, no waiting for a server.`,
               },
               {
-                step: "4",
-                title: "Download your files",
-                desc: `Click Download to save your ${tool.toLabel} ${results.length === 1 ? "file" : "files"}. Multiple files are downloaded individually.`,
+                n: "4",
+                title: "Download",
+                desc: `Your ${tool.toLabel} file downloads instantly. Multiple files download individually.`,
               },
             ].map((s) => (
-              <li key={s.step} className="flex gap-3">
+              <li key={s.n} className="flex gap-3">
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--primary)/0.15)] text-sm font-bold text-[hsl(var(--primary))]"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--primary)/0.12)] text-sm font-bold text-[hsl(var(--primary))]"
                   aria-hidden
                 >
-                  {s.step}
+                  {s.n}
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{s.title}</p>
-                  <p className="mt-0.5 text-sm text-[hsl(var(--muted-foreground))]">{s.desc}</p>
+                  <p className="mt-0.5 text-sm text-[hsl(var(--muted-foreground))]">
+                    {s.desc}
+                  </p>
                 </div>
               </li>
             ))}
@@ -514,83 +559,71 @@ export default function ImageConverterView({ tool, alias, faqs }: Props) {
         </CardContent>
       </Card>
 
-      {/* ─── Why convert section ─── */}
-      <Card className="p-4 sm:p-6">
-        <CardHeader className="px-0 pt-0 pb-2 sm:pb-4">
-          <h2 className="text-base font-semibold text-foreground sm:text-lg">
-            Why convert {tool.fromLabel} to {tool.toLabel}?
-          </h2>
-        </CardHeader>
-        <CardContent className="px-0 pb-0">
-          <p className="text-sm leading-relaxed text-[hsl(var(--muted-foreground))] sm:text-base">
-            {tool.whyConvert}
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {TRUST_BADGES.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] p-3 text-sm text-foreground"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]" aria-hidden />
-                {label}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ─── FAQ ─── */}
-      {faqs.length > 0 && (
-        <Card className="p-4 sm:p-6">
-          <CardHeader className="px-0 pt-0 pb-2 sm:pb-4">
-            <h2 className="text-base font-semibold text-foreground sm:text-lg">
-              Frequently asked questions
-            </h2>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`}>
-                  <AccordionTrigger className="text-sm font-medium text-foreground text-left">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ─── Related tools CTA ─── */}
-      <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 sm:p-6">
+      {/* CTA to all tools */}
+      <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="font-semibold text-foreground">Explore all image conversion tools</h3>
-            <p className="mt-1 text-sm text-[hsl(var(--muted-foreground))]">
-              33 free image converters — PNG, JPG, WebP, AVIF, HEIC, ICO, TIFF, BMP, GIF and more.
+            <h3 className="font-semibold text-foreground">
+              All 49 free image tools
+            </h3>
+            <p className="mt-0.5 text-sm text-[hsl(var(--muted-foreground))]">
+              Convert, compress, resize, crop, rotate, watermark, remove backgrounds and more.
             </p>
           </div>
-          <Button variant="outline" className="shrink-0 rounded-full" asChild>
+          <Button
+            variant="outline"
+            className="shrink-0 rounded-full"
+            asChild
+          >
             <Link href="/tools">
-              All free tools
+              Browse all tools
               <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
             </Link>
           </Button>
         </div>
       </div>
-
-      <Separator />
-
-      {/* ─── SEO footer ─── */}
-      <p className="text-xs leading-relaxed text-[hsl(var(--muted-foreground))]">
-        Trndinn&apos;s {tool.fromLabel} to {tool.toLabel} converter is a free, browser-based tool.
-        All conversion happens locally on your device using the HTML5 Canvas API
-        {isHeic ? " and a WASM-based HEIC decoder" : ""}. No files are uploaded to any server.
-        No signup, no watermark, no usage limit.
-      </p>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Default export — wraps ToolControls in ImageToolsShell
+// ---------------------------------------------------------------------------
+
+export default function ImageConverterView({ tool, alias, faqs }: Props) {
+  const eyebrow = alias?.eyebrow ?? `Free ${tool.fromLabel} to ${tool.toLabel} Converter`;
+  const heroSubline = alias?.heroSubline ?? tool.whyConvert;
+
+  // Derive H1 parts
+  let h1Prefix = "";
+  let h1Highlight = "";
+  let h1Suffix = "";
+
+  if (alias) {
+    h1Prefix = alias.h1Prefix ?? "";
+    h1Highlight = alias.h1Highlight ?? "";
+    h1Suffix = alias.h1Suffix ?? "";
+  } else {
+    // Split tool.h1 — highlight the format names e.g. "Free PNG to JPG Converter"
+    // → prefix="Free", highlight="PNG to JPG", suffix="Converter"
+    h1Prefix = "Free";
+    h1Highlight = `${tool.fromLabel} to ${tool.toLabel}`;
+    h1Suffix = "Converter";
+  }
+
+  return (
+    <ImageToolsShell
+      slug={tool.slug}
+      toolName={tool.h1}
+      h1Prefix={h1Prefix}
+      h1Highlight={h1Highlight}
+      h1Suffix={h1Suffix}
+      eyebrow={eyebrow}
+      heroSubline={heroSubline}
+      whyText={tool.whyConvert}
+      faqs={faqs}
+    >
+      <ToolControls tool={tool} alias={alias} faqs={faqs} />
+    </ImageToolsShell>
   );
 }
