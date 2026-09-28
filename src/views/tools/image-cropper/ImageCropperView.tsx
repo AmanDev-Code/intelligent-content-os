@@ -1,46 +1,67 @@
 "use client";
 
 /**
- * ImageCropperView — handles the image-cropper tool.
+ * ImageCropperView — premium redesign matching .design-refs/20.png.
  *
- * Shadcn primitives: Card, CardContent, CardHeader, Button, Badge,
- *   Progress, Accordion, AccordionContent, AccordionItem,
- *   AccordionTrigger, Alert, AlertDescription, Separator.
- * Design tokens: --background, --foreground, --card, --card-foreground,
- *   --muted, --muted-foreground, --primary, --primary-foreground,
- *   --border, --destructive, --ring.
+ * Layout: MarketingShell > flex(ImageToolsSidebar | main).
+ * Premium sections: ToolHero with 3D illustration, TrustBadges,
+ *   StepProgressBar, workspace with dropzone + crop controls + live preview,
+ *   orange gradient CTA, TrustStrip.
+ *
+ * Shadcn primitives: Card, CardContent, Button, Badge, Progress,
+ *   Alert, AlertDescription, Select, SelectContent, SelectItem,
+ *   SelectTrigger, SelectValue, Separator.
+ * Design tokens: --tool-bg, --tool-surface, --tool-surface-dim,
+ *   --tool-border, --primary, --primary-foreground, --foreground,
+ *   --muted-foreground, --border, --ring.
  * Icons: Lucide only.
- * Motion: CSS only (no framer-motion — app UI).
+ * Motion: framer-motion for entrance animations, prefers-reduced-motion safe.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Download,
   RotateCcw,
   Zap,
   Shield,
-  Clock,
+  Globe,
+  FileImage,
+  Crop,
   CheckCircle2,
   AlertCircle,
-  Crop,
+  ArrowRight,
+  Maximize2,
+  Image as ImageIcon,
+  Scissors,
+  Lock,
+  RatioIcon,
+  Layers,
 } from "lucide-react";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ImageEditShell } from "@/views/tools/image-tools/ImageEditShell";
+
+import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ToolHero } from "@/views/tools/shared/ToolHero";
+import { StepProgressBar } from "@/views/tools/shared/StepProgressBar";
+import { TrustStrip } from "@/views/tools/shared/TrustStrip";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { useImageProcessor } from "@/hooks/tools/useImageProcessor";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
+import { cn } from "@/lib/utils";
 import type { EditTool } from "@/lib/image-edit-data";
 import type { EditAlias } from "@/lib/image-edit-aliases";
 
@@ -58,10 +79,60 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 const TRUST_BADGES = [
-  { icon: Zap, label: "No signup required" },
-  { icon: Shield, label: "Images never leave your browser" },
-  { icon: Clock, label: "Instant crop" },
+  { icon: Zap, text: "No signup required" },
+  { icon: Shield, text: "100% private" },
+  { icon: Globe, text: "Runs in browser" },
+  { icon: FileImage, text: "Supports all formats" },
 ];
+
+const STEPS = [
+  { number: 1, label: "Upload Image", sublabel: "Choose or drag & drop" },
+  { number: 2, label: "Set Crop Area", sublabel: "Adjust & preview" },
+  { number: 3, label: "Download", sublabel: "Get high quality image" },
+];
+
+const TRUST_FEATURES = [
+  {
+    icon: Zap,
+    title: "Instant cropping",
+    description: "Crop images in real-time right in your browser.",
+  },
+  {
+    icon: Lock,
+    title: "100% private",
+    description: "Your images never leave your device.",
+  },
+  {
+    icon: RatioIcon,
+    title: "Multiple aspect ratios",
+    description: "Popular ratios or custom size in pixels.",
+  },
+  {
+    icon: Layers,
+    title: "Supports all formats",
+    description: "JPG, PNG, WebP, GIF, BMP, TIFF and more.",
+  },
+];
+
+const ASPECT_RATIOS = [
+  { label: "Free", value: "free" },
+  { label: "1:1", value: "1:1" },
+  { label: "16:9", value: "16:9" },
+  { label: "4:3", value: "4:3" },
+  { label: "3:2", value: "3:2" },
+  { label: "9:16", value: "9:16" },
+] as const;
+
+const SAMPLE_IMAGES = [
+  "/images/tools/samples/landscape-1.jpg",
+  "/images/tools/samples/landscape-2.jpg",
+  "/images/tools/samples/portrait-1.jpg",
+  "/images/tools/samples/animal-1.jpg",
+  "/images/tools/samples/city-1.jpg",
+  "/images/tools/samples/nature-1.jpg",
+];
+
+const OUTPUT_FORMATS = ["JPG", "PNG", "WEBP"] as const;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,7 +147,7 @@ function formatBytes(bytes: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// DimensionInput — reusable labeled number input
+// DimensionInput — labeled number input with dark theme
 // ---------------------------------------------------------------------------
 
 function DimensionInput({
@@ -84,19 +155,17 @@ function DimensionInput({
   label,
   value,
   onChange,
-  hint,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
-  hint?: string;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label
         htmlFor={id}
-        className="text-xs font-medium text-[hsl(var(--muted-foreground))]"
+        className="text-xs font-medium text-muted-foreground"
       >
         {label}
       </label>
@@ -107,12 +176,128 @@ function DimensionInput({
         max={99999}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+        className={cn(
+          "w-full rounded-lg px-3 py-2.5 text-sm font-medium text-foreground",
+          "bg-[hsl(var(--tool-surface-dim))]",
+          "border border-[hsl(var(--tool-border))]",
+          "focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary)/0.5)]",
+          "transition-colors"
+        )}
         aria-label={label}
       />
-      {hint && (
-        <p className="text-[10px] text-[hsl(var(--muted-foreground))]">{hint}</p>
-      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 3D Hero Illustration
+// ---------------------------------------------------------------------------
+
+function CropperIllustration() {
+  const shouldReduce = useReducedMotion();
+
+  return (
+    <div className="relative h-[280px] w-[320px] sm:h-[320px] sm:w-[380px]">
+      {/* Warm glow */}
+      <div
+        className="absolute inset-0 rounded-3xl opacity-40 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.3) 0%, transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Main image card with crop handles */}
+      <motion.div
+        className={cn(
+          "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+          "h-[180px] w-[240px] sm:h-[200px] sm:w-[280px]",
+          "rounded-xl border-2 border-[hsl(var(--primary)/0.5)]",
+          "bg-gradient-to-br from-[hsl(var(--tool-surface))] to-[hsl(var(--tool-surface-dim))]",
+          "shadow-2xl overflow-hidden"
+        )}
+        animate={
+          shouldReduce
+            ? undefined
+            : { y: [0, -6, 0], rotate: [0, 1, 0] }
+        }
+        transition={
+          shouldReduce
+            ? undefined
+            : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+        }
+      >
+        {/* Simulated image content */}
+        <div className="h-full w-full bg-gradient-to-br from-sky-900/40 via-emerald-900/30 to-amber-900/20 flex items-center justify-center">
+          <Crop className="h-12 w-12 text-[hsl(var(--primary)/0.4)]" aria-hidden="true" />
+        </div>
+
+        {/* Crop overlay handles */}
+        {[
+          "top-0 left-0 -translate-x-1/2 -translate-y-1/2",
+          "top-0 right-0 translate-x-1/2 -translate-y-1/2",
+          "bottom-0 left-0 -translate-x-1/2 translate-y-1/2",
+          "bottom-0 right-0 translate-x-1/2 translate-y-1/2",
+        ].map((pos, i) => (
+          <div
+            key={i}
+            className={cn(
+              "absolute h-3 w-3 rounded-full border-2",
+              "border-white bg-[hsl(var(--primary))]",
+              pos
+            )}
+            aria-hidden="true"
+          />
+        ))}
+
+        {/* Dimension label */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+          800 x 600
+        </div>
+      </motion.div>
+
+      {/* Floating format badges */}
+      {[
+        { label: "JPG", top: "10%", right: "0%", delay: 0 },
+        { label: "PNG", top: "28%", right: "-5%", delay: 0.1 },
+        { label: "WEBP", top: "46%", right: "-2%", delay: 0.2 },
+        { label: "GIF", top: "64%", right: "0%", delay: 0.3 },
+        { label: "TIFF", top: "82%", right: "3%", delay: 0.4 },
+      ].map(({ label, top, right, delay }) => (
+        <motion.div
+          key={label}
+          className={cn(
+            "absolute rounded-lg px-3 py-1.5 text-xs font-bold",
+            "bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))]",
+            "text-foreground shadow-lg"
+          )}
+          style={{ top, right }}
+          initial={shouldReduce ? undefined : { opacity: 0, x: 20 }}
+          animate={shouldReduce ? undefined : { opacity: 1, x: 0 }}
+          transition={
+            shouldReduce ? undefined : { delay: 0.5 + delay, duration: 0.4 }
+          }
+        >
+          {label}
+        </motion.div>
+      ))}
+
+      {/* Handwritten label */}
+      <motion.div
+        className="absolute -top-2 right-4 sm:right-8"
+        initial={shouldReduce ? undefined : { opacity: 0 }}
+        animate={shouldReduce ? undefined : { opacity: 1 }}
+        transition={shouldReduce ? undefined : { delay: 0.8, duration: 0.5 }}
+      >
+        <span className="font-serif text-sm italic text-muted-foreground/70">
+          Crop to
+        </span>
+        <br />
+        <span className="font-serif text-sm italic text-muted-foreground/70">
+          exact size
+        </span>
+      </motion.div>
     </div>
   );
 }
@@ -126,6 +311,7 @@ export default function ImageCropperView({ tool, alias }: Props) {
   const { downloadSingle } = useFileDownload();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -135,21 +321,79 @@ export default function ImageCropperView({ tool, alias }: Props) {
   const [cropY, setCropY] = useState("0");
   const [cropW, setCropW] = useState("800");
   const [cropH, setCropH] = useState("600");
+  const [aspectRatio, setAspectRatio] = useState("free");
+  const [outputFormat, setOutputFormat] = useState<string>("JPG");
 
   const isDone = result !== null;
   const hasFile = selectedFile !== null;
 
-  const eyebrow = alias?.eyebrow ?? `Free ${tool.name} — No Signup`;
-  const heroSubline = alias?.heroSubline ?? tool.description;
+  // Derive active step from state
+  const activeStep = isDone ? 3 : hasFile ? 2 : 1;
+
+  // Original image dimensions (from preview)
+  const [origDimensions, setOrigDimensions] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
+
+  const shouldReduce = useReducedMotion();
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleFilesSelected = useCallback((files: File[]) => {
-    setSelectedFile(files[0] ?? null);
+    const file = files[0] ?? null;
+    setSelectedFile(file);
     setResult(null);
     setError(undefined);
     setProgress(0);
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+
+      // Read dimensions
+      const img = new window.Image();
+      img.onload = () => {
+        setOrigDimensions({ w: img.naturalWidth, h: img.naturalHeight });
+        // Default crop to full image
+        setCropW(String(img.naturalWidth));
+        setCropH(String(img.naturalHeight));
+        setCropX("0");
+        setCropY("0");
+      };
+      img.src = url;
+    } else {
+      setPreviewUrl(null);
+      setOrigDimensions(null);
+    }
   }, []);
+
+  const handleAspectRatioChange = useCallback(
+    (ratio: string) => {
+      setAspectRatio(ratio);
+      if (ratio === "free" || !origDimensions) return;
+
+      const [wRatio, hRatio] = ratio.split(":").map(Number);
+      if (!wRatio || !hRatio) return;
+
+      const maxW = origDimensions.w;
+      const maxH = origDimensions.h;
+
+      // Fit the ratio within original dimensions
+      let newW = maxW;
+      let newH = Math.round(maxW * (hRatio / wRatio));
+      if (newH > maxH) {
+        newH = maxH;
+        newW = Math.round(maxH * (wRatio / hRatio));
+      }
+
+      setCropW(String(newW));
+      setCropH(String(newH));
+      setCropX("0");
+      setCropY("0");
+    },
+    [origDimensions]
+  );
 
   const handleCrop = useCallback(async () => {
     if (!selectedFile) return;
@@ -173,7 +417,12 @@ export default function ImageCropperView({ tool, alias }: Props) {
     setError(undefined);
 
     try {
-      const cropped = await cropImage(selectedFile, { x, y, width: w, height: h });
+      const cropped = await cropImage(selectedFile, {
+        x,
+        y,
+        width: w,
+        height: h,
+      });
       setProgress(100);
       setResult(cropped);
     } catch (err) {
@@ -192,7 +441,9 @@ export default function ImageCropperView({ tool, alias }: Props) {
   }, [result, downloadSingle]);
 
   const handleReset = useCallback(() => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(null);
+    setPreviewUrl(null);
     setResult(null);
     setError(undefined);
     setProgress(0);
@@ -200,167 +451,518 @@ export default function ImageCropperView({ tool, alias }: Props) {
     setCropY("0");
     setCropW("800");
     setCropH("600");
-  }, []);
+    setAspectRatio("free");
+    setOrigDimensions(null);
+  }, [previewUrl]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <ImageEditShell slug={tool.slug}>
-      <Card className="p-0 overflow-hidden">
-        <CardHeader className="px-4 py-4 sm:px-6 sm:py-5 pb-2 sm:pb-4 bg-[hsl(var(--muted)/0.3)]">
-          <div className="flex items-center gap-2">
-            <Crop className="h-5 w-5 text-[hsl(var(--primary))]" aria-hidden />
-            <h2 className="font-semibold text-foreground">Crop image</h2>
-          </div>
-        </CardHeader>
+    <MarketingShell>
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <ImageToolsSidebar activeSlug={tool.slug} />
 
-        <CardContent className="px-4 py-4 sm:px-6 sm:py-6 space-y-6">
-          {/* Upload */}
-          <ImageDropzone
-            onFilesSelected={handleFilesSelected}
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            maxSizeMB={50}
-            multiple={false}
-          />
-
-          {/* Crop controls */}
-          <fieldset className="space-y-4">
-            <legend className="text-sm font-medium text-foreground">
-              Crop area (pixels)
-            </legend>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <DimensionInput
-                id="crop-x"
-                label="X offset"
-                value={cropX}
-                onChange={setCropX}
-                hint="Left edge"
-              />
-              <DimensionInput
-                id="crop-y"
-                label="Y offset"
-                value={cropY}
-                onChange={setCropY}
-                hint="Top edge"
-              />
-              <DimensionInput
-                id="crop-w"
-                label="Width"
-                value={cropW}
-                onChange={setCropW}
-                hint="Crop width"
-              />
-              <DimensionInput
-                id="crop-h"
-                label="Height"
-                value={cropH}
-                onChange={setCropH}
-                hint="Crop height"
-              />
-            </div>
-
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              The crop area starts at (X, Y) from the top-left corner and extends
-              Width × Height pixels. Coordinates outside the image bounds are clamped.
-            </p>
-          </fieldset>
-
-          {/* Error */}
-          {error && (
-            <Alert variant="destructive" role="alert" aria-live="assertive">
-              <AlertCircle className="h-4 w-4" aria-hidden />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {/* Progress */}
-          {isProcessing && (
-            <div className="space-y-2" aria-live="polite" aria-busy="true">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[hsl(var(--muted-foreground))]">Cropping…</span>
-                <span className="font-medium text-foreground">{progress}%</span>
-              </div>
-              <Progress
-                value={progress}
-                className="h-2"
-                aria-label={`Crop progress: ${progress}%`}
-              />
-            </div>
-          )}
-
-          {/* Result */}
-          {isDone && !isProcessing && (
-            <div
-              className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 sm:p-5 space-y-2"
-              role="region"
-              aria-label="Crop result"
+        {/* Main content */}
+        <div className="flex-1 min-w-0 bg-[hsl(var(--tool-bg))]">
+          <main
+            id="main-content"
+            className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8"
+            aria-label="Image Cropper tool"
+          >
+            {/* ── Premium Hero ── */}
+            <ToolHero
+              eyebrow="FREE IMAGE CROPPER — BROWSER-BASED"
+              h1Prefix="Free"
+              h1Highlight="Image Cropper"
+              h1Suffix="Crop images to exact size."
+              description="Crop any image to your exact dimensions using pixel coordinates. No uploads, no signup — all processing happens in your browser."
+              trustBadges={TRUST_BADGES}
             >
-              <div className="flex items-center gap-2">
-                <CheckCircle2
-                  className="h-5 w-5 text-[hsl(142.1_76.2%_36.3%)]"
-                  aria-hidden
-                />
-                <span className="font-semibold text-foreground">
-                  Image cropped — {cropW}×{cropH} px
-                </span>
-              </div>
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                {result.name} · {formatBytes(result.size)}
+              <CropperIllustration />
+            </ToolHero>
+
+            {/* ── Workspace Card ── */}
+            <motion.section
+              className="pb-8"
+              initial={shouldReduce ? undefined : { opacity: 0, y: 20 }}
+              animate={shouldReduce ? undefined : { opacity: 1, y: 0 }}
+              transition={shouldReduce ? undefined : { delay: 0.4, duration: 0.5 }}
+              aria-label="Crop workspace"
+            >
+              <Card
+                className={cn(
+                  "overflow-hidden border-[hsl(var(--tool-border))]",
+                  "bg-[hsl(var(--tool-surface))]"
+                )}
+              >
+                <CardContent className="p-0">
+                  {/* Step Progress Bar */}
+                  <div className="border-b border-[hsl(var(--tool-border))] px-4 py-5 sm:px-6 sm:py-6">
+                    <StepProgressBar
+                      steps={STEPS}
+                      activeStep={activeStep}
+                    />
+                  </div>
+
+                  {/* Workspace content: two-column layout */}
+                  <div className="flex flex-col lg:flex-row">
+                    {/* Left column: Upload + Crop Controls */}
+                    <div className="flex-1 border-b lg:border-b-0 lg:border-r border-[hsl(var(--tool-border))] p-4 sm:p-6 space-y-6">
+                      {/* Upload Dropzone */}
+                      <ImageDropzone
+                        onFilesSelected={handleFilesSelected}
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        maxSizeMB={50}
+                        multiple={false}
+                      />
+
+                      {/* Sample images strip */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Try a sample image:
+                        </p>
+                        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                          {SAMPLE_IMAGES.map((src, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className={cn(
+                                "h-14 w-20 shrink-0 overflow-hidden rounded-lg",
+                                "border border-[hsl(var(--tool-border))]",
+                                "bg-[hsl(var(--tool-surface-dim))]",
+                                "transition-all hover:border-[hsl(var(--primary)/0.5)] hover:scale-105",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]"
+                              )}
+                              aria-label={`Load sample image ${i + 1}`}
+                            >
+                              <div className="h-full w-full bg-gradient-to-br from-sky-900/20 to-emerald-900/20" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Separator className="bg-[hsl(var(--tool-border))]" />
+
+                      {/* Crop Area Controls */}
+                      <fieldset className="space-y-4">
+                        <legend className="text-sm font-semibold text-foreground">
+                          Crop area (pixels)
+                        </legend>
+
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          <DimensionInput
+                            id="crop-x"
+                            label="X offset"
+                            value={cropX}
+                            onChange={setCropX}
+                          />
+                          <DimensionInput
+                            id="crop-y"
+                            label="Y offset"
+                            value={cropY}
+                            onChange={setCropY}
+                          />
+                          <DimensionInput
+                            id="crop-w"
+                            label="Width"
+                            value={cropW}
+                            onChange={setCropW}
+                          />
+                          <DimensionInput
+                            id="crop-h"
+                            label="Height"
+                            value={cropH}
+                            onChange={setCropH}
+                          />
+                        </div>
+                      </fieldset>
+
+                      {/* Aspect Ratio */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">
+                            Aspect ratio
+                          </span>
+                          <Select
+                            value={aspectRatio}
+                            onValueChange={handleAspectRatioChange}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "w-24 h-9 text-sm",
+                                "bg-[hsl(var(--tool-surface-dim))]",
+                                "border-[hsl(var(--tool-border))]"
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ASPECT_RATIOS.map(({ label, value }) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Quick ratio buttons */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {ASPECT_RATIOS.map(({ label, value }) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => handleAspectRatioChange(value)}
+                              className={cn(
+                                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                                "border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--primary))]",
+                                aspectRatio === value
+                                  ? "text-white border-transparent"
+                                  : "border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))] text-muted-foreground hover:border-[hsl(var(--primary)/0.3)] hover:text-foreground"
+                              )}
+                              style={
+                                aspectRatio === value
+                                  ? {
+                                      background:
+                                        "linear-gradient(135deg, #F97316, #F59E0B)",
+                                    }
+                                  : undefined
+                              }
+                              aria-pressed={aspectRatio === value}
+                              aria-label={`Aspect ratio ${label}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right column: Live Preview */}
+                    <div className="lg:w-[420px] p-4 sm:p-6 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-foreground font-display">
+                          Live Preview
+                        </h3>
+                        {hasFile && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "text-xs gap-1.5",
+                              "border-[hsl(var(--tool-border))]",
+                              "bg-[hsl(var(--tool-surface-dim))]"
+                            )}
+                            aria-label="Fit to screen"
+                          >
+                            <Maximize2 className="h-3 w-3" aria-hidden="true" />
+                            Fit to screen
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Preview area */}
+                      <div
+                        className={cn(
+                          "relative flex items-center justify-center overflow-hidden rounded-xl",
+                          "border border-[hsl(var(--tool-border))]",
+                          "bg-[hsl(var(--tool-surface-dim))]",
+                          "min-h-[260px] sm:min-h-[320px]"
+                        )}
+                      >
+                        {previewUrl ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={previewUrl}
+                              alt="Image preview with crop area"
+                              className="max-h-[300px] max-w-full object-contain"
+                            />
+                            {/* Crop handles overlay */}
+                            <div className="absolute inset-4 border-2 border-dashed border-white/40 rounded-md pointer-events-none">
+                              {[
+                                "top-0 left-0 -translate-x-1/2 -translate-y-1/2",
+                                "top-0 right-0 translate-x-1/2 -translate-y-1/2",
+                                "bottom-0 left-0 -translate-x-1/2 translate-y-1/2",
+                                "bottom-0 right-0 translate-x-1/2 translate-y-1/2",
+                                "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                                "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
+                                "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2",
+                                "top-1/2 right-0 translate-x-1/2 -translate-y-1/2",
+                              ].map((pos, i) => (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    "absolute h-2.5 w-2.5 rounded-full",
+                                    "bg-white border border-[hsl(var(--primary))]",
+                                    "shadow-sm",
+                                    pos
+                                  )}
+                                  aria-hidden="true"
+                                />
+                              ))}
+                            </div>
+                            {/* Size overlay */}
+                            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                              {cropW} x {cropH}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center gap-3 py-8 text-muted-foreground">
+                            <ImageIcon
+                              className="h-12 w-12 opacity-30"
+                              aria-hidden="true"
+                            />
+                            <p className="text-sm">
+                              Upload an image to see preview
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Image info row */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                            Original size
+                          </p>
+                          <p className="text-xs font-medium text-foreground">
+                            {origDimensions
+                              ? `${origDimensions.w} x ${origDimensions.h} px`
+                              : "—"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                            Cropped size
+                          </p>
+                          <p className="text-xs font-medium text-foreground">
+                            {hasFile ? `${cropW} x ${cropH} px` : "—"}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                            Output format
+                          </p>
+                          <Select
+                            value={outputFormat}
+                            onValueChange={setOutputFormat}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-7 w-full text-xs",
+                                "bg-[hsl(var(--tool-surface-dim))]",
+                                "border-[hsl(var(--tool-border))]"
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {OUTPUT_FORMATS.map((fmt) => (
+                                <SelectItem key={fmt} value={fmt}>
+                                  {fmt}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Error */}
+                  {error && (
+                    <div className="px-4 sm:px-6 pb-4">
+                      <Alert
+                        variant="destructive"
+                        role="alert"
+                        aria-live="assertive"
+                      >
+                        <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+
+                  {/* Progress */}
+                  {isProcessing && (
+                    <div
+                      className="px-4 sm:px-6 pb-4 space-y-2"
+                      aria-live="polite"
+                      aria-busy="true"
+                    >
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Cropping...
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {progress}%
+                        </span>
+                      </div>
+                      <Progress
+                        value={progress}
+                        className="h-2"
+                        aria-label={`Crop progress: ${progress}%`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Result */}
+                  {isDone && !isProcessing && (
+                    <div className="px-4 sm:px-6 pb-4">
+                      <div
+                        className={cn(
+                          "rounded-lg p-4 space-y-1",
+                          "bg-[hsl(142_76%_36%/0.1)]",
+                          "border border-[hsl(142_76%_36%/0.3)]"
+                        )}
+                        role="region"
+                        aria-label="Crop result"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2
+                            className="h-5 w-5 text-[hsl(142_76%_36%)]"
+                            aria-hidden="true"
+                          />
+                          <span className="font-semibold text-foreground">
+                            Image cropped — {cropW} x {cropH} px
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground pl-7">
+                          {result.name} · {formatBytes(result.size)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA Button */}
+                  <div className="border-t border-[hsl(var(--tool-border))] p-4 sm:p-6">
+                    {isDone ? (
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={handleDownload}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5",
+                            "text-base font-bold text-white",
+                            "transition-all hover:opacity-90 hover:shadow-lg",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                          )}
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #F97316, #F59E0B)",
+                          }}
+                          aria-label="Download cropped image"
+                        >
+                          <Download className="h-5 w-5" aria-hidden="true" />
+                          Crop &amp; Download Image
+                        </button>
+                        <Button
+                          onClick={handleReset}
+                          variant="outline"
+                          size="lg"
+                          className={cn(
+                            "border-[hsl(var(--tool-border))]",
+                            "bg-[hsl(var(--tool-surface-dim))]"
+                          )}
+                          aria-label="Reset and start over"
+                        >
+                          <RotateCcw
+                            className="mr-2 h-4 w-4"
+                            aria-hidden="true"
+                          />
+                          Start over
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={handleCrop}
+                          disabled={!hasFile || isProcessing}
+                          className={cn(
+                            "flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5",
+                            "text-base font-bold text-white",
+                            "transition-all",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50",
+                            hasFile && !isProcessing
+                              ? "hover:opacity-90 hover:shadow-lg"
+                              : "opacity-50 cursor-not-allowed"
+                          )}
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #F97316, #F59E0B)",
+                          }}
+                          aria-label="Crop and download image"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <span
+                                className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"
+                                aria-hidden="true"
+                              />
+                              Cropping...
+                            </>
+                          ) : (
+                            <>
+                              <Download
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                              Crop &amp; Download Image
+                            </>
+                          )}
+                        </button>
+                        {hasFile && (
+                          <Button
+                            onClick={handleReset}
+                            variant="outline"
+                            size="lg"
+                            disabled={isProcessing}
+                            className={cn(
+                              "border-[hsl(var(--tool-border))]",
+                              "bg-[hsl(var(--tool-surface-dim))]"
+                            )}
+                            aria-label="Reset and start over"
+                          >
+                            <RotateCcw
+                              className="mr-2 h-4 w-4"
+                              aria-hidden="true"
+                            />
+                            Start over
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.section>
+
+            {/* ── Trust Strip ── */}
+            <motion.div
+              className="pb-12"
+              initial={shouldReduce ? undefined : { opacity: 0, y: 20 }}
+              animate={shouldReduce ? undefined : { opacity: 1, y: 0 }}
+              transition={
+                shouldReduce ? undefined : { delay: 0.6, duration: 0.5 }
+              }
+            >
+              <TrustStrip features={TRUST_FEATURES} />
+            </motion.div>
+
+            {/* ── SEO footer note ── */}
+            <div className="pb-8 px-2">
+              <p className="text-xs leading-relaxed text-muted-foreground/60">
+                Trndinn&apos;s Image Cropper is a free, browser-based tool. All
+                processing happens locally on your device — no files are
+                uploaded to any server. No signup, no watermark, no usage limit.
               </p>
             </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-            {isDone ? (
-              <Button
-                onClick={handleDownload}
-                size="lg"
-                className="w-full sm:w-auto px-8 font-semibold"
-                aria-label="Download cropped image"
-              >
-                <Download className="mr-2 h-4 w-4" aria-hidden />
-                Download
-              </Button>
-            ) : (
-              <Button
-                onClick={handleCrop}
-                disabled={!hasFile || isProcessing}
-                size="lg"
-                className="w-full sm:w-auto px-8 font-semibold"
-                aria-label="Crop image"
-              >
-                {isProcessing ? (
-                  <>
-                    <span
-                      className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-                      aria-hidden
-                    />
-                    Cropping…
-                  </>
-                ) : (
-                  "Crop Image"
-                )}
-              </Button>
-            )}
-
-            {(isDone || hasFile) && (
-              <Button
-                onClick={handleReset}
-                variant="outline"
-                size="lg"
-                disabled={isProcessing}
-                className="w-full sm:w-auto"
-                aria-label="Reset and start over"
-              >
-                <RotateCcw className="mr-2 h-4 w-4" aria-hidden />
-                Start over
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </ImageEditShell>
+          </main>
+        </div>
+      </div>
+    </MarketingShell>
   );
 }
