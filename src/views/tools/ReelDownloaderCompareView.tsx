@@ -31,7 +31,7 @@ export default function ReelDownloaderCompareView({ competitor, related }: Props
 
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb (transparent — sits directly on page canvas, no band) ─── */}
         <nav
           aria-label="Breadcrumb"

@@ -36,6 +36,11 @@ const CATEGORY_ICONS: Record<ToolCategory, typeof Download> = {
   "Bio Generator": User,
   Hashtag: Hash,
   Analytics: BarChart3,
+  "Image Converter": Camera,
+  "Image Editor": Camera,
+  "Image Utility": Camera,
+  Audio: Wand2,
+  Video: Camera,
 };
 
 // ---------------------------------------------------------------------------
@@ -500,11 +505,12 @@ export default function ToolsHubView() {
   const [active, setActive] = useState<ToolCategory | "All">("All");
   const shouldReduceMotion = useReducedMotion();
 
+  const hubTools = TOOLS.filter((t) => t.showOnHub !== false);
   const filtered =
-    active === "All" ? TOOLS : TOOLS.filter((t) => t.category === active);
+    active === "All" ? hubTools : hubTools.filter((t) => t.category === active);
 
-  const liveCount = TOOLS.filter((t) => t.live).length;
-  const totalCount = TOOLS.length;
+  const liveCount = hubTools.filter((t) => t.live).length;
+  const totalCount = hubTools.length;
 
   return (
     <MarketingShell>

@@ -40,7 +40,7 @@ export default function CaptionCompareIndexView({
 }: Props) {
   return (
     <MarketingShell>
-      <main>
+      <main className="bg-[hsl(var(--tool-bg))] text-foreground">
         {/* ─── Breadcrumb (no background, blends with page canvas) ─── */}
         <nav
           aria-label="Breadcrumb"

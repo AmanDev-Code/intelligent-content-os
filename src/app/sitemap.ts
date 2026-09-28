@@ -8,6 +8,21 @@ import { BIO_GENERATOR_ALIAS_SLUGS } from "@/lib/bio-generator-aliases";
 import { CAPTION_COMPETITOR_SLUGS } from "@/lib/caption-competitors";
 import { REEL_DOWNLOADER_COMPETITOR_SLUGS } from "@/lib/reel-downloader-competitors";
 import { BIO_COMPETITOR_SLUGS } from "@/lib/bio-generator-competitors";
+import { ALL_CONVERSION_SLUGS } from "@/lib/image-converter-data";
+import { IMAGE_CONVERTER_ALIAS_SLUGS } from "@/lib/image-converter-aliases";
+import { IMAGE_CONVERTER_COMPETITOR_SLUGS } from "@/lib/image-converter-competitors";
+import { ALL_EDIT_SLUGS } from "@/lib/image-edit-data";
+import { IMAGE_EDIT_ALIAS_SLUGS } from "@/lib/image-edit-aliases";
+import { IMAGE_EDIT_COMPETITOR_SLUGS } from "@/lib/image-edit-competitors";
+import { ALL_UTILITY_SLUGS } from "@/lib/image-utility-data";
+import { IMAGE_UTILITY_ALIAS_SLUGS } from "@/lib/image-utility-aliases";
+import { IMAGE_UTILITY_COMPETITOR_SLUGS } from "@/lib/image-utility-competitors";
+import { ALL_AUDIO_SLUGS } from "@/lib/audio-data";
+import { AUDIO_ALIAS_SLUGS } from "@/lib/audio-aliases";
+import { AUDIO_COMPETITOR_SLUGS } from "@/lib/audio-competitors";
+import { ALL_VIDEO_SLUGS } from "@/lib/video-data";
+import { VIDEO_ALIAS_SLUGS } from "@/lib/video-aliases";
+import { VIDEO_COMPETITOR_SLUGS } from "@/lib/video-competitors";
 
 // Re-generate the sitemap on every request (no ISR cache) so new blog posts
 // appear in the sitemap immediately after publishing.
@@ -129,6 +144,174 @@ const STATIC_ROUTES: StaticRoute[] = [
     changeFrequency: "monthly" as const,
     priority: 0.75,
     lastModified: new Date("2026-08-22"),
+  })),
+
+  // Image conversion tools (33 primary — PNG/JPG/WebP/AVIF/GIF/BMP/TIFF/ICO/HEIC/SVG)
+  ...ALL_CONVERSION_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image conversion aliases (165 — 5 per tool)
+  ...IMAGE_CONVERTER_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image converter compare pages (5 — Convertio/iLoveIMG/CloudConvert/Zamzar/Squoosh)
+  ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // Image converter alternative pages (5)
+  ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 3: Image edit & compression tools ──────────────────────────────
+
+  // 9 primary edit/compression tool URLs (priority 0.9)
+  ...ALL_EDIT_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 45 edit/compression alias URLs (priority 0.7)
+  ...IMAGE_EDIT_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image edit compare pages (priority 0.8)
+  ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image edit alternative pages (priority 0.75)
+  ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 4: Image utility / AI tools ───────────────────────────────────
+
+  // 7 primary utility tool URLs (priority 0.9)
+  ...ALL_UTILITY_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 35 utility alias URLs — 5 per tool (priority 0.7)
+  ...IMAGE_UTILITY_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image utility compare pages (priority 0.8)
+  ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 image utility alternative pages (priority 0.75)
+  ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 7: Audio tools ─────────────────────────────────────────────────
+
+  // 4 primary audio tool URLs (priority 0.9)
+  ...ALL_AUDIO_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 20 audio alias URLs — 5 per tool (priority 0.7)
+  ...AUDIO_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 audio compare pages (priority 0.8)
+  ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 audio alternative pages (priority 0.75)
+  ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // ─── Phase 7: Video tools ─────────────────────────────────────────────────
+
+  // 3 primary video tool URLs (priority 0.9)
+  ...ALL_VIDEO_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 15 video alias URLs — 5 per tool (priority 0.7)
+  ...VIDEO_ALIAS_SLUGS.map((slug) => ({
+    path: `/tools/${slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 video compare pages (priority 0.8)
+  ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/compare/trndinn-vs-${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+    lastModified: new Date("2026-09-27"),
+  })),
+
+  // 5 video alternative pages (priority 0.75)
+  ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({
+    path: `/alternatives/${slug}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    lastModified: new Date("2026-09-27"),
   })),
 
   // Pillar guide pages

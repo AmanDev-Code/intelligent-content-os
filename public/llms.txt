@@ -53,7 +53,78 @@ Auth: Bearer trnd_* API keys with scoped access (blog:read, blog:write, content-
   - https://trndinn.com/tools/save-instagram-reels
   - https://trndinn.com/tools/download-instagram-reel-mp4
   - https://trndinn.com/tools/instagram-reel-saver
-- Roadmap tools (not yet live): Instagram Caption Generator, LinkedIn Post Generator, LinkedIn Hook Generator, Hashtag Generator.
+- Roadmap tools (not yet live): LinkedIn Post Generator, LinkedIn Hook Generator, Hashtag Generator.
+
+## Image Tools (free, browser-based — images never uploaded)
+
+### Image Conversion (33 tools)
+Primary converters at /tools/{from}-to-{to}:
+- PNG to JPG: https://trndinn.com/tools/png-to-jpg
+- JPG to PNG: https://trndinn.com/tools/jpg-to-png
+- WEBP to JPG: https://trndinn.com/tools/webp-to-jpg
+- WEBP to PNG: https://trndinn.com/tools/webp-to-png
+- HEIC to JPG: https://trndinn.com/tools/heic-to-jpg
+- HEIC to PNG: https://trndinn.com/tools/heic-to-png
+- SVG to PNG: https://trndinn.com/tools/svg-to-png
+- GIF to JPG: https://trndinn.com/tools/gif-to-jpg
+- GIF to PNG: https://trndinn.com/tools/gif-to-png
+- GIF to WEBP: https://trndinn.com/tools/gif-to-webp
+- BMP to JPG: https://trndinn.com/tools/bmp-to-jpg
+- BMP to PNG: https://trndinn.com/tools/bmp-to-png
+- TIFF to JPG: https://trndinn.com/tools/tiff-to-jpg
+- TIFF to PNG: https://trndinn.com/tools/tiff-to-png
+- JPG to WEBP: https://trndinn.com/tools/jpg-to-webp
+- PNG to WEBP: https://trndinn.com/tools/png-to-webp
+- JPG to AVIF: https://trndinn.com/tools/jpg-to-avif
+- PNG to AVIF: https://trndinn.com/tools/png-to-avif
+- WEBP to AVIF: https://trndinn.com/tools/webp-to-avif
+- AVIF to JPG: https://trndinn.com/tools/avif-to-jpg
+- AVIF to PNG: https://trndinn.com/tools/avif-to-png
+- JPG to GIF: https://trndinn.com/tools/jpg-to-gif
+- PNG to GIF: https://trndinn.com/tools/png-to-gif
+- WEBP to GIF: https://trndinn.com/tools/webp-to-gif
+- JPG to BMP: https://trndinn.com/tools/jpg-to-bmp
+- PNG to BMP: https://trndinn.com/tools/png-to-bmp
+- WEBP to BMP: https://trndinn.com/tools/webp-to-bmp
+- JPG to TIFF: https://trndinn.com/tools/jpg-to-tiff
+- PNG to TIFF: https://trndinn.com/tools/png-to-tiff
+- WEBP to TIFF: https://trndinn.com/tools/webp-to-tiff
+- PNG to ICO: https://trndinn.com/tools/png-to-ico
+- JPG to ICO: https://trndinn.com/tools/jpg-to-ico
+- WEBP to ICO: https://trndinn.com/tools/webp-to-ico
+
+### Image Compression
+- Compress JPG: https://trndinn.com/tools/compress-jpg
+- Compress PNG: https://trndinn.com/tools/compress-png
+- Compress WEBP: https://trndinn.com/tools/compress-webp
+- Compress GIF: https://trndinn.com/tools/compress-gif
+
+### Image Edit
+- Image Resizer: https://trndinn.com/tools/image-resizer
+- Image Cropper: https://trndinn.com/tools/image-cropper
+- Image Rotator: https://trndinn.com/tools/image-rotator
+- Watermark Image: https://trndinn.com/tools/watermark-image
+- Image Workbench: https://trndinn.com/tools/image-workbench
+
+### Image Utility
+- Image to Base64: https://trndinn.com/tools/image-to-base64
+- Base64 to Image: https://trndinn.com/tools/base64-to-image
+- Favicon Generator: https://trndinn.com/tools/favicon-generator
+- Background Remover: https://trndinn.com/tools/background-remover
+- Image to Text (OCR): https://trndinn.com/tools/image-to-text
+- QR Code Generator: https://trndinn.com/tools/qr-code-generator
+- Profile Pic Creator: https://trndinn.com/tools/profile-pic-creator
+
+## Audio Tools (free, browser-based)
+- Audio Converter: https://trndinn.com/tools/audio-converter
+- Audio Recorder: https://trndinn.com/tools/audio-recorder
+- Text to Speech: https://trndinn.com/tools/text-to-speech
+- Speech to Text: https://trndinn.com/tools/speech-to-text
+
+## Video Tools (free, browser-based)
+- Video Converter: https://trndinn.com/tools/video-converter
+- Video Recorder: https://trndinn.com/tools/video-recorder
+- Screen Recorder: https://trndinn.com/tools/screen-recorder
 
 ## Pricing plan names (public)
 
