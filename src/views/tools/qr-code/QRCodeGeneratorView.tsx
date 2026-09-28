@@ -3,8 +3,7 @@
 /**
  * QRCodeGeneratorView — generate QR codes client-side using the qrcode library.
  *
- * Shadcn primitives: Card, CardContent, CardHeader, Button, Badge,
- *   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+ * Shadcn primitives: Card, CardContent, CardHeader, Button,
  *   Alert, AlertDescription, Separator, Slider, Label.
  * Design tokens: --background, --foreground, --card, --card-foreground,
  *   --muted, --muted-foreground, --primary, --primary-foreground,
@@ -17,29 +16,17 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import {
   Download,
   RotateCcw,
-  Zap,
-  Shield,
   CheckCircle2,
   AlertCircle,
-  QrCode,
-  ArrowRight,
 } from "lucide-react";
-import Link from "next/link";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { MarketingShell } from "@/components/marketing/MarketingShell";
+import { ImageToolsShell } from "@/views/tools/image-tools/ImageToolsShell";
 import { cn } from "@/lib/utils";
 import type { UtilityTool } from "@/lib/image-utility-data";
 import type { UtilityAlias } from "@/lib/image-utility-aliases";
@@ -61,16 +48,6 @@ const ECC_LABELS: Record<EccLevel, string> = {
   Q: "Q — Quartile (25%)",
   H: "H — High (30%)",
 };
-
-// ---------------------------------------------------------------------------
-// Trust badges
-// ---------------------------------------------------------------------------
-
-const TRUST_BADGES = [
-  { icon: Zap, label: "No signup required" },
-  { icon: Shield, label: "No watermark" },
-  { icon: QrCode, label: "PNG & SVG download" },
-];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -179,50 +156,21 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
   }, []);
 
   return (
-    <MarketingShell>
-    <main className="flex-1 space-y-4 sm:space-y-6">
-      {/* ----------------------------------------------------------------
-          Hero
-      ---------------------------------------------------------------- */}
-      <section
-        className="px-4 pt-10 pb-6 sm:pt-16 sm:pb-10 text-center"
-        aria-labelledby="tool-heading"
-      >
-        <div className="mx-auto max-w-3xl space-y-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--primary))]">
-            {eyebrow}
-          </p>
-          <h1
-            id="tool-heading"
-            className="font-display text-[clamp(1.875rem,4.5vw,3.5rem)] font-bold leading-[1.1] tracking-tight text-foreground"
-          >
-            {h1Prefix && <>{h1Prefix} </>}
-            <span className="gradient-text">{h1Highlight}</span>
-            {h1Suffix && <> {h1Suffix}</>}
-          </h1>
-          <p className="mx-auto max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            {heroSubline}
-          </p>
-          <ul
-            className="flex flex-wrap items-center justify-center gap-3 pt-2"
-            aria-label="Tool features"
-          >
-            {TRUST_BADGES.map(({ icon: Icon, label }) => (
-              <li key={label}>
-                <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs font-medium">
-                  <Icon className="h-3 w-3" aria-hidden="true" />
-                  {label}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
+    <ImageToolsShell
+      slug="qr-code-generator"
+      toolName="QR Code Generator"
+      h1Prefix={h1Prefix}
+      h1Highlight={h1Highlight}
+      h1Suffix={h1Suffix}
+      eyebrow={eyebrow}
+      heroSubline={heroSubline}
+      whyText="QR codes bridge the physical and digital worlds — put them on business cards, flyers, packaging, or presentations. This generator runs entirely in your browser with custom colors, error correction levels, and both PNG and SVG downloads."
+      faqs={tool.faqs}
+    >
       {/* ----------------------------------------------------------------
           Tool UI — two-column on lg
       ---------------------------------------------------------------- */}
-      <section className="px-4 pb-10 sm:pb-14" aria-label="QR code generator tool">
+      <section aria-label="QR code generator tool">
         <div className="mx-auto max-w-4xl">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Controls */}
@@ -445,85 +393,6 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
           </div>
         </div>
       </section>
-
-      {/* ----------------------------------------------------------------
-          FAQ
-      ---------------------------------------------------------------- */}
-      <section className="px-4 pb-10 sm:pb-14" aria-labelledby="faq-heading">
-        <div className="mx-auto max-w-3xl">
-          <h2
-            id="faq-heading"
-            className="mb-6 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          >
-            Frequently asked questions
-          </h2>
-          <Accordion type="single" collapsible className="space-y-2">
-            {tool.faqs.map(({ question, answer }, i) => (
-              <AccordionItem
-                key={i}
-                value={`faq-${i}`}
-                className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 sm:px-6"
-              >
-                <AccordionTrigger className="text-left font-semibold text-foreground hover:text-[hsl(var(--primary))] hover:no-underline">
-                  {question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-                  {answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </section>
-
-      {/* ----------------------------------------------------------------
-          Related tools
-      ---------------------------------------------------------------- */}
-      <section className="px-4 pb-16 sm:pb-24" aria-labelledby="related-tools-heading">
-        <div className="mx-auto max-w-3xl">
-          <h2
-            id="related-tools-heading"
-            className="mb-6 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          >
-            Related tools
-          </h2>
-          <ul
-            className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="Related tools"
-          >
-            {[
-              { slug: "profile-pic-creator", name: "Profile Picture Creator", description: "Create an emoji avatar for social profiles" },
-              { slug: "favicon-generator", name: "Favicon Generator", description: "Generate all favicon sizes from one image" },
-              { slug: "image-to-base64", name: "Image to Base64", description: "Encode any image as a data URI string" },
-            ].map(({ slug, name, description }) => (
-              <li key={slug}>
-                <Link
-                  href={`/tools/${slug}`}
-                  className={cn(
-                    "group flex h-full flex-col rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4",
-                    "transition-colors hover:border-[hsl(var(--primary))] hover:bg-[hsl(var(--accent))]",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2",
-                  )}
-                  aria-label={`Go to ${name}`}
-                >
-                  <h3 className="font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">
-                    {name}
-                  </h3>
-                  <p className="mt-1 flex-1 text-sm text-muted-foreground">{description}</p>
-                  <span
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--primary))]"
-                    aria-hidden="true"
-                  >
-                    Try it
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    </main>
-    </MarketingShell>
+    </ImageToolsShell>
   );
 }
