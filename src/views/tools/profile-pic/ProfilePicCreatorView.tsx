@@ -41,7 +41,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { StepProgressBar } from "@/views/tools/shared/StepProgressBar";
 import { TrustStrip, type TrustFeature } from "@/views/tools/shared/TrustStrip";
@@ -305,7 +305,7 @@ export default function ProfilePicCreatorView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         <ImageToolsSidebar activeSlug="profile-pic-creator" />
 
         <div className="flex-1 min-w-0">
@@ -326,39 +326,72 @@ export default function ProfilePicCreatorView({ tool, alias }: Props) {
               description={heroDescription}
               trustBadges={HERO_BADGES}
             >
-              {/* 3D Emoji Illustration */}
-              <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px]" aria-hidden="true">
+              {/* 3D Profile Pic Illustration */}
+              <div className="relative w-[280px] h-[260px] sm:w-[340px] sm:h-[300px]" aria-hidden="true">
                 {/* Glow backdrop */}
                 <div
-                  className="absolute inset-0 rounded-full blur-3xl opacity-40"
+                  className="absolute inset-0 rounded-full blur-3xl opacity-30"
                   style={{
-                    background: "radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(249,115,22,0.2) 50%, transparent 70%)",
+                    background: "radial-gradient(circle, rgba(249,115,22,0.35) 0%, rgba(168,85,247,0.15) 50%, transparent 70%)",
                   }}
                 />
-                {/* Floating emojis */}
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <span className="text-8xl sm:text-9xl select-none drop-shadow-2xl" role="img" aria-label="Cool emoji">😎</span>
-                  {/* Orbiting smaller emojis */}
-                  <span className="absolute top-2 right-8 text-4xl sm:text-5xl select-none animate-bounce" style={{ animationDelay: "0.1s" }}>😍</span>
-                  <span className="absolute bottom-8 left-4 text-3xl sm:text-4xl select-none animate-bounce" style={{ animationDelay: "0.3s" }}>🤩</span>
-                  <span className="absolute top-12 left-2 text-3xl sm:text-4xl select-none animate-bounce" style={{ animationDelay: "0.5s" }}>😊</span>
-                  <span className="absolute bottom-4 right-12 text-3xl sm:text-4xl select-none animate-bounce" style={{ animationDelay: "0.7s" }}>🥰</span>
+                {/* Main avatar card */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                  <div
+                    className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full border-4 shadow-2xl"
+                    style={{
+                      borderColor: "hsl(var(--primary))",
+                      background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-surface-dim)))",
+                      animation: "pp-hero-float 5s ease-in-out infinite",
+                    }}
+                  >
+                    <span className="text-6xl sm:text-7xl select-none drop-shadow-lg">😎</span>
+                  </div>
+                  {/* Size badge below */}
+                  <div
+                    className="mt-2 rounded-full px-3 py-1 text-[10px] font-bold shadow-md"
+                    style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)", color: "white" }}
+                  >
+                    512 × 512 px
+                  </div>
                 </div>
-                {/* Side badges */}
-                <div className="absolute -right-2 top-1/4 flex flex-col gap-2">
-                  {["Custom styles", "Any background", "Multiple sizes", "Instant download"].map((label) => (
+                {/* Orbiting mini avatars */}
+                {[
+                  { emoji: "😍", top: "5%", left: "15%", delay: "0s", size: "text-3xl" },
+                  { emoji: "🤩", top: "10%", right: "10%", delay: "0.8s", size: "text-2xl" },
+                  { emoji: "😊", bottom: "15%", left: "8%", delay: "1.6s", size: "text-2xl" },
+                  { emoji: "🥰", bottom: "10%", right: "15%", delay: "2.4s", size: "text-3xl" },
+                ].map((e, i) => (
+                  <div
+                    key={i}
+                    className="absolute flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[hsl(var(--tool-border))] shadow-lg"
+                    style={{
+                      background: "hsl(var(--tool-surface))",
+                      top: e.top, left: e.left, right: e.right, bottom: e.bottom,
+                      animation: `pp-hero-orbit 4s ease-in-out infinite ${e.delay}`,
+                    }}
+                  >
+                    <span className={cn("select-none", e.size)}>{e.emoji}</span>
+                  </div>
+                ))}
+                {/* Feature labels */}
+                <div className="absolute -right-2 top-[20%] flex flex-col gap-1.5">
+                  {["Custom bg", "Any size", "PNG output"].map((label) => (
                     <span
                       key={label}
-                      className={cn(
-                        "rounded-full px-3 py-1 text-[10px] font-semibold whitespace-nowrap",
-                        "bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))]",
-                        "text-foreground/80"
-                      )}
+                      className="rounded-full px-2.5 py-0.5 text-[9px] font-semibold whitespace-nowrap bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))] text-foreground/80"
                     >
                       {label}
                     </span>
                   ))}
                 </div>
+                <style>{`
+                  @keyframes pp-hero-float { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.03) translateY(-4px)} }
+                  @keyframes pp-hero-orbit { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+                  @media (prefers-reduced-motion:reduce) {
+                    [style*="pp-hero-float"],[style*="pp-hero-orbit"] { animation:none !important; }
+                  }
+                `}</style>
               </div>
             </ToolHero>
 
@@ -780,6 +813,94 @@ export default function ProfilePicCreatorView({ tool, alias }: Props) {
                 <TrustStrip features={TRUST_FEATURES} />
               </MotionDiv>
 
+              {/* ── AEO: What is a Profile Picture? ── */}
+              <MotionDiv
+                {...(shouldReduce ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: 0.25 } })}
+              >
+                <section
+                  aria-labelledby="what-is-pfp-heading"
+                  className="rounded-xl border p-6"
+                  style={{
+                    background: "hsl(var(--tool-surface))",
+                    borderColor: "hsl(var(--tool-border))",
+                  }}
+                >
+                  <h2 id="what-is-pfp-heading" className="text-lg font-bold text-foreground mb-4">
+                    What is a profile picture creator?
+                  </h2>
+                  <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                    A profile picture creator is a tool that generates custom avatars for social media accounts without requiring photo uploads or design skills. Trndinn&apos;s Profile Picture Creator turns any emoji into a polished, high-resolution PNG avatar with customizable backgrounds, shapes, and styles — entirely in your browser. No signup, no photo upload needed.
+                  </p>
+                  <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                    Profile pictures are the single most-viewed element of any social media profile. LinkedIn profiles with a professional photo get 14× more views than those without [LinkedIn, 2024]. Each platform has specific size requirements: LinkedIn needs 400×400px, Instagram uses 110×110px (displayed) but stores 320×320px, Twitter/X recommends 400×400px, and Discord uses 128×128px.
+                  </p>
+                  <h3 className="text-base font-semibold text-foreground mt-6 mb-3">Frequently asked questions</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">How do I create a free profile picture?</h4>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Pick an emoji, choose a background color and shape (circle, square, or rounded), then click Download. Trndinn generates a 512×512px PNG instantly — no account needed.</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">What size should my profile picture be?</h4>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">LinkedIn: 400×400px. Instagram: 110×110px (displayed). Twitter/X: 400×400px. Facebook: 170×170px. Discord: 128×128px. Slack: 512×512px. Trndinn outputs 512×512px which works perfectly on all platforms.</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground">Can I use an emoji as my LinkedIn profile picture?</h4>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes — emoji avatars are increasingly popular for personal branding, anonymous accounts, and placeholder profiles. Apply a professional gradient or glass style for a polished look that stands out in the feed.</p>
+                    </div>
+                  </div>
+                </section>
+              </MotionDiv>
+
+              {/* ── Need more? CTA ── */}
+              <MotionDiv
+                {...(shouldReduce ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: 0.3 } })}
+              >
+                <section
+                  aria-label="Try Trndinn"
+                  className="flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                    borderColor: "hsl(var(--tool-border))",
+                  }}
+                >
+                  <div className="max-w-md">
+                    <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">Create social media graphics, OG images, and branded assets with AI.</p>
+                    <div className="mt-5">
+                      <a href="/features" className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all" style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}>
+                        Try Trndinn <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    </div>
+                  </div>
+                </section>
+              </MotionDiv>
+
+              {/* ── More tools ── */}
+              <MotionDiv
+                {...(shouldReduce ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: 0.35 } })}
+              >
+                <section aria-label="Related tools">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                    <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                      { name: "QR Code Generator", desc: "Custom colors, PNG & SVG", href: "/tools/qr-code-generator" },
+                      { name: "Favicon Generator", desc: "All sizes in one ZIP", href: "/tools/favicon-generator" },
+                      { name: "Image Resizer", desc: "Resize for any platform", href: "/tools/resize-image" },
+                    ].map((t) => (
+                      <a key={t.name} href={t.href} className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                        <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              </MotionDiv>
+
               {/* ── SEO footer ── */}
               <Separator className="bg-[hsl(var(--tool-border))]" />
               <p className="text-xs leading-relaxed text-muted-foreground/70">
@@ -790,7 +911,7 @@ export default function ProfilePicCreatorView({ tool, alias }: Props) {
             </div>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

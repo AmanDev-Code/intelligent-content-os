@@ -3,14 +3,10 @@
 /**
  * ImageToolsSidebar — shared left navigation sidebar for ALL image tools.
  *
- * Design: matches the original converter sidebar exactly — colored format
- * badges, POPULAR / CONVERT / OPTIMIZE / EDIT / GENERATE sections, search
- * bar with ⌘K, Trndinn CTA card at bottom.
+ * Desktop: position:fixed background lane (full viewport height, always),
+ *          sticky nav inside a 210px flex column.
+ * Mobile:  hidden — tools accessed via hamburger menu.
  *
- * Sticky: position sticky, top 64px, max-height calc(100vh - 64px).
- * Mobile: Sheet trigger + SheetContent side="left".
- *
- * Shadcn primitives: Sheet, SheetContent, SheetTrigger.
  * Icons: Lucide only.
  * Accessible: nav landmark, aria-current, focus rings.
  */
@@ -20,7 +16,6 @@ import Link from "next/link";
 import {
   Search,
   ArrowRight,
-  ChevronDown,
   Layers,
   Minimize2,
   Wand2,
@@ -36,11 +31,6 @@ import {
   ArrowUpRight,
   User,
 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { CONVERSION_TOOLS } from "@/lib/image-converter-data";
 
@@ -49,6 +39,8 @@ import { CONVERSION_TOOLS } from "@/lib/image-converter-data";
 // ---------------------------------------------------------------------------
 
 const SIDEBAR_POPULAR = [
+  { slug: "jpg-to-ico",  label: "JPG → ICO",  color: "#F59E0B" },
+  { slug: "png-to-ico",  label: "PNG → ICO",  color: "#3B82F6" },
   { slug: "png-to-jpg",  label: "PNG → JPG",  color: "#EF4444" },
   { slug: "jpg-to-png",  label: "JPG → PNG",  color: "#3B82F6" },
   { slug: "webp-to-jpg", label: "WebP → JPG", color: "#10B981" },
@@ -366,61 +358,6 @@ function SidebarContent({
 }
 
 // ---------------------------------------------------------------------------
-// Mobile — "Tools" trigger opening the same sidebar as a sheet
-// ---------------------------------------------------------------------------
-
-function MobileToolsTrigger({ activeSlug }: { activeSlug: string }) {
-  const [open, setOpen] = useState(false);
-
-  // Find the active label from any section
-  const activeLabel =
-    SIDEBAR_POPULAR.find(t => t.slug === activeSlug)?.label ??
-    SIDEBAR_OPTIMIZE.find(t => t.slug === activeSlug)?.label ??
-    SIDEBAR_EDIT.find(t => t.slug === activeSlug)?.label ??
-    SIDEBAR_GENERATE.find(t => t.slug === activeSlug)?.label ??
-    CONVERSION_TOOLS.find(t => t.slug === activeSlug)
-      ? `${CONVERSION_TOOLS.find(t => t.slug === activeSlug)?.fromLabel} → ${CONVERSION_TOOLS.find(t => t.slug === activeSlug)?.toLabel}`
-      : "Tools";
-
-  return (
-    <div className="lg:hidden border-b" style={{ borderColor: "hsl(var(--tool-border))", background: "hsl(var(--tool-bg))" }}>
-      <div className="px-4 py-2.5">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <button
-              className={cn(
-                "flex w-full items-center justify-between gap-2 rounded-lg border",
-                "px-3 py-2 text-sm font-medium text-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              )}
-              style={{ borderColor: "hsl(var(--tool-border))", background: "hsl(var(--tool-surface-dim))" }}
-            >
-              <span className="flex items-center gap-2 truncate">
-                <Layers className="h-4 w-4 shrink-0" style={{ color: "#F97316" }} aria-hidden />
-                {activeLabel}
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[280px] p-0">
-            <nav
-              aria-label="Image tools navigation"
-              className="flex h-full flex-col overflow-y-auto"
-              style={{ background: "hsl(var(--tool-bg))" }}
-            >
-              <SidebarContent
-                activeSlug={activeSlug}
-                onNavigate={() => setOpen(false)}
-              />
-            </nav>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
@@ -435,28 +372,40 @@ interface ImageToolsSidebarProps {
 
 export function ImageToolsSidebar({ activeSlug, className }: ImageToolsSidebarProps) {
   return (
-    <>
-      {/* Desktop sidebar — sticky, same design as original converter sidebar */}
+    <div
+      className={cn(
+        "hidden lg:flex lg:flex-col w-[210px] shrink-0",
+        className
+      )}
+      style={{
+        background: "hsl(var(--tool-bg))",
+        borderRight: "1px solid hsl(var(--tool-border))",
+      }}
+    >
+      {/* No sticky, no height cap — sidebar content flows with page */}
       <nav
         aria-label="Image tools navigation"
-        className={cn(
-          "hidden lg:flex flex-col w-[210px] shrink-0",
-          className
-        )}
-        style={{
-          position: "sticky",
-          top: "64px",
-          height: "fit-content",
-          maxHeight: "calc(100vh - 64px)",
-          overflowY: "auto",
-          background: "hsl(var(--tool-bg))",
-        }}
+        className="flex flex-col flex-1"
       >
         <SidebarContent activeSlug={activeSlug} />
       </nav>
+    </div>
+  );
+}
 
-      {/* Mobile: sheet trigger */}
-      <MobileToolsTrigger activeSlug={activeSlug} />
-    </>
+/**
+ * SidebarWrapper — simple flex row container.
+ */
+export function SidebarWrapper({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex min-h-screen", className)}>
+      {children}
+    </div>
   );
 }

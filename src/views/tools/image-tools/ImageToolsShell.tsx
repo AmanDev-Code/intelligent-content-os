@@ -25,7 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "./ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "./ImageToolsSidebar";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -157,7 +157,7 @@ export function ImageToolsShell({
   return (
     <MarketingShell>
       {/* Sidebar lives outside the scrollable content area */}
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Left sidebar — desktop only, mobile shows pill strip inside */}
         <ImageToolsSidebar activeSlug={slug} />
 
@@ -257,7 +257,7 @@ export function ImageToolsShell({
             </div>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

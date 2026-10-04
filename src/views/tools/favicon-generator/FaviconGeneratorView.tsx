@@ -27,7 +27,6 @@ import {
   Package,
   ArrowRight,
   Upload,
-  Eye,
   Zap,
   Lock,
   Monitor,
@@ -39,6 +38,12 @@ import {
   Crop,
   Sparkles,
   Chrome,
+  ChevronUp,
+  Instagram,
+  Twitter,
+  Linkedin,
+  Youtube,
+  Plus,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,11 +54,10 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
-import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { TrustStrip, type TrustFeature } from "@/views/tools/shared/TrustStrip";
-import { StepProgressBar, type Step } from "@/views/tools/shared/StepProgressBar";
+import { TrustBadges } from "@/views/tools/shared/TrustBadges";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { useFileDownload } from "@/hooks/tools/useFileDownload";
 import { cn } from "@/lib/utils";
 import type { UtilityTool } from "@/lib/image-utility-data";
@@ -81,12 +85,12 @@ interface FaviconSize {
 }
 
 const ALL_FAVICON_SIZES: FaviconSize[] = [
-  { size: 16, name: "favicon-16x16.png", label: "16 x 16", description: "favicon.ico" },
-  { size: 32, name: "favicon-32x32.png", label: "32 x 32", description: "favicon.ico" },
-  { size: 48, name: "favicon-48x48.png", label: "48 x 48", description: "favicon.ico" },
-  { size: 180, name: "apple-touch-icon.png", label: "180 x 180", description: "Apple Touch" },
-  { size: 192, name: "android-chrome-192x192.png", label: "192 x 192", description: "Android Chrome" },
-  { size: 512, name: "android-chrome-512x512.png", label: "512 x 512", description: "Android Chrome" },
+  { size: 16, name: "favicon-16x16.png", label: "16 × 16", description: "favicon.ico" },
+  { size: 32, name: "favicon-32x32.png", label: "32 × 32", description: "" },
+  { size: 48, name: "favicon-48x48.png", label: "48 × 48", description: "" },
+  { size: 180, name: "apple-touch-icon.png", label: "180 × 180", description: "Apple Touch" },
+  { size: 192, name: "android-chrome-192x192.png", label: "192 × 192", description: "Android Chrome" },
+  { size: 512, name: "android-chrome-512x512.png", label: "512 × 512", description: "Android Chrome" },
 ];
 
 const WEBMANIFEST_CONTENT = JSON.stringify(
@@ -109,7 +113,11 @@ const WEBMANIFEST_CONTENT = JSON.stringify(
 // Canvas resize helper
 // ---------------------------------------------------------------------------
 
-async function resizeToCanvas(file: File, size: number): Promise<Blob> {
+async function resizeToCanvas(
+  file: File,
+  size: number,
+  transparent: boolean = false
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
@@ -123,6 +131,12 @@ async function resizeToCanvas(file: File, size: number): Promise<Blob> {
         URL.revokeObjectURL(objectUrl);
         return;
       }
+      if (!transparent) {
+        // Fill with white background for non-transparent mode
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
+      }
+      // transparent mode: canvas is already transparent by default
       ctx.drawImage(img, 0, 0, size, size);
       canvas.toBlob(
         (blob) => {
@@ -146,12 +160,6 @@ async function resizeToCanvas(file: File, size: number): Promise<Blob> {
 // Static data
 // ---------------------------------------------------------------------------
 
-const STEPS: Step[] = [
-  { number: 1, label: "Upload Image" },
-  { number: 2, label: "Configure" },
-  { number: 3, label: "Download" },
-];
-
 const TRUST_BADGES: TrustBadge[] = [
   { icon: Sparkles, text: "No signup required" },
   { icon: Lock, text: "100% private" },
@@ -164,15 +172,6 @@ const TRUST_FEATURES: TrustFeature[] = [
   { icon: Lock, title: "100% private", description: "Files never leave your browser" },
   { icon: Monitor, title: "Browser-based", description: "No installation needed" },
   { icon: Globe, title: "Perfect for all platforms", description: "Windows, macOS, Android, iOS" },
-];
-
-const SAMPLE_IMAGES = [
-  { src: "/tools/samples/mountain.jpg", alt: "Mountain landscape" },
-  { src: "/tools/samples/forest.jpg", alt: "Forest path" },
-  { src: "/tools/samples/ocean.jpg", alt: "Ocean waves" },
-  { src: "/tools/samples/city.jpg", alt: "City skyline" },
-  { src: "/tools/samples/flower.jpg", alt: "Flower macro" },
-  { src: "/tools/samples/abstract.jpg", alt: "Abstract art" },
 ];
 
 const ZIP_CONTENTS = [
@@ -194,102 +193,141 @@ const BROWSER_PLATFORMS = [
   { label: "iOS", icon: Smartphone },
 ];
 
+const SOCIAL_ICONS = [
+  { label: "Instagram", icon: Instagram, color: "#E4405F" },
+  { label: "X", icon: Twitter, color: "#1DA1F2" },
+  { label: "LinkedIn", icon: Linkedin, color: "#0A66C2" },
+  { label: "YouTube", icon: Youtube, color: "#FF0000" },
+];
+
 // ---------------------------------------------------------------------------
 // 3D Illustration for hero
 // ---------------------------------------------------------------------------
 
 function FaviconHeroIllustration() {
+  // A small favicon "logo" (mountain + sun) reused at every size
+  const Logo = ({ className }: { className?: string }) => (
+    <div
+      className={cn("relative overflow-hidden", className)}
+      style={{ background: "linear-gradient(160deg, #7C6FF0 0%, #4F46E5 55%, #312E81 100%)" }}
+    >
+      {/* sun */}
+      <div
+        className="absolute rounded-full"
+        style={{ width: "26%", height: "26%", right: "16%", top: "16%", background: "linear-gradient(135deg, #FDBA74, #F97316)" }}
+      />
+      {/* mountains */}
+      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full" fill="none" aria-hidden="true">
+        <polygon points="0,40 14,20 26,40" fill="#1E1B4B" opacity="0.9" />
+        <polygon points="16,40 28,16 40,40" fill="#312E81" opacity="0.95" />
+      </svg>
+    </div>
+  );
+
+  const sizeCard = (label: string, boxH: string, key: string, delay: number) => (
+    <motion.div
+      key={key}
+      className="flex flex-col items-center gap-1"
+      initial={{ opacity: 0, y: 16, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.45, ease: "easeOut" }}
+    >
+      <div
+        className={cn("rounded-lg border border-[hsl(var(--tool-border))] shadow-lg shadow-black/30", boxH)}
+        style={{ overflow: "hidden" }}
+      >
+        <Logo className="h-full w-full" />
+      </div>
+      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
+    </motion.div>
+  );
+
   return (
-    <div className="relative h-[280px] w-[360px] sm:h-[320px] sm:w-[400px]" aria-hidden="true">
+    <div className="relative h-[300px] w-[380px] sm:h-[340px] sm:w-[440px]" aria-hidden="true">
       {/* Warm glow behind */}
       <div
         className="absolute inset-0 rounded-full opacity-40 blur-3xl"
-        style={{
-          background: "radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(circle at 60% 40%, hsl(var(--primary) / 0.35) 0%, transparent 70%)" }}
       />
 
-      {/* Floating favicon size cards */}
-      {[
-        { size: "16px", x: "5%", y: "10%", delay: 0 },
-        { size: "32px", x: "35%", y: "2%", delay: 0.1 },
-        { size: "48px", x: "65%", y: "8%", delay: 0.2 },
-      ].map(({ size, x, y, delay }) => (
-        <motion.div
-          key={size}
-          className={cn(
-            "absolute flex flex-col items-center gap-1 rounded-xl p-3",
-            "bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))]",
-            "shadow-lg shadow-black/20"
-          )}
-          style={{ left: x, top: y }}
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.4 + delay, duration: 0.5, ease: "easeOut" }}
-        >
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg"
-            style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
-          >
-            <ImageIcon className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-[10px] font-bold text-muted-foreground">{size}</span>
-        </motion.div>
-      ))}
-
-      {/* Larger size cards on the bottom row */}
-      {[
-        { size: "180px", x: "8%", y: "55%", delay: 0.3 },
-        { size: "192px", x: "38%", y: "60%", delay: 0.4 },
-        { size: "512px", x: "68%", y: "55%", delay: 0.5 },
-      ].map(({ size, x, y, delay }) => (
-        <motion.div
-          key={size}
-          className={cn(
-            "absolute flex flex-col items-center gap-1 rounded-xl p-3",
-            "bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))]",
-            "shadow-lg shadow-black/20"
-          )}
-          style={{ left: x, top: y }}
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.4 + delay, duration: 0.5, ease: "easeOut" }}
-        >
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-lg"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}
-          >
-            <ImageIcon className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-[10px] font-bold text-muted-foreground">{size}</span>
-        </motion.div>
-      ))}
-
-      {/* ICO badge */}
+      {/* Source photo card (left) */}
       <motion.div
-        className={cn(
-          "absolute right-[5%] top-[35%] rounded-lg px-3 py-1.5",
-          "bg-[hsl(var(--primary)/0.15)] border border-[hsl(var(--primary)/0.3)]"
-        )}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8, duration: 0.4 }}
+        className="absolute left-[2%] top-[22%] h-24 w-24 rounded-2xl border-2 shadow-xl shadow-black/40"
+        style={{ borderColor: "#8B5CF680", overflow: "hidden", transform: "rotate(-8deg)" }}
+        initial={{ opacity: 0, x: -24, scale: 0.9 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.55, ease: "easeOut" }}
       >
-        <span className="text-xs font-bold text-[hsl(var(--primary))]">ICO</span>
+        <Logo className="h-full w-full" />
       </motion.div>
 
-      {/* Webmanifest badge */}
+      {/* Orange swoosh arrow (source → ICO) */}
+      <motion.svg
+        className="absolute left-[27%] top-[24%] h-16 w-24"
+        viewBox="0 0 100 60"
+        fill="none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+      >
+        <defs>
+          <linearGradient id="favSwoosh" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#F97316" />
+            <stop offset="100%" stopColor="#F59E0B" />
+          </linearGradient>
+        </defs>
+        <path d="M4 46 Q52 4 92 26" stroke="url(#favSwoosh)" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M84 16 L94 26 L82 32" stroke="url(#favSwoosh)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </motion.svg>
+
+      {/* ICO card (big, glowing) */}
       <motion.div
-        className={cn(
-          "absolute right-[2%] bottom-[20%] rounded-lg px-3 py-1.5",
-          "bg-[hsl(var(--tool-surface))] border border-[hsl(var(--tool-border))]",
-          "shadow-lg shadow-black/10"
-        )}
+        className="absolute left-[40%] top-[6%] flex flex-col items-center gap-1.5"
+        initial={{ opacity: 0, y: 20, scale: 0.85 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0.45, duration: 0.55, ease: "easeOut" }}
+      >
+        <div
+          className="h-20 w-20 rounded-2xl border-2"
+          style={{
+            borderColor: "#F9731699",
+            boxShadow: "0 0 30px #F9731650, 0 0 60px #F9731625",
+            overflow: "hidden",
+          }}
+        >
+          <Logo className="h-full w-full" />
+        </div>
+        <span className="text-xs font-bold tracking-wider text-foreground">ICO</span>
+      </motion.div>
+
+      {/* Top row: 16 / 32 / 48 px */}
+      <div className="absolute right-[2%] top-[6%] flex items-start gap-3">
+        {sizeCard("16px", "h-8 w-8", "16", 0.7)}
+        {sizeCard("32px", "h-9 w-9", "32", 0.78)}
+        {sizeCard("48px", "h-10 w-10", "48", 0.86)}
+      </div>
+
+      {/* Bottom row: 180 / 192 / 512 px */}
+      <div className="absolute left-[38%] bottom-[10%] flex items-end gap-3">
+        {sizeCard("180px", "h-9 w-9", "180", 0.94)}
+        {sizeCard("192px", "h-10 w-10", "192", 1.02)}
+        {sizeCard("512px", "h-12 w-12", "512", 1.1)}
+      </div>
+
+      {/* Webmanifest code card (right) */}
+      <motion.div
+        className="absolute right-[1%] top-[40%] flex flex-col items-center gap-1 rounded-xl border border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface))] px-3 py-2.5 shadow-lg shadow-black/30"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.9, duration: 0.4 }}
+        transition={{ delay: 1.0, duration: 0.4 }}
       >
-        <span className="text-[10px] font-mono text-muted-foreground">&lt;/&gt; site.webmanifest</span>
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-lg"
+          style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}
+        >
+          <span className="font-mono text-sm font-bold text-white">&lt;/&gt;</span>
+        </div>
+        <span className="text-[9px] font-medium text-muted-foreground">site.webmanifest</span>
       </motion.div>
     </div>
   );
@@ -384,19 +422,18 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
     new Set(ALL_FAVICON_SIZES.map((s) => s.size))
   );
   const [bgOption, setBgOption] = useState<"original" | "transparent">("original");
-  const [cropOption, setCropOption] = useState<"auto" | "manual">("auto");
+
+  // URL input state
+  const [urlInput, setUrlInput] = useState("");
 
   const { downloadAsZip } = useFileDownload();
 
   const eyebrow = alias?.eyebrow ?? "FREE FAVICON GENERATOR";
   const h1Prefix = alias?.h1Prefix ?? "Favicon generator";
-  const h1Highlight = alias?.h1Highlight ?? "— all sizes,";
-  const h1Suffix = alias?.h1Suffix ?? "one click.";
+  const h1Highlight = alias?.h1Highlight ?? "— all sizes, one click.";
+  const h1Suffix = alias?.h1Suffix ?? "";
   const heroDescription =
     "Upload any image and get a complete favicon package: favicon.ico (16/32/48px), apple-touch-icon (180px), android-chrome (192px and 512px), and a site.webmanifest — all in a single ZIP download.";
-
-  // Determine active step
-  const activeStep = isDone ? 3 : sourceFile ? 2 : 1;
 
   const selectedSizes = useMemo(
     () => ALL_FAVICON_SIZES.filter((s) => enabledSizes.has(s.size)),
@@ -416,6 +453,29 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
   }, []);
+
+  const handleLoadUrl = useCallback(async () => {
+    const url = urlInput.trim();
+    if (!url) return;
+    setError("");
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch image");
+      const blob = await res.blob();
+      if (!blob.type.startsWith("image/"))
+        throw new Error("URL does not point to an image");
+      const name = url.split("/").pop()?.split("?")[0] || "image.png";
+      const file = new File([blob], name, { type: blob.type });
+      handleFilesSelected([file]);
+      setActiveTab("upload");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Failed to load image from URL. Make sure it's a direct image link."
+      );
+    }
+  }, [urlInput, handleFilesSelected]);
 
   const toggleSize = useCallback((size: number) => {
     setEnabledSizes((prev) => {
@@ -440,9 +500,10 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
       const total = selectedSizes.length;
       const previews = new Map<number, string>();
 
+      const useTransparent = bgOption === "transparent";
       for (let i = 0; i < selectedSizes.length; i++) {
         const { size, name } = selectedSizes[i];
-        const blob = await resizeToCanvas(sourceFile, size);
+        const blob = await resizeToCanvas(sourceFile, size, useTransparent);
         files.push(new File([blob], name, { type: "image/png" }));
         // Store preview URL for result grid
         previews.set(size, URL.createObjectURL(blob));
@@ -469,7 +530,7 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
     } finally {
       setIsProcessing(false);
     }
-  }, [sourceFile, selectedSizes, downloadAsZip]);
+  }, [sourceFile, selectedSizes, bgOption, downloadAsZip]);
 
   const handleReset = useCallback(() => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -485,38 +546,70 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Sidebar */}
         <ImageToolsSidebar activeSlug="favicon-generator" />
 
         {/* Main content */}
-        <div className="flex-1 min-w-0 bg-[hsl(var(--tool-bg))]">
-          {/* ── Hero ── */}
-          <ToolHero
-            eyebrow={eyebrow}
-            h1Prefix={h1Prefix}
-            h1Highlight={h1Highlight}
-            h1Suffix={h1Suffix}
-            description={heroDescription}
-            trustBadges={TRUST_BADGES}
+        <div className="flex-1 min-w-0 overflow-x-hidden bg-[hsl(var(--tool-bg))]">
+          {/* ── Hero (converter skeleton: left text column + absolute-right illustration) ── */}
+          <section
+            className="relative overflow-x-clip px-6 pb-8 pt-8 lg:px-10 lg:pt-10"
+            style={{
+              background: "linear-gradient(180deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-bg)) 100%)",
+            }}
           >
-            <FaviconHeroIllustration />
-          </ToolHero>
+            {/* 3D illustration — absolute right on desktop */}
+            <div
+              className="pointer-events-none absolute right-0 top-0 hidden h-full w-[46%] items-center justify-center pr-6 lg:flex"
+              aria-hidden="true"
+            >
+              <FaviconHeroIllustration />
+            </div>
+
+            {/* Left column */}
+            <div className="relative z-10 max-w-[680px]">
+              <span className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--primary))]">
+                {eyebrow}
+              </span>
+              <h1 className="mt-3 font-display text-[clamp(1.75rem,4.5vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-foreground">
+                {h1Prefix}{" "}
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{ backgroundImage: "linear-gradient(90deg, #F97316, #F59E0B)" }}
+                >
+                  {h1Highlight}
+                </span>
+                {h1Suffix ? <> {h1Suffix}</> : null}
+              </h1>
+              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
+                {heroDescription}
+              </p>
+              <div className="mt-5">
+                <TrustBadges badges={TRUST_BADGES} className="sm:justify-start" />
+              </div>
+
+              {/* Illustration on mobile (below text) */}
+              <div className="mt-8 flex justify-center lg:hidden">
+                <FaviconHeroIllustration />
+              </div>
+            </div>
+          </section>
 
           <main
             id="main-content"
-            className="mx-auto w-full max-w-[1200px] px-4 pb-16 sm:px-6 lg:px-8 space-y-10"
+            className="px-6 pb-16 pt-6 lg:px-10 space-y-10"
             aria-label="Favicon Generator tool"
           >
-            {/* ── Step Progress Bar ── */}
-            <StepProgressBar steps={STEPS} activeStep={activeStep} />
-
             {/* ── Tool Workspace ── */}
             <Card
               className={cn(
-                "overflow-hidden border-[hsl(var(--tool-border))]",
-                "bg-[hsl(var(--tool-surface))]"
+                "overflow-hidden bg-[hsl(var(--tool-surface))]"
               )}
+              style={{
+                border: "1px solid #F9731640",
+                boxShadow: "0 0 40px #F9731618, 0 0 80px #8B5CF610",
+              }}
             >
               <CardContent className="p-0">
                 {/* Upload tabs header */}
@@ -528,7 +621,7 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                 <div className="grid grid-cols-1 gap-4 p-4 sm:p-6 lg:grid-cols-3">
                   {/* Left: Upload / Dropzone */}
                   <div className="space-y-4">
-                    {activeTab === "upload" ? (
+                    {activeTab === "upload" && (
                       <ImageDropzone
                         accept="image/png,image/jpeg,image/jpg,image/svg+xml"
                         multiple={false}
@@ -536,53 +629,42 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                         onFilesSelected={handleFilesSelected}
                         disabled={isProcessing}
                       />
-                    ) : (
+                    )}
+                    {activeTab === "url" && (
                       <div className="space-y-3">
                         <label htmlFor="favicon-url-input" className="text-sm font-medium text-foreground">
                           Image URL
                         </label>
-                        <input
-                          id="favicon-url-input"
-                          type="url"
-                          placeholder="https://example.com/logo.png"
-                          className={cn(
-                            "w-full rounded-lg border border-[hsl(var(--tool-border))] px-4 py-3",
-                            "bg-[hsl(var(--tool-surface-dim))] text-foreground text-sm",
-                            "placeholder:text-muted-foreground/60",
-                            "focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-transparent"
-                          )}
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            id="favicon-url-input"
+                            type="url"
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleLoadUrl()}
+                            placeholder="https://example.com/logo.png"
+                            className={cn(
+                              "w-full rounded-lg border border-[hsl(var(--tool-border))] px-4 py-3",
+                              "bg-[hsl(var(--tool-surface-dim))] text-foreground text-sm",
+                              "placeholder:text-muted-foreground/60",
+                              "focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))] focus:border-transparent"
+                            )}
+                          />
+                          <Button
+                            size="sm"
+                            onClick={handleLoadUrl}
+                            disabled={!urlInput.trim()}
+                            className="shrink-0 self-end"
+                            aria-label="Load image from URL"
+                          >
+                            Load
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Paste a direct image URL to generate favicons from.
+                        </p>
                       </div>
                     )}
-
-                    {/* Sample image strip */}
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-                      {SAMPLE_IMAGES.map((sample, i) => (
-                        <div
-                          key={i}
-                          className={cn(
-                            "h-10 w-10 shrink-0 rounded-lg overflow-hidden",
-                            "border border-[hsl(var(--tool-border))]",
-                            "bg-[hsl(var(--tool-surface-dim))]",
-                            "cursor-pointer hover:border-[hsl(var(--primary)/0.5)] transition-colors"
-                          )}
-                        >
-                          <div className="flex h-full w-full items-center justify-center">
-                            <ImageIcon className="h-4 w-4 text-muted-foreground/40" aria-hidden="true" />
-                          </div>
-                        </div>
-                      ))}
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                          "border border-dashed border-[hsl(var(--tool-border))]",
-                          "text-muted-foreground/40 hover:text-muted-foreground hover:border-[hsl(var(--tool-border))]",
-                          "transition-colors cursor-pointer"
-                        )}
-                      >
-                        <span className="text-lg">+</span>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Center: Preview (Square crop) */}
@@ -621,21 +703,14 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                       )}
                     </div>
 
-                    {/* Auto crop button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))] text-foreground hover:bg-[hsl(var(--tool-surface))]"
-                      disabled={!sourceFile}
-                    >
-                      <Sparkles className="mr-2 h-3.5 w-3.5 text-[hsl(var(--primary))]" aria-hidden="true" />
-                      Auto crop &amp; optimize
-                    </Button>
                   </div>
 
                   {/* Right: Advanced Options */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-foreground">Advanced Options</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-foreground">Advanced Options</h3>
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    </div>
 
                     {/* Icon Sizes */}
                     <div className="space-y-2.5">
@@ -655,8 +730,10 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                               htmlFor={`size-${size}`}
                               className="text-xs text-foreground cursor-pointer"
                             >
-                              {label}{" "}
-                              <span className="text-muted-foreground">({description})</span>
+                              {label}
+                              {description && (
+                                <span className="text-muted-foreground"> ({description})</span>
+                              )}
                             </Label>
                           </div>
                         ))}
@@ -706,48 +783,6 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                       </div>
                     </div>
 
-                    <Separator className="bg-[hsl(var(--tool-border))]" />
-
-                    {/* Crop & Fit */}
-                    <div className="space-y-2.5">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                        Crop &amp; Fit
-                      </p>
-                      <div className="space-y-2">
-                        {(
-                          [
-                            { id: "auto", label: "Auto center (recommended)" },
-                            { id: "manual", label: "Manual adjust" },
-                          ] as const
-                        ).map(({ id, label }) => (
-                          <label key={id} className="flex items-center gap-2.5 cursor-pointer">
-                            <div
-                              className={cn(
-                                "h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors",
-                                cropOption === id
-                                  ? "border-[hsl(var(--primary))]"
-                                  : "border-[hsl(var(--tool-border))]"
-                              )}
-                              onClick={() => setCropOption(id)}
-                              role="radio"
-                              aria-checked={cropOption === id}
-                              tabIndex={0}
-                              onKeyDown={(e) => {
-                                if (e.key === " " || e.key === "Enter") setCropOption(id);
-                              }}
-                            >
-                              {cropOption === id && (
-                                <div
-                                  className="h-2 w-2 rounded-full"
-                                  style={{ background: "linear-gradient(135deg, #F97316, #F59E0B)" }}
-                                />
-                              )}
-                            </div>
-                            <span className="text-xs text-foreground">{label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -864,14 +899,6 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
                         <Download className="h-4 w-4" aria-hidden="true" />
                         Download All Files (ZIP)
                       </button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-[hsl(var(--tool-border))] text-foreground"
-                      >
-                        <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
-                        Preview Files
-                      </Button>
                     </div>
                   </div>
 
@@ -1004,37 +1031,101 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
               </section>
             </div>
 
+            {/* ── AEO: What is a Favicon? ── */}
+            <section
+              aria-labelledby="what-is-favicon-heading"
+              className={cn(
+                "rounded-xl border border-[hsl(var(--tool-border))] p-6",
+                "bg-[hsl(var(--tool-surface))]"
+              )}
+            >
+              <h2 id="what-is-favicon-heading" className="text-lg font-bold text-foreground mb-4">
+                What is a favicon?
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                A favicon (short for &quot;favorite icon&quot;) is the small icon displayed in browser tabs, bookmarks, history lists, and mobile home screens next to your site&apos;s name. Modern browsers expect multiple sizes — from 16x16 for tab icons up to 512x512 for Android splash screens. A complete favicon package includes an ICO file (multi-size), an Apple Touch Icon (180x180), Android Chrome icons (192 and 512), and a site.webmanifest that tells browsers where to find them.
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                According to HTTP Archive data, over 60% of the top one million websites serve a properly configured favicon [HTTP Archive, 2024]. Sites without one show a generic globe or blank icon, which reduces perceived credibility and makes tabs harder to identify.
+              </p>
+              <h3 className="text-base font-semibold text-foreground mt-6 mb-3">Frequently asked questions</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">What size should a favicon be?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">You need multiple sizes: 16x16 and 32x32 for browser tabs, 48x48 for Windows shortcuts, 180x180 for iOS, and 192x192 plus 512x512 for Android. Trndinn generates all of these from a single image.</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Do I need a site.webmanifest file?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes, if you want your site to work as a Progressive Web App (PWA) or display correctly on Android home screens. The manifest tells the browser which icons to use, your app name, and theme colors. Trndinn includes one in every download.</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Can I use a transparent background for my favicon?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes. Select &quot;Make transparent&quot; in the Background options before generating. Transparent favicons work well for logos and icons but may look off for photos — test in a browser tab to confirm it looks right.</p>
+                </div>
+              </div>
+            </section>
+
             {/* ── Need more? CTA ── */}
             <section
               aria-label="Try Trndinn"
               className={cn(
-                "rounded-xl p-6 sm:p-8 text-center",
+                "flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8",
                 "border border-[hsl(var(--tool-border))]"
               )}
               style={{
                 background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
               }}
             >
-              <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                Need more?
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-                Create social media icons, OG images, and brand assets with AI.
-              </p>
-              <div className="mt-5">
-                <button
+              {/* Left: text + purple CTA */}
+              <div className="max-w-md">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                  Need more?
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Create social media icons, OG images, and brand assets with AI.
+                </p>
+                <div className="mt-5">
+                  <button
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-lg px-6 py-3",
+                      "text-sm font-bold text-white",
+                      "hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                    )}
+                    style={{
+                      background: "linear-gradient(135deg, #8B5CF6, #6366F1)",
+                    }}
+                  >
+                    Try Trndinn
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: social icons */}
+              <div className="flex items-center gap-3">
+                {SOCIAL_ICONS.map(({ label, icon: Icon, color }) => (
+                  <div
+                    key={label}
+                    className={cn(
+                      "flex h-12 w-12 items-center justify-center rounded-xl",
+                      "border border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))]"
+                    )}
+                    title={label}
+                    aria-hidden="true"
+                  >
+                    <Icon className="h-5 w-5" style={{ color }} />
+                  </div>
+                ))}
+                <div
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-lg px-6 py-3",
-                    "text-sm font-bold text-white",
-                    "hover:shadow-lg hover:shadow-orange-500/20 transition-all"
+                    "flex h-12 w-12 items-center justify-center rounded-xl",
+                    "border border-dashed border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))]",
+                    "text-muted-foreground/50"
                   )}
-                  style={{
-                    background: "linear-gradient(135deg, #F97316, #F59E0B)",
-                  }}
+                  aria-hidden="true"
                 >
-                  Try Trndinn
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </button>
+                  <Plus className="h-5 w-5" />
+                </div>
               </div>
             </section>
 
@@ -1098,7 +1189,7 @@ export default function FaviconGeneratorView({ tool, alias }: Props) {
             </p>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

@@ -20,6 +20,8 @@ import { TrustBadges, type TrustBadge } from "./TrustBadges";
 export interface ToolHeroProps {
   /** Small pill badge text above the headline (e.g. "FREE AI BACKGROUND REMOVER") */
   eyebrow: string;
+  /** Eyebrow rendering: bordered pill (default) or plain orange text */
+  eyebrowVariant?: "pill" | "text";
   /** Text before the highlighted word */
   h1Prefix: string;
   /** The word(s) rendered in orange gradient */
@@ -87,6 +89,7 @@ function usePrefersReducedMotion() {
 
 export function ToolHero({
   eyebrow,
+  eyebrowVariant = "pill",
   h1Prefix,
   h1Highlight,
   h1Suffix,
@@ -103,7 +106,7 @@ export function ToolHero({
     <section
       aria-labelledby="tool-hero-heading"
       className={cn(
-        "relative overflow-hidden px-4 pt-8 pb-6 sm:pt-14 sm:pb-10",
+        "relative overflow-x-clip px-4 pt-8 pb-6 sm:pt-10 sm:pb-8",
         className
       )}
     >
@@ -126,17 +129,23 @@ export function ToolHero({
         >
           {/* Eyebrow badge */}
           <motion.div variants={v(fadeUp)}>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-4 py-1.5",
-                "border border-[hsl(var(--primary)/0.3)]",
-                "bg-[hsl(var(--primary)/0.08)]",
-                "text-xs font-bold uppercase tracking-widest",
-                "text-[hsl(var(--primary))]"
-              )}
-            >
-              {eyebrow}
-            </span>
+            {eyebrowVariant === "text" ? (
+              <span className="text-xs font-bold uppercase tracking-widest text-[hsl(var(--primary))]">
+                {eyebrow}
+              </span>
+            ) : (
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-4 py-1.5",
+                  "border border-[hsl(var(--primary)/0.3)]",
+                  "bg-[hsl(var(--primary)/0.08)]",
+                  "text-xs font-bold uppercase tracking-widest",
+                  "text-[hsl(var(--primary))]"
+                )}
+              >
+                {eyebrow}
+              </span>
+            )}
           </motion.div>
 
           {/* Headline */}
@@ -144,8 +153,8 @@ export function ToolHero({
             id="tool-hero-heading"
             variants={v(fadeUpDelayed(0.1))}
             className={cn(
-              "mt-6 font-display font-bold leading-[1.1] tracking-tight text-foreground",
-              "text-[clamp(2rem,5vw,3.75rem)]"
+              "mt-4 font-display font-bold leading-[1.08] tracking-tight text-foreground",
+              "text-[clamp(1.75rem,4.5vw,3.25rem)]"
             )}
           >
             {h1Prefix}{" "}
@@ -164,7 +173,7 @@ export function ToolHero({
           {/* Description */}
           <motion.p
             variants={v(fadeUpDelayed(0.2))}
-            className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+            className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground"
           >
             {description}
           </motion.p>
@@ -173,7 +182,7 @@ export function ToolHero({
           {trustBadges && trustBadges.length > 0 && (
             <motion.div
               variants={v(fadeUpDelayed(0.3))}
-              className="mt-6 w-full"
+              className="mt-5 w-full"
             >
               <TrustBadges
                 badges={trustBadges}

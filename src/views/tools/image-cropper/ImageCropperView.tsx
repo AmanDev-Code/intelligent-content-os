@@ -54,7 +54,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { StepProgressBar } from "@/views/tools/shared/StepProgressBar";
 import { TrustStrip } from "@/views/tools/shared/TrustStrip";
@@ -459,7 +459,7 @@ export default function ImageCropperView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Sidebar */}
         <ImageToolsSidebar activeSlug={tool.slug} />
 
@@ -952,6 +952,106 @@ export default function ImageCropperView({ tool, alias }: Props) {
               <TrustStrip features={TRUST_FEATURES} />
             </motion.div>
 
+            {/* ── AEO: What is Image Cropping? ── */}
+            <section
+              aria-labelledby="what-is-crop-heading"
+              className="mt-8 rounded-xl border p-6"
+              style={{
+                background: "hsl(var(--tool-surface))",
+                borderColor: "hsl(var(--tool-border))",
+              }}
+            >
+              <h2 id="what-is-crop-heading" className="text-lg font-bold text-foreground mb-4">
+                What is image cropping?
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                Image cropping is the process of removing unwanted outer areas from a photo to improve composition, change the aspect ratio, or focus on a specific subject. Unlike resizing, cropping removes pixels rather than scaling them — the remaining area retains its original resolution and quality.
+              </p>
+              <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                Trndinn&apos;s Image Cropper runs 100% in your browser using the HTML5 Canvas API. Your photos never leave your device. Supports pixel-perfect coordinates, preset aspect ratios (1:1, 16:9, 4:3, 3:2, 9:16), and outputs in JPG, PNG, WebP, GIF, BMP, and TIFF. Over 3.2 billion images are shared on social media daily [Photutorial, 2025], and proper cropping is the single fastest way to improve visual impact.
+              </p>
+
+              <h3 className="text-base font-semibold text-foreground mt-6 mb-3">
+                Frequently asked questions
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">How do I crop an image to exact pixel dimensions?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Upload your image to Trndinn&apos;s Image Cropper, enter the exact Width and Height in pixels (plus optional X/Y offset), and click &quot;Crop &amp; Download.&quot; The output file is exactly the dimensions you specified.</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">What aspect ratio should I use for Instagram?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Instagram supports 1:1 (square posts, 1080×1080), 4:5 (portrait, 1080×1350), and 16:9 (landscape, 1080×608). Stories and Reels use 9:16 (1080×1920). Use the preset buttons in our cropper to snap to these ratios instantly.</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Does cropping reduce image quality?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">No — cropping preserves the original pixel data of the selected area. Only the removed outer portions are discarded. The cropped region remains at full resolution.</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Can I crop images without uploading to a server?</h4>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes. Trndinn&apos;s Image Cropper processes everything locally in your browser. Your images never leave your device — it works offline too.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* ── Need more? CTA ── */}
+            <section
+              aria-label="Try Trndinn"
+              className="mt-6 flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                borderColor: "hsl(var(--tool-border))",
+              }}
+            >
+              <div className="max-w-md">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Create social media graphics, OG images, and branded assets with AI.
+                </p>
+                <div className="mt-5">
+                  <a
+                    href="/features"
+                    className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                    style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}
+                  >
+                    Try Trndinn
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            {/* ── More tools you'll love ── */}
+            <section aria-label="Related tools" className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">
+                  View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </a>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { name: "Image Resizer", desc: "Resize for any platform", href: "/tools/resize-image" },
+                  { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                  { name: "Watermark Tool", desc: "Add text or image watermarks", href: "/tools/watermark-image" },
+                  { name: "Image Rotator", desc: "Rotate and flip images", href: "/tools/rotate-image" },
+                ].map((t) => (
+                  <a
+                    key={t.name}
+                    href={t.href}
+                    className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group"
+                    style={{
+                      background: "hsl(var(--tool-surface))",
+                      borderColor: "hsl(var(--tool-border))",
+                    }}
+                  >
+                    <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+
             {/* ── SEO footer note ── */}
             <div className="pb-8 px-2">
               <p className="text-xs leading-relaxed text-muted-foreground/60">
@@ -962,7 +1062,7 @@ export default function ImageCropperView({ tool, alias }: Props) {
             </div>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

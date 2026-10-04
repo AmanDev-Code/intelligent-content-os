@@ -40,6 +40,7 @@ import {
   MonitorSmartphone,
   QrCode,
   ChevronDown,
+  ArrowRight,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,7 +57,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { StepProgressBar, type Step } from "@/views/tools/shared/StepProgressBar";
 import { TrustStrip, type TrustFeature } from "@/views/tools/shared/TrustStrip";
@@ -99,7 +100,7 @@ const STEPS: Step[] = [
 const TRUST_FEATURES: TrustFeature[] = [
   { icon: Zap, title: "Instant generation", description: "Create QR codes in seconds." },
   { icon: Shield, title: "100% private", description: "Everything runs in your browser." },
-  { icon: Palette, title: "Fully customizable", description: "Colors, logo, style, and more." },
+  { icon: Palette, title: "Fully customizable", description: "Colors, error correction, and more." },
   { icon: MonitorSmartphone, title: "Multiple formats", description: "Download as PNG or vector SVG." },
 ];
 
@@ -364,7 +365,7 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Sidebar */}
         <ImageToolsSidebar activeSlug="qr-code-generator" />
 
@@ -523,7 +524,7 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
                       {/* ── Customize Design tab ── */}
                       <TabsContent value="customize" className="mt-4 space-y-5">
                         {/* Colors row */}
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                           {/* Foreground Color */}
                           <div className="space-y-2.5">
                             <Label className="text-xs font-semibold text-muted-foreground">
@@ -594,86 +595,6 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
                                   {bgColor}
                                 </span>
                               </div>
-                            </div>
-                          </div>
-
-                          {/* Style (dot patterns — visual only, since qrcode lib has limited style support) */}
-                          <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold text-muted-foreground">
-                              Style
-                            </Label>
-                            <div className="grid grid-cols-4 gap-1.5">
-                              {[
-                                "■ ■\n■ ■",
-                                "● ●\n● ●",
-                                "◆ ◆\n◆ ◆",
-                                "▪ ▪\n▪ ▪",
-                              ].map((pattern, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-lg border text-[8px] leading-none transition-all",
-                                    i === 0
-                                      ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)]"
-                                      : "border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))] hover:border-[hsl(var(--primary)/0.3)]"
-                                  )}
-                                  aria-label={`QR style ${i + 1}`}
-                                >
-                                  <span className="text-foreground whitespace-pre font-mono">
-                                    {pattern}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Corner Style & Dots Style */}
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                          <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold text-muted-foreground">
-                              Corner Style
-                            </Label>
-                            <div className="flex gap-1.5">
-                              {["□", "◻", "◇"].map((s, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-lg border text-lg transition-all",
-                                    i === 0
-                                      ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)]"
-                                      : "border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))] hover:border-[hsl(var(--primary)/0.3)]"
-                                  )}
-                                  aria-label={`Corner style ${i + 1}`}
-                                >
-                                  <span className="text-foreground">{s}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold text-muted-foreground">
-                              Dots Style
-                            </Label>
-                            <div className="flex gap-1.5">
-                              {["⊞", "⊡", "▦", "▧", "▨", "▩"].map((s, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-lg border text-lg transition-all",
-                                    i === 0
-                                      ? "border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.1)]"
-                                      : "border-[hsl(var(--tool-border))] bg-[hsl(var(--tool-surface-dim))] hover:border-[hsl(var(--primary)/0.3)]"
-                                  )}
-                                  aria-label={`Dots style ${i + 1}`}
-                                >
-                                  <span className="text-foreground">{s}</span>
-                                </button>
-                              ))}
                             </div>
                           </div>
                         </div>
@@ -1012,6 +933,112 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
               </section>
             )}
 
+            {/* ─── AEO: What is a QR Code? ─── */}
+            <section
+              aria-labelledby="what-is-qr-heading"
+              className="mx-auto max-w-[1200px] px-4 pb-8 sm:px-6 lg:px-8"
+            >
+              <div
+                className="rounded-xl border p-6"
+                style={{
+                  background: "hsl(var(--tool-surface))",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <h2 id="what-is-qr-heading" className="text-lg font-bold text-foreground mb-4">
+                  What is a QR code?
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  A QR (Quick Response) code is a two-dimensional barcode that stores data as a pattern of black and white squares. Invented by Denso Wave in 1994 for automotive tracking, QR codes are now used globally for contactless payments, marketing, and information sharing. Over 89% of smartphone users have scanned a QR code at least once [Statista, 2025].
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  Trndinn&apos;s QR Code Generator creates high-resolution QR codes entirely in your browser — no server upload, no signup, no watermark. Customize foreground and background colors, adjust error correction levels, and download as lossless PNG or scalable SVG for print.
+                </p>
+                <h3 className="text-base font-semibold text-foreground mt-6 mb-3">
+                  Common questions about QR codes
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Do QR codes expire?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Static QR codes (like the ones Trndinn generates) never expire. The data is encoded directly in the pattern — as long as the destination URL exists, the code works forever.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">What&apos;s the maximum data a QR code can hold?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">A single QR code can store up to 4,296 alphanumeric characters or 7,089 numeric digits. For URLs, keep them under 2,000 characters for reliable scanning across all devices.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Should I download PNG or SVG?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Use PNG for digital screens (social media, websites, presentations). Use SVG for print materials (business cards, posters, packaging) — SVG scales to any size without losing quality.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ─── Need more? CTA ─── */}
+            <section
+              aria-label="Try Trndinn"
+              className="mx-auto max-w-[1200px] px-4 pb-8 sm:px-6 lg:px-8"
+            >
+              <div
+                className="flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <div className="max-w-md">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Create social media graphics, OG images, and branded assets with AI.
+                  </p>
+                  <div className="mt-5">
+                    <a
+                      href="/features"
+                      className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                      style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}
+                    >
+                      Try Trndinn
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ─── More tools you'll love ─── */}
+            <section
+              aria-label="Related tools"
+              className="mx-auto max-w-[1200px] px-4 pb-8 sm:px-6 lg:px-8"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">
+                  View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </a>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { name: "Favicon Generator", desc: "All sizes in one ZIP", href: "/tools/favicon-generator" },
+                  { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                  { name: "Image Resizer", desc: "Resize for any platform", href: "/tools/resize-image" },
+                  { name: "Image to Base64", desc: "Encode images as Base64", href: "/tools/image-to-base64" },
+                ].map((t) => (
+                  <a
+                    key={t.name}
+                    href={t.href}
+                    className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group"
+                    style={{
+                      background: "hsl(var(--tool-surface))",
+                      borderColor: "hsl(var(--tool-border))",
+                    }}
+                  >
+                    <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+
             {/* ─── SEO footer ─── */}
             <div className="mx-auto max-w-[1200px] px-4 pb-12 sm:px-6 lg:px-8">
               <Separator
@@ -1026,7 +1053,7 @@ export default function QRCodeGeneratorView({ tool, alias }: Props) {
             </div>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

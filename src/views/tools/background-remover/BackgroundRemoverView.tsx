@@ -66,7 +66,7 @@ import {
 } from "@/components/ui/accordion";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { TrustBadges, type TrustBadge } from "@/views/tools/shared/TrustBadges";
 import { StepProgressBar, type Step } from "@/views/tools/shared/StepProgressBar";
@@ -95,7 +95,6 @@ type BgMode = "transparent" | "solid" | "custom";
 const HERO_TRUST_BADGES: TrustBadge[] = [
   { icon: Zap, text: "No signup required" },
   { icon: Shield, text: "100% private" },
-  { icon: CloudOff, text: "Images never uploaded" },
   { icon: ScanLine, text: "AI runs in browser" },
   { icon: Star, text: "High quality edges" },
 ];
@@ -408,7 +407,7 @@ export default function BackgroundRemoverView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Sidebar */}
         <ImageToolsSidebar activeSlug="background-remover" />
 
@@ -1125,8 +1124,109 @@ export default function BackgroundRemoverView({ tool, alias }: Props) {
               </AnimatedSection>
             )}
 
-            {/* ── SEO footer ── */}
+            {/* ── AEO: What is Background Removal? ── */}
             <AnimatedSection delay={0.35} className="mt-10">
+              <section
+                aria-labelledby="what-is-bg-heading"
+                className="rounded-xl border p-6"
+                style={{
+                  background: "hsl(var(--tool-surface))",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <h2 id="what-is-bg-heading" className="text-lg font-bold text-foreground mb-4">
+                  What is AI background removal?
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  AI background removal is the process of automatically separating the foreground subject (a person, product, or object) from its background using machine learning. Trndinn uses an ONNX-based neural network that runs entirely in your browser via WebAssembly — your images never leave your device. The model produces clean, high-quality edge masks comparable to manual cutouts in Photoshop.
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  Background removal is essential for e-commerce product photography (Amazon requires white backgrounds), social media content creation, professional headshots, and graphic design. The global image editing software market is projected to reach $1.27 billion by 2028 [Grand View Research, 2024], driven largely by AI-powered tools that eliminate manual masking.
+                </p>
+                <h3 className="text-base font-semibold text-foreground mt-6 mb-3">
+                  Common questions
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">How accurate is AI background removal?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Trndinn&apos;s ONNX model handles complex edges like hair, fur, and semi-transparent objects with near-professional accuracy. For best results, use images with clear contrast between subject and background.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Is my data safe?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">100% safe. The AI model runs locally in your browser using WebAssembly. Your images are never uploaded to any server — processing happens entirely on your device, even offline.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">What output formats are supported?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Download as transparent PNG (recommended), JPG with a solid background color, or WebP for smaller file sizes. PNG preserves the transparent background for use in design tools.</p>
+                  </div>
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* ── Need more? CTA ── */}
+            <AnimatedSection delay={0.4} className="mt-10">
+              <section
+                aria-label="Try Trndinn"
+                className="flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <div className="max-w-md">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Create social media graphics, OG images, and branded assets with AI.
+                  </p>
+                  <div className="mt-5">
+                    <a
+                      href="/features"
+                      className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all"
+                      style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}
+                    >
+                      Try Trndinn
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* ── More tools you'll love ── */}
+            <AnimatedSection delay={0.45} className="mt-10">
+              <section aria-label="Related tools">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                  <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">
+                    View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { name: "Profile Pic Creator", desc: "Emoji avatars, any size", href: "/tools/profile-pic-creator" },
+                    { name: "Image Resizer", desc: "Resize for any platform", href: "/tools/resize-image" },
+                    { name: "Image Cropper", desc: "Crop to exact dimensions", href: "/tools/image-cropper" },
+                    { name: "Favicon Generator", desc: "All sizes in one ZIP", href: "/tools/favicon-generator" },
+                  ].map((t) => (
+                    <a
+                      key={t.name}
+                      href={t.href}
+                      className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group"
+                      style={{
+                        background: "hsl(var(--tool-surface))",
+                        borderColor: "hsl(var(--tool-border))",
+                      }}
+                    >
+                      <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            </AnimatedSection>
+
+            {/* ── SEO footer ── */}
+            <AnimatedSection delay={0.5} className="mt-10">
               <Separator className="mb-6" />
               <p className="text-xs leading-relaxed text-muted-foreground/70">
                 Trndinn&apos;s Background Remover is a free, browser-based AI
@@ -1137,7 +1237,7 @@ export default function BackgroundRemoverView({ tool, alias }: Props) {
             </AnimatedSection>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

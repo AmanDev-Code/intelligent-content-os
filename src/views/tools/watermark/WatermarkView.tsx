@@ -35,21 +35,18 @@ import {
   Lock,
   Wifi,
   ArrowRight,
-  Plus,
   Maximize2,
-  ToggleLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ImageDropzone } from "@/views/tools/shared/ImageDropzone";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { StepProgressBar, type Step } from "@/views/tools/shared/StepProgressBar";
@@ -134,14 +131,6 @@ const POSITION_GRID: { value: WatermarkPosition; row: number; col: number }[] = 
   { value: "bottom-right", row: 2, col: 2 },
 ];
 
-const SAMPLE_IMAGES = [
-  "/samples/mountain-sunset.jpg",
-  "/samples/city-skyline.jpg",
-  "/samples/nature-forest.jpg",
-  "/samples/ocean-beach.jpg",
-  "/samples/portrait-woman.jpg",
-];
-
 // ---------------------------------------------------------------------------
 // Animation variants
 // ---------------------------------------------------------------------------
@@ -186,71 +175,156 @@ function formatBytes(bytes: number): string {
 
 function WatermarkHeroIllustration() {
   return (
-    <div className="relative w-[340px] h-[280px]" aria-hidden="true">
-      {/* Glow */}
+    <div className="relative w-[320px] h-[260px]" aria-hidden="true">
+      {/* CSS keyframes for float animation + reduced-motion */}
+      <style>{`
+        @keyframes wm-hero-float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .wm-float { animation: none !important; }
+        }
+      `}</style>
+
+      {/* Ambient glow behind the card */}
       <div
-        className="absolute inset-0 rounded-3xl blur-3xl opacity-30"
+        className="absolute inset-0 rounded-3xl blur-3xl opacity-25"
         style={{
-          background: "radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)",
+          background:
+            "radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)",
         }}
       />
-      {/* Photo card */}
+
+      {/* Photo card with landscape scene */}
       <div
-        className="absolute left-4 top-6 w-[240px] h-[160px] rounded-2xl overflow-hidden border-2 shadow-2xl"
+        className="wm-float absolute left-2 top-4 w-[220px] h-[160px] rounded-lg overflow-hidden border-2 shadow-2xl"
         style={{
           borderColor: "hsl(var(--tool-border))",
-          background: "linear-gradient(135deg, hsl(var(--tool-surface)), hsl(var(--tool-surface-dim)))",
+          animation: "wm-hero-float 4s ease-in-out infinite",
         }}
       >
-        <div className="w-full h-full flex items-center justify-center">
-          <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
-        </div>
-        {/* Watermark overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        {/* Gradient sky */}
+        <svg
+          viewBox="0 0 220 160"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="absolute inset-0 w-full h-full"
+          preserveAspectRatio="none"
+        >
+          {/* Sky gradient */}
+          <defs>
+            <linearGradient id="wm-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary) / 0.25)" />
+              <stop offset="100%" stopColor="hsl(var(--tool-surface))" />
+            </linearGradient>
+            <linearGradient id="wm-mountain-far" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--muted-foreground) / 0.25)" />
+              <stop offset="100%" stopColor="hsl(var(--muted-foreground) / 0.1)" />
+            </linearGradient>
+            <linearGradient id="wm-mountain-near" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+              <stop offset="100%" stopColor="hsl(var(--primary) / 0.1)" />
+            </linearGradient>
+            <linearGradient id="wm-ground" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--tool-surface))" />
+              <stop offset="100%" stopColor="hsl(var(--tool-surface) / 0.8)" />
+            </linearGradient>
+          </defs>
+          {/* Sky fill */}
+          <rect width="220" height="160" fill="url(#wm-sky)" />
+          {/* Sun/moon circle */}
+          <circle
+            cx="170"
+            cy="40"
+            r="18"
+            fill="hsl(var(--primary) / 0.15)"
+          />
+          <circle
+            cx="170"
+            cy="40"
+            r="12"
+            fill="hsl(var(--primary) / 0.25)"
+          />
+          {/* Far mountain range */}
+          <polygon
+            points="0,110 30,65 60,85 100,50 140,75 180,55 220,80 220,160 0,160"
+            fill="url(#wm-mountain-far)"
+          />
+          {/* Near mountain range */}
+          <polygon
+            points="0,130 50,80 90,100 130,70 170,95 220,75 220,160 0,160"
+            fill="url(#wm-mountain-near)"
+          />
+          {/* Ground plane */}
+          <rect y="130" width="220" height="30" fill="url(#wm-ground)" />
+        </svg>
+
+        {/* Diagonal watermark overlay */}
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <span
-            className="text-2xl font-bold opacity-40 rotate-[-20deg] select-none"
-            style={{ color: "hsl(var(--primary))" }}
+            className="text-lg font-bold select-none whitespace-nowrap"
+            style={{
+              color: "hsl(var(--foreground) / 0.2)",
+              transform: "rotate(-20deg)",
+              letterSpacing: "0.08em",
+              textShadow: "0 1px 2px hsl(var(--foreground) / 0.05)",
+            }}
+          >
+            &copy; trndinn
+          </span>
+        </div>
+        {/* Second watermark line for realism */}
+        <div className="absolute inset-0 flex items-end justify-end overflow-hidden pr-3 pb-2">
+          <span
+            className="text-[9px] font-medium select-none"
+            style={{
+              color: "hsl(var(--foreground) / 0.15)",
+              letterSpacing: "0.05em",
+            }}
           >
             &copy; trndinn
           </span>
         </div>
       </div>
-      {/* Floating labels */}
+
+      {/* Floating badge: Text (orange gradient) */}
       <div
-        className="absolute right-0 top-0 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg"
+        className="absolute right-2 top-2 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg"
         style={{
-          background: "linear-gradient(135deg, #F97316, #F59E0B)",
-          color: "#fff",
+          background:
+            "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.75))",
+          color: "hsl(var(--primary-foreground))",
         }}
       >
         Text
       </div>
+
+      {/* Floating badge: Image / Logo (surface bg with border) */}
       <div
-        className="absolute right-4 top-10 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg border"
+        className="absolute right-6 top-12 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-lg border"
         style={{
           background: "hsl(var(--tool-surface))",
           borderColor: "hsl(var(--tool-border))",
           color: "hsl(var(--foreground))",
         }}
       >
-        Image / Logo
+        <span className="flex items-center gap-1">
+          <ImageIcon className="h-3 w-3" />
+          Image / Logo
+        </span>
       </div>
-      {/* Protect your content label */}
+
+      {/* Protect your content pill */}
       <div
-        className="absolute right-2 bottom-10 rounded-full px-3 py-1 text-[10px] font-medium italic"
+        className="absolute right-1 bottom-6 rounded-full px-3 py-1 text-[10px] font-semibold shadow-md"
         style={{
-          background: "hsl(var(--primary) / 0.1)",
+          background: "hsl(var(--primary) / 0.12)",
           color: "hsl(var(--primary))",
-          border: "1px solid hsl(var(--primary) / 0.2)",
+          border: "1px solid hsl(var(--primary) / 0.25)",
         }}
       >
         Protect your content
-      </div>
-      {/* Style label */}
-      <div
-        className="absolute left-6 bottom-4 font-serif italic text-sm text-muted-foreground/50 select-none"
-      >
-        Pour watermark / Your style
       </div>
     </div>
   );
@@ -278,6 +352,7 @@ export default function WatermarkView({ tool, alias }: Props) {
 
   // Upload tab
   const [activeUploadTab, setActiveUploadTab] = useState<UploadTab>("upload");
+  const [urlInput, setUrlInput] = useState("");
 
   // Watermark config
   const [watermarkType, setWatermarkType] = useState<WatermarkType>("text");
@@ -287,6 +362,7 @@ export default function WatermarkView({ tool, alias }: Props) {
   const [position, setPosition] = useState<WatermarkPosition>("bottom-right");
   const [opacity, setOpacity] = useState(60);
   const [watermarkImageSrc, setWatermarkImageSrc] = useState<string | undefined>(undefined);
+  const [fontFamily, setFontFamily] = useState("Poppins");
   const [addShadow, setAddShadow] = useState(false);
   const [addBackground, setAddBackground] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -294,6 +370,7 @@ export default function WatermarkView({ tool, alias }: Props) {
 
   const isDone = result !== null;
   const hasFile = selectedFile !== null;
+  const [fitToScreen, setFitToScreen] = useState(false);
 
   // Compute active step
   const activeStep = isDone ? 3 : hasFile ? 2 : 1;
@@ -354,6 +431,32 @@ export default function WatermarkView({ tool, alias }: Props) {
     []
   );
 
+  const handleLoadUrl = useCallback(async () => {
+    const url = urlInput.trim();
+    if (!url) return;
+    setError(undefined);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch image");
+      const blob = await res.blob();
+      if (!blob.type.startsWith("image/"))
+        throw new Error("URL does not point to an image");
+      const name = url.split("/").pop()?.split("?")[0] || "image.jpg";
+      const file = new File([blob], name, { type: blob.type });
+      setSelectedFile(file);
+      setResult(null);
+      setResultUrl(null);
+      setProgress(0);
+      setActiveUploadTab("upload");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Failed to load image from URL. Make sure it's a direct image link."
+      );
+    }
+  }, [urlInput]);
+
   const handleAddWatermark = useCallback(async () => {
     if (!selectedFile) return;
 
@@ -378,7 +481,12 @@ export default function WatermarkView({ tool, alias }: Props) {
       position,
       opacity: opacity / 100,
       fontSize: watermarkType === "text" ? fontSize : undefined,
+      fontFamily: watermarkType === "text" ? fontFamily : undefined,
       color: watermarkType === "text" ? color : undefined,
+      addShadow,
+      addBackground,
+      rotation,
+      tile: tileWatermark,
     };
 
     try {
@@ -402,7 +510,12 @@ export default function WatermarkView({ tool, alias }: Props) {
     position,
     opacity,
     fontSize,
+    fontFamily,
     color,
+    addShadow,
+    addBackground,
+    rotation,
+    tileWatermark,
     addWatermarkToImage,
   ]);
 
@@ -432,7 +545,7 @@ export default function WatermarkView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Sidebar */}
         <ImageToolsSidebar activeSlug={tool.slug} />
 
@@ -536,13 +649,27 @@ export default function WatermarkView({ tool, alias }: Props) {
 
                     {activeUploadTab === "url" && (
                       <div className="space-y-2">
-                        <input
-                          type="url"
-                          placeholder="https://example.com/image.jpg"
-                          className="w-full rounded-lg border px-3 py-2.5 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
-                          style={{ borderColor: "hsl(var(--tool-border))" }}
-                          aria-label="Image URL"
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="url"
+                            value={urlInput}
+                            onChange={(e) => setUrlInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleLoadUrl()}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full rounded-lg border px-3 py-2.5 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+                            style={{ borderColor: "hsl(var(--tool-border))" }}
+                            aria-label="Image URL"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={handleLoadUrl}
+                            disabled={!urlInput.trim()}
+                            className="shrink-0"
+                            aria-label="Load image from URL"
+                          >
+                            Load
+                          </Button>
+                        </div>
                         <p className="text-[10px] text-muted-foreground">
                           Paste a direct image URL to add a watermark.
                         </p>
@@ -550,30 +677,25 @@ export default function WatermarkView({ tool, alias }: Props) {
                     )}
 
                     {activeUploadTab === "samples" && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground">Try with a sample image:</p>
-                        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                          {[1, 2, 3, 4].map((i) => (
-                            <div
-                              key={i}
-                              className="h-14 w-14 shrink-0 rounded-lg border cursor-pointer transition-all hover:border-[hsl(var(--primary))] hover:scale-105"
-                              style={{
-                                borderColor: "hsl(var(--tool-border))",
-                                background: "hsl(var(--tool-surface-dim))",
-                              }}
-                            >
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ImageIcon className="h-5 w-5 text-muted-foreground/30" />
-                              </div>
-                            </div>
-                          ))}
-                          <div
-                            className="h-14 w-14 shrink-0 rounded-lg border border-dashed cursor-pointer flex items-center justify-center transition-all hover:border-[hsl(var(--primary))]"
-                            style={{ borderColor: "hsl(var(--tool-border))" }}
+                      <div
+                        className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center"
+                        style={{
+                          borderColor: "hsl(var(--tool-border))",
+                          background: "hsl(var(--tool-surface-dim))",
+                        }}
+                      >
+                        <Link2 className="h-6 w-6 text-muted-foreground/40" aria-hidden />
+                        <p className="text-xs text-muted-foreground">
+                          No sample images available yet. Use the{" "}
+                          <button
+                            type="button"
+                            onClick={() => setActiveUploadTab("url")}
+                            className="font-medium underline underline-offset-2 hover:text-foreground transition-colors"
                           >
-                            <Plus className="h-4 w-4 text-muted-foreground" aria-hidden />
-                          </div>
-                        </div>
+                            Paste URL
+                          </button>{" "}
+                          tab to load an image from any direct link.
+                        </p>
                       </div>
                     )}
 
@@ -669,14 +791,16 @@ export default function WatermarkView({ tool, alias }: Props) {
                               Font
                             </label>
                             <select
+                              value={fontFamily}
+                              onChange={(e) => setFontFamily(e.target.value)}
                               className="w-full rounded-lg border px-2.5 py-2 text-xs text-foreground bg-transparent focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
                               style={{ borderColor: "hsl(var(--tool-border))" }}
                               aria-label="Font family"
                             >
-                              <option>Poppins</option>
-                              <option>Space Grotesk</option>
-                              <option>Arial</option>
-                              <option>Georgia</option>
+                              <option value="Poppins">Poppins</option>
+                              <option value="Space Grotesk">Space Grotesk</option>
+                              <option value="Arial">Arial</option>
+                              <option value="Georgia">Georgia</option>
                             </select>
                           </div>
 
@@ -892,11 +1016,13 @@ export default function WatermarkView({ tool, alias }: Props) {
                       </div>
                       {(previewUrl || resultUrl) && (
                         <button
-                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label="Fit to screen"
+                          onClick={() => setFitToScreen((prev) => !prev)}
+                          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                          aria-label={fitToScreen ? "Show actual size" : "Fit to screen"}
+                          aria-pressed={fitToScreen}
                         >
                           <Maximize2 className="h-3 w-3" aria-hidden />
-                          Fit to screen
+                          {fitToScreen ? "Actual size" : "Fit to screen"}
                         </button>
                       )}
                     </div>
@@ -913,13 +1039,19 @@ export default function WatermarkView({ tool, alias }: Props) {
                         <img
                           src={resultUrl}
                           alt="Watermarked image preview"
-                          className="max-w-full max-h-full object-contain"
+                          className={cn(
+                            "max-w-full max-h-full",
+                            fitToScreen ? "w-full h-full object-cover" : "object-contain"
+                          )}
                         />
                       ) : previewUrl ? (
                         <img
                           src={previewUrl}
                           alt="Original image preview"
-                          className="max-w-full max-h-full object-contain"
+                          className={cn(
+                            "max-w-full max-h-full",
+                            fitToScreen ? "w-full h-full object-cover" : "object-contain"
+                          )}
                         />
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
@@ -942,36 +1074,6 @@ export default function WatermarkView({ tool, alias }: Props) {
                         </div>
                       )}
                     </div>
-
-                    {/* Sample strip below preview */}
-                    {previewUrl && (
-                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div
-                            key={i}
-                            className="h-12 w-12 shrink-0 rounded-lg border cursor-pointer overflow-hidden transition-all hover:border-[hsl(var(--primary))]"
-                            style={{ borderColor: "hsl(var(--tool-border))" }}
-                          >
-                            <div
-                              className="w-full h-full"
-                              style={{
-                                background: "hsl(var(--tool-surface-dim))",
-                              }}
-                            >
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ImageIcon className="h-4 w-4 text-muted-foreground/20" aria-hidden />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div
-                          className="h-12 w-12 shrink-0 rounded-lg border border-dashed flex items-center justify-center cursor-pointer transition-all hover:border-[hsl(var(--primary))]"
-                          style={{ borderColor: "hsl(var(--tool-border))" }}
-                        >
-                          <Plus className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-                        </div>
-                      </div>
-                    )}
 
                     {/* Image info */}
                     {hasFile && (
@@ -1076,6 +1178,82 @@ export default function WatermarkView({ tool, alias }: Props) {
                 <TrustStrip features={TRUST_FEATURES} />
               </motion.div>
 
+              {/* ─── AEO: What is Image Watermarking? ─── */}
+              <section
+                aria-labelledby="what-is-wm-heading"
+                className="mt-8 rounded-xl border p-6"
+                style={{
+                  background: "hsl(var(--tool-surface))",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <h2 id="what-is-wm-heading" className="text-lg font-bold text-foreground mb-4">
+                  What is image watermarking?
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  Image watermarking is the process of overlaying text, a logo, or a pattern onto a photo to assert ownership, prevent unauthorized reuse, or brand your content. Watermarks can be visible (semi-transparent text or logos) or invisible (embedded metadata). Trndinn&apos;s watermark tool adds visible watermarks entirely in your browser — no server upload, no signup.
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  Professional photographers, e-commerce sellers, and content creators use watermarks to protect intellectual property. According to the Copyright Alliance, over 2.5 billion images are stolen online daily [Copyright Alliance, 2024]. A visible watermark deters casual theft while keeping your work shareable.
+                </p>
+                <h3 className="text-base font-semibold text-foreground mt-6 mb-3">Frequently asked questions</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">How do I add a watermark to a photo for free?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Upload your photo to Trndinn&apos;s Watermark tool, type your watermark text (or upload a logo), adjust font, size, color, opacity, and position, then click Download. Everything runs in your browser — free, no signup.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Can I use my own logo as a watermark?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes. Switch to the &quot;Image / Logo&quot; tab, upload your PNG logo (transparent background recommended), and position it anywhere on the image with adjustable opacity and size.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">What is tile watermarking?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Tile watermarking repeats the watermark text or logo across the entire image in a grid pattern. This makes it much harder to crop out, providing stronger protection for high-value photos.</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* ─── Need more? CTA ─── */}
+              <section
+                aria-label="Try Trndinn"
+                className="mt-6 flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <div className="max-w-md">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">Create social media graphics, OG images, and branded assets with AI.</p>
+                  <div className="mt-5">
+                    <a href="/features" className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all" style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}>
+                      Try Trndinn <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              </section>
+
+              {/* ─── More tools ─── */}
+              <section aria-label="Related tools" className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                  <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { name: "Image Cropper", desc: "Crop to exact dimensions", href: "/tools/image-cropper" },
+                    { name: "Image Resizer", desc: "Resize for any platform", href: "/tools/resize-image" },
+                    { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                    { name: "Compress Image", desc: "Reduce file size", href: "/tools/compress-jpg" },
+                  ].map((t) => (
+                    <a key={t.name} href={t.href} className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                      <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </section>
+
               {/* ─── SEO Footer ──────────────────────────────── */}
               <Separator className="my-10" />
               <p className="text-xs leading-relaxed text-muted-foreground/60 max-w-2xl">
@@ -1086,7 +1264,7 @@ export default function WatermarkView({ tool, alias }: Props) {
             </div>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

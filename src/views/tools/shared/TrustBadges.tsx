@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * TrustBadges — horizontal row of pill badges with icon + text.
- * Matches the premium tool page design: dark pill with subtle border,
- * icon tinted with primary color, horizontal scroll on mobile.
+ * TrustBadges — compact horizontal row of pill badges with icon + text.
+ * Always fits in a single row. Horizontal scroll on very small screens.
  *
  * Design tokens: --tool-surface, --tool-border, --primary, --foreground.
  * Icons: Lucide only.
@@ -20,7 +19,6 @@ export interface TrustBadge {
 
 export interface TrustBadgesProps {
   badges: TrustBadge[];
-  /** Additional class names for the outer container */
   className?: string;
 }
 
@@ -30,9 +28,7 @@ export function TrustBadges({ badges, className }: TrustBadgesProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none",
-        // Center on larger screens, scroll on mobile
-        "sm:flex-wrap sm:justify-center sm:overflow-x-visible sm:pb-0",
+        "flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-0.5",
         className
       )}
       role="list"
@@ -43,16 +39,17 @@ export function TrustBadges({ badges, className }: TrustBadgesProps) {
           key={text}
           role="listitem"
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full",
-            "border border-[hsl(var(--tool-border))]",
+            "inline-flex shrink-0 items-center gap-1.5",
+            "rounded-full border border-[hsl(var(--tool-border))]",
             "bg-[hsl(var(--tool-surface))]",
-            "px-4 py-2 text-sm font-medium",
+            "px-2.5 py-1.5 sm:px-3 sm:py-1.5",
+            "text-[11px] sm:text-xs font-medium",
             "text-foreground/90",
             "transition-colors hover:border-[hsl(var(--primary)/0.3)]"
           )}
         >
           <Icon
-            className="h-4 w-4 shrink-0 text-[hsl(var(--primary))]"
+            className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 text-[hsl(var(--primary))]"
             aria-hidden="true"
           />
           <span className="whitespace-nowrap">{text}</span>

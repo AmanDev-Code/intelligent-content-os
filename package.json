@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
     "@hookform/resolvers": "^3.10.0",
+    "@imgly/background-removal": "^1.7.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -47,12 +50,16 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.42.2",
     "input-otp": "^1.4.2",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.462.0",
     "next": "^15.1.0",
     "next-themes": "^0.3.0",
+    "piexifjs": "^1.0.6",
     "posthog-js": "^1.372.6",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -67,21 +74,17 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "vaul": "^0.9.9",
-    "zod": "^3.25.76",
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/core": "^0.12.10",
-    "@imgly/background-removal": "^1.7.0",
     "tesseract.js": "^7.0.0",
-    "qrcode": "^1.5.4",
-    "jszip": "^3.10.1",
-    "file-saver": "^2.0.5"
+    "vaul": "^0.9.9",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^22.16.5",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.4.21",
@@ -89,8 +92,6 @@
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3",
-    "@types/qrcode": "^1.5.5",
-    "@types/file-saver": "^2.0.7"
+    "typescript": "^5.8.3"
   }
 }

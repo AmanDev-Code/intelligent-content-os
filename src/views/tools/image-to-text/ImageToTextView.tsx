@@ -989,6 +989,86 @@ export default function ImageToTextView({ tool, alias }: Props) {
 
               {/* ═══════════════════ TRUST STRIP ═══════════════════ */}
               <TrustStrip features={TRUST_FEATURES} className="mt-8" />
+
+              {/* ═══════════════════ AEO: What is OCR? ═══════════════════ */}
+              <section
+                aria-labelledby="what-is-ocr-heading"
+                className="mt-10 rounded-xl border p-6"
+                style={{
+                  background: "hsl(var(--tool-surface))",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <h2 id="what-is-ocr-heading" className="text-lg font-bold text-foreground mb-4">
+                  What is OCR (Optical Character Recognition)?
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  OCR (Optical Character Recognition) is a technology that converts images of text — such as scanned documents, photos of signs, or screenshots — into machine-readable, editable text. Trndinn&apos;s Image to Text tool uses Tesseract.js, an open-source OCR engine with over 35,000 GitHub stars, running entirely in your browser via WebAssembly. Your images never leave your device.
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                  The global OCR market is projected to reach $32.3 billion by 2030, driven by digitization of paper documents and accessibility requirements [Grand View Research, 2024]. Modern OCR engines like Tesseract.js achieve 95%+ accuracy on printed text in English and support 100+ languages including Arabic, Chinese, Japanese, and Korean.
+                </p>
+                <h3 className="text-base font-semibold text-foreground mt-6 mb-3">Frequently asked questions</h3>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">How do I extract text from an image for free?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Upload your image to Trndinn&apos;s Image to Text tool, select a language, and click Extract Text. The OCR engine processes the image locally in your browser and returns editable text you can copy or download as a .txt file.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">What languages does the OCR support?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Tesseract.js supports 100+ languages including English, Spanish, French, German, Portuguese, Chinese (Simplified &amp; Traditional), Japanese, Korean, Arabic, Hindi, and Russian. Language data is downloaded on first use and cached in your browser.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">How can I improve OCR accuracy?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Use clear, high-contrast images with legible text. Avoid blurry or low-resolution images. Enable &quot;Improve image contrast&quot; in Advanced Options. Printed or typed text works best — handwriting recognition is limited.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground">Is my data safe when using OCR online?</h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes. Trndinn&apos;s OCR tool runs the Tesseract.js engine entirely in your browser. Your images are never uploaded to any server — all processing happens locally on your device, even offline.</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* ═══════════════════ Need more? CTA ═══════════════════ */}
+              <section
+                aria-label="Try Trndinn"
+                className="mt-10 flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <div className="max-w-md">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">Create social media graphics, OG images, and branded assets with AI.</p>
+                  <div className="mt-5">
+                    <a href="/features" className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all" style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}>
+                      Try Trndinn <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              </section>
+
+              {/* ═══════════════════ More tools ═══════════════════ */}
+              <section aria-label="Related tools" className="mt-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                  <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { name: "Base64 to Image", desc: "Decode Base64 strings", href: "/tools/base64-to-image" },
+                    { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                    { name: "QR Code Generator", desc: "Custom colors, PNG & SVG", href: "/tools/qr-code-generator" },
+                    { name: "Image Converter", desc: "Convert between formats", href: "/tools/jpg-to-png" },
+                  ].map((t) => (
+                    <a key={t.name} href={t.href} className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                      <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </section>
             </div>
           </section>
         </main>

@@ -52,7 +52,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 import { MarketingShell } from "@/components/marketing/MarketingShell";
-import { ImageToolsSidebar } from "@/views/tools/image-tools/ImageToolsSidebar";
+import { ImageToolsSidebar, SidebarWrapper } from "@/views/tools/image-tools/ImageToolsSidebar";
 import { ToolHero } from "@/views/tools/shared/ToolHero";
 import { TrustBadges, type TrustBadge } from "@/views/tools/shared/TrustBadges";
 import { StepProgressBar, type Step } from "@/views/tools/shared/StepProgressBar";
@@ -408,7 +408,7 @@ export default function Base64ToImageView({ tool, alias }: Props) {
 
   return (
     <MarketingShell>
-      <div className="flex min-h-screen">
+      <SidebarWrapper>
         {/* Left sidebar */}
         <ImageToolsSidebar activeSlug="base64-to-image" />
 
@@ -986,6 +986,75 @@ export default function Base64ToImageView({ tool, alias }: Props) {
                 </Card>
               </div>
 
+              {/* ── FAQ ── */}
+              <section
+                aria-labelledby="b64-faq-heading"
+                className="mt-8"
+              >
+                <h2 id="b64-faq-heading" className="text-lg font-bold text-foreground font-display mb-4">
+                  Frequently asked questions
+                </h2>
+                <div className="space-y-4">
+                  <div className="rounded-xl border p-4" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                    <h3 className="text-sm font-semibold text-foreground">How do I decode a Base64 string to an image?</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Paste the Base64 string (with or without the data:image/... prefix) into the text area and click &quot;Decode Image.&quot; The decoded image appears instantly in the preview panel. Download as PNG or JPG.</p>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                    <h3 className="text-sm font-semibold text-foreground">What is the difference between a data URI and raw Base64?</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">A data URI includes a MIME type prefix like &quot;data:image/png;base64,&quot; followed by the encoded data. Raw Base64 is just the encoded characters without the prefix. Trndinn supports both — if no prefix is detected, it defaults to PNG.</p>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                    <h3 className="text-sm font-semibold text-foreground">Is there a size limit for Base64 decoding?</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">There&apos;s no hard limit in Trndinn since processing happens in your browser. Very large strings (10MB+) may be slow depending on your device. For typical images (under 5MB encoded), decoding is instant.</p>
+                  </div>
+                  <div className="rounded-xl border p-4" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                    <h3 className="text-sm font-semibold text-foreground">Is my Base64 data safe?</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Yes. Everything runs locally in your browser — your Base64 string is never sent to any server. This makes it safe for decoding sensitive images like screenshots of private data or API responses.</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Need more? CTA ── */}
+              <section
+                aria-label="Try Trndinn"
+                className="mt-8 flex flex-col gap-6 rounded-xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 border"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--tool-surface)) 0%, hsl(var(--tool-surface-dim)) 100%)",
+                  borderColor: "hsl(var(--tool-border))",
+                }}
+              >
+                <div className="max-w-md">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">Need more?</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">Create social media graphics, OG images, and branded assets with AI.</p>
+                  <div className="mt-5">
+                    <a href="/features" className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-bold text-white hover:shadow-lg hover:shadow-violet-500/20 transition-all" style={{ background: "linear-gradient(135deg, #8B5CF6, #6366F1)" }}>
+                      Try Trndinn <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </div>
+                </div>
+              </section>
+
+              {/* ── More tools ── */}
+              <section aria-label="Related tools" className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
+                  <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { name: "Image to Text (OCR)", desc: "Extract text from images", href: "/tools/image-to-text" },
+                    { name: "QR Code Generator", desc: "Custom colors, PNG & SVG", href: "/tools/qr-code-generator" },
+                    { name: "Favicon Generator", desc: "All sizes in one ZIP", href: "/tools/favicon-generator" },
+                    { name: "Remove Background", desc: "AI background removal", href: "/tools/background-remover" },
+                  ].map((t) => (
+                    <a key={t.name} href={t.href} className="rounded-xl border p-4 hover:border-[hsl(var(--primary)/0.3)] transition-colors group" style={{ background: "hsl(var(--tool-surface))", borderColor: "hsl(var(--tool-border))" }}>
+                      <p className="text-sm font-semibold text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">{t.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t.desc}</p>
+                    </a>
+                  ))}
+                </div>
+              </section>
+
               {/* SEO footer note */}
               <p className="mt-8 text-xs leading-relaxed text-muted-foreground/60">
                 Trndinn&apos;s Base64 to Image Decoder is a free, browser-based
@@ -996,7 +1065,7 @@ export default function Base64ToImageView({ tool, alias }: Props) {
             </section>
           </main>
         </div>
-      </div>
+      </SidebarWrapper>
     </MarketingShell>
   );
 }

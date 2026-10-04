@@ -4,6 +4,8 @@
  * All logic is identical; only the reactivity layer has changed.
  */
 
+import piexif from "piexifjs";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -25,6 +27,14 @@ export interface WatermarkConfig {
   fontFamily?: string;
   color?: string;
   size?: number;
+  /** Add a drop shadow behind the watermark text/image */
+  addShadow?: boolean;
+  /** Add a semi-transparent background pill behind text watermark */
+  addBackground?: boolean;
+  /** Rotation angle in degrees (applied to each watermark stamp) */
+  rotation?: number;
+  /** Repeat the watermark in a tiled grid across the entire image */
+  tile?: boolean;
 }
 
 export interface PipelineOptions {
@@ -67,7 +77,7 @@ export interface ImageMetadata {
 
 export interface ImageProcessorHook {
   convertImage: (file: File, targetFormat: string, quality?: number) => Promise<File>;
-  compressImage: (file: File, quality: number) => Promise<File>;
+  compressImage: (file: File, quality: number, options?: CompressOptions) => Promise<File>;
   resizeImage: (
     file: File,
     width: number,
@@ -374,9 +384,108 @@ const convertImage = async (
   return canvasToFile(canvas, newName, mimeType, quality);
 };
 
-const compressImage = async (file: File, quality: number): Promise<File> => {
-  const format = file.type.split("/")[1] || "jpeg";
-  return convertImage(file, format, normalizeQuality(quality));
+// ---------------------------------------------------------------------------
+// EXIF helpers (piexifjs)
+// ---------------------------------------------------------------------------
+
+const extractExif = async (file: File): Promise<string | null> => {
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    const exifObj = piexif.load(dataUrl);
+    return piexif.dump(exifObj);
+  } catch {
+    return null; // No EXIF or not a JPEG
+  }
+};
+
+const injectExif = async (blob: Blob, exifBytes: string): Promise<Blob> => {
+  try {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const newDataUrl = piexif.insert(exifBytes, dataUrl);
+    const base64 = newDataUrl.split(",")[1];
+    const binary = atob(base64);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+    return new Blob([array], { type: blob.type });
+  } catch {
+    return blob; // Injection failed — return unchanged
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Compress with EXIF preservation + output format selection
+// ---------------------------------------------------------------------------
+
+export interface CompressOptions {
+  preserveExif?: boolean;
+  outputFormat?: "same" | "jpeg" | "png" | "webp";
+}
+
+const compressImage = async (
+  file: File,
+  quality: number,
+  options?: CompressOptions
+): Promise<File> => {
+  const { preserveExif = false, outputFormat = "same" } = options ?? {};
+
+  // Determine output format
+  const inputFormat = (file.type.split("/")[1] || "jpeg").toLowerCase();
+  let format: string;
+  if (outputFormat === "same") {
+    // Keep input format, but for lossless formats (png/gif/bmp) that ignore
+    // quality, default to jpeg for actual size reduction
+    format = ["jpeg", "jpg", "webp"].includes(inputFormat) ? inputFormat : "jpeg";
+  } else {
+    format = outputFormat;
+  }
+  if (format === "jpg") format = "jpeg";
+
+  // Extract EXIF before canvas processing (canvas strips all metadata)
+  let exifBytes: string | null = null;
+  if (preserveExif && format === "jpeg") {
+    exifBytes = await extractExif(file);
+  }
+
+  const nq = normalizeQuality(quality);
+  const safeFile = await prepareFileForCanvas(file);
+  const dataUrl = await readFileAsDataUrl(safeFile);
+  const img = await createImageFromSource(dataUrl);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext("2d")!;
+
+  // Fill white background for JPEG (no alpha channel)
+  if (format === "jpeg") {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  ctx.drawImage(img, 0, 0);
+
+  const mimeType = `image/${format}`;
+  const ext = format === "jpeg" ? "jpg" : format;
+  const newName = file.name.replace(/\.[^/.]+$/, `.${ext}`);
+
+  let result = await canvasToFile(canvas, newName, mimeType, nq);
+
+  // Re-inject EXIF if we extracted it (only works for JPEG)
+  if (exifBytes && format === "jpeg") {
+    const exifBlob = await injectExif(result, exifBytes);
+    result = new File([exifBlob], newName, { type: mimeType, lastModified: Date.now() });
+  }
+
+  // Safety: if compressed is larger than original, return original
+  if (result.size >= file.size) {
+    return file;
+  }
+
+  return result;
 };
 
 const resizeImage = async (
@@ -466,41 +575,119 @@ const addWatermarkToImage = async (
   canvas.height = img.height;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
-  ctx.globalAlpha = watermarkConfig.opacity;
 
-  if (watermarkConfig.type === "text" && watermarkConfig.text) {
-    ctx.font = `${watermarkConfig.fontSize ?? 24}px ${watermarkConfig.fontFamily ?? "Arial"}`;
-    ctx.fillStyle = watermarkConfig.color ?? "#ffffff";
+  const rotationRad = ((watermarkConfig.rotation ?? 0) * Math.PI) / 180;
+  const shouldTile = watermarkConfig.tile === true;
+
+  // Helper: draw a single text watermark stamp at a given position
+  const drawTextStamp = (x: number, y: number) => {
+    ctx.save();
+    ctx.globalAlpha = watermarkConfig.opacity;
+    ctx.translate(x, y);
+    if (rotationRad !== 0) ctx.rotate(rotationRad);
+
+    const font = `${watermarkConfig.fontSize ?? 24}px ${watermarkConfig.fontFamily ?? "Arial"}`;
+    ctx.font = font;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    const pos = getWatermarkPosition(
-      watermarkConfig.position,
-      canvas.width,
-      canvas.height
-    );
-    ctx.fillText(watermarkConfig.text, pos.x, pos.y);
-    ctx.globalAlpha = 1;
+    const text = watermarkConfig.text!;
+
+    // Background pill behind text
+    if (watermarkConfig.addBackground) {
+      const metrics = ctx.measureText(text);
+      const padX = (watermarkConfig.fontSize ?? 24) * 0.5;
+      const padY = (watermarkConfig.fontSize ?? 24) * 0.35;
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      const bw = metrics.width + padX * 2;
+      const bh = (watermarkConfig.fontSize ?? 24) + padY * 2;
+      ctx.beginPath();
+      ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 6);
+      ctx.fill();
+    }
+
+    // Drop shadow
+    if (watermarkConfig.addShadow) {
+      ctx.shadowColor = "rgba(0,0,0,0.6)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
+
+    ctx.fillStyle = watermarkConfig.color ?? "#ffffff";
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  };
+
+  // Helper: draw a single image watermark stamp at a given position
+  const drawImageStamp = (wmImg: HTMLImageElement, x: number, y: number, w: number, h: number) => {
+    ctx.save();
+    ctx.globalAlpha = watermarkConfig.opacity;
+    ctx.translate(x + w / 2, y + h / 2);
+    if (rotationRad !== 0) ctx.rotate(rotationRad);
+
+    if (watermarkConfig.addShadow) {
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
+
+    ctx.drawImage(wmImg, -w / 2, -h / 2, w, h);
+    ctx.restore();
+  };
+
+  // ── Text watermark ──────────────────────────────────────────
+  if (watermarkConfig.type === "text" && watermarkConfig.text) {
+    if (shouldTile) {
+      // Measure text to compute tile spacing
+      ctx.font = `${watermarkConfig.fontSize ?? 24}px ${watermarkConfig.fontFamily ?? "Arial"}`;
+      const metrics = ctx.measureText(watermarkConfig.text);
+      const stepX = metrics.width + 80;
+      const stepY = (watermarkConfig.fontSize ?? 24) * 2.5;
+      for (let ty = stepY / 2; ty < canvas.height + stepY; ty += stepY) {
+        for (let tx = stepX / 2; tx < canvas.width + stepX; tx += stepX) {
+          drawTextStamp(tx, ty);
+        }
+      }
+    } else {
+      const pos = getWatermarkPosition(
+        watermarkConfig.position,
+        canvas.width,
+        canvas.height
+      );
+      drawTextStamp(pos.x, pos.y);
+    }
     return canvasToFile(canvas, file.name, safeFile.type, 0.92);
   }
 
+  // ── Image watermark ─────────────────────────────────────────
   if (watermarkConfig.type === "image" && watermarkConfig.watermarkImage) {
     const wmImg = await createImageFromSource(watermarkConfig.watermarkImage);
     const wmWidth = watermarkConfig.size ?? 100;
     const wmHeight = (wmImg.height / wmImg.width) * wmWidth;
-    const pos = getWatermarkPosition(
-      watermarkConfig.position,
-      canvas.width,
-      canvas.height,
-      20,
-      20
-    );
-    ctx.drawImage(wmImg, pos.x, pos.y, wmWidth, wmHeight);
-    ctx.globalAlpha = 1;
+
+    if (shouldTile) {
+      const stepX = wmWidth + 60;
+      const stepY = wmHeight + 60;
+      for (let ty = 0; ty < canvas.height + stepY; ty += stepY) {
+        for (let tx = 0; tx < canvas.width + stepX; tx += stepX) {
+          drawImageStamp(wmImg, tx, ty, wmWidth, wmHeight);
+        }
+      }
+    } else {
+      const pos = getWatermarkPosition(
+        watermarkConfig.position,
+        canvas.width,
+        canvas.height,
+        20,
+        20
+      );
+      drawImageStamp(wmImg, pos.x, pos.y, wmWidth, wmHeight);
+    }
     return canvasToFile(canvas, file.name, safeFile.type, 0.92);
   }
 
-  ctx.globalAlpha = 1;
   return canvasToFile(canvas, file.name, safeFile.type, 0.92);
 };
 

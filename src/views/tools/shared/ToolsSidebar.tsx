@@ -19,12 +19,17 @@ import {
   ArrowUpRight,
   Minimize2,
   Crop,
+  RotateCcw,
+  Stamp,
+  ScanLine,
+  User,
   Wand2,
   Layers,
   Palette,
   Star,
   QrCode,
   FileCode2,
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +39,8 @@ import { CONVERSION_TOOLS } from "@/lib/image-converter-data";
 // ─── Sidebar data ────────────────────────────────────────────────────────────
 
 const SIDEBAR_POPULAR = [
+  { slug: "jpg-to-ico",  label: "JPG → ICO",  color: "#F59E0B" },
+  { slug: "png-to-ico",  label: "PNG → ICO",  color: "#3B82F6" },
   { slug: "png-to-jpg",  label: "PNG → JPG",  color: "#EF4444" },
   { slug: "jpg-to-png",  label: "JPG → PNG",  color: "#3B82F6" },
   { slug: "webp-to-jpg", label: "WebP → JPG", color: "#10B981" },
@@ -51,6 +58,15 @@ const SIDEBAR_GENERATE = [
   { slug: "favicon-generator",  label: "Favicon Generator",  color: "#F59E0B", icon: Star },
   { slug: "qr-code-generator",  label: "QR Code Generator",  color: "#06B6D4", icon: QrCode },
   { slug: "image-to-base64",    label: "Image to Base64",    color: "#8B5CF6", icon: FileCode2 },
+  { slug: "base64-to-image",    label: "Base64 to Image",    color: "#6B7280", icon: ImageIcon },
+];
+
+const SIDEBAR_EDIT = [
+  { slug: "image-cropper",       label: "Image Cropper",    color: "#3B82F6", icon: Crop },
+  { slug: "image-rotator",       label: "Image Rotator",    color: "#10B981", icon: RotateCcw },
+  { slug: "watermark-image",     label: "Add Watermark",    color: "#F97316", icon: Stamp },
+  { slug: "image-to-text",       label: "Image to Text",    color: "#8B5CF6", icon: ScanLine },
+  { slug: "profile-pic-creator", label: "Profile Picture",  color: "#EC4899", icon: User },
 ];
 
 /** Format → color for sidebar convert items */
@@ -99,6 +115,10 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
   const filteredGenerate = q
     ? SIDEBAR_GENERATE.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
     : SIDEBAR_GENERATE;
+
+  const filteredEdit = q
+    ? SIDEBAR_EDIT.filter(t => `${t.label} ${t.slug}`.toLowerCase().includes(q))
+    : SIDEBAR_EDIT;
 
   return (
     <nav
@@ -218,6 +238,41 @@ export function ToolsSidebar({ activeSlug }: ToolsSidebarProps) {
               Optimize
             </p>
             {filteredOptimize.map(t => {
+              const Icon = t.icon;
+              const isActive = t.slug === activeSlug;
+              return (
+                <Link
+                  key={t.slug}
+                  href={`/tools/${t.slug}`}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "mx-1.5 flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12.5px] transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isActive ? "font-semibold" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  style={isActive ? { background: `${t.color}20`, color: t.color } : undefined}
+                >
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-white"
+                    style={{ background: t.color }}
+                    aria-hidden
+                  >
+                    <Icon className="h-3 w-3" />
+                  </span>
+                  {t.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* EDIT — show when not searching, or when search matches */}
+        {(!q || filteredEdit.length > 0) && (
+          <div>
+            <p className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Edit
+            </p>
+            {filteredEdit.map(t => {
               const Icon = t.icon;
               const isActive = t.slug === activeSlug;
               return (
