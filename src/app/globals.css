@@ -51,6 +51,11 @@
     --chart-3: 47.9 95.8% 53.1%;
     --chart-4: 0 84.2% 60.2%;
     --chart-5: 270 95.2% 75.3%;
+
+    --tool-bg: 43 37% 96%;
+    --tool-surface: 0 0% 100%;
+    --tool-surface-dim: 43 21% 94%;
+    --tool-border: 38 26% 90%;
   }
 
   .dark {
@@ -98,6 +103,11 @@
     --chart-3: 47.9 95.8% 53.1%;
     --chart-4: 0 84.2% 60.2%;
     --chart-5: 270 95.2% 75.3%;
+
+    --tool-bg: 223 62% 7%;
+    --tool-surface: 223 62% 9%;
+    --tool-surface-dim: 224 36% 11%;
+    --tool-border: 224 28% 18%;
   }
 }
 

@@ -2,6 +2,43 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  webpack(config, { isServer }) {
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+      layers: true,
+    };
+
+    // Handle WASM files for libheif (image tools) — async WASM module type.
+    // Exclude onnxruntime-web's WASM files which use their own loader internally.
+    config.module.rules.push({
+      test: /\.wasm$/,
+      exclude: /node_modules[\\/]onnxruntime-web/,
+      type: "webassembly/async",
+    });
+
+    // onnxruntime-web (used by @imgly/background-removal) ships its own WASM
+    // files that reference internal path aliases webpack can't resolve.
+    // Tell webpack to ignore those .wasm references — onnxruntime loads them
+    // at runtime via fetch() anyway, not through the module system.
+    config.module.rules.push({
+      test: /onnxruntime-web[\\/]dist[\\/].*\.wasm$/,
+      type: "asset/resource",
+    });
+
+    // On the server side, mark @imgly/background-removal as external so it
+    // is never bundled into the server build at all. The next/dynamic ssr:false
+    // wrapper ensures it only ever runs in the browser.
+    if (isServer) {
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : []),
+        "@imgly/background-removal",
+        "onnxruntime-web",
+      ];
+    }
+
+    return config;
+  },
   typescript: {
     ignoreBuildErrors: false,
   },
@@ -78,6 +115,13 @@ const nextConfig: NextConfig = {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
           },
+        ],
+      },
+      {
+        source: "/tools/(audio|video)/:path*",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },
     ];

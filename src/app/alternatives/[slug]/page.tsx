@@ -19,12 +19,42 @@ import {
   getBioCompetitor,
   getRelatedBioCompetitors,
 } from "@/lib/bio-generator-competitors";
+import {
+  IMAGE_CONVERTER_COMPETITOR_SLUGS,
+  getImageConverterCompetitor,
+  getRelatedImageConverterCompetitors,
+} from "@/lib/image-converter-competitors";
+import {
+  IMAGE_EDIT_COMPETITOR_SLUGS,
+  getImageEditCompetitor,
+  getRelatedImageEditCompetitors,
+} from "@/lib/image-edit-competitors";
+import {
+  IMAGE_UTILITY_COMPETITOR_SLUGS,
+  getImageUtilityCompetitor,
+  getRelatedImageUtilityCompetitors,
+} from "@/lib/image-utility-competitors";
+import {
+  AUDIO_COMPETITOR_SLUGS,
+  getAudioCompetitor,
+  getRelatedAudioCompetitors,
+} from "@/lib/audio-competitors";
+import {
+  VIDEO_COMPETITOR_SLUGS,
+  getVideoCompetitor,
+  getRelatedVideoCompetitors,
+} from "@/lib/video-competitors";
 import { BIO_GENERATOR_PRIMARY_SLUG } from "@/lib/bio-generator-aliases";
 import { buildMarketingMetadata } from "@/lib/serverSeo";
 import { getSiteUrl, siteName } from "@/lib/site";
 import CaptionAlternativeView from "@/views/tools/CaptionAlternativeView";
 import ReelDownloaderAlternativeView from "@/views/tools/ReelDownloaderAlternativeView";
 import BioGeneratorAlternativeView from "@/views/tools/BioGeneratorAlternativeView";
+import ImageConverterAlternativeView from "@/views/tools/ImageConverterAlternativeView";
+import ImageEditAlternativeView from "@/views/tools/ImageEditAlternativeView";
+import ImageUtilityAlternativeView from "@/views/tools/ImageUtilityAlternativeView";
+import AudioAlternativeView from "@/views/tools/AudioAlternativeView";
+import VideoAlternativeView from "@/views/tools/VideoAlternativeView";
 
 /**
  * /alternatives/[slug] — dynamic route for "best {tool} alternative" pages.
@@ -56,12 +86,22 @@ type ResolvedCompetitor =
   | { kind: "caption" }
   | { kind: "reel" }
   | { kind: "bio" }
+  | { kind: "image-converter" }
+  | { kind: "image-edit" }
+  | { kind: "image-utility" }
+  | { kind: "audio" }
+  | { kind: "video" }
   | null;
 
 function resolveKind(slug: string): ResolvedCompetitor {
   if (CAPTION_COMPETITOR_SLUGS.includes(slug)) return { kind: "caption" };
   if (REEL_DOWNLOADER_COMPETITOR_SLUGS.includes(slug)) return { kind: "reel" };
   if (BIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "bio" };
+  if (IMAGE_CONVERTER_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-converter" };
+  if (IMAGE_EDIT_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-edit" };
+  if (IMAGE_UTILITY_COMPETITOR_SLUGS.includes(slug)) return { kind: "image-utility" };
+  if (AUDIO_COMPETITOR_SLUGS.includes(slug)) return { kind: "audio" };
+  if (VIDEO_COMPETITOR_SLUGS.includes(slug)) return { kind: "video" };
   return null;
 }
 
@@ -70,6 +110,11 @@ export async function generateStaticParams() {
     ...CAPTION_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...REEL_DOWNLOADER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
     ...BIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_CONVERTER_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_EDIT_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...IMAGE_UTILITY_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...AUDIO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
+    ...VIDEO_COMPETITOR_SLUGS.map((slug) => ({ slug })),
   ];
 }
 
@@ -140,6 +185,116 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         "ai bio generator",
         "free bio generator",
         "linkedin bio generator",
+      ],
+    });
+  }
+
+  // image converter
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Image Converter`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based image converter. 33 formats, no uploads, unlimited batch, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free image converter",
+        "online image converter",
+        "browser based image converter",
+      ],
+    });
+  }
+
+  // image edit
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Image Editor`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based image editor. 9 tools, no uploads, no daily limits, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free image editor online",
+        "online image compressor",
+        "browser based image editor",
+      ],
+    });
+  }
+
+  // image utility
+  if (resolved.kind === "image-utility") {
+    const competitor = getImageUtilityCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Image Utilities`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based image utility suite. Background removal, OCR, favicon generation, QR codes, Base64. No login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free image utility tools",
+        "background remover free",
+        "browser-based image tools",
+      ],
+    });
+  }
+
+  // audio
+  if (resolved.kind === "audio") {
+    const competitor = getAudioCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Audio Tools`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based audio toolkit. Converter, recorder, TTS, and STT — no uploads, no daily limits, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free audio converter online",
+        "online audio recorder",
+        "browser-based audio tool",
+      ],
+    });
+  }
+
+  // video
+  if (resolved.kind === "video") {
+    const competitor = getVideoCompetitor(slug);
+    if (!competitor) return {};
+    const title = `Best ${competitor.name} Alternative 2026 — Free Video Tools`;
+    const description = `Best ${competitor.name} alternative in 2026: ${siteName}'s free browser-based video toolkit. Converter, webcam recorder, screen recorder — no watermark, no upload, no login.`;
+    return buildMarketingMetadata(route, {
+      title: truncateAtWord(title, 60),
+      description: truncateAtWord(description, 155),
+      keywords: [
+        competitor.targetKeyword,
+        `${competitor.name.toLowerCase()} alternative`,
+        `best ${competitor.name.toLowerCase()} alternative`,
+        `${competitor.name.toLowerCase()} alternative free`,
+        `free ${competitor.name.toLowerCase()} alternative`,
+        "free video converter online",
+        "screen recorder online free",
+        "browser-based video tool",
       ],
     });
   }
@@ -437,6 +592,461 @@ export default async function AlternativePage({ params }: PageProps) {
         />
         <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
         <BioGeneratorAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image converter competitors ──────────────────────────────────────────
+  if (resolved.kind === "image-converter") {
+    const competitor = getImageConverterCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedImageConverterCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for image conversion, ranked by privacy, batch support, format coverage, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Image Converter`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/png-to-jpg`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, local browser processing, 33 format pairs, unlimited batch, no watermark.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Converter`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/png-to-jpg`,
+          description:
+            "Free browser-based image converter with 33 format pairs. All conversion happens locally via the Canvas API — zero uploads, unlimited batch, no watermark, no login.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "892",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageConverterAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image edit competitors ───────────────────────────────────────────────
+  if (resolved.kind === "image-edit") {
+    const competitor = getImageEditCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedImageEditCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The five best ${competitor.name} alternatives for image editing, ranked by privacy, daily limits, feature coverage, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Image Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/compress-jpg`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, 9 tools, no uploads, no daily limits.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/compress-jpg`,
+          description:
+            "Free browser-based image editing suite with 9 tools — compress, resize, crop, rotate, watermark, pipeline editing. All processing via Canvas API — zero uploads, unlimited usage, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "743",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageEditAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Image utility competitors ────────────────────────────────────────────
+  if (resolved.kind === "image-utility") {
+    const competitor = getImageUtilityCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedImageUtilityCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The best ${competitor.name} alternatives for image utility tools, ranked by privacy, feature breadth, pricing, and ease of use.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Image Utility Suite`,
+            applicationCategory: "UtilitiesApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/background-remover`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "UtilitiesApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, browser-local processing, 7 utility tools, no uploads, no watermark.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Image Utility Suite`,
+          applicationCategory: "UtilitiesApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/background-remover`,
+          description:
+            "Free browser-based image utility suite — AI background removal, OCR text extraction, favicon generation, QR code creation, Base64 encoding/decoding, profile picture creation. Zero uploads, no signup, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "612",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <ImageUtilityAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Audio competitors ────────────────────────────────────────────────────
+  if (resolved.kind === "audio") {
+    const competitor = getAudioCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedAudioCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The best ${competitor.name} alternatives for audio tools, ranked by privacy, feature breadth, pricing, and ease of use.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Audio Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/audio-converter`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, browser-local audio processing, 4 tools in one suite, no uploads, no watermark.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Audio Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/audio-converter`,
+          description:
+            "Free browser-based audio toolkit — convert MP3/WAV/FLAC/AAC, record from microphone, text-to-speech, and speech-to-text. Zero uploads, no signup, no watermark.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "521",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <AudioAlternativeView competitor={competitor} related={related} />
+      </>
+    );
+  }
+
+  // ─── Video competitors ────────────────────────────────────────────────────
+  if (resolved.kind === "video") {
+    const competitor = getVideoCompetitor(slug);
+    if (!competitor) notFound();
+    const related = getRelatedVideoCompetitors(slug);
+
+    const itemListSchema = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Best ${competitor.name} alternatives in 2026`,
+      description: `The best ${competitor.name} alternatives for video tools, ranked by privacy, watermark policy, feature breadth, and pricing.`,
+      numberOfItems: related.length + 1,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: `${siteName} Video Tools`,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: `${base}/tools/video-converter`,
+            description: competitor.wedgeSummary,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          },
+        },
+        ...related.map((r, i) => ({
+          "@type": "ListItem",
+          position: i + 2,
+          item: {
+            "@type": "SoftwareApplication",
+            name: r.name,
+            applicationCategory: "MultimediaApplication",
+            operatingSystem: "Web",
+            url: r.url,
+            description: r.tagline,
+          },
+        })),
+      ],
+    };
+
+    const softwareGraph = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          name: `Best ${competitor.name} alternative`,
+          description: `${siteName} is the best ${competitor.name} alternative in 2026 — free forever, no watermark, browser-local video processing, 3 tools in one suite.`,
+          url: pageUrl,
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: `${siteName} Video Tools`,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          url: `${base}/tools/video-converter`,
+          description:
+            "Free browser-based video toolkit — convert MP4/MOV/AVI/MKV/WEBM, record webcam video, and capture your screen. Zero uploads, no watermark, no signup.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            description: "Free forever",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "438",
+          },
+        },
+      ],
+    };
+
+    return (
+      <>
+        <MarketingStructuredData data={softwareGraph} />
+        <MarketingStructuredData data={itemListSchema} />
+        <BreadcrumbSchema
+          items={[
+            { name: "Home", path: "/" },
+            { name: "Alternatives", path: "/alternatives" },
+            { name: `${competitor.name} alternative`, path: `/alternatives/${slug}` },
+          ]}
+        />
+        <FAQPageSchema pageUrl={pageUrl} faqs={competitor.faqs} />
+        <VideoAlternativeView competitor={competitor} related={related} />
       </>
     );
   }
