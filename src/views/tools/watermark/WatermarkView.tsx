@@ -16,6 +16,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import {
   Download,
@@ -1237,7 +1238,7 @@ export default function WatermarkView({ tool, alias }: Props) {
               <section aria-label="Related tools" className="mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-foreground">More image tools you&apos;ll love</h2>
-                  <a href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
+                  <Link href="/tools/image" className="text-xs font-medium text-[hsl(var(--primary))] hover:underline flex items-center gap-1">View all tools <ArrowRight className="h-3 w-3" aria-hidden="true" /></Link>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[

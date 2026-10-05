@@ -14,6 +14,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   Video,
   VideoOff,
@@ -368,12 +369,12 @@ export default function VideoRecorderView({ tool, alias }: Props) {
               </div>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                 Downloads as WEBM. Use the{" "}
-                <a
+                <Link
                   href="/tools/video-converter"
                   className="text-[hsl(var(--primary))] hover:underline"
                 >
                   Video Converter
-                </a>{" "}
+                </Link>{" "}
                 to convert to MP4 or MOV.
               </p>
             </div>
