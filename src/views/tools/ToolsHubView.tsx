@@ -322,6 +322,251 @@ function ComingSoonArtwork({ category }: { category: ToolCategory }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Image Tools artwork — warm orange gradient with floating format cards
+// ---------------------------------------------------------------------------
+
+function ImageToolsArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#F97316] via-[#EF4444] to-[#EC4899] p-6">
+      {/* Center: image frame mockup */}
+      <div className="relative z-10 flex h-28 w-28 items-center justify-center rounded-xl bg-black/30 ring-2 ring-white/20 backdrop-blur-md">
+        {/* Mountain/sun landscape icon */}
+        <svg viewBox="0 0 48 48" className="h-14 w-14" fill="none">
+          <rect x="4" y="8" width="40" height="32" rx="4" className="fill-white/10 stroke-white/40" strokeWidth="1.5" />
+          <circle cx="16" cy="18" r="4" className="fill-yellow-300/80" />
+          <path d="M4 32 l12-10 8 6 10-12 10 16" className="fill-white/15 stroke-white/50" strokeWidth="1.5" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* Floating format badges */}
+      <motion.div
+        className="absolute left-3 top-4 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -4, 0], rotate: [-3, 2, -3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-[10px] font-black text-white">PNG</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute right-4 top-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 5, 0], rotate: [2, -2, 2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      >
+        <span className="text-[10px] font-black text-white">JPG</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-6 left-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+      >
+        <span className="text-[10px] font-black text-white">WebP</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-5 right-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0], rotate: [1, -2, 1] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+      >
+        <span className="text-[10px] font-black text-white">SVG</span>
+      </motion.div>
+
+      {/* Conversion arrows */}
+      <motion.div
+        className="absolute top-1/2 left-[22%] -translate-y-1/2"
+        animate={{ x: [0, 4, 0], opacity: [0.4, 0.9, 0.4] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <ArrowRight className="h-3.5 w-3.5 text-white/70" />
+      </motion.div>
+      <motion.div
+        className="absolute top-1/2 right-[22%] -translate-y-1/2"
+        animate={{ x: [0, -4, 0], opacity: [0.4, 0.9, 0.4] }}
+        transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+      >
+        <ArrowRight className="h-3.5 w-3.5 rotate-180 text-white/70" />
+      </motion.div>
+
+      {/* Sparkle */}
+      <motion.div
+        className="absolute top-3 left-1/2"
+        animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Sparkles className="h-3 w-3 text-yellow-200" />
+      </motion.div>
+
+      {/* Dots */}
+      <div className="absolute top-8 right-12 h-1 w-1 rounded-full bg-white/50" />
+      <div className="absolute bottom-8 left-12 h-1.5 w-1.5 rounded-full bg-white/40" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Audio Tools artwork — teal/cyan gradient with waveform + mic
+// ---------------------------------------------------------------------------
+
+function AudioToolsArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#06B6D4] via-[#0EA5E9] to-[#6366F1] p-6">
+      {/* Center: microphone + waveform */}
+      <div className="relative z-10 flex flex-col items-center gap-3">
+        {/* Mic icon */}
+        <motion.div
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 ring-2 ring-white/20 backdrop-blur-md"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="1" width="6" height="12" rx="3" />
+            <path d="M5 10a7 7 0 0 0 14 0" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+          </svg>
+        </motion.div>
+
+        {/* Waveform bars */}
+        <div className="flex items-end gap-[3px]">
+          {[4, 8, 6, 12, 8, 14, 10, 12, 6, 8, 4].map((h, i) => (
+            <motion.div
+              key={i}
+              className="w-[3px] rounded-full bg-white/70"
+              animate={{ height: [`${h}px`, `${h + 5}px`, `${h}px`] }}
+              transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.08, ease: "easeInOut" }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Floating format badges */}
+      <motion.div
+        className="absolute left-3 top-4 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -4, 0], rotate: [-2, 3, -2] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-[10px] font-black text-white">MP3</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute right-4 top-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 4, 0], rotate: [2, -2, 2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+      >
+        <span className="text-[10px] font-black text-white">WAV</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-5 left-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        <span className="text-[10px] font-black text-white">AAC</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-6 right-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+      >
+        <span className="text-[10px] font-black text-white">OGG</span>
+      </motion.div>
+
+      {/* Dots */}
+      <div className="absolute top-3 right-14 h-1 w-1 rounded-full bg-white/50" />
+      <div className="absolute bottom-3 left-14 h-1.5 w-1.5 rounded-full bg-white/30" />
+      <div className="absolute top-10 left-8 h-1 w-1 rounded-full bg-white/40" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Video Tools artwork — purple/magenta gradient with clapperboard + play
+// ---------------------------------------------------------------------------
+
+function VideoToolsArtwork() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-t-2xl bg-gradient-to-br from-[#8B5CF6] via-[#A855F7] to-[#EC4899] p-6">
+      {/* Center: video player mockup */}
+      <div className="relative z-10 flex h-24 w-36 flex-col items-center justify-center rounded-xl bg-black/35 ring-2 ring-white/20 backdrop-blur-md">
+        {/* Video aspect ratio lines */}
+        <div className="absolute top-0 left-0 right-0 h-5 rounded-t-xl bg-white/5 border-b border-white/10 flex items-center px-2 gap-1">
+          <div className="h-1.5 w-1.5 rounded-full bg-red-400/80" />
+          <div className="h-1.5 w-1.5 rounded-full bg-yellow-400/80" />
+          <div className="h-1.5 w-1.5 rounded-full bg-green-400/80" />
+        </div>
+        {/* Play button */}
+        <motion.div
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 fill-[#8B5CF6]">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </motion.div>
+        {/* Progress bar */}
+        <div className="absolute bottom-2 mx-3 left-3 right-3 h-1 rounded-full bg-white/15 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-white/70"
+            animate={{ width: ["0%", "65%"] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+      </div>
+
+      {/* Floating format badges */}
+      <motion.div
+        className="absolute left-3 top-4 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -4, 0], rotate: [-3, 2, -3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-[10px] font-black text-white">MP4</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute right-3 top-5 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 5, 0], rotate: [2, -2, 2] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+      >
+        <span className="text-[10px] font-black text-white">WebM</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-5 left-4 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, 3, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+      >
+        <span className="text-[10px] font-black text-white">MOV</span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-4 right-4 rounded-lg bg-white/15 px-2.5 py-1.5 backdrop-blur-sm"
+        animate={{ y: [0, -3, 0], rotate: [1, -2, 1] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+      >
+        <span className="text-[10px] font-black text-white">AVI</span>
+      </motion.div>
+
+      {/* Film strip element */}
+      <motion.div
+        className="absolute top-2 left-1/2 -translate-x-1/2 flex gap-1"
+        animate={{ opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 3, repeat: Infinity }}
+      >
+        {[1, 2, 3, 4, 5].map((_, i) => (
+          <div key={i} className="h-2 w-3 rounded-[1px] bg-white/20" />
+        ))}
+      </motion.div>
+
+      {/* Dots */}
+      <div className="absolute top-8 right-12 h-1 w-1 rounded-full bg-white/50" />
+      <div className="absolute bottom-8 left-12 h-1.5 w-1.5 rounded-full bg-white/40" />
+    </div>
+  );
+}
+
 // Map of slug → artwork component for live tools
 function getToolArtwork(tool: ToolEntry) {
   if (!tool.live) return <ComingSoonArtwork category={tool.category} />;
@@ -333,6 +578,12 @@ function getToolArtwork(tool: ToolEntry) {
       return <AutoCaptionArtwork />;
     case "bio-generator":
       return <BioGeneratorArtwork />;
+    case "image":
+      return <ImageToolsArtwork />;
+    case "audio":
+      return <AudioToolsArtwork />;
+    case "video":
+      return <VideoToolsArtwork />;
     default:
       return <ComingSoonArtwork category={tool.category} />;
   }
