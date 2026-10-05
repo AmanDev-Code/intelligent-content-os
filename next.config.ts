@@ -43,7 +43,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: false,
+    // ESLint runs in CI/pre-commit — don't let warnings block production builds.
+    // TypeScript errors (ignoreBuildErrors: false) still fail the build.
+    ignoreDuringBuilds: true,
   },
   images: {
     formats: ["image/webp", "image/avif"],
